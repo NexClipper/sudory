@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/NexClipper/sudory-prototype-r1/pkg/control"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 type Route struct {
@@ -21,6 +22,8 @@ func New() *Route {
 	controller := control.New()
 
 	router.e.POST("/clusters", controller.CreateCluster)
+
+	router.e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	return router
 }
