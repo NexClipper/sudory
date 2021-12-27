@@ -7,19 +7,23 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/NexClipper/sudory-prototype-r1/pkg/config"
 	"github.com/NexClipper/sudory-prototype-r1/pkg/control"
+	"github.com/NexClipper/sudory-prototype-r1/pkg/database"
+
 	"github.com/labstack/echo/v4"
 	echoSwagger "github.com/swaggo/echo-swagger"
+
+	_ "github.com/NexClipper/sudory-prototype-r1/pkg/route/docs"
 )
 
 type Route struct {
 	e *echo.Echo
 }
 
-func New() *Route {
+func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router := &Route{e: echo.New()}
-
-	controller := control.New()
+	controller := control.New(db)
 
 	router.e.POST("/clusters", controller.CreateCluster)
 
@@ -28,10 +32,10 @@ func New() *Route {
 	return router
 }
 
-func (r *Route) Start() error {
+func (r *Route) Start(port int32) error {
 	go func() {
-		port := fmt.Sprintf(":%d", 8099)
-		if err := r.e.Start(port); err != nil {
+		address := fmt.Sprintf(":%d", port)
+		if err := r.e.Start(address); err != nil {
 			r.e.Logger.Info("shut down the server")
 		}
 	}()

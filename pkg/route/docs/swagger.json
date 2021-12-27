@@ -1,0 +1,65 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/clusters": {
+            "post": {
+                "description": "Create a Cluster",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "description": "Cluster의 정보",
+                        "name": "namespace",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ReqCluster"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Cluster"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.Cluster": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ReqCluster": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

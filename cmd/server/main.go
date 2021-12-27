@@ -1,6 +1,12 @@
 package main
 
-import "github.com/NexClipper/sudory-prototype-r1/pkg/route"
+import (
+	"flag"
+
+	"github.com/NexClipper/sudory-prototype-r1/pkg/config"
+	"github.com/NexClipper/sudory-prototype-r1/pkg/database"
+	"github.com/NexClipper/sudory-prototype-r1/pkg/route"
+)
 
 // @title SUDORY
 // @version 0.0.1
@@ -8,7 +14,20 @@ import "github.com/NexClipper/sudory-prototype-r1/pkg/route"
 // @contact.url https://nexclipper.io
 // @contact.email jaehoon@nexclipper.io
 func main() {
-	r := route.New()
+	configPath := flag.String("config", "../../conf/sudory-server.yml", "Path to sudory-server's config file")
+	flag.Parse()
 
-	r.Start()
+	cfg, err := config.New(*configPath)
+	if err != nil {
+		panic(err)
+	}
+
+	db, err := database.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	r := route.New(cfg, db)
+
+	r.Start(cfg.Host.Port)
 }

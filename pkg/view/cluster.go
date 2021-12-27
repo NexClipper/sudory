@@ -36,5 +36,8 @@ func (v *CreateCluster) Request(ctx echo.Context) error {
 }
 
 func (v *CreateCluster) Response(ctx echo.Context) error {
+	if err := ctx.JSON(http.StatusOK, nil); err != nil {
+		return err
+	}
 	return nil
 }

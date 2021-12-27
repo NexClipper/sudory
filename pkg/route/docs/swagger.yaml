@@ -1,0 +1,40 @@
+definitions:
+  model.Cluster:
+    properties:
+      created:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated:
+        type: string
+    type: object
+  model.ReqCluster:
+    properties:
+      name:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /clusters:
+    post:
+      consumes:
+      - application/json
+      description: Create a Cluster
+      parameters:
+      - description: Cluster의 정보
+        in: body
+        name: namespace
+        required: true
+        schema:
+          $ref: '#/definitions/model.ReqCluster'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Cluster'
+swagger: "2.0"
