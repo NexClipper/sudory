@@ -9,6 +9,7 @@ import (
 type Cluster struct {
 	db *database.DBManipulator
 
+	ID   string
 	Name string
 
 	Response ResponseFn
@@ -20,6 +21,7 @@ func NewCluster(d *database.DBManipulator) Operator {
 
 func (o *Cluster) toModel() *model.Cluster {
 	m := &model.Cluster{
+		ID:   o.ID,
 		Name: o.Name,
 	}
 
@@ -35,7 +37,22 @@ func (o *Cluster) Create(ctx echo.Context) error {
 	}
 
 	if o.Response != nil {
-		o.Response(ctx)
+		o.Response(ctx, nil)
+	}
+
+	return nil
+}
+
+func (o *Cluster) Get(ctx echo.Context) error {
+	cluster := o.toModel()
+
+	m, err := o.db.GetCluster(cluster)
+	if err != nil {
+		return err
+	}
+
+	if o.Response != nil {
+		o.Response(ctx, m)
 	}
 
 	return nil

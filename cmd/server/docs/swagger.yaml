@@ -16,7 +16,12 @@ definitions:
         type: string
     type: object
 info:
-  contact: {}
+  contact:
+    email: jaehoon@nexclipper.io
+    url: https://nexclipper.io
+  description: this is a sudory server.
+  title: SUDORY
+  version: 0.0.1
 paths:
   /cluster:
     post:

@@ -30,9 +30,54 @@
                     }
                 }
             }
+        },
+        "/cluster/{id}": {
+            "get": {
+                "description": "Get a Cluster",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cluster의 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Cluster"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "model.Cluster": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                }
+            }
+        },
         "model.ReqCluster": {
             "type": "object",
             "properties": {
