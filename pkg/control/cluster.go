@@ -10,9 +10,9 @@ import (
 // @Description Create a Cluster
 // @Accept json
 // @Produce json
-// @Router /clusters [post]
+// @Router /cluster [post]
 // @Param namespace body model.ReqCluster true "Cluster의 정보"
-// @Success 200 {object} model.Cluster
+// @Success 200
 func (c *Control) CreateCluster(ctx echo.Context) error {
 	v := view.NewCreateCluster(operator.NewCluster(c.db))
 	return v.Request(ctx)

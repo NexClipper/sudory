@@ -23,7 +23,7 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/clusters": {
+        "/cluster": {
             "post": {
                 "description": "Create a Cluster",
                 "consumes": [
@@ -45,33 +45,13 @@ var doc = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.Cluster"
-                        }
+                        "description": ""
                     }
                 }
             }
         }
     },
     "definitions": {
-        "model.Cluster": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                }
-            }
-        },
         "model.ReqCluster": {
             "type": "object",
             "properties": {

@@ -1,15 +1,4 @@
 definitions:
-  model.Cluster:
-    properties:
-      created:
-        type: string
-      id:
-        type: string
-      name:
-        type: string
-      updated:
-        type: string
-    type: object
   model.ReqCluster:
     properties:
       name:
@@ -18,7 +7,7 @@ definitions:
 info:
   contact: {}
 paths:
-  /clusters:
+  /cluster:
     post:
       consumes:
       - application/json
@@ -34,7 +23,5 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.Cluster'
+          description: ""
 swagger: "2.0"
