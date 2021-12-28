@@ -1,4 +1,16 @@
 definitions:
+  model.Catalogue:
+    properties:
+      name:
+        type: string
+    type: object
+  model.Catalogues:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.Catalogue'
+        type: array
+    type: object
   model.Cluster:
     properties:
       created:
@@ -18,6 +30,16 @@ definitions:
 info:
   contact: {}
 paths:
+  /catalogue:
+    get:
+      description: Get a Catalogues
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Catalogues'
   /cluster:
     post:
       consumes:

@@ -9,4 +9,5 @@ type ResponseFn func(ctx echo.Context, m model.Modeler) error
 
 type Operator interface {
 	Create(ctx echo.Context) error
+	Get(ctx echo.Context) error
 }

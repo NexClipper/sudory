@@ -23,6 +23,22 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/catalogue": {
+            "get": {
+                "description": "Get a Catalogues",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Catalogues"
+                        }
+                    }
+                }
+            }
+        },
         "/cluster": {
             "post": {
                 "description": "Create a Cluster",
@@ -80,6 +96,25 @@ var doc = `{
         }
     },
     "definitions": {
+        "model.Catalogue": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Catalogues": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Catalogue"
+                    }
+                }
+            }
+        },
         "model.Cluster": {
             "type": "object",
             "properties": {
