@@ -18,11 +18,12 @@ import (
 )
 
 type Route struct {
-	e *echo.Echo
+	e  *echo.Echo
+	db *database.DBManipulator
 }
 
 func New(cfg *config.Config, db *database.DBManipulator) *Route {
-	router := &Route{e: echo.New()}
+	router := &Route{e: echo.New(), db: db}
 	controller := control.New(db)
 
 	router.e.POST("/cluster", controller.CreateCluster)
@@ -50,8 +51,10 @@ func (r *Route) Start(port int32) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		if err := r.e.Shutdown(ctx); err != nil {
+			r.db.Close()
 			return err
 		}
+		r.db.Close()
 	}
 
 	return nil
