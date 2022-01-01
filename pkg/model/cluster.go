@@ -7,7 +7,7 @@ type ReqCluster struct {
 }
 
 type Cluster struct {
-	ID      string    `xorm:"pk autoincr 'id'"`
+	ID      uint64    `xorm:"pk autoincr 'id'"`
 	Name    string    `xorm:"name"`
 	Created time.Time `xorm:"created"`
 	Updated time.Time `xorm:"updated"`

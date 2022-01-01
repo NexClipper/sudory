@@ -16,7 +16,7 @@ definitions:
       created:
         type: string
       id:
-        type: string
+        type: integer
       name:
         type: string
       updated:
@@ -26,6 +26,30 @@ definitions:
     properties:
       name:
         type: string
+    type: object
+  model.ReqService:
+    properties:
+      cluster_id:
+        type: integer
+      name:
+        type: string
+      step:
+        items:
+          $ref: '#/definitions/model.ReqStep'
+        type: array
+      step_count:
+        type: integer
+    type: object
+  model.ReqStep:
+    properties:
+      command:
+        type: string
+      name:
+        type: string
+      parameter:
+        type: string
+      sequence:
+        type: integer
     type: object
 info:
   contact: {}
@@ -75,4 +99,21 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/model.Cluster'
+  /service:
+    post:
+      consumes:
+      - application/json
+      description: Create a Service
+      parameters:
+      - description: Service의 정보
+        in: body
+        name: service
+        required: true
+        schema:
+          $ref: '#/definitions/model.ReqService'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
 swagger: "2.0"

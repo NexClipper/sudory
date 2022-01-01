@@ -2,6 +2,7 @@ package view
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/NexClipper/sudory-prototype-r1/pkg/control/operator"
 	"github.com/NexClipper/sudory-prototype-r1/pkg/model"
@@ -50,13 +51,18 @@ func NewGetCluster(o operator.Operator) Viewer {
 	return &GetCluster{opr: o.(*operator.Cluster)}
 }
 
-func (v *GetCluster) fromModel(id string) {
+func (v *GetCluster) fromModel(id uint64) {
 	v.opr.ID = id
 	v.opr.Response = v.Response
 }
 
 func (v *GetCluster) Request(ctx echo.Context) error {
-	id := ctx.Param("id")
+	reqID := ctx.Param("id")
+
+	id, err := strconv.ParseUint(reqID, 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, nil)
+	}
 
 	v.fromModel(id)
 	if err := v.opr.Get(ctx); err != nil {

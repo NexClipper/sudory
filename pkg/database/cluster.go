@@ -4,8 +4,19 @@ import "github.com/NexClipper/sudory-prototype-r1/pkg/model"
 
 func (d *DBManipulator) CreateCluster(m *model.Cluster) (int64, error) {
 	tx := d.session()
+	tx.Begin()
 
-	return tx.Insert(m)
+	cnt, err := tx.Insert(m)
+
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		} else {
+			tx.Commit()
+		}
+	}()
+
+	return cnt, err
 }
 
 func (d *DBManipulator) GetCluster(m *model.Cluster) (*model.Cluster, error) {

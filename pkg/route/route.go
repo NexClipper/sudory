@@ -29,6 +29,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router.e.POST("/cluster", controller.CreateCluster)
 	router.e.GET("/cluster/:id", controller.GetCluster)
 	router.e.GET("/catalogue", controller.GetCatalogue)
+	router.e.POST("/service", controller.CreateService)
 
 	router.e.GET("/swagger/*", echoSwagger.WrapHandler)
 

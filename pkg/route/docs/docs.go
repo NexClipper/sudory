@@ -93,6 +93,33 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/service": {
+            "post": {
+                "description": "Create a Service",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "description": "Service의 정보",
+                        "name": "service",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ReqService"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -122,7 +149,7 @@ var doc = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"
@@ -137,6 +164,43 @@ var doc = `{
             "properties": {
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "model.ReqService": {
+            "type": "object",
+            "properties": {
+                "cluster_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "step": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ReqStep"
+                    }
+                },
+                "step_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.ReqStep": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parameter": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "integer"
                 }
             }
         }

@@ -9,7 +9,7 @@ import (
 type Cluster struct {
 	db *database.DBManipulator
 
-	ID   string
+	ID   uint64
 	Name string
 
 	Response ResponseFn
