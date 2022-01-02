@@ -6,12 +6,12 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// CreateCluster godoc
+// CreateCluster
 // @Description Create a Cluster
 // @Accept json
 // @Produce json
 // @Router /cluster [post]
-// @Param namespace body model.ReqCluster true "Cluster의 정보"
+// @Param cluster body model.ReqCluster true "Cluster의 정보"
 // @Success 200
 func (c *Control) CreateCluster(ctx echo.Context) error {
 	v := view.NewCreateCluster(operator.NewCluster(c.db))

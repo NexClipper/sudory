@@ -28,6 +28,8 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 
 	router.e.POST("/cluster", controller.CreateCluster)
 	router.e.GET("/cluster/:id", controller.GetCluster)
+	router.e.POST("/cluster/:id/token", controller.CreateToken)
+
 	router.e.GET("/catalogue", controller.GetCatalogue)
 	router.e.POST("/service", controller.CreateService)
 

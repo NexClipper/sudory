@@ -51,7 +51,7 @@ var doc = `{
                 "parameters": [
                     {
                         "description": "Cluster의 정보",
-                        "name": "namespace",
+                        "name": "cluster",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -90,6 +90,40 @@ var doc = `{
                         "schema": {
                             "$ref": "#/definitions/model.Cluster"
                         }
+                    }
+                }
+            }
+        },
+        "/cluster/{id}/token": {
+            "post": {
+                "description": "Create a Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "cluster id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Token의 정보",
+                        "name": "token",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ReqToken"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
                     }
                 }
             }
@@ -201,6 +235,14 @@ var doc = `{
                 },
                 "sequence": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.ReqToken": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
                 }
             }
         }
