@@ -1,7 +1,13 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "this is a sudory server.",
+        "title": "SUDORY",
+        "contact": {
+            "url": "https://nexclipper.io",
+            "email": "jaehoon@nexclipper.io"
+        },
+        "version": "0.0.1"
     },
     "paths": {
         "/catalogue": {

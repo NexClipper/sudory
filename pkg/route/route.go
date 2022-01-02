@@ -1,3 +1,8 @@
+// @title SUDORY
+// @version 0.0.1
+// @description this is a sudory server.
+// @contact.url https://nexclipper.io
+// @contact.email jaehoon@nexclipper.io
 package route
 
 import (
