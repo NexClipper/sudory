@@ -26,11 +26,44 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/catalogue": {
+        "/client/regist": {
+            "post": {
+                "description": "Regist a Client",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "client"
+                ],
+                "parameters": [
+                    {
+                        "description": "Client의 정보",
+                        "name": "client",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ReqClient"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/catalogue": {
             "get": {
                 "description": "Get a Catalogues",
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "server"
                 ],
                 "responses": {
                     "200": {
@@ -42,7 +75,7 @@ var doc = `{
                 }
             }
         },
-        "/cluster": {
+        "/server/cluster": {
             "post": {
                 "description": "Create a Cluster",
                 "consumes": [
@@ -50,6 +83,9 @@ var doc = `{
                 ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "server"
                 ],
                 "parameters": [
                     {
@@ -69,7 +105,7 @@ var doc = `{
                 }
             }
         },
-        "/cluster/{id}": {
+        "/server/cluster/{id}": {
             "get": {
                 "description": "Get a Cluster",
                 "consumes": [
@@ -77,6 +113,9 @@ var doc = `{
                 ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "server"
                 ],
                 "parameters": [
                     {
@@ -97,7 +136,7 @@ var doc = `{
                 }
             }
         },
-        "/cluster/{id}/token": {
+        "/server/cluster/{id}/token": {
             "post": {
                 "description": "Create a Token",
                 "consumes": [
@@ -105,6 +144,9 @@ var doc = `{
                 ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "server"
                 ],
                 "parameters": [
                     {
@@ -131,7 +173,7 @@ var doc = `{
                 }
             }
         },
-        "/service": {
+        "/server/service": {
             "post": {
                 "description": "Create a Service",
                 "consumes": [
@@ -139,6 +181,9 @@ var doc = `{
                 ],
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "server"
                 ],
                 "parameters": [
                     {
@@ -193,6 +238,23 @@ var doc = `{
                 },
                 "updated": {
                     "type": "string"
+                }
+            }
+        },
+        "model.ReqClient": {
+            "type": "object",
+            "properties": {
+                "agent_id": {
+                    "type": "string"
+                },
+                "cluster_id": {
+                    "type": "integer"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
                 }
             }
         },

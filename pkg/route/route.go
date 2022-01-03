@@ -31,12 +31,14 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router := &Route{e: echo.New(), db: db}
 	controller := control.New(db)
 
-	router.e.POST("/cluster", controller.CreateCluster)
-	router.e.GET("/cluster/:id", controller.GetCluster)
-	router.e.POST("/cluster/:id/token", controller.CreateToken)
+	router.e.POST("/server/cluster", controller.CreateCluster)
+	router.e.GET("/server//cluster/:id", controller.GetCluster)
+	router.e.POST("/server/cluster/:id/token", controller.CreateToken)
 
-	router.e.GET("/catalogue", controller.GetCatalogue)
-	router.e.POST("/service", controller.CreateService)
+	router.e.GET("/server/catalogue", controller.GetCatalogue)
+	router.e.POST("/server/service", controller.CreateService)
+
+	router.e.POST("/client/regist", controller.CreateClient)
 
 	router.e.GET("/swagger/*", echoSwagger.WrapHandler)
 

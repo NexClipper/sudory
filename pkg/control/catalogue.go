@@ -9,7 +9,8 @@ import (
 // GetCatalogue
 // @Description Get a Catalogues
 // @Produce json
-// @Router /catalogue [get]
+// @Tags server
+// @Router /server/catalogue [get]
 // @Success 200 {object} model.Catalogues
 func (c *Control) GetCatalogue(ctx echo.Context) error {
 	v := view.NewGetCatalogue(operator.NewCatalogue())

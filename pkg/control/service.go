@@ -10,7 +10,8 @@ import (
 // @Description Create a Service
 // @Accept json
 // @Produce json
-// @Router /service [post]
+// @Tags server
+// @Router /server/service [post]
 // @Param service body model.ReqService true "Service의 정보"
 // @Success 200
 func (c *Control) CreateService(ctx echo.Context) error {
