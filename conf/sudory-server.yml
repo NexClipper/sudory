@@ -5,7 +5,7 @@ host:
 
 database:
   type: mysql
-  dsn: 'sudory:sudory@tcp(127.0.0.1:3306)/sudory2?charset=utf8mb4&parseTime=True&loc=Local'
+  dsn: 'sudory:sudory@tcp(127.0.0.1:3306)/sudory_prototype_r1?charset=utf8mb4&parseTime=True&loc=Local'
   maxopenconns: 15
   maxidleconns: 5
   maxconnlifetime: 1

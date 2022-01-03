@@ -1,8 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `sudory-prototype-r1` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_bin */;
-USE `sudory-prototype-r1`;
+CREATE DATABASE  IF NOT EXISTS `sudory_prototype_r1` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_bin */;
+USE `sudory_prototype_r1`;
 -- MariaDB dump 10.18  Distrib 10.5.8-MariaDB, for Win64 (AMD64)
 --
--- Host: 127.0.0.1    Database: sudory-prototype-r1
+-- Host: 127.0.0.1    Database: sudory_prototype_r1
 -- ------------------------------------------------------
 -- Server version	10.5.8-MariaDB
 
