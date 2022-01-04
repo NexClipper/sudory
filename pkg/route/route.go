@@ -39,6 +39,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router.e.POST("/server/service", controller.CreateService)
 
 	router.e.POST("/client/regist", controller.CreateClient)
+	router.e.PUT("/client/service", controller.GetService)
 
 	router.e.GET("/swagger/*", echoSwagger.WrapHandler)
 

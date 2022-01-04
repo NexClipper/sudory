@@ -7,10 +7,10 @@ type ReqCluster struct {
 }
 
 type Cluster struct {
-	ID      uint64    `xorm:"pk autoincr 'id'"`
-	Name    string    `xorm:"name"`
-	Created time.Time `xorm:"created"`
-	Updated time.Time `xorm:"updated"`
+	ID      uint64    `xorm:"pk autoincr 'id'" json:"id"`
+	Name    string    `xorm:"name" json:"name"`
+	Created time.Time `xorm:"created" json:"created"`
+	Updated time.Time `xorm:"updated" json:"updated"`
 }
 
 func (m *Cluster) GetType() string {

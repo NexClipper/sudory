@@ -44,3 +44,15 @@ func (d *DBManipulator) CreateStep(m []*model.Step) (int64, error) {
 
 	return cnt, err
 }
+
+func (d *DBManipulator) GetServiceSteps(m *model.Service) ([]*model.ServiceStep, error) {
+	tx := d.session()
+
+	serviceSteps := make([]*model.ServiceStep, 0)
+	cnt, err := tx.Table("service").Join("LEFT", "step", "service.id=step.service_id").Where("service.cluster_id like ?", m.ClusterID).FindAndCount(&serviceSteps)
+	if cnt == 0 {
+		return nil, err
+	}
+
+	return serviceSteps, err
+}

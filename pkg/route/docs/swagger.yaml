@@ -33,6 +33,11 @@ definitions:
       port:
         type: integer
     type: object
+  model.ReqClientGetService:
+    properties:
+      cluster_id:
+        type: integer
+    type: object
   model.ReqCluster:
     properties:
       name:
@@ -67,6 +72,30 @@ definitions:
       key:
         type: string
     type: object
+  model.RespService:
+    properties:
+      cluster_id:
+        type: integer
+      name:
+        type: string
+      step:
+        items:
+          $ref: '#/definitions/model.RespStep'
+        type: array
+      step_count:
+        type: integer
+    type: object
+  model.RespStep:
+    properties:
+      command:
+        type: string
+      name:
+        type: string
+      parameter:
+        type: string
+      sequence:
+        type: integer
+    type: object
 info:
   contact:
     email: jaehoon@nexclipper.io
@@ -92,6 +121,27 @@ paths:
       responses:
         "200":
           description: ""
+      tags:
+      - client
+  /client/service:
+    put:
+      consumes:
+      - application/json
+      description: Get a Service
+      parameters:
+      - description: Service의 정보
+        in: body
+        name: service
+        required: true
+        schema:
+          $ref: '#/definitions/model.ReqClientGetService'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.RespService'
       tags:
       - client
   /server/catalogue:

@@ -42,3 +42,30 @@ type Step struct {
 func (m *Step) GetType() string {
 	return "STEP"
 }
+
+type ServiceStep struct {
+	Service `xorm:"extends"`
+	Step    `xorm:"extends"`
+}
+
+type ReqClientGetService struct {
+	ClusterID uint64 `json:"cluster_id"`
+}
+
+type RespService struct {
+	Name      string      `json:"name"`
+	ClusterID uint64      `json:"cluster_id"`
+	StepCount uint        `json:"step_count"`
+	Step      []*RespStep `json:"step"`
+}
+
+func (m *RespService) GetType() string {
+	return "RESPSERVICE"
+}
+
+type RespStep struct {
+	Name      string `json:"name"`
+	Sequence  uint64 `json:"sequence"`
+	Command   string `json:"command"`
+	Parameter string `json:"parameter"`
+}

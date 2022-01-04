@@ -54,3 +54,61 @@ func (v *CreateService) Response(ctx echo.Context, m model.Modeler) error {
 	}
 	return nil
 }
+
+type GetService struct {
+	opr *operator.Service
+}
+
+func NewGetService(o operator.Operator) Viewer {
+	return &GetService{opr: o.(*operator.Service)}
+}
+
+func (v *GetService) fromModel(m *model.ReqClientGetService) {
+	v.opr.ClusterID = m.ClusterID
+	v.opr.Response = v.Response
+}
+
+func (v *GetService) Request(ctx echo.Context) error {
+	reqModel := &model.ReqClientGetService{}
+	if err := ctx.Bind(reqModel); err != nil {
+		return ctx.JSON(http.StatusBadRequest, nil)
+	}
+
+	v.fromModel(reqModel)
+	if err := v.opr.Get(ctx); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, nil)
+	}
+
+	return nil
+}
+
+func (v *GetService) Response(ctx echo.Context, m model.Modeler) error {
+	if m != nil {
+		ss := m.(*model.RespService)
+
+		respBody := &model.RespService{
+			Name:      ss.Name,
+			ClusterID: ss.ClusterID,
+			StepCount: ss.StepCount,
+		}
+
+		for _, s := range ss.Step {
+			step := &model.RespStep{
+				Name:      s.Name,
+				Sequence:  s.Sequence,
+				Command:   s.Command,
+				Parameter: s.Parameter,
+			}
+			respBody.Step = append(respBody.Step, step)
+		}
+
+		if err := ctx.JSON(http.StatusOK, respBody); err != nil {
+			return err
+		}
+	} else {
+		if err := ctx.JSON(http.StatusOK, nil); err != nil {
+			return err
+		}
+	}
+	return nil
+}

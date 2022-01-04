@@ -79,5 +79,33 @@ func (o *Service) Create(ctx echo.Context) error {
 }
 
 func (o *Service) Get(ctx echo.Context) error {
+	service := o.toModelService()
+
+	serviceSteps, err := o.db.GetServiceSteps(service)
+	if err != nil {
+		return err
+	}
+
+	if o.Response != nil {
+		if len(serviceSteps) == 0 {
+			o.Response(ctx, nil)
+		} else {
+			respBody := &model.RespService{
+				Name:      serviceSteps[0].Service.Name,
+				ClusterID: serviceSteps[0].Service.ClusterID,
+				StepCount: serviceSteps[0].Service.StepCount,
+			}
+			for _, s := range serviceSteps {
+				step := &model.RespStep{
+					Name:      s.Step.Name,
+					Sequence:  s.Step.Sequence,
+					Command:   s.Step.Command,
+					Parameter: s.Step.Parameter,
+				}
+				respBody.Step = append(respBody.Step, step)
+			}
+			o.Response(ctx, respBody)
+		}
+	}
 	return nil
 }

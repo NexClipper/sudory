@@ -40,6 +40,39 @@
                 }
             }
         },
+        "/client/service": {
+            "put": {
+                "description": "Get a Service",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "client"
+                ],
+                "parameters": [
+                    {
+                        "description": "Service의 정보",
+                        "name": "service",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ReqClientGetService"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.RespService"
+                        }
+                    }
+                }
+            }
+        },
         "/server/catalogue": {
             "get": {
                 "description": "Get a Catalogues",
@@ -242,6 +275,14 @@
                 }
             }
         },
+        "model.ReqClientGetService": {
+            "type": "object",
+            "properties": {
+                "cluster_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "model.ReqCluster": {
             "type": "object",
             "properties": {
@@ -292,6 +333,43 @@
             "properties": {
                 "key": {
                     "type": "string"
+                }
+            }
+        },
+        "model.RespService": {
+            "type": "object",
+            "properties": {
+                "cluster_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "step": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RespStep"
+                    }
+                },
+                "step_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.RespStep": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parameter": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "integer"
                 }
             }
         }
