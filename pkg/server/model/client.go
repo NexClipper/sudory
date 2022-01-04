@@ -3,7 +3,7 @@ package model
 import "time"
 
 type ReqClient struct {
-	AgetnID   string `json:"agent_id"`
+	MachineID string `json:"machine_id"`
 	ClusterID uint64 `json:"cluster_id"`
 	IP        string `json:"ip"`
 	Port      int    `json:"port"`
@@ -11,7 +11,7 @@ type ReqClient struct {
 
 type Client struct {
 	ID        uint64    `xorm:"pk autoincr 'id'"`
-	AgentID   string    `xorm:"agent_id"`
+	MachineID string    `xorm:"machine_id"`
 	ClusterID uint64    `xorm:"cluster_id"`
 	Active    bool      `xorm:"active"`
 	IP        string    `xorm:"ip"`

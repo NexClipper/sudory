@@ -277,13 +277,13 @@ var doc = `{
         "model.ReqClient": {
             "type": "object",
             "properties": {
-                "agent_id": {
-                    "type": "string"
-                },
                 "cluster_id": {
                     "type": "integer"
                 },
                 "ip": {
+                    "type": "string"
+                },
+                "machine_id": {
                     "type": "string"
                 },
                 "port": {

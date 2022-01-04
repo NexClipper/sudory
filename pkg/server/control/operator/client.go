@@ -10,7 +10,7 @@ type Client struct {
 	db *database.DBManipulator
 
 	ID        uint64
-	AgentID   string
+	MachineID string
 	ClusterID uint64
 	IP        string
 	Port      int
@@ -25,7 +25,7 @@ func NewClient(d *database.DBManipulator) Operator {
 func (o *Client) toModel() *model.Client {
 	m := &model.Client{
 		ID:        o.ID,
-		AgentID:   o.AgentID,
+		MachineID: o.MachineID,
 		ClusterID: o.ClusterID,
 		IP:        o.IP,
 		Port:      o.Port,

@@ -17,7 +17,7 @@ func NewCreateClient(o operator.Operator) Viewer {
 }
 
 func (v *CreateClient) fromModel(m *model.ReqClient) {
-	v.opr.AgentID = m.AgetnID
+	v.opr.MachineID = m.MachineID
 	v.opr.ClusterID = m.ClusterID
 	v.opr.IP = m.IP
 	v.opr.Port = m.Port
