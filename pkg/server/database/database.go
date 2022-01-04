@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NexClipper/sudory-prototype-r1/pkg/config"
+	"github.com/NexClipper/sudory-prototype-r1/pkg/server/config"
 	"xorm.io/xorm"
 	"xorm.io/xorm/log"
 	"xorm.io/xorm/names"

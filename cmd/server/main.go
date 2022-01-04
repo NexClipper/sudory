@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 
-	"github.com/NexClipper/sudory-prototype-r1/pkg/config"
-	"github.com/NexClipper/sudory-prototype-r1/pkg/database"
-	"github.com/NexClipper/sudory-prototype-r1/pkg/route"
+	"github.com/NexClipper/sudory-prototype-r1/pkg/server/config"
+	"github.com/NexClipper/sudory-prototype-r1/pkg/server/database"
+	"github.com/NexClipper/sudory-prototype-r1/pkg/server/route"
 )
 
 func main() {

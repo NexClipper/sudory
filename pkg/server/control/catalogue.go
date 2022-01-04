@@ -1,8 +1,8 @@
 package control
 
 import (
-	"github.com/NexClipper/sudory-prototype-r1/pkg/control/operator"
-	"github.com/NexClipper/sudory-prototype-r1/pkg/view"
+	"github.com/NexClipper/sudory-prototype-r1/pkg/server/control/operator"
+	"github.com/NexClipper/sudory-prototype-r1/pkg/server/view"
 	"github.com/labstack/echo/v4"
 )
 

@@ -1,6 +1,6 @@
 package database
 
-import "github.com/NexClipper/sudory-prototype-r1/pkg/model"
+import "github.com/NexClipper/sudory-prototype-r1/pkg/server/model"
 
 func (d *DBManipulator) CreateService(m *model.Service) (int64, error) {
 	tx := d.session()
