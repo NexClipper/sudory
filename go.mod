@@ -7,6 +7,7 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/jinzhu/configor v1.2.1
 	github.com/labstack/echo/v4 v4.6.1
+	github.com/panta/machineid v1.0.1
 	github.com/swaggo/echo-swagger v1.1.4
 	github.com/swaggo/swag v1.7.0
 	xorm.io/xorm v1.2.5
@@ -17,6 +18,7 @@ require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
+	github.com/denisbrodbeck/machineid v1.0.1 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/spec v0.20.0 // indirect
