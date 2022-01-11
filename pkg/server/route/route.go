@@ -12,14 +12,14 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/NexClipper/sudory-prototype-r1/pkg/server/config"
-	"github.com/NexClipper/sudory-prototype-r1/pkg/server/control"
-	"github.com/NexClipper/sudory-prototype-r1/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/config"
+	"github.com/NexClipper/sudory/pkg/server/control"
+	"github.com/NexClipper/sudory/pkg/server/database"
 
 	"github.com/labstack/echo/v4"
 	echoSwagger "github.com/swaggo/echo-swagger"
 
-	_ "github.com/NexClipper/sudory-prototype-r1/pkg/server/route/docs"
+	_ "github.com/NexClipper/sudory/pkg/server/route/docs"
 )
 
 type Route struct {

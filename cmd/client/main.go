@@ -4,7 +4,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/NexClipper/sudory-prototype-r1/pkg/client/poll"
+	"github.com/NexClipper/sudory/pkg/client/poll"
 )
 
 func main() {

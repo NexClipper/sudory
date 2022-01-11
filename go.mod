@@ -1,4 +1,4 @@
-module github.com/NexClipper/sudory-prototype-r1
+module github.com/NexClipper/sudory
 
 go 1.17
 

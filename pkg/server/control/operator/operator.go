@@ -1,7 +1,7 @@
 package operator
 
 import (
-	"github.com/NexClipper/sudory-prototype-r1/pkg/server/model"
+	"github.com/NexClipper/sudory/pkg/server/model"
 	"github.com/labstack/echo/v4"
 )
 
