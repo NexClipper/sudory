@@ -26,6 +26,7 @@ require (
 	github.com/go-openapi/swag v0.19.12 // indirect
 	github.com/goccy/go-json v0.7.4 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/labstack/gommon v0.3.0 // indirect
