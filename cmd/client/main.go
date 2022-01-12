@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"os"
+	"os/signal"
 
 	"github.com/NexClipper/sudory/pkg/client/poll"
 )
@@ -21,16 +22,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	poller := poll.New(*token, *server)
-
-	// regist
-
-	if err := poller.Regist(); err != nil {
-		os.Exit(1)
-	}
+	poller := poll.NewPoller(*token, *server)
 
 	// polling
-	if err := poller.Start(); err != nil {
+	poller.Start()
+
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt)
+
+	select {
+	case <-quit:
 		os.Exit(1)
 	}
 }
