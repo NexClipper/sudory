@@ -9,6 +9,7 @@ import (
 	"github.com/panta/machineid"
 
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
+	"github.com/NexClipper/sudory/pkg/client/service"
 	"github.com/NexClipper/sudory/pkg/server/model"
 )
 
@@ -20,9 +21,10 @@ type Poller struct {
 	machineID        string
 	client           *httpclient.HttpClient
 	pollingScheduler *gocron.Scheduler
+	serviceScheduler *service.ServiceScheduler
 }
 
-func NewPoller(token, server string) *Poller {
+func NewPoller(token, server string, serviceScheduler *service.ServiceScheduler) *Poller {
 	id, err := machineid.ID()
 	if err != nil {
 		return nil
@@ -32,7 +34,7 @@ func NewPoller(token, server string) *Poller {
 
 	uri := server + "/client/service"
 
-	return &Poller{token: token, server: server, machineID: id, client: httpclient.NewHttpClient(uri, token), pollingScheduler: gocron.NewScheduler(time.UTC)}
+	return &Poller{token: token, server: server, machineID: id, client: httpclient.NewHttpClient(uri, token), pollingScheduler: gocron.NewScheduler(time.UTC), serviceScheduler: serviceScheduler}
 }
 
 func (p *Poller) Start() {
@@ -46,7 +48,8 @@ func (p *Poller) ChangePollingInterval(interval int) {
 }
 
 func (p *Poller) poll() {
-	// TODO: Get services's status
+	// Get services's status
+	// servicesWillUpdate := p.serviceScheduler.GetServices()
 
 	// TODO: services' status -> reqData
 
@@ -60,6 +63,8 @@ func (p *Poller) poll() {
 		return
 	}
 
+	// TODO: If server updated service's status, remove completed services.
+
 	respData := &model.RespService{}
 	if err := json.Unmarshal(body, respData); err != nil {
 		log.Printf(err.Error())
@@ -67,6 +72,8 @@ func (p *Poller) poll() {
 	}
 
 	// TODO: respData -> services
+	recvServices := make(map[string]*service.Service)
 
-	// TODO: Register new services.
+	// Register new services.
+	p.serviceScheduler.RegisterServices(recvServices)
 }

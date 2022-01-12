@@ -6,6 +6,7 @@ import (
 	"os/signal"
 
 	"github.com/NexClipper/sudory/pkg/client/poll"
+	"github.com/NexClipper/sudory/pkg/client/service"
 )
 
 func main() {
@@ -22,7 +23,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	poller := poll.NewPoller(*token, *server)
+	serviceScheduler := service.NewScheduler()
+	serviceScheduler.Start()
+
+	poller := poll.NewPoller(*token, *server, serviceScheduler)
 
 	// polling
 	poller.Start()
