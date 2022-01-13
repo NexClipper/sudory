@@ -1,4 +1,4 @@
-package v1
+package macro
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func createKeyValuePairs(m map[string]string) string {
+func ConvtKeyValuePairString(m map[string]string) string {
 	b := new(bytes.Buffer)
 	for key, value := range m {
 		fmt.Fprintf(b, "%s=\"%s\"\n", key, value)
@@ -14,10 +14,10 @@ func createKeyValuePairs(m map[string]string) string {
 	return b.String()
 }
 
-func createKeyValueJson(m map[string]string) []byte {
+func ConvtKeyValuePairJson(m map[string]string) string {
 	b, err := json.Marshal(m)
 	if err != nil {
 		panic(err)
 	}
-	return b
+	return string(b)
 }

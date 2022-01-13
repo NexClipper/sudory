@@ -96,6 +96,46 @@ definitions:
       sequence:
         type: integer
     type: object
+  v1.HttpReqTemplate:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      name:
+        description: label name
+        type: string
+      origin:
+        description: |-
+          origin
+          @example: predefined, userdefined
+        type: string
+      summary:
+        description: label summary
+        type: string
+      uuid:
+        description: UUID
+        type: string
+    type: object
+  v1.HttpRspTemplate:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      name:
+        description: label name
+        type: string
+      origin:
+        description: |-
+          origin
+          @example: predefined, userdefined
+        type: string
+      summary:
+        description: label summary
+        type: string
+      uuid:
+        description: UUID
+        type: string
+    type: object
 info:
   contact:
     email: jaehoon@nexclipper.io
@@ -238,4 +278,118 @@ paths:
           description: ""
       tags:
       - server
+  /server/template:
+    get:
+      consumes:
+      - application/json
+      description: Get []template
+      parameters:
+      - description: ReqTemplate 의 Uuid
+        in: query
+        name: uuid
+        type: string
+      - description: ReqTemplate 의 Name
+        in: query
+        name: name
+        type: string
+      - description: ReqTemplate 의 Origin
+        in: query
+        name: origin
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '[]HttpRspTemplate'
+          schema:
+            items:
+              $ref: '#/definitions/v1.HttpRspTemplate'
+            type: array
+      tags:
+      - server
+      - server/template
+      - search
+    post:
+      consumes:
+      - application/json
+      description: Create a template
+      parameters:
+      - description: HttpReqTemplates
+        in: body
+        name: template
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/v1.HttpReqTemplate'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server
+      - server/template
+      - create
+    put:
+      consumes:
+      - application/json
+      description: Update a template
+      parameters:
+      - description: HttpReqTemplate
+        in: body
+        name: template
+        required: true
+        schema:
+          $ref: '#/definitions/v1.HttpReqTemplate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server
+      - server/template
+      - update
+  /server/template/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a template
+      parameters:
+      - description: HttpReqTemplate 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server
+      - server/template
+      - delete
+    get:
+      consumes:
+      - application/json
+      description: Get a template
+      parameters:
+      - description: ReqTemplate 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspTemplate'
+      tags:
+      - server
+      - server/template
+      - get
 swagger: "2.0"

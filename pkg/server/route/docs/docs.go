@@ -6,8 +6,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"strings"
+	"text/template"
 
-	"github.com/alecthomas/template"
 	"github.com/swaggo/swag"
 )
 
@@ -15,7 +15,7 @@ var doc = `{
     "schemes": {{ marshal .Schemes }},
     "swagger": "2.0",
     "info": {
-        "description": "{{.Description}}",
+        "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {
             "url": "https://nexclipper.io",
@@ -235,6 +235,177 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/server/template": {
+            "get": {
+                "description": "Get []template",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server",
+                    "server/template",
+                    "search"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ReqTemplate 의 Uuid",
+                        "name": "uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ReqTemplate 의 Name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ReqTemplate 의 Origin",
+                        "name": "origin",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "[]HttpRspTemplate",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.HttpRspTemplate"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a template",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server",
+                    "server/template",
+                    "update"
+                ],
+                "parameters": [
+                    {
+                        "description": "HttpReqTemplate",
+                        "name": "template",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpReqTemplate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a template",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server",
+                    "server/template",
+                    "create"
+                ],
+                "parameters": [
+                    {
+                        "description": "HttpReqTemplates",
+                        "name": "template",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.HttpReqTemplate"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/template/{uuid}": {
+            "get": {
+                "description": "Get a template",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server",
+                    "server/template",
+                    "get"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ReqTemplate 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspTemplate"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a template",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server",
+                    "server/template",
+                    "delete"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "HttpReqTemplate 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -388,6 +559,56 @@ var doc = `{
                     "type": "integer"
                 }
             }
+        },
+        "v1.HttpReqTemplate": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "origin": {
+                    "description": "origin\n@example: predefined, userdefined",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpRspTemplate": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "origin": {
+                    "description": "origin\n@example: predefined, userdefined",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
         }
     }
 }`
@@ -422,6 +643,13 @@ func (s *s) ReadDoc() string {
 			a, _ := json.Marshal(v)
 			return string(a)
 		},
+		"escape": func(v interface{}) string {
+			// escape tabs
+			str := strings.Replace(v.(string), "\t", "\\t", -1)
+			// replace " with \", and if that results in \\", replace that with \\\"
+			str = strings.Replace(str, "\"", "\\\"", -1)
+			return strings.Replace(str, "\\\\\"", "\\\\\\\"", -1)
+		},
 	}).Parse(doc)
 	if err != nil {
 		return doc
@@ -436,5 +664,5 @@ func (s *s) ReadDoc() string {
 }
 
 func init() {
-	swag.Register(swag.Name, &s{})
+	swag.Register("swagger", &s{})
 }

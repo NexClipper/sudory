@@ -14,7 +14,6 @@ CREATE TABLE `service_template_v1` (
 	`api_version` VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'api version' COLLATE 'utf8mb4_general_ci',
 	`origin` VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'origin name  ex) predefined, userdefined' COLLATE 'utf8mb4_general_ci',
 	PRIMARY KEY (`id`) USING BTREE,
-	UNIQUE INDEX `name` (`name`) USING BTREE,
 	UNIQUE INDEX `uuid` (`uuid`) USING BTREE
 )
 COMMENT='template table'

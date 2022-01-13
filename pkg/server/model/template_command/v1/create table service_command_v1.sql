@@ -16,8 +16,7 @@ CREATE TABLE `service_command_v1` (
 	`method` VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'method ex) kube.node.get, kube.pods.list' COLLATE 'utf8mb4_general_ci',
 	`args` VARCHAR(255) NULL DEFAULT '' COMMENT 'kubernetes method arguments' COLLATE 'utf8mb4_general_ci',
 	PRIMARY KEY (`id`) USING BTREE,
-	UNIQUE INDEX `uuid` (`uuid`) USING BTREE,
-	UNIQUE INDEX `name` (`name`) USING BTREE
+	UNIQUE INDEX `uuid` (`uuid`) USING BTREE
 )
 COMMENT='commandtable'
 COLLATE='utf8mb4_general_ci'

@@ -1,15 +1,16 @@
-package v1
+package macro_test
 
 import (
 	"testing"
 
+	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/google/uuid"
 )
 
 func TestNewUuid(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
-		println(NewUuidString())
+		println(macro.UuidNewString())
 	}
 }
 
