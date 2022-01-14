@@ -72,8 +72,6 @@ func (s *ServiceScheduler) RemoveServices(services map[string]*Service) {
 	for id, _ := range services {
 		delete(s.services, id)
 	}
-
-	return
 }
 
 func (s *ServiceScheduler) ExecuteService(serv *Service) error {

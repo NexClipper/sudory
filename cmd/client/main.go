@@ -2,9 +2,11 @@ package main
 
 import (
 	"flag"
+	"log"
 	"os"
 	"os/signal"
 
+	"github.com/NexClipper/sudory/pkg/client/k8s"
 	"github.com/NexClipper/sudory/pkg/client/poll"
 	"github.com/NexClipper/sudory/pkg/client/service"
 )
@@ -21,6 +23,13 @@ func main() {
 
 	if len(*server) == 0 {
 		os.Exit(1)
+	}
+
+	// get k8s client
+	// TODO: k8s client usage
+	_, err := k8s.NewClient()
+	if err != nil {
+		log.Panicln(err)
 	}
 
 	serviceScheduler := service.NewScheduler()
