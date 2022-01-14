@@ -7,7 +7,7 @@ import (
 )
 
 // Create Template
-// @Description Create a template
+// @Description Create []template
 // @Accept json
 // @Produce json
 // @Tags server,server/template,create
@@ -30,18 +30,18 @@ func (c *Control) GetTemplate(ctx echo.Context) error {
 	return view.NewGetTemplate(operator.NewGetTemplate(c.db)).Request(ctx)
 }
 
-// Get []Template
-// @Description Get []template
+// Find []Template
+// @Description Find []template
 // @Accept json
 // @Produce json
-// @Tags server,server/template,search
+// @Tags server,server/template,find
 // @Router /server/template [get]
 // @Param uuid   query string false "ReqTemplate 의 Uuid"
 // @Param name   query string false "ReqTemplate 의 Name"
 // @Param origin query string false "ReqTemplate 의 Origin"
 // @Success 200 {object} []v1.HttpRspTemplate "[]HttpRspTemplate"
-func (c *Control) SearchTemplate(ctx echo.Context) error {
-	return view.NewSearchTemplate(operator.NewSearchTemplate(c.db)).Request(ctx)
+func (c *Control) FindTemplate(ctx echo.Context) error {
+	return view.NewFindTemplate(operator.NewFindTemplate(c.db)).Request(ctx)
 }
 
 // Update Template

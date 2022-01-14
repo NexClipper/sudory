@@ -36,14 +36,17 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router.e.POST("/server/cluster/:id/token", controller.CreateToken)
 
 	//route /server/template
-	router.e.GET("/server/template", controller.SearchTemplate)
+	router.e.GET("/server/template", controller.FindTemplate)
 	router.e.GET("/server/template/:uuid", controller.GetTemplate)
 	router.e.POST("/server/template", controller.CreateTemplate)
 	router.e.PUT("/server/template", controller.UpdateTemplate)
 	router.e.DELETE("/server/template/:uuid", controller.DeleteTemplate)
 
 	//route /server/template_command
-	//TODO: ADD controller template_command
+	router.e.GET("/server/template_command/:uuid", controller.GetTemplateCommand)
+	router.e.POST("/server/template_command", controller.CreateTemplateCommand)
+	router.e.PUT("/server/template_command", controller.UpdateTemplateCommand)
+	router.e.DELETE("/server/template_command/:uuid", controller.DeleteTemplateCommand)
 
 	router.e.GET("/server/catalogue", controller.GetCatalogue)
 	router.e.POST("/server/service", controller.CreateService)

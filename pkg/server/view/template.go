@@ -27,12 +27,12 @@ func (v *CreateTemplate) fromModel(m templatev1.HttpReqTemplates) {
 }
 
 func (v *CreateTemplate) Request(ctx echo.Context) error {
-	reqModel := templatev1.HttpReqTemplates{}
-	if err := ctx.Bind(&reqModel); err != nil {
+	reqModel := &templatev1.HttpReqTemplates{}
+	if err := ctx.Bind(reqModel); err != nil {
 		return ctx.JSON(http.StatusBadRequest, nil)
 	}
 
-	v.fromModel(reqModel)
+	v.fromModel(*reqModel)
 	if err := v.opr.Create(ctx); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, err)
 	}
@@ -86,24 +86,24 @@ func (v *GetTemplate) Response(ctx echo.Context, m model.Modeler) error {
 	return ctx.JSON(http.StatusOK, rsp)
 }
 
-type SearchTemplate struct {
-	opr *operator.SearchTemplate
+type FindTemplate struct {
+	opr *operator.FindTemplate
 }
 
-var _ Viewer = (*SearchTemplate)(nil)
+var _ Viewer = (*FindTemplate)(nil)
 
-func NewSearchTemplate(o operator.Getter) Viewer {
-	v := &SearchTemplate{opr: o.(*operator.SearchTemplate)}
+func NewFindTemplate(o operator.Getter) Viewer {
+	v := &FindTemplate{opr: o.(*operator.FindTemplate)}
 	v.opr.Response = v.Response
 	return v
 }
 
-func (v *SearchTemplate) fromModel(param map[string]string) {
+func (v *FindTemplate) fromModel(param map[string]string) {
 	v.opr.Params = param
 	// v.opr.Response = v.Response
 }
 
-func (v *SearchTemplate) Request(ctx echo.Context) error {
+func (v *FindTemplate) Request(ctx echo.Context) error {
 	param := map[string]string{
 		"uuid":   ctx.QueryParam("uuid"),
 		"name":   ctx.QueryParam("name"),
@@ -118,7 +118,7 @@ func (v *SearchTemplate) Request(ctx echo.Context) error {
 	return nil
 }
 
-func (v *SearchTemplate) Response(ctx echo.Context, m model.Modeler) error {
+func (v *FindTemplate) Response(ctx echo.Context, m model.Modeler) error {
 	rsp := m.(*templatev1.HttpRspTemplates)
 	return ctx.JSON(http.StatusOK, rsp)
 }
@@ -135,7 +135,7 @@ func NewUpdateTemplate(o operator.Updater) Viewer {
 	return v
 }
 
-func (v *UpdateTemplate) fromModel(m *templatev1.HttpReqTemplate) {
+func (v *UpdateTemplate) fromModel(m templatev1.HttpReqTemplate) {
 	v.opr.Template = m.Template
 	// v.opr.Response = v.Response
 }
@@ -146,7 +146,7 @@ func (v *UpdateTemplate) Request(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, nil)
 	}
 
-	v.fromModel(reqModel)
+	v.fromModel(*reqModel)
 	if err := v.opr.Update(ctx); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, err)
 	}

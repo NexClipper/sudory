@@ -59,3 +59,21 @@ var _ model.Modeler = (*HttpRspTemplateCommands)(nil)
 func (HttpRspTemplateCommands) GetType() string {
 	return "HTTP RSP []TEMPLATE_COMMAND"
 }
+
+//변환 TemplateCommand -> DbSchema*
+func TransToDbSchema(s []TemplateCommand) []DbSchemaTemplateCommand {
+	var out = make([]DbSchemaTemplateCommand, len(s))
+	for n, it := range s {
+		out[n] = DbSchemaTemplateCommand{TemplateCommand: it}
+	}
+	return out
+}
+
+//변환 HttpReq* -> TemplateCommand
+func TransFormHttpReqTemplate(s []HttpReqTemplateCommand) []TemplateCommand {
+	var out = make([]TemplateCommand, len(s))
+	for n, it := range s {
+		out[n] = it.TemplateCommand
+	}
+	return out
+}

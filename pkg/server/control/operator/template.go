@@ -1,8 +1,9 @@
 package operator
 
 import (
+	"fmt"
+
 	"github.com/NexClipper/sudory/pkg/server/database"
-	. "github.com/NexClipper/sudory/pkg/server/macro"
 
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
 	"github.com/labstack/echo/v4"
@@ -26,19 +27,17 @@ func (o *CreateTemplate) toModel() []templatev1.Template {
 func (o *CreateTemplate) Create(ctx echo.Context) error {
 	model := o.toModel()
 
-	vaild := func(m *templatev1.Template) {
-		if len(m.Uuid) == 0 {
-			m.Uuid = UuidNewString()
-		}
-	}
+	// vaild := func(m *templatev1.Template) {
+	// 	if len(m.Uuid) == 0 {
+	// 		m.Uuid = UuidNewString()
+	// 	}
+	// }
 
-	for n := range model {
-		vaild(&model[n])
-	}
+	// for n := range model {
+	// 	vaild(&model[n])
+	// }
 
-	m := templatev1.TransToDbSchema(model)
-
-	_, err := o.Db.CreateTemplate(m)
+	_, err := o.Db.CreateTemplate(templatev1.TransToDbSchema(model))
 	if err != nil {
 		return err
 	}
@@ -63,9 +62,9 @@ func (o *GetTemplate) toModel() map[string]string {
 }
 
 func (o *GetTemplate) Get(ctx echo.Context) error {
-	model := o.toModel()
+	params := o.toModel()
 
-	r, err := o.Db.GetTemplate(model)
+	r, err := o.Db.GetTemplate(params["uuid"])
 	if err != nil {
 		return err
 	}
@@ -79,24 +78,29 @@ func (o *GetTemplate) Get(ctx echo.Context) error {
 	return nil
 }
 
-type SearchTemplate KeyValueParam
+type FindTemplate KeyValueParam
 
-var _ Getter = (*SearchTemplate)(nil)
+var _ Getter = (*FindTemplate)(nil)
 
-func NewSearchTemplate(d *database.DBManipulator) Getter {
-	return (*SearchTemplate)(NewKeyValueParam(OperateContext{
+func NewFindTemplate(d *database.DBManipulator) Getter {
+	return (*FindTemplate)(NewKeyValueParam(OperateContext{
 		Db: d,
 	}))
 }
 
-func (o *SearchTemplate) toModel() map[string]string {
+func (o *FindTemplate) toModel() map[string]string {
 	return o.Params
 }
 
-func (o *SearchTemplate) Get(ctx echo.Context) error {
+func (o *FindTemplate) Get(ctx echo.Context) error {
 	param := o.toModel()
 
-	r, err := o.Db.SearchTemplate(param)
+	where := "uuid LIKE ? AND name LIKE ? AND origin LIKE ?"
+	uuid := fmt.Sprintf("%s%%", param["uuid"])
+	name := fmt.Sprintf("%%%s%%", param["name"])
+	origin := fmt.Sprintf("%%%s%%", param["origin"])
+
+	r, err := o.Db.FindTemplate(where, uuid, name, origin)
 	if err != nil {
 		return err
 	}
@@ -132,8 +136,7 @@ func (o *UpdateTemplate) toModel() *templatev1.Template {
 func (o *UpdateTemplate) Update(ctx echo.Context) error {
 	model := o.toModel()
 
-	m := &templatev1.DbSchemaTemplate{Template: *model}
-	_, err := o.Db.UpdateTemplate(m)
+	_, err := o.Db.UpdateTemplate(templatev1.DbSchemaTemplate{Template: *model})
 	if err != nil {
 		return err
 	}

@@ -116,6 +116,34 @@ definitions:
         description: UUID
         type: string
     type: object
+  v1.HttpReqTemplateCommand:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      args:
+        additionalProperties:
+          type: string
+        description: arguments
+        type: object
+      methods:
+        description: |-
+          메소드
+          @example: "kubernetes.deployment.get.v1", "kubernetes.pod.list.v1"
+        type: string
+      name:
+        description: label name
+        type: string
+      summary:
+        description: label summary
+        type: string
+      template_uuid:
+        description: 템플릿 UUID
+        type: string
+      uuid:
+        description: UUID
+        type: string
+    type: object
   v1.HttpRspTemplate:
     properties:
       api_version:
@@ -282,7 +310,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get []template
+      description: Find []template
       parameters:
       - description: ReqTemplate 의 Uuid
         in: query
@@ -308,11 +336,11 @@ paths:
       tags:
       - server
       - server/template
-      - search
+      - find
     post:
       consumes:
       - application/json
-      description: Create a template
+      description: Create []template
       parameters:
       - description: HttpReqTemplates
         in: body
@@ -391,5 +419,87 @@ paths:
       tags:
       - server
       - server/template
+      - get
+  /server/template_command:
+    post:
+      consumes:
+      - application/json
+      description: Create a template command
+      parameters:
+      - description: HttpReqTemplateCommand
+        in: body
+        name: template_command
+        required: true
+        schema:
+          $ref: '#/definitions/v1.HttpReqTemplateCommand'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server
+      - server/template_command
+      - create
+    put:
+      consumes:
+      - application/json
+      description: Update a template command
+      parameters:
+      - description: HttpReqTemplateCommand
+        in: body
+        name: template_command
+        required: true
+        schema:
+          $ref: '#/definitions/v1.HttpReqTemplateCommand'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server
+      - server/template_command
+      - update
+  /server/template_command/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a template command
+      parameters:
+      - description: HttpReqTemplateCommand 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server
+      - server/template_command
+      - delete
+    get:
+      consumes:
+      - application/json
+      description: Get a template command
+      parameters:
+      - description: HttpReqTemplateCommand 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspTemplate'
+      tags:
+      - server
+      - server/template_command
       - get
 swagger: "2.0"

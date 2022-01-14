@@ -8,16 +8,17 @@ import (
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
+	tcommandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
 	"xorm.io/xorm"
 	"xorm.io/xorm/log"
 )
 
-//Test Template CRUD
-//테스트 목적: Template 테이블 기능
+//Test TemplateCommand CRUD
+//테스트 목적: TemplateCommand 테이블 기능
 //테스트 조건:
 //		로컬 호스트 mariadb 인스턴스
-//		v1.Template 테이블
-func TestTemplateCRUD(t *testing.T) {
+//		v1.TemplateCommand 테이블
+func TestTemplateCommandCRUD(t *testing.T) {
 
 	newEngine := func() *xorm.Engine {
 		const (
@@ -53,32 +54,43 @@ func TestTemplateCRUD(t *testing.T) {
 	}
 
 	const templateUuid = "cda6498a235d4f7eae19661d41bc154c"
-	create_model := func() *templatev1.DbSchemaTemplate {
-		return &templatev1.DbSchemaTemplate{
-			Template: templatev1.Template{
+	create_model := func() *tcommandv1.DbSchemaTemplateCommand {
+		return &tcommandv1.DbSchemaTemplateCommand{
+			TemplateCommand: tcommandv1.TemplateCommand{
 				LabelMeta: metav1.LabelMeta{
 					Uuid:       templateUuid,
 					Name:       "(NEW) template_kube_get_pods",
 					Summary:    "(NEW) template_kube_get_pods: ...",
 					ApiVersion: "v1",
 				},
-				TemplateProperty: templatev1.TemplateProperty{
-					Origin: "(NEW) test_defined",
+				TemplateCommandProperty: tcommandv1.TemplateCommandProperty{
+					TemplateUuid: "template_uuid",
+					Method:       "kube.pod.get.v1",
+					Args: map[string]string{
+						"name": "test_name",
+						"ns":   "test_namespace",
+					},
 				},
 			},
 		}
 	}
-	updated_model := func() *templatev1.DbSchemaTemplate {
-		return &templatev1.DbSchemaTemplate{
-			Template: templatev1.Template{
+	updated_model := func() *tcommandv1.DbSchemaTemplateCommand {
+		return &tcommandv1.DbSchemaTemplateCommand{
+			TemplateCommand: tcommandv1.TemplateCommand{
 				LabelMeta: metav1.LabelMeta{
 					Uuid:       templateUuid,
 					Name:       "(UPDATE) template_kube_get_pods",
 					Summary:    "(UPDATE) template_kube_get_pods: ...",
 					ApiVersion: "v2",
 				},
-				TemplateProperty: templatev1.TemplateProperty{
-					Origin: "(UPDATE) test_defined",
+				TemplateCommandProperty: tcommandv1.TemplateCommandProperty{
+					TemplateUuid: "template_uuid",
+					Method:       "kube.pod.get.v2",
+					Args: map[string]string{
+						"name": "update_name",
+						"ns":   "update_namespace",
+						"args": "test_args",
+					},
 				},
 			},
 		}
@@ -88,7 +100,7 @@ func TestTemplateCRUD(t *testing.T) {
 		return new(templatev1.DbSchemaTemplate)
 	}
 	create := func() error {
-		affect, err := database.CreateTemplate([]templatev1.DbSchemaTemplate{*create_model()})
+		affect, err := database.CreateTemplateCommand(*create_model())
 		if !(0 < affect) {
 			return errors.New("no record created")
 		}
@@ -96,12 +108,12 @@ func TestTemplateCRUD(t *testing.T) {
 	} //생성
 
 	read := func() error {
-		_, err := database.GetTemplate(create_model().Uuid)
+		_, err := database.GetTemplateCommand(create_model().Uuid)
 		return err
 	} //조회
-	validate := func(model *templatev1.DbSchemaTemplate) func() error {
+	validate := func(model *tcommandv1.DbSchemaTemplateCommand) func() error {
 		return func() error {
-			record, err := database.GetTemplate(model.Uuid)
+			record, err := database.GetTemplateCommand(model.Uuid)
 
 			are_equl := (func(msg string))(nil)
 			are_diff := func(msg string) { t.Error(err) }
@@ -110,14 +122,16 @@ func TestTemplateCRUD(t *testing.T) {
 			Are(model.Name, record.Name, are_equl, are_diff)
 			Are(model.Summary, record.Summary, are_equl, are_diff)
 			Are(model.ApiVersion, record.ApiVersion, are_equl, are_diff)
-			Are(model.Origin, record.Origin, are_equl, are_diff)
+			Are(model.TemplateUuid, record.TemplateUuid, are_equl, are_diff)
+			Are(model.Method, record.Method, are_equl, are_diff)
+			Are(model.Args, record.Args, are_equl, are_diff)
 
 			return err
 		}
 	} //데이터 정합 확인
 
 	update := func() error {
-		affect, err := database.UpdateTemplate(*updated_model())
+		affect, err := database.UpdateTemplateCommand(*updated_model())
 
 		if !(0 < affect) {
 			return errors.New("no record updated")
@@ -125,7 +139,7 @@ func TestTemplateCRUD(t *testing.T) {
 		return err
 	} //데이터 갱신
 	delete := func() error {
-		affect, err := database.DeleteTemplate(updated_model().Uuid)
+		affect, err := database.DeleteTemplateCommand(updated_model().Uuid)
 
 		if !(0 < affect) {
 			return errors.New("no record deleted")

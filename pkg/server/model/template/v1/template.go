@@ -76,7 +76,7 @@ func TransToDbSchema(s []Template) []DbSchemaTemplate {
 	return out
 }
 
-//변환 ttpReq* -> Template
+//변환 HttpReq* -> Template
 func TransFormHttpReqTemplate(s []HttpReqTemplate) []Template {
 	var out = make([]Template, len(s))
 	for n, it := range s {

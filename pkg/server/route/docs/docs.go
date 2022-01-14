@@ -238,7 +238,7 @@ var doc = `{
         },
         "/server/template": {
             "get": {
-                "description": "Get []template",
+                "description": "Find []template",
                 "consumes": [
                     "application/json"
                 ],
@@ -248,7 +248,7 @@ var doc = `{
                 "tags": [
                     "server",
                     "server/template",
-                    "search"
+                    "find"
                 ],
                 "parameters": [
                     {
@@ -313,7 +313,7 @@ var doc = `{
                 }
             },
             "post": {
-                "description": "Create a template",
+                "description": "Create []template",
                 "consumes": [
                     "application/json"
                 ],
@@ -395,6 +395,129 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "HttpReqTemplate 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/template_command": {
+            "put": {
+                "description": "Update a template command",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server",
+                    "server/template_command",
+                    "update"
+                ],
+                "parameters": [
+                    {
+                        "description": "HttpReqTemplateCommand",
+                        "name": "template_command",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpReqTemplateCommand"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a template command",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server",
+                    "server/template_command",
+                    "create"
+                ],
+                "parameters": [
+                    {
+                        "description": "HttpReqTemplateCommand",
+                        "name": "template_command",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpReqTemplateCommand"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/template_command/{uuid}": {
+            "get": {
+                "description": "Get a template command",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server",
+                    "server/template_command",
+                    "get"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "HttpReqTemplateCommand 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspTemplate"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a template command",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server",
+                    "server/template_command",
+                    "delete"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "HttpReqTemplateCommand 의 Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -577,6 +700,42 @@ var doc = `{
                 },
                 "summary": {
                     "description": "label summary",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpReqTemplateCommand": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "args": {
+                    "description": "arguments",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "methods": {
+                    "description": "메소드\n@example: \"kubernetes.deployment.get.v1\", \"kubernetes.pod.list.v1\"",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "description": "템플릿 UUID",
                     "type": "string"
                 },
                 "uuid": {
