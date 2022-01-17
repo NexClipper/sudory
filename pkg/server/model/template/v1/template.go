@@ -10,7 +10,7 @@ import (
 type TemplateProperty struct {
 	//origin
 	//@example: predefined, userdefined
-	Origin string `json:"origin,omitempty" orm:"origin"`
+	Origin string `json:"origin,omitempty" xorm:"varchar(255) null 'origin' comment('origin')"`
 }
 
 //Template
@@ -28,7 +28,7 @@ type DbSchemaTemplate struct {
 var _ orm.TableName = (*DbSchemaTemplate)(nil)
 
 func (DbSchemaTemplate) TableName() string {
-	return "service_template_v1"
+	return "template"
 }
 
 //HTTP REQUEST BODY: TEMPLATE

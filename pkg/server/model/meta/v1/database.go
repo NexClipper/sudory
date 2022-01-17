@@ -7,33 +7,24 @@ import (
 //database meta info
 type DbMeta struct {
 	//아이디 PK
-	Id int64 `json:"id" orm:"id,primary" xorm:"pk autoincr 'id'"`
-	// //생성자
-	// CreatedBy string `json:"created_by,omitempty" orm:"created_by"`
+	Id int64 `json:"id" xorm:"int pk autoincr 'id' comment('db_meta's id')"`
 	//생성시간
-	// CreatedAt serializev1.JSONTime `json:"created_at,omitempty" orm:"created_at" xorm:"extends","created"`
-	CreatedAt time.Time `json:"created_at,omitempty" orm:"created_at" xorm:"created"`
-	// //수정자
-	// UpdatedBy string `json:"updated_by,omitempty" orm:"updated_by"`
+	Created time.Time `json:"created,omitempty" xorm:"datetime null created 'created' comment('db_meta's created')"`
 	//수정시간
-	// UpdatedAt serializev1.JSONTime `json:"updated_at,omitempty" orm:"updated_at" xorm:"extends","updated"`
-	UpdatedAt time.Time `json:"updated_at,omitempty" orm:"updated_at" xorm:"updated"`
-	// //삭제자
-	// DeletedBy string `json:"deleted_by,omitempty" orm:"deleted_by"`
+	Updated time.Time `json:"updated,omitempty" xorm:"datetime null updated 'updated' comment('db_meta's updated')"`
 	//삭제시간, 삭제 플래그
-	// DeletedAt serializev1.JSONTime `json:"deleted_at,omitempty" orm:"deleted_at" xorm:"extends","deleted"`
-	DeletedAt time.Time `json:"deleted_at,omitempty" orm:"deleted_at" xorm:"deleted"`
+	Deleted time.Time `json:"deleted,omitempty" xorm:"datetime null deleted 'deleted' comment('db_meta's deleted')"`
 }
 
 //label meta info
 //object extends
 type LabelMeta struct {
 	//UUID
-	Uuid string `json:"uuid" orm:"uuid" xorm:"unique","not null"`
+	Uuid string `json:"uuid" xorm:"char(32) notnull unique 'uuid' comment('label_meta's uuid')"`
 	//label name
-	Name string `json:"name" orm:"name"`
+	Name string `json:"name" xorm:"varchar(255) notnull 'name' comment('label_meta's name')"`
 	//label summary
-	Summary string `json:"summary" orm:"summary"`
+	Summary string `json:"summary" xorm:"varchar(255) null 'summary' comment('label_meta's summary')"`
 	//api version
-	ApiVersion string `json:"api_version,omitempty" orm:"api_version"`
+	ApiVersion string `json:"api_version,omitempty" xorm:"varchar(255) notnull 'api_version' comment('label_meta's api version')"`
 }

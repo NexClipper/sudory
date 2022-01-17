@@ -9,12 +9,12 @@ import (
 //TemplateCommand Property
 type TemplateCommandProperty struct {
 	//템플릿 UUID
-	TemplateUuid string `json:"template_uuid" orm:"template_uuid"`
+	TemplateUuid string `json:"template_uuid" xorm:"char(32) notnull 'template_uuid' comment('template's uuid')"`
 	//메소드
 	//@example: "kubernetes.deployment.get.v1", "kubernetes.pod.list.v1"
-	Method string `json:"methods,omitempty" orm:"methods"`
+	Method string `json:"method,omitempty" xorm:"varchar(255) notnull 'method' comment('method')"`
 	//arguments
-	Args map[string]string `json:"args,omitempty" orm:"args"`
+	Args map[string]string `json:"args,omitempty" xorm:"text null 'args' comment('method args')"`
 }
 
 //MODEL: TEMPLATE_COMMAND
@@ -32,7 +32,7 @@ type DbSchemaTemplateCommand struct {
 var _ orm.TableName = (*DbSchemaTemplateCommand)(nil)
 
 func (DbSchemaTemplateCommand) TableName() string {
-	return "service_command_v1"
+	return "template_command"
 }
 
 //HTTP REQUEST BODY: TEMPLATE

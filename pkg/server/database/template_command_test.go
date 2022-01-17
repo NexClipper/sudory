@@ -1,13 +1,11 @@
 package database
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
-	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
 	tcommandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
 	"xorm.io/xorm"
 	"xorm.io/xorm/log"
@@ -23,7 +21,7 @@ func TestTemplateCommandCRUD(t *testing.T) {
 	newEngine := func() *xorm.Engine {
 		const (
 			driver = "mysql"
-			dsn    = "root:root@tcp(127.0.0.1:3306)/sudory?charset=utf8mb4&parseTime=True&loc=Local"
+			dsn    = "sudory:sudory@tcp(127.0.0.1:3306)/sudory?charset=utf8mb4&parseTime=True&loc=Local"
 		)
 
 		engine, err := xorm.NewEngine(driver, dsn)
@@ -96,13 +94,13 @@ func TestTemplateCommandCRUD(t *testing.T) {
 		}
 	}
 
-	empty_model := func() *templatev1.DbSchemaTemplate {
-		return new(templatev1.DbSchemaTemplate)
+	empty_model := func() *tcommandv1.DbSchemaTemplateCommand {
+		return new(tcommandv1.DbSchemaTemplateCommand)
 	}
 	create := func() error {
 		affect, err := database.CreateTemplateCommand(*create_model())
 		if !(0 < affect) {
-			return errors.New("no record created")
+			return fmt.Errorf("no record created; %w", err)
 		}
 		return err
 	} //생성
@@ -134,7 +132,7 @@ func TestTemplateCommandCRUD(t *testing.T) {
 		affect, err := database.UpdateTemplateCommand(*updated_model())
 
 		if !(0 < affect) {
-			return errors.New("no record updated")
+			return fmt.Errorf("no record updated; %w", err)
 		}
 		return err
 	} //데이터 갱신
@@ -142,7 +140,7 @@ func TestTemplateCommandCRUD(t *testing.T) {
 		affect, err := database.DeleteTemplateCommand(updated_model().Uuid)
 
 		if !(0 < affect) {
-			return errors.New("no record deleted")
+			return fmt.Errorf("no record deleted; %w", err)
 		}
 		return err
 	} //삭제
@@ -152,24 +150,24 @@ func TestTemplateCommandCRUD(t *testing.T) {
 		sqlrst, err := newEngine().
 			Exec(fmt.Sprintf("delete from %s where uuid = ?", table), create_model().Uuid)
 		if err != nil {
-			return err
+			return fmt.Errorf("no record clear; %w", err)
 		}
 		affect, err := sqlrst.RowsAffected()
 
 		if !(0 < affect) {
-			return errors.New("no record deleted")
+			return fmt.Errorf("no record clear; %w", err)
 		}
 		return err
 	} //데이터 정리
 
 	//시나리오 구성
 	TestScenarios([]TestChapter{
-		{Subject: "create newist record", Method: create},
-		{Subject: "vaild created record", Method: validate(create_model())},
-		{Subject: "read created record", Method: read},
-		{Subject: "update record", Method: update},
-		{Subject: "vaild update record", Method: validate(updated_model())},
-		{Subject: "delete record", Method: delete},    //테이블에서 지워지는것이 아니라 삭제 플래그가 업데이트 됨 (레코드가 남아있음)
-		{Subject: "clear test record", Method: clear}, //남아있는 레코드 정리
-	}).Foreach(t)
+		{Subject: "create newist record", Action: create},
+		{Subject: "vaild created record", Action: validate(create_model())},
+		{Subject: "read created record", Action: read},
+		{Subject: "update record", Action: update},
+		{Subject: "vaild update record", Action: validate(updated_model())},
+		{Subject: "delete record", Action: delete},    //테이블에서 지워지는것이 아니라 삭제 플래그가 업데이트 됨 (레코드가 남아있음)
+		{Subject: "clear test record", Action: clear}, //남아있는 레코드 정리
+	}).Foreach(func(s string) { t.Error(s) })
 }
