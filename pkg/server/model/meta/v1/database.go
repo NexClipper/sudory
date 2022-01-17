@@ -7,7 +7,7 @@ import (
 //database meta info
 type DbMeta struct {
 	//아이디 PK
-	Id int64 `json:"id" xorm:"int pk autoincr 'id' comment('db_meta's id')"`
+	Id uint64 `json:"id" xorm:"bigint pk autoincr 'id' comment('db_meta's id')"`
 	//생성시간
 	Created time.Time `json:"created,omitempty" xorm:"datetime null created 'created' comment('db_meta's created')"`
 	//수정시간

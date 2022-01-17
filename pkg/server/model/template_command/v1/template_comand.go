@@ -9,9 +9,9 @@ import (
 //TemplateCommand Property
 type TemplateCommandProperty struct {
 	//템플릿 UUID
-	TemplateUuid string `json:"template_uuid" xorm:"char(32) notnull 'template_uuid' comment('template's uuid')"`
+	TemplateUuid string `json:"template_uuid" xorm:"char(32) notnull index 'template_uuid' comment('templates uuid')"`
 	//순서
-	Order int64 `json:"order,omitempty" xorm:"int notnull 'order' comment('order')"`
+	Sequence int32 `json:"sequence,omitempty" xorm:"int notnull 'sequence' comment('sequence')"`
 	//메소드
 	//@example: "kubernetes.deployment.get.v1", "kubernetes.pod.list.v1"
 	Method string `json:"method,omitempty" xorm:"varchar(255) notnull 'method' comment('method')"`

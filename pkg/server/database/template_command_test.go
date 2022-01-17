@@ -64,7 +64,7 @@ func TestTemplateCommandCRUD(t *testing.T) {
 				},
 				TemplateCommandProperty: tcommandv1.TemplateCommandProperty{
 					TemplateUuid: "template_uuid",
-					Order:        1,
+					Sequence:     1,
 					Method:       "kube.pod.get.v1",
 					Args: map[string]string{
 						"name": "test_name",
@@ -85,7 +85,7 @@ func TestTemplateCommandCRUD(t *testing.T) {
 				},
 				TemplateCommandProperty: tcommandv1.TemplateCommandProperty{
 					TemplateUuid: "template_uuid",
-					Order:        2,
+					Sequence:     2,
 					Method:       "kube.pod.get.v2",
 					Args: map[string]string{
 						"name": "update_name",
@@ -142,7 +142,7 @@ func TestTemplateCommandCRUD(t *testing.T) {
 			Are(model.Summary, record.Summary, are_equl, are_diff)
 			Are(model.ApiVersion, record.ApiVersion, are_equl, are_diff)
 			Are(model.TemplateUuid, record.TemplateUuid, are_equl, are_diff)
-			Are(model.Order, record.Order, are_equl, are_diff)
+			Are(model.Sequence, record.Sequence, are_equl, are_diff)
 			Are(model.Method, record.Method, are_equl, are_diff)
 			Are(model.Args, record.Args, are_equl, are_diff)
 
