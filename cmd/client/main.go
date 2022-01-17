@@ -18,19 +18,26 @@ func main() {
 	flag.Parse()
 
 	if len(*token) == 0 {
-		os.Exit(1)
+		log.Fatalf("Client must have token('%s').\n", *token)
 	}
 
 	if len(*server) == 0 {
-		os.Exit(1)
+		log.Fatalf("Client must have server('%s').\n", *server)
 	}
 
 	// get k8s client
 	// TODO: k8s client usage
-	_, err := k8s.NewClient()
+	client, err := k8s.NewClient()
 	if err != nil {
-		log.Panicln(err)
+		log.Fatalf("Failed to create k8s.NewClient : %v.\n", err)
 	}
+	log.Printf("Created k8s clientset.\n")
+
+	// check k8s's api-server status
+	if err := client.RawRequest().CheckApiServerStatus(); err != nil {
+		log.Fatalf("CheckApiServerStatus is failed : %v.\n", err)
+	}
+	log.Printf("Successed to check K8s's api-server status.\n")
 
 	serviceScheduler := service.NewScheduler()
 	serviceScheduler.Start()

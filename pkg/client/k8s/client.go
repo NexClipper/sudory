@@ -62,3 +62,7 @@ func NewClient() (*Client, error) {
 func (c *Client) Pod(namespace string) *pods {
 	return newPods(c, namespace)
 }
+
+func (c *Client) RawRequest() *rawRequest {
+	return newRawRequest(c)
+}
