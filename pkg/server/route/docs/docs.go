@@ -722,13 +722,17 @@ var doc = `{
                         "type": "string"
                     }
                 },
-                "methods": {
+                "method": {
                     "description": "메소드\n@example: \"kubernetes.deployment.get.v1\", \"kubernetes.pod.list.v1\"",
                     "type": "string"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
+                },
+                "order": {
+                    "description": "순서",
+                    "type": "integer"
                 },
                 "summary": {
                     "description": "label summary",

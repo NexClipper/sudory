@@ -126,7 +126,7 @@ definitions:
           type: string
         description: arguments
         type: object
-      methods:
+      method:
         description: |-
           메소드
           @example: "kubernetes.deployment.get.v1", "kubernetes.pod.list.v1"
@@ -134,6 +134,9 @@ definitions:
       name:
         description: label name
         type: string
+      order:
+        description: 순서
+        type: integer
       summary:
         description: label summary
         type: string
