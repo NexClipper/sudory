@@ -10,11 +10,13 @@ import (
 type TemplateCommandProperty struct {
 	//템플릿 UUID
 	TemplateUuid string `json:"template_uuid" xorm:"char(32) notnull 'template_uuid' comment('template's uuid')"`
+	//순서
+	Order int64 `json:"order,omitempty" xorm:"int notnull 'order' comment('order')"`
 	//메소드
 	//@example: "kubernetes.deployment.get.v1", "kubernetes.pod.list.v1"
 	Method string `json:"method,omitempty" xorm:"varchar(255) notnull 'method' comment('method')"`
 	//arguments
-	Args map[string]string `json:"args,omitempty" xorm:"text null 'args' comment('method args')"`
+	Args map[string]string `json:"args,omitempty" xorm:"text null 'args' comment('args')"`
 }
 
 //MODEL: TEMPLATE_COMMAND

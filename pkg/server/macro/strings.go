@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func StringJoin(sep string) (func(elems ...interface{}), func() string) {
+func StringJoin() (func(elems ...interface{}), func(sep string) string) {
 	buf := make([]string, 0)
 
 	sprint := func(a interface{}) string {
@@ -18,7 +18,7 @@ func StringJoin(sep string) (func(elems ...interface{}), func() string) {
 		}
 	}
 
-	builder := func() string {
+	builder := func(sep string) string {
 		return strings.Join(buf, sep)
 	}
 

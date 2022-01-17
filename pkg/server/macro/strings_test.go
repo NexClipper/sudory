@@ -8,12 +8,12 @@ import (
 
 func TestStringJoin(t *testing.T) {
 
-	jointer, builder := StringJoin(",")
+	jointer, builder := StringJoin()
 
 	for i := 0; i < 10; i++ {
 		jointer(i)
 	}
 
-	t.Log(builder())
+	t.Log(builder(","))
 
 }

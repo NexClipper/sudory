@@ -1,6 +1,7 @@
 package database
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -63,6 +64,7 @@ func TestTemplateCommandCRUD(t *testing.T) {
 				},
 				TemplateCommandProperty: tcommandv1.TemplateCommandProperty{
 					TemplateUuid: "template_uuid",
+					Order:        1,
 					Method:       "kube.pod.get.v1",
 					Args: map[string]string{
 						"name": "test_name",
@@ -72,7 +74,7 @@ func TestTemplateCommandCRUD(t *testing.T) {
 			},
 		}
 	}
-	updated_model := func() *tcommandv1.DbSchemaTemplateCommand {
+	update_model := func() *tcommandv1.DbSchemaTemplateCommand {
 		return &tcommandv1.DbSchemaTemplateCommand{
 			TemplateCommand: tcommandv1.TemplateCommand{
 				LabelMeta: metav1.LabelMeta{
@@ -83,6 +85,7 @@ func TestTemplateCommandCRUD(t *testing.T) {
 				},
 				TemplateCommandProperty: tcommandv1.TemplateCommandProperty{
 					TemplateUuid: "template_uuid",
+					Order:        2,
 					Method:       "kube.pod.get.v2",
 					Args: map[string]string{
 						"name": "update_name",
@@ -97,21 +100,39 @@ func TestTemplateCommandCRUD(t *testing.T) {
 	empty_model := func() *tcommandv1.DbSchemaTemplateCommand {
 		return new(tcommandv1.DbSchemaTemplateCommand)
 	}
+
 	create := func() error {
 		affect, err := database.CreateTemplateCommand(*create_model())
-		if !(0 < affect) {
-			return fmt.Errorf("no record created; %w", err)
+		if err != nil {
+			return fmt.Errorf("created error with; %w", err)
 		}
-		return err
+		if !(0 < affect) {
+			return fmt.Errorf("create error with; %w", err)
+		}
+		return nil
 	} //생성
 
 	read := func() error {
-		_, err := database.GetTemplateCommand(create_model().Uuid)
-		return err
+		record, err := database.GetTemplateCommand(create_model().Uuid)
+		if err != nil {
+			return fmt.Errorf("read error with; %w", err)
+		}
+
+		//verbose
+		j, err := json.MarshalIndent(record, "", " ")
+		if err != nil {
+			return fmt.Errorf("read error with json; %w", err)
+		}
+		t.Logf("\nverbose: %s\n", j)
+
+		return nil
 	} //조회
 	validate := func(model *tcommandv1.DbSchemaTemplateCommand) func() error {
 		return func() error {
 			record, err := database.GetTemplateCommand(model.Uuid)
+			if err != nil {
+				return fmt.Errorf("validate error with; %w", err)
+			}
 
 			are_equl := (func(msg string))(nil)
 			are_diff := func(msg string) { t.Error(err) }
@@ -121,28 +142,33 @@ func TestTemplateCommandCRUD(t *testing.T) {
 			Are(model.Summary, record.Summary, are_equl, are_diff)
 			Are(model.ApiVersion, record.ApiVersion, are_equl, are_diff)
 			Are(model.TemplateUuid, record.TemplateUuid, are_equl, are_diff)
+			Are(model.Order, record.Order, are_equl, are_diff)
 			Are(model.Method, record.Method, are_equl, are_diff)
 			Are(model.Args, record.Args, are_equl, are_diff)
 
-			return err
+			return nil
 		}
 	} //데이터 정합 확인
 
 	update := func() error {
-		affect, err := database.UpdateTemplateCommand(*updated_model())
-
-		if !(0 < affect) {
-			return fmt.Errorf("no record updated; %w", err)
+		affect, err := database.UpdateTemplateCommand(*update_model())
+		if err != nil {
+			return fmt.Errorf("updated error with; %w", err)
 		}
-		return err
+		if !(0 < affect) {
+			return fmt.Errorf("updated error with affect; %d", affect)
+		}
+		return nil
 	} //데이터 갱신
 	delete := func() error {
-		affect, err := database.DeleteTemplateCommand(updated_model().Uuid)
-
-		if !(0 < affect) {
-			return fmt.Errorf("no record deleted; %w", err)
+		affect, err := database.DeleteTemplateCommand(update_model().Uuid)
+		if err != nil {
+			return fmt.Errorf("deleted error with; %w", err)
 		}
-		return err
+		if !(0 < affect) {
+			return fmt.Errorf("deleted error with affect; %d", affect)
+		}
+		return nil
 	} //삭제
 	clear := func() error {
 		table := empty_model().TableName()
@@ -150,14 +176,17 @@ func TestTemplateCommandCRUD(t *testing.T) {
 		sqlrst, err := newEngine().
 			Exec(fmt.Sprintf("delete from %s where uuid = ?", table), create_model().Uuid)
 		if err != nil {
-			return fmt.Errorf("no record clear; %w", err)
+			return fmt.Errorf("clear error with; %w", err)
 		}
-		affect, err := sqlrst.RowsAffected()
 
-		if !(0 < affect) {
-			return fmt.Errorf("no record clear; %w", err)
+		affect, err := sqlrst.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("clear error with; %w", err)
 		}
-		return err
+		if !(0 < affect) {
+			return fmt.Errorf("clear error with affect %d;", affect)
+		}
+		return nil
 	} //데이터 정리
 
 	//시나리오 구성
@@ -166,8 +195,9 @@ func TestTemplateCommandCRUD(t *testing.T) {
 		{Subject: "vaild created record", Action: validate(create_model())},
 		{Subject: "read created record", Action: read},
 		{Subject: "update record", Action: update},
-		{Subject: "vaild update record", Action: validate(updated_model())},
+		{Subject: "vaild updated record", Action: validate(update_model())},
+		{Subject: "read updated record", Action: read},
 		{Subject: "delete record", Action: delete},    //테이블에서 지워지는것이 아니라 삭제 플래그가 업데이트 됨 (레코드가 남아있음)
 		{Subject: "clear test record", Action: clear}, //남아있는 레코드 정리
-	}).Foreach(func(s string) { t.Error(s) })
+	}).Foreach(func(err error) { t.Error(err) })
 }
