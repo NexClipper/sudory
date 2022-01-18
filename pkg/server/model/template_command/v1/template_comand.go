@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"github.com/NexClipper/sudory/pkg/server/model"
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	"github.com/NexClipper/sudory/pkg/server/model/orm"
 )
@@ -47,22 +46,9 @@ type HttpRspTemplateCommand struct {
 	TemplateCommand `json:",inline"`
 }
 
-var _ model.Modeler = (*HttpRspTemplateCommand)(nil)
-
-func (HttpRspTemplateCommand) GetType() string {
-	return "HTTP RSP TEMPLATE_COMMAND"
-}
-
-//HTTP RESPONSE BODY: MANY TEMPLATE
 type HttpRspTemplateCommands []HttpRspTemplateCommand
 
-var _ model.Modeler = (*HttpRspTemplateCommands)(nil)
-
-func (HttpRspTemplateCommands) GetType() string {
-	return "HTTP RSP []TEMPLATE_COMMAND"
-}
-
-//변환 TemplateCommand -> DbSchema*
+//변환 TemplateCommand -> DbSchema
 func TransToDbSchema(s []TemplateCommand) []DbSchemaTemplateCommand {
 	var out = make([]DbSchemaTemplateCommand, len(s))
 	for n, it := range s {
@@ -71,11 +57,29 @@ func TransToDbSchema(s []TemplateCommand) []DbSchemaTemplateCommand {
 	return out
 }
 
-//변환 HttpReq* -> TemplateCommand
-func TransFormHttpReqTemplate(s []HttpReqTemplateCommand) []TemplateCommand {
+//변환 DbSchema -> TemplateCommand
+func TransFromDbSchema(s []DbSchemaTemplateCommand) []TemplateCommand {
 	var out = make([]TemplateCommand, len(s))
 	for n, it := range s {
 		out[n] = it.TemplateCommand
+	}
+	return out
+}
+
+//변환 HttpReq -> TemplateCommand
+func TransFormHttpReq(s []HttpReqTemplateCommand) []TemplateCommand {
+	var out = make([]TemplateCommand, len(s))
+	for n, it := range s {
+		out[n] = it.TemplateCommand
+	}
+	return out
+}
+
+//변환 TemplateCommand -> HttpRsp
+func TransToHttpRsp(s []TemplateCommand) []HttpRspTemplateCommand {
+	var out = make([]HttpRspTemplateCommand, len(s))
+	for n, it := range s {
+		out[n].TemplateCommand = it
 	}
 	return out
 }

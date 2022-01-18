@@ -16,7 +16,7 @@ func (scenarios TestScenarios) Foreach(fn func(error)) {
 		//if you wanna debugging in step? break here!!!
 		err := chapter.Action()
 		//^^^^^^^^^^
-		ErrorHandle(err, func(err error) {
+		ErrorWithHandler(err, func(err error) {
 			fn(fmt.Errorf("chapter:'%d' subject:'%s' error: '%w'", n+1, chapter.Subject, err))
 		})
 	}

@@ -18,7 +18,7 @@ func TestSericeSync(t *testing.T) {
 		)
 
 		engine, err := xorm.NewEngine(driver, dsn)
-		if ErrorHandle(err) {
+		if ErrorWithHandler(err) {
 			panic(err)
 		}
 
@@ -35,7 +35,7 @@ func TestSericeSync(t *testing.T) {
 
 		err := engine.Sync(model)
 
-		if ErrorHandle(err) {
+		if ErrorWithHandler(err) {
 			t.Fatal(err)
 		}
 	}

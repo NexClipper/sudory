@@ -26,7 +26,7 @@ func TestTemplateCRUD(t *testing.T) {
 		)
 
 		engine, err := xorm.NewEngine(driver, dsn)
-		if ErrorHandle(err) {
+		if ErrorWithHandler(err) {
 			panic(err)
 		}
 
@@ -88,13 +88,11 @@ func TestTemplateCRUD(t *testing.T) {
 		return new(templatev1.DbSchemaTemplate)
 	}
 	create := func() error {
-		affect, err := database.CreateTemplate([]templatev1.DbSchemaTemplate{*create_model()})
+		err := database.CreateTemplate(*create_model())
 		if err != nil {
 			return fmt.Errorf("created error with; %w", err)
 		}
-		if !(0 < affect) {
-			return fmt.Errorf("created error with affect; %d", affect)
-		}
+
 		return nil
 	} //생성
 
@@ -133,23 +131,19 @@ func TestTemplateCRUD(t *testing.T) {
 	} //데이터 정합 확인
 
 	update := func() error {
-		affect, err := database.UpdateTemplate(*update_model())
+		err := database.UpdateTemplate(*update_model())
 		if err != nil {
 			return fmt.Errorf("updated error with; %w", err)
 		}
-		if !(0 < affect) {
-			return fmt.Errorf("updated error with affect; %d", affect)
-		}
+
 		return nil
 	} //데이터 갱신
 	delete := func() error {
-		affect, err := database.DeleteTemplate(update_model().Uuid)
+		err := database.DeleteTemplate(update_model().Uuid)
 		if err != nil {
 			return fmt.Errorf("deleted error with; %w", err)
 		}
-		if !(0 < affect) {
-			return fmt.Errorf("deleted error with affect; %d", affect)
-		}
+
 		return nil
 	} //삭제
 	clear := func() error {

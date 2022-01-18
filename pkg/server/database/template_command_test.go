@@ -26,7 +26,7 @@ func TestTemplateCommandCRUD(t *testing.T) {
 		)
 
 		engine, err := xorm.NewEngine(driver, dsn)
-		if ErrorHandle(err) {
+		if ErrorWithHandler(err) {
 			panic(err)
 		}
 
@@ -102,12 +102,9 @@ func TestTemplateCommandCRUD(t *testing.T) {
 	}
 
 	create := func() error {
-		affect, err := database.CreateTemplateCommand(*create_model())
+		err := database.CreateTemplateCommand(*create_model())
 		if err != nil {
 			return fmt.Errorf("created error with; %w", err)
-		}
-		if !(0 < affect) {
-			return fmt.Errorf("create error with; %w", err)
 		}
 		return nil
 	} //생성
@@ -151,22 +148,16 @@ func TestTemplateCommandCRUD(t *testing.T) {
 	} //데이터 정합 확인
 
 	update := func() error {
-		affect, err := database.UpdateTemplateCommand(*update_model())
+		err := database.UpdateTemplateCommand(*update_model())
 		if err != nil {
 			return fmt.Errorf("updated error with; %w", err)
-		}
-		if !(0 < affect) {
-			return fmt.Errorf("updated error with affect; %d", affect)
 		}
 		return nil
 	} //데이터 갱신
 	delete := func() error {
-		affect, err := database.DeleteTemplateCommand(update_model().Uuid)
+		err := database.DeleteTemplateCommand(update_model().Uuid)
 		if err != nil {
 			return fmt.Errorf("deleted error with; %w", err)
-		}
-		if !(0 < affect) {
-			return fmt.Errorf("deleted error with affect; %d", affect)
 		}
 		return nil
 	} //삭제

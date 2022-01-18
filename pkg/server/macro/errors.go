@@ -1,9 +1,9 @@
 package macro
 
-func ErrorHandle(err error, handles ...func(err error)) bool {
+func ErrorWithHandler(err error, handler ...func(err error)) bool {
 	if err != nil {
-		for _, h := range handles {
-			h(err)
+		for _, fn_h := range handler {
+			fn_h(err)
 		}
 		return true
 	}

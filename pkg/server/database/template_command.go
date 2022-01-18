@@ -1,9 +1,6 @@
 package database
 
 import (
-	"errors"
-
-	. "github.com/NexClipper/sudory/pkg/server/macro"
 	tcommandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
 )
 
@@ -13,7 +10,7 @@ import (
    @from TemplateCommand
    @condition DbSchemaTemplateCommand
 */
-func (d *DBManipulator) CreateTemplateCommand(model tcommandv1.DbSchemaTemplateCommand) (int64, error) {
+func (d *DBManipulator) CreateTemplateCommand(model tcommandv1.DbSchemaTemplateCommand) error {
 	var err error
 	tx := d.session()
 	tx.Begin()
@@ -26,8 +23,13 @@ func (d *DBManipulator) CreateTemplateCommand(model tcommandv1.DbSchemaTemplateC
 	}()
 
 	affect, err := tx.Insert(&model)
-
-	return affect, err
+	if err != nil {
+		return err
+	}
+	if !(0 < affect) {
+		return ErrorNoAffecte()
+	}
+	return nil
 }
 
 /* GetTemplateCommand
@@ -40,15 +42,17 @@ func (d *DBManipulator) GetTemplateCommand(uuid string) (*tcommandv1.DbSchemaTem
 	tx := d.session()
 
 	var record = new(tcommandv1.DbSchemaTemplateCommand)
-	//SELECT * FROM template_command WHERE uuid = ? LIMIT 1
+	//SELECT * FROM {table} WHERE uuid = ? LIMIT 1
 	has, err := tx.Where("uuid = ?", uuid).
 		Get(record)
-
+	if err != nil {
+		return nil, err
+	}
 	if !has {
-		return nil, errors.New(ErrorRecordWasNotFound)
+		return nil, ErrorRecordWasNotFound()
 	}
 
-	return record, err
+	return record, nil
 }
 
 /* FindTemplateCommand
@@ -57,15 +61,18 @@ func (d *DBManipulator) GetTemplateCommand(uuid string) (*tcommandv1.DbSchemaTem
    @from TemplateCommand
    @condition where, args
 */
-func (d *DBManipulator) FindTemplateCommand(where string, args ...string) ([]tcommandv1.DbSchemaTemplateCommand, error) {
+func (d *DBManipulator) FindTemplateCommand(where string, args ...interface{}) ([]tcommandv1.DbSchemaTemplateCommand, error) {
 	tx := d.session()
 
 	var records = make([]tcommandv1.DbSchemaTemplateCommand, 0)
-	//SELECT * FROM template_command WHERE [cond]
-	err := tx.Where(where, args).
-		Find(records)
+	//SELECT * FROM {table} WHERE [cond]
+	err := tx.Where(where, args...).
+		Find(&records)
+	if err != nil {
+		return nil, err
+	}
 
-	return records, err
+	return records, nil
 }
 
 /* UpdateTemplateCommand
@@ -77,7 +84,7 @@ func (d *DBManipulator) FindTemplateCommand(where string, args ...string) ([]tco
    @comment		message: golang panic hash of unhashable type {noun pointer data struct}
    @comment   	원인: xorm Update or Insert 등의 반환 기능이 있는 메소드 호출 하면서 패닉 발생 값을 포인터로 넘긴다
 */
-func (d *DBManipulator) UpdateTemplateCommand(model tcommandv1.DbSchemaTemplateCommand) (int64, error) {
+func (d *DBManipulator) UpdateTemplateCommand(model tcommandv1.DbSchemaTemplateCommand) error {
 	var err error
 	tx := d.session()
 	tx.Begin()
@@ -89,24 +96,16 @@ func (d *DBManipulator) UpdateTemplateCommand(model tcommandv1.DbSchemaTemplateC
 		}
 	}()
 
-	//아이디를 가져오기
-	var record = new(tcommandv1.DbSchemaTemplateCommand)
-	//SELECT * FROM template_command WHERE uuid = ? LIMIT 1
-	has, err := tx.Where("uuid = ?", model.Uuid).
-		Get(record)
-
-	if HasError(err) {
-		return -1, err
-	}
-	if !has {
-		return -2, errors.New(ErrorRecordWasNotFound)
-	}
-
 	//아이디를 조건으로 업데이트
-	affect, err := tx.ID(record.Id).
+	affect, err := tx.Where("uuid = ?", model.Uuid).
 		Update(&model)
-
-	return affect, err
+	if err != nil {
+		return err
+	}
+	if !(0 < affect) {
+		return ErrorNoAffecte()
+	}
+	return nil
 }
 
 /* DeleteTemplateCommand
@@ -115,7 +114,7 @@ func (d *DBManipulator) UpdateTemplateCommand(model tcommandv1.DbSchemaTemplateC
    @from TemplateCommand
    @condition uuid
 */
-func (d *DBManipulator) DeleteTemplateCommand(uuid string) (int64, error) {
+func (d *DBManipulator) DeleteTemplateCommand(uuid string) error {
 	var err error
 	tx := d.session()
 	tx.Begin()
@@ -127,22 +126,15 @@ func (d *DBManipulator) DeleteTemplateCommand(uuid string) (int64, error) {
 		}
 	}()
 
-	//아이디를 가져오기
-	var record = new(tcommandv1.DbSchemaTemplateCommand)
-	//SELECT * FROM template_command WHERE uuid = ? LIMIT 1
-	has, err := tx.Where("uuid = ?", uuid).
-		Get(record)
-
-	if HasError(err) {
-		return -1, err
-	}
-	if !has {
-		return -2, errors.New(ErrorRecordWasNotFound)
-	}
-
+	var model = new(tcommandv1.DbSchemaTemplateCommand)
 	//아이디를 조건으로 업데이트
-	affect, err := tx.ID(record.Id).
-		Delete(record)
-
-	return affect, err
+	affect, err := tx.Where("uuid = ?", uuid).
+		Delete(model)
+	if err != nil {
+		return err
+	}
+	if !(0 < affect) {
+		return ErrorNoAffecte()
+	}
+	return nil
 }

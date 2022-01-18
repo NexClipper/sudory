@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	configPath := flag.String("config", "../../conf/sudory-server.yml", "Path to sudory-server's config file")
+	configPath := flag.String("config", "../../conf/server/sudory-server.yml", "Path to sudory-server's config file")
 	flag.Parse()
 
 	cfg, err := config.New(*configPath)

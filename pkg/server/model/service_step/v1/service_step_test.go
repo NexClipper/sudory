@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	. "github.com/NexClipper/sudory/pkg/server/macro"
-	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
+	servstepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	_ "github.com/go-sql-driver/mysql"
 	"xorm.io/xorm"
 	"xorm.io/xorm/log"
@@ -18,7 +18,7 @@ func TestSericeStepSync(t *testing.T) {
 		)
 
 		engine, err := xorm.NewEngine(driver, dsn)
-		if ErrorHandle(err) {
+		if ErrorWithHandler(err) {
 			panic(err)
 		}
 
@@ -31,11 +31,11 @@ func TestSericeStepSync(t *testing.T) {
 
 		engine := newEngine()
 
-		model := new(servicev1.DbSchemaServiceStep)
+		model := new(servstepv1.DbSchemaServiceStep)
 
 		err := engine.Sync(model)
 
-		if ErrorHandle(err) {
+		if ErrorWithHandler(err) {
 			t.Fatal(err)
 		}
 	}

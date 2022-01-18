@@ -1,10 +1,16 @@
 package database
 
 import (
-	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
+	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 )
 
-func (d *DBManipulator) CreateService(m servicev1.DbSchemaService) error {
+/* CreateServiceStep
+   @return error
+   @method insert
+   @from ServiceStep
+   @condition []stepv1.DbSchemaServiceStep
+*/
+func (d *DBManipulator) CreateServiceStep(m stepv1.DbSchemaServiceStep) error {
 	var err error
 	tx := d.session()
 	tx.Begin()
@@ -26,16 +32,16 @@ func (d *DBManipulator) CreateService(m servicev1.DbSchemaService) error {
 	return nil
 }
 
-/* GetService
-   @return DbSchemaService, error
+/* GetServiceStep
+   @return DbSchemaServiceStep, error
    @method get
-   @from Service
+   @from ServiceStep
    @condition uuid
 */
-func (d *DBManipulator) GetService(uuid string) (*servicev1.DbSchemaService, error) {
+func (d *DBManipulator) GetServiceStep(uuid string) (*stepv1.DbSchemaServiceStep, error) {
 	tx := d.session()
 
-	record := new(servicev1.DbSchemaService)
+	record := new(stepv1.DbSchemaServiceStep)
 	has, err := tx.Where("uuid = ?", uuid).
 		Get(record)
 	if err != nil {
@@ -48,33 +54,32 @@ func (d *DBManipulator) GetService(uuid string) (*servicev1.DbSchemaService, err
 	return record, err
 }
 
-/* FindService
-   @return []servicev1.DbSchemaService, error
+/* FindServiceStep
+   @return []stepv1.DbSchemaServiceStep, error
    @method find
-   @from Service
+   @from ServiceStep
    @condition where, args
 */
-func (d *DBManipulator) FindService(where string, args ...interface{}) ([]servicev1.DbSchemaService, error) {
+func (d *DBManipulator) FindServiceStep(where string, args ...interface{}) ([]stepv1.DbSchemaServiceStep, error) {
 	tx := d.session()
 
 	//SELECT * FROM {table} WHERE [cond]
-	var model = make([]servicev1.DbSchemaService, 0)
+	model := make([]stepv1.DbSchemaServiceStep, 0)
 	err := tx.Where(where, args...).
 		Find(&model)
 	if err != nil {
 		return nil, err
 	}
-
 	return model, nil
 }
 
-/* UpdateService
+/* UpdateServiceStep
    @return error
    @method update
-   @from Service
-   @condition DbSchemaService
+   @from ServiceStep
+   @condition DbSchemaServiceStep
 */
-func (d *DBManipulator) UpdateService(m servicev1.DbSchemaService) error {
+func (d *DBManipulator) UpdateServiceStep(m stepv1.DbSchemaServiceStep) error {
 	var err error
 	tx := d.session()
 	tx.Begin()
@@ -97,13 +102,13 @@ func (d *DBManipulator) UpdateService(m servicev1.DbSchemaService) error {
 	return nil
 }
 
-/* DeleteService
+/* DeleteServiceStep
    @return error
    @method delete
-   @from Service
+   @from ServiceStep
    @condition uuid
 */
-func (d *DBManipulator) DeleteService(uuid string) error {
+func (d *DBManipulator) DeleteServiceStep(uuid string) error {
 	var err error
 	tx := d.session()
 	tx.Begin()
@@ -115,7 +120,7 @@ func (d *DBManipulator) DeleteService(uuid string) error {
 		}
 	}()
 
-	record := new(servicev1.DbSchemaService)
+	record := new(stepv1.DbSchemaServiceStep)
 	//DELETE FROM {table} WHERE uuid = ?
 	affect, err := tx.Where("uuid = ?", uuid).
 		Delete(record)

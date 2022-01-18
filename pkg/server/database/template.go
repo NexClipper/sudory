@@ -1,19 +1,16 @@
 package database
 
 import (
-	"errors"
-
-	. "github.com/NexClipper/sudory/pkg/server/macro"
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
 )
 
 /* CreateTemplate
-   @return int64, error
+   @return error
    @method insert
    @from Template
    @condition []templatev1.DbSchemaTemplate
 */
-func (d *DBManipulator) CreateTemplate(m []templatev1.DbSchemaTemplate) (int64, error) {
+func (d *DBManipulator) CreateTemplate(m templatev1.DbSchemaTemplate) error {
 	var err error
 	tx := d.session()
 	tx.Begin()
@@ -25,9 +22,14 @@ func (d *DBManipulator) CreateTemplate(m []templatev1.DbSchemaTemplate) (int64, 
 		}
 	}()
 
-	affect, err := tx.Insert(m)
-
-	return affect, err
+	affect, err := tx.Insert(&m)
+	if err != nil {
+		return err
+	}
+	if !(0 < affect) {
+		return ErrorNoAffecte()
+	}
+	return nil
 }
 
 /* GetTemplate
@@ -39,42 +41,47 @@ func (d *DBManipulator) CreateTemplate(m []templatev1.DbSchemaTemplate) (int64, 
 func (d *DBManipulator) GetTemplate(uuid string) (*templatev1.DbSchemaTemplate, error) {
 	tx := d.session()
 
-	var model templatev1.DbSchemaTemplate
-	//SELECT * FROM template WHERE uuid = ? LIMIT 1
+	var record = new(templatev1.DbSchemaTemplate)
+	//SELECT * FROM {table} WHERE uuid = ? LIMIT 1
 	has, err := tx.Where("uuid = ?", uuid).
-		Get(&model)
-
+		Get(record)
+	if err != nil {
+		return nil, err
+	}
 	if !has {
-		return nil, errors.New(ErrorRecordWasNotFound)
+		return nil, ErrorRecordWasNotFound()
 	}
 
-	return &model, err
+	return record, nil
 }
 
 /* FindTemplate
    @return []templatev1.DbSchemaTemplate, error
    @method find
    @from Template
-   @condition cond, args
+   @condition where, args
 */
 func (d *DBManipulator) FindTemplate(where string, args ...interface{}) ([]templatev1.DbSchemaTemplate, error) {
 	tx := d.session()
 
 	//SELECT * FROM template WHERE [cond]
-	var model []templatev1.DbSchemaTemplate = make([]templatev1.DbSchemaTemplate, 0)
+	model := make([]templatev1.DbSchemaTemplate, 0)
 	err := tx.Where(where, args...).
 		Find(&model)
+	if err != nil {
+		return nil, err
+	}
 
-	return model, err
+	return model, nil
 }
 
 /* UpdateTemplate
-   @return int64, error
+   @return error
    @method update
    @from Template
    @condition DbSchemaTemplate
 */
-func (d *DBManipulator) UpdateTemplate(m templatev1.DbSchemaTemplate) (int64, error) {
+func (d *DBManipulator) UpdateTemplate(m templatev1.DbSchemaTemplate) error {
 	var err error
 	tx := d.session()
 	tx.Begin()
@@ -86,32 +93,24 @@ func (d *DBManipulator) UpdateTemplate(m templatev1.DbSchemaTemplate) (int64, er
 		}
 	}()
 
-	//아이디를 가져오기
-	var record = new(templatev1.DbSchemaTemplate)
-	//SELECT * FROM template WHERE uuid = ? LIMIT 1
-	has, err := tx.Where("uuid = ?", m.Uuid).
-		Get(record)
-
-	if HasError(err) {
-		return -1, err
-	}
-	if !has {
-		return -2, errors.New(ErrorRecordWasNotFound)
-	}
-
 	affect, err := tx.Where("uuid = ?", m.Uuid).
-		Update(m)
-
-	return affect, err
+		Update(&m)
+	if err != nil {
+		return err
+	}
+	if !(0 < affect) {
+		return ErrorNoAffecte()
+	}
+	return nil
 }
 
 /* DeleteTemplate
-   @return int64, error
+   @return error
    @method delete
    @from Template
    @condition uuid
 */
-func (d *DBManipulator) DeleteTemplate(uuid string) (int64, error) {
+func (d *DBManipulator) DeleteTemplate(uuid string) error {
 	var err error
 	tx := d.session()
 	tx.Begin()
@@ -123,22 +122,15 @@ func (d *DBManipulator) DeleteTemplate(uuid string) (int64, error) {
 		}
 	}()
 
-	//아이디를 가져오기
 	record := new(templatev1.DbSchemaTemplate)
-	//SELECT * FROM template WHERE uuid = ? LIMIT 1
-	has, err := tx.Where("uuid = ?", uuid).
-		Get(record)
-
-	if HasError(err) {
-		return -1, err
-	}
-	if !has {
-		return -2, errors.New(ErrorRecordWasNotFound)
-	}
-
-	//DELETE FROM template WHERE uuid = ?
+	//DELETE FROM {table} WHERE uuid = ?
 	affect, err := tx.Where("uuid = ?", uuid).
 		Delete(record)
-
-	return affect, err
+	if err != nil {
+		return err
+	}
+	if !(0 < affect) {
+		return ErrorNoAffecte()
+	}
+	return nil
 }

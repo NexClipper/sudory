@@ -12,22 +12,22 @@ type Operator interface {
 	Get(ctx echo.Context) error
 }
 
-//생성
-type Creator interface {
-	Create(ctx echo.Context) error
-}
+// //생성
+// type Creator interface {
+// 	Create(ctx echo.Context) error
+// }
 
-//조회
-type Getter interface {
-	Get(ctx echo.Context) error
-}
+// //조회
+// type Getter interface {
+// 	Get(ctx echo.Context) error
+// }
 
-//갱신
-type Updater interface {
-	Update(ctx echo.Context) error
-}
+// //갱신
+// type Updater interface {
+// 	Update(ctx echo.Context) error
+// }
 
-//삭제
-type Remover interface {
-	Delete(ctx echo.Context) error
-}
+// //삭제
+// type Remover interface {
+// 	Delete(ctx echo.Context) error
+// }

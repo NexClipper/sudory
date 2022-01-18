@@ -46,3 +46,21 @@ type HttpReqServiceStep struct {
 type HttpRspServiceStep struct {
 	ServiceStep `json:",inline"`
 }
+
+//변환 DbSchema -> Step
+func TransFormDbSchema(s []DbSchemaServiceStep) []ServiceStep {
+	var out = make([]ServiceStep, len(s))
+	for n, it := range s {
+		out[n] = it.ServiceStep
+	}
+	return out
+}
+
+//변환 Step -> HttpRsp
+func TransToHttpRsp(s []ServiceStep) []HttpRspServiceStep {
+	var out = make([]HttpRspServiceStep, len(s))
+	for n, it := range s {
+		out[n].ServiceStep = it
+	}
+	return out
+}
