@@ -14,6 +14,7 @@ import (
 func main() {
 	token := flag.String("token", "token", "sudory token")
 	server := flag.String("server", "http://localhost:8099", "sudory server url")
+	clusterid := flag.String("clusterid", "", "sudory client's cluster id")
 
 	flag.Parse()
 
@@ -23,6 +24,10 @@ func main() {
 
 	if len(*server) == 0 {
 		log.Fatalf("Client must have server('%s').\n", *server)
+	}
+
+	if len(*clusterid) == 0 {
+		log.Fatalf("Client must have server('%s').\n", *clusterid)
 	}
 
 	// get k8s client
