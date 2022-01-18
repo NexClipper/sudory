@@ -12,15 +12,10 @@ import (
 )
 
 func main() {
-	token := flag.String("token", "token", "sudory token")
 	server := flag.String("server", "http://localhost:8099", "sudory server url")
 	clusterid := flag.String("clusterid", "", "sudory client's cluster id")
 
 	flag.Parse()
-
-	if len(*token) == 0 {
-		log.Fatalf("Client must have token('%s').\n", *token)
-	}
 
 	if len(*server) == 0 {
 		log.Fatalf("Client must have server('%s').\n", *server)
@@ -47,7 +42,7 @@ func main() {
 	serviceScheduler := service.NewScheduler()
 	serviceScheduler.Start()
 
-	poller := poll.NewPoller(*token, *server, serviceScheduler)
+	poller := poll.NewPoller("", *server, serviceScheduler)
 
 	// polling
 	poller.Start()
