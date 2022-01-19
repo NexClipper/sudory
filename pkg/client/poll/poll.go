@@ -10,7 +10,7 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/service"
-	"github.com/NexClipper/sudory/pkg/server/model"
+	v1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 )
 
 const defaultPollingInterval = 5 // * time.Second
@@ -53,9 +53,7 @@ func (p *Poller) poll() {
 
 	// TODO: services' status -> reqData
 
-	reqData := &model.ReqClientGetService{
-		ClusterID: 999,
-	}
+	reqData := &v1.HttpRspClientSideService{}
 
 	body, err := p.client.PutJson(reqData)
 	if err != nil {
@@ -65,7 +63,7 @@ func (p *Poller) poll() {
 
 	// TODO: If server updated service's status, remove completed services.
 
-	respData := &model.RespService{}
+	respData := &v1.HttpReqClientSideService{}
 	if err := json.Unmarshal(body, respData); err != nil {
 		log.Printf(err.Error())
 		return
