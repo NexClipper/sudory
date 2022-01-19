@@ -54,48 +54,27 @@ func (DbSchemaService) TableName() string {
 	return "service"
 }
 
-type ClientSideServiceProperty struct {
-	//클러스터 UUID
-	ClusterUuid string `json:"cluster_uuid"`
-	//Type; 0: Once, 1: repeat(epoch, interval)
-	Type int32 `json:"type,omitempty"`
-	//Epoch -1: infinite, 0 :
-	Epoch int32 `json:"epoch,omitempty"`
-	//Interval
-	Interval int32 `json:"interval,omitempty"`
-}
-
-type ClientSideService struct {
-	metav1.LabelMeta          `json:",inline" ` //inline labelmeta
-	ClientSideServiceProperty `json:",inline"`
-	Steps                     []stepv1.ServiceStep
-}
-
 //HTTP REQUEST BODY: SERVICE
 type HttpReqService struct {
 	Service `json:",inline"`
 }
 
 //HTTP REQUEST BODY: SERVICE (with steps)
-type HttpReqServiceWithSteps struct {
+type HttpReqServiceCreate struct {
 	Service `json:",inline"`
-	Steps   []stepv1.ServiceStep `json:"steps,inline"`
+	Steps   []stepv1.ServiceStep `json:"steps"`
 }
 
-//HTTP RESPONSE BODY: SERVICE
-type HttpRspService struct {
-	Service `json:",inline"`
-	Steps   []stepv1.ServiceStep `json:"steps,inline"`
-}
-
-//HTTP REQUEST BODY: SERVICEs (client)
+//HTTP RESPONSE BODY: SERVICE (client)
 type HttpReqClientSideService struct {
-	Stervicies []ClientSideService `json:",inline"`
+	Service `json:",inline"`
+	Steps   []stepv1.ServiceStep `json:"steps"`
 }
 
-//HTTP RESPONSE BODY: SERVICEs (client)
+//HTTP RESPONSE BODY: SERVICE (client)
 type HttpRspClientSideService struct {
-	Stervicies []ClientSideService `json:",inline"`
+	Service `json:",inline"`
+	Steps   []stepv1.ServiceStep `json:"steps"`
 }
 
 //변환 DbSchema -> Service
