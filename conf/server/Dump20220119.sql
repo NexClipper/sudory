@@ -78,12 +78,13 @@ CREATE TABLE `service` (
   `summary` varchar(255) COLLATE utf8_bin DEFAULT NULL,
   `api_version` varchar(255) COLLATE utf8_bin NOT NULL,
   `cluster_uuid` char(32) COLLATE utf8_bin NOT NULL COMMENT 'clusters uuid',
-  `status` int(11) NOT NULL DEFAULT 0 COMMENT 'status',
   `step_count` int(11) DEFAULT 0,
   `step_position` int(11) DEFAULT 0,
   `type` int(11) DEFAULT 0,
   `epoch` int(11) DEFAULT 0,
   `interval` int(11) DEFAULT 0,
+  `status` int(11) NOT NULL DEFAULT 0 COMMENT 'status',
+  `result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UQE_service_uuid` (`uuid`),
   KEY `IDX_service_cluster_uuid` (`cluster_uuid`),
@@ -112,7 +113,7 @@ CREATE TABLE `service_step` (
   `method` varchar(255) COLLATE utf8_bin NOT NULL COMMENT 'method',
   `args` text COLLATE utf8_bin DEFAULT NULL COMMENT 'args',
   `status` int(11) NOT NULL DEFAULT 1 COMMENT 'status',
-  `result` varchar(255) COLLATE utf8_bin NOT NULL DEFAULT '' COMMENT 'result',
+  `result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'result',
   `started` datetime DEFAULT NULL,
   `ended` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -196,4 +197,4 @@ CREATE TABLE `token` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-01-19  3:20:16
+-- Dump completed on 2022-01-19  8:13:19

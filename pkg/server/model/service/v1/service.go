@@ -24,14 +24,16 @@ type ServiceProperty struct {
 	StepCount int32 `json:"step_count,omitempty" xorm:"int notnull default(0) 'step_count' comment('step_count')"`
 	//스탭 Position
 	StepPosition int32 `json:"step_position,omitempty" xorm:"int notnull default(0) 'step_position' comment('step_position')"`
-	//Status
-	Status int32 `json:"status,omitempty" xorm:"int notnull default(0) index 'status' comment('status')"`
 	//Type; 0: Once, 1: repeat(epoch, interval)
 	Type int32 `json:"type,omitempty" xorm:"int notnull default(0) index 'type' comment('type')"`
 	//Epoch -1: infinite, 0 :
 	Epoch int32 `json:"epoch,omitempty" xorm:"int notnull default(0) index 'epoch' comment('epoch (times)')"`
 	//Interval
 	Interval int32 `json:"interval,omitempty" xorm:"int notnull default(0) index 'interval' comment('interval (sec)')"`
+	//Status
+	Status int32 `json:"status,omitempty" xorm:"int notnull default(0) index 'status' comment('status')"`
+	//Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
+	Result string `json:"result,omitempty" xorm:"longtext null 'result' comment('result')"`
 }
 
 //MODEL: SERVICE
