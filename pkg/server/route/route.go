@@ -44,7 +44,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router.e.PUT("/server/template/:template_uuid/command/:uuid", controller.UpdateTemplateCommand())
 	router.e.DELETE("/server/template/:template_uuid/command/:uuid", controller.DeleteTemplateCommand())
 	//route /server/service*
-	router.e.GET("/server/service", controller.GetServicies())
+	router.e.GET("/server/service", controller.FindService())
 	router.e.GET("/server/service/:uuid", controller.GetService())
 	router.e.POST("/server/service", controller.CreateService())
 	router.e.PUT("/server/service/:uuid", controller.UpdateService())
@@ -56,9 +56,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router.e.PUT("/server/service/:service_uuid/step/:uuid", controller.UpdateServiceStep())
 	router.e.DELETE("/server/service/:service_uuid/step/:uuid", controller.DeleteServiceStep())
 	//route /client/service*
-	router.e.GET("/client/service", controller.GetClientServicies())
-	//route /client/service/:service_uuid/step*
-	router.e.GET("/client/service/:service_uuid/step/:uuid", controller.UpdateClientServiceStep())
+	router.e.PUT("/client/service", controller.GetClientServicies())
 
 	/*TODO: 라우트 연결 기능 구현
 	router.e.POST("/server/cluster", controller.CreateCluster)

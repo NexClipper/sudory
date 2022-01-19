@@ -3,6 +3,7 @@ package v1
 import (
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	"github.com/NexClipper/sudory/pkg/server/model/orm"
+	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
 )
 
 //Template Property
@@ -35,9 +36,16 @@ type HttpReqTemplate struct {
 	Template `json:",inline"`
 }
 
-//HTTP REQUEST BODY: TEMPLATE
+//HTTP REQUEST BODY: TEMPLATE with template_command
+type HttpReqTemplateCreate struct {
+	Template `json:",inline"`
+	Commands []commandv1.TemplateCommand `json:"commands"`
+}
+
+//HTTP RESPONSE BODY: TEMPLATE with template_command
 type HttpRspTemplate struct {
 	Template `json:",inline"`
+	Commands []commandv1.TemplateCommand `json:"commands"`
 }
 
 //변환 DbSchema -> Template
@@ -49,29 +57,16 @@ func TransFormDbSchema(s []DbSchemaTemplate) []Template {
 	return out
 }
 
-//변환 Template -> DbSchema
-func TransToDbSchema(s []Template) []DbSchemaTemplate {
-	var out = make([]DbSchemaTemplate, len(s))
-	for n, it := range s {
-		out[n] = DbSchemaTemplate{Template: it}
+//Build Template -> HttpRsp
+func HttpRspBuilder(length int) (func(a Template, b []commandv1.TemplateCommand), func() []HttpRspTemplate) {
+	var pos int = 0
+	queue := make([]HttpRspTemplate, length)
+	pusher := func(a Template, b []commandv1.TemplateCommand) {
+		queue[pos] = HttpRspTemplate{Template: a, Commands: b}
+		pos++
 	}
-	return out
-}
-
-//변환 HttpReq -> Template
-func TransFormHttpReq(s []HttpReqTemplate) []Template {
-	var out = make([]Template, len(s))
-	for n, it := range s {
-		out[n] = it.Template
+	poper := func() []HttpRspTemplate {
+		return queue
 	}
-	return out
-}
-
-//변환 Template -> HttpRsp
-func TransToHttpRsp(s []Template) []HttpRspTemplate {
-	var out = make([]HttpRspTemplate, len(s))
-	for n, it := range s {
-		out[n] = HttpRspTemplate{Template: it}
-	}
-	return out
+	return pusher, poper
 }

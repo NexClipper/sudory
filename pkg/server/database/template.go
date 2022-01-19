@@ -4,12 +4,11 @@ import (
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
 )
 
-/* CreateTemplate
-   @return error
-   @method insert
-   @from Template
-   @condition []templatev1.DbSchemaTemplate
-*/
+// CreateTemplate
+//  @return error
+//  @method insert
+//  @from Template
+//  @condition []templatev1.DbSchemaTemplate
 func (d *DBManipulator) CreateTemplate(m templatev1.DbSchemaTemplate) error {
 	var err error
 	tx := d.session()
@@ -32,12 +31,11 @@ func (d *DBManipulator) CreateTemplate(m templatev1.DbSchemaTemplate) error {
 	return nil
 }
 
-/* GetTemplate
-   @return DbSchemaTemplate, error
-   @method get
-   @from Template
-   @condition uuid
-*/
+// GetTemplate
+//  @return DbSchemaTemplate, error
+//  @method get
+//  @from Template
+//  @condition uuid
 func (d *DBManipulator) GetTemplate(uuid string) (*templatev1.DbSchemaTemplate, error) {
 	tx := d.session()
 
@@ -55,12 +53,11 @@ func (d *DBManipulator) GetTemplate(uuid string) (*templatev1.DbSchemaTemplate, 
 	return record, nil
 }
 
-/* FindTemplate
-   @return []templatev1.DbSchemaTemplate, error
-   @method find
-   @from Template
-   @condition where, args
-*/
+// FindTemplate
+//  @return []templatev1.DbSchemaTemplate, error
+//  @method find
+//  @from Template
+//  @condition where, args
 func (d *DBManipulator) FindTemplate(where string, args ...interface{}) ([]templatev1.DbSchemaTemplate, error) {
 	tx := d.session()
 
@@ -75,12 +72,11 @@ func (d *DBManipulator) FindTemplate(where string, args ...interface{}) ([]templ
 	return model, nil
 }
 
-/* UpdateTemplate
-   @return error
-   @method update
-   @from Template
-   @condition DbSchemaTemplate
-*/
+// UpdateTemplate
+//  @return error
+//  @method update
+//  @from Template
+//  @condition DbSchemaTemplate
 func (d *DBManipulator) UpdateTemplate(m templatev1.DbSchemaTemplate) error {
 	var err error
 	tx := d.session()
@@ -104,12 +100,11 @@ func (d *DBManipulator) UpdateTemplate(m templatev1.DbSchemaTemplate) error {
 	return nil
 }
 
-/* DeleteTemplate
-   @return error
-   @method delete
-   @from Template
-   @condition uuid
-*/
+// DeleteTemplate
+//  @return error
+//  @method delete
+//  @from Template
+//  @condition uuid
 func (d *DBManipulator) DeleteTemplate(uuid string) error {
 	var err error
 	tx := d.session()

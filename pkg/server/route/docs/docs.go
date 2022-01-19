@@ -27,7 +27,7 @@ var doc = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/client/service": {
-            "get": {
+            "put": {
                 "description": "Get a Servicies",
                 "consumes": [
                     "application/json"
@@ -36,14 +36,26 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "client/service"
                 ],
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Service 의 ClusterUuid",
+                        "description": "Client 의 ClusterUuid",
                         "name": "cluster_uuid",
                         "in": "query"
+                    },
+                    {
+                        "description": "HttpReqClientSideService",
+                        "name": "service",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.HttpReqClientSideService"
+                            }
+                        }
                     }
                 ],
                 "responses": {
@@ -52,60 +64,16 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.HttpRspService"
+                                "$ref": "#/definitions/v1.HttpRspClientSideService"
                             }
                         }
                     }
                 }
             }
         },
-        "/client/service/{service_uuid}/step/{uuid}": {
-            "put": {
-                "description": "Update a Service Step",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ServiceStep 의 Uuid",
-                        "name": "service_uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "ServiceStep 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "HttpReqServiceStep",
-                        "name": "step",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpReqServiceStep"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
         "/server/service": {
             "get": {
-                "description": "Get a Servicies",
+                "description": "Find []Service",
                 "consumes": [
                     "application/json"
                 ],
@@ -113,7 +81,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/service"
                 ],
                 "parameters": [
                     {
@@ -156,16 +124,16 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/service"
                 ],
                 "parameters": [
                     {
-                        "description": "HttpReqService",
+                        "description": "HttpReqServiceCreate",
                         "name": "service",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqService"
+                            "$ref": "#/definitions/v1.HttpReqServiceCreate"
                         }
                     }
                 ],
@@ -186,7 +154,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/service_step"
                 ],
                 "parameters": [
                     {
@@ -218,7 +186,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/service_step"
                 ],
                 "parameters": [
                     {
@@ -255,7 +223,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/service_step"
                 ],
                 "parameters": [
                     {
@@ -291,7 +259,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/service_step"
                 ],
                 "parameters": [
                     {
@@ -333,7 +301,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/service_step"
                 ],
                 "parameters": [
                     {
@@ -368,7 +336,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/service"
                 ],
                 "parameters": [
                     {
@@ -397,7 +365,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/service"
                 ],
                 "parameters": [
                     {
@@ -432,7 +400,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/service"
                 ],
                 "parameters": [
                     {
@@ -460,7 +428,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/template"
                 ],
                 "parameters": [
                     {
@@ -503,16 +471,16 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/template"
                 ],
                 "parameters": [
                     {
-                        "description": "HttpReqTemplate",
+                        "description": "HttpReqTemplateCreate",
                         "name": "template",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqTemplate"
+                            "$ref": "#/definitions/v1.HttpReqTemplateCreate"
                         }
                     }
                 ],
@@ -533,7 +501,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/template_command"
                 ],
                 "parameters": [
                     {
@@ -565,7 +533,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/template_command"
                 ],
                 "parameters": [
                     {
@@ -602,7 +570,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/template_command"
                 ],
                 "parameters": [
                     {
@@ -638,7 +606,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/template_command"
                 ],
                 "parameters": [
                     {
@@ -680,7 +648,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/template_command"
                 ],
                 "parameters": [
                     {
@@ -715,7 +683,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/template"
                 ],
                 "parameters": [
                     {
@@ -744,9 +712,15 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/template"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Template 의 Uuid",
+                        "name": "uuid",
+                        "in": "path"
+                    },
                     {
                         "description": "HttpReqTemplate",
                         "name": "template",
@@ -772,7 +746,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server"
+                    "server/template"
                 ],
                 "parameters": [
                     {
@@ -792,6 +766,65 @@ var doc = `{
         }
     },
     "definitions": {
+        "v1.HttpReqClientSideService": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "description": "클러스터 UUID",
+                    "type": "string"
+                },
+                "epoch": {
+                    "description": "Epoch -1: infinite, 0 :",
+                    "type": "integer"
+                },
+                "interval": {
+                    "description": "Interval",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "result": {
+                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status",
+                    "type": "integer"
+                },
+                "step_count": {
+                    "description": "스탭 카운트",
+                    "type": "integer"
+                },
+                "step_position": {
+                    "description": "스탭 Position",
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.ServiceStep"
+                    }
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
+                    "type": "integer"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
         "v1.HttpReqService": {
             "type": "object",
             "properties": {
@@ -815,6 +848,10 @@ var doc = `{
                     "description": "label name",
                     "type": "string"
                 },
+                "result": {
+                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
+                    "type": "string"
+                },
                 "status": {
                     "description": "Status",
                     "type": "integer"
@@ -826,6 +863,65 @@ var doc = `{
                 "step_position": {
                     "description": "스탭 Position",
                     "type": "integer"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
+                    "type": "integer"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpReqServiceCreate": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "description": "클러스터 UUID",
+                    "type": "string"
+                },
+                "epoch": {
+                    "description": "Epoch -1: infinite, 0 :",
+                    "type": "integer"
+                },
+                "interval": {
+                    "description": "Interval",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "result": {
+                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status",
+                    "type": "integer"
+                },
+                "step_count": {
+                    "description": "스탭 카운트",
+                    "type": "integer"
+                },
+                "step_position": {
+                    "description": "스탭 Position",
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.ServiceStep"
+                    }
                 },
                 "summary": {
                     "description": "label summary",
@@ -962,6 +1058,96 @@ var doc = `{
                 }
             }
         },
+        "v1.HttpReqTemplateCreate": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "commands": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.TemplateCommand"
+                    }
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "origin": {
+                    "description": "origin\n@example: predefined, userdefined",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpRspClientSideService": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "description": "클러스터 UUID",
+                    "type": "string"
+                },
+                "epoch": {
+                    "description": "Epoch -1: infinite, 0 :",
+                    "type": "integer"
+                },
+                "interval": {
+                    "description": "Interval",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "result": {
+                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status",
+                    "type": "integer"
+                },
+                "step_count": {
+                    "description": "스탭 카운트",
+                    "type": "integer"
+                },
+                "step_position": {
+                    "description": "스탭 Position",
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.ServiceStep"
+                    }
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
+                    "type": "integer"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
         "v1.HttpRspService": {
             "type": "object",
             "properties": {
@@ -983,6 +1169,10 @@ var doc = `{
                 },
                 "name": {
                     "description": "label name",
+                    "type": "string"
+                },
+                "result": {
+                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
                     "type": "string"
                 },
                 "status": {
@@ -1080,6 +1270,12 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
+                "commands": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.TemplateCommand"
+                    }
+                },
                 "name": {
                     "description": "label name",
                     "type": "string"
@@ -1146,6 +1342,46 @@ var doc = `{
                 },
                 "summary": {
                     "description": "label summary",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.TemplateCommand": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "args": {
+                    "description": "arguments",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "method": {
+                    "description": "메소드\n@example: \"kubernetes.deployment.get.v1\", \"kubernetes.pod.list.v1\"",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "sequence": {
+                    "description": "순서",
+                    "type": "integer"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "description": "템플릿 UUID",
                     "type": "string"
                 },
                 "uuid": {

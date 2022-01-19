@@ -65,7 +65,13 @@ type HttpReqServiceCreate struct {
 	Steps   []stepv1.ServiceStep `json:"steps"`
 }
 
-//HTTP RESPONSE BODY: SERVICE (client)
+//HTTP RESPONSE BODY: SERVICE
+type HttpRspService struct {
+	Service `json:",inline"`
+	Steps   []stepv1.ServiceStep `json:"steps"`
+}
+
+//HTTP REQUEST BODY: SERVICE (client)
 type HttpReqClientSideService struct {
 	Service `json:",inline"`
 	Steps   []stepv1.ServiceStep `json:"steps"`
@@ -86,11 +92,25 @@ func TransFormDbSchema(s []DbSchemaService) []Service {
 	return out
 }
 
-//변환 Service -> HtppRsp
-func TransToHttpRsp(s []Service) []HttpRspService {
-	var out = make([]HttpRspService, len(s))
-	for n, it := range s {
-		out[n].Service = it
+// //변환 Service -> HtppRsp
+// func TransToHttpRsp(s []Service) []HttpRspService {
+// 	var out = make([]HttpRspService, len(s))
+// 	for n, it := range s {
+// 		out[n].Service = it
+// 	}
+// 	return out
+// }
+
+//Build Template -> HttpRsp
+func HttpRspBuilder(length int) (func(a Service, b []stepv1.ServiceStep), func() []HttpRspService) {
+	var pos int = 0
+	queue := make([]HttpRspService, length)
+	pusher := func(a Service, b []stepv1.ServiceStep) {
+		queue[pos] = HttpRspService{Service: a, Steps: b}
+		pos++
 	}
-	return out
+	poper := func() []HttpRspService {
+		return queue
+	}
+	return pusher, poper
 }

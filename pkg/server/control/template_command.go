@@ -10,7 +10,7 @@ import (
 // @Description Create a template command
 // @Accept json
 // @Produce json
-// @Tags server
+// @Tags server/template_command
 // @Router /server/template/{template_uuid}/command [post]
 // @Param template_uuid path string true "HttpReqTemplate 의 Uuid"
 // @Param command       body v1.HttpReqTemplateCommand true "HttpReqTemplateCommand"
@@ -63,7 +63,7 @@ func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
 // @Description Get a template command
 // @Accept json
 // @Produce json
-// @Tags server
+// @Tags server/template_command
 // @Router /server/template/{template_uuid}/command [get]
 // @Param template_uuid path string true "HttpReqTemplate 의 Uuid"
 // @Success 200 {array} v1.HttpRspTemplate
@@ -101,7 +101,7 @@ func (c *Control) GetTemplateCommands() func(ctx echo.Context) error {
 // @Description Get a template command
 // @Accept json
 // @Produce json
-// @Tags server
+// @Tags server/template_command
 // @Router /server/template/{template_uuid}/command/{uuid} [get]
 // @Param template_uuid path string true "HttpReqTemplate 의 Uuid"
 // @Param uuid          path string true "HttpReqTemplateCommand 의 Uuid"
@@ -144,7 +144,7 @@ func (c *Control) GetTemplateCommand() func(ctx echo.Context) error {
 // @Description Update a template command
 // @Accept json
 // @Produce json
-// @Tags server
+// @Tags server/template_command
 // @Router /server/template/{template_uuid}/command/{uuid} [put]
 // @Param template_uuid path string true "HttpReqTemplateCommand 의 TemplateUuid"
 // @Param uuid          path string true "HttpReqTemplateCommand 의 Uuid"
@@ -209,7 +209,7 @@ func (c *Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 // @Description Delete a template command
 // @Accept json
 // @Produce json
-// @Tags server
+// @Tags server/template_command
 // @Router /server/template/{template_uuid}/command/{uuid} [delete]
 // @Param template_uuid path string true "HttpReqTemplate 의 Uuid"
 // @Param uuid          path string true "HttpReqTemplateCommand 의 Uuid"

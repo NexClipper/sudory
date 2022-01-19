@@ -10,7 +10,7 @@ import (
 // @Description Create a Service Step
 // @Accept json
 // @Produce json
-// @Tags server
+// @Tags server/service_step
 // @Router /server/service/{service_uuid}/step [post]
 // @Param service_uuid path string true "ServiceStep 의 service_uuid"
 // @Param step         body stepv1.HttpReqServiceStep true "HttpReqServiceStep"
@@ -64,7 +64,7 @@ func (c *Control) CreateServiceStep() func(ctx echo.Context) error {
 // @Description Get a Service Step
 // @Accept json
 // @Produce json
-// @Tags server
+// @Tags server/service_step
 // @Router /server/service/{service_uuid}/step [get]
 // @Param service_uuid path string true "ServiceStep 의 service_uuid"
 // @Success 200 {array} stepv1.HttpRspServiceStep
@@ -102,7 +102,7 @@ func (c *Control) GetServiceSteps() func(ctx echo.Context) error {
 // @Description Get a Service Step
 // @Accept json
 // @Produce json
-// @Tags server
+// @Tags server/service_step
 // @Router /server/service/{service_uuid}/step/{uuid} [get]
 // @Param service_uuid path string true "ServiceStep 의 service_uuid"
 // @Param uuid         path string true "ServiceStep 의 Uuid"
@@ -145,7 +145,7 @@ func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 // @Description Update a Service Step
 // @Accept json
 // @Produce json
-// @Tags server
+// @Tags server/service_step
 // @Router /server/service/{service_uuid}/step/{uuid} [put]
 // @Param service_uuid path string true "ServiceStep 의 service_uuid"
 // @Param uuid         path string true "ServiceStep 의 Uuid"
@@ -178,7 +178,7 @@ func (c *Control) UpdateServiceStep() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		template_uuid, ok := req["service_uuid"].(string)
+		service_uuid, ok := req["service_uuid"].(string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -191,7 +191,7 @@ func (c *Control) UpdateServiceStep() func(ctx echo.Context) error {
 			return nil, ErrorFailedCast()
 		}
 
-		body.ServiceStep.ServiceUuid = template_uuid
+		body.ServiceStep.ServiceUuid = service_uuid
 		body.ServiceStep.Uuid = uuid
 		err := operator.NewServiceStep(c.db).
 			Update(body.ServiceStep)
@@ -208,7 +208,7 @@ func (c *Control) UpdateServiceStep() func(ctx echo.Context) error {
 // @Description Delete a Service
 // @Accept json
 // @Produce json
-// @Tags server
+// @Tags server/service_step
 // @Router /server/service/{service_uuid}/step/{uuid} [delete]
 // @Param service_uuid path string true "ServiceStep 의 service_uuid"
 // @Param uuid         path string true "ServiceStep 의 Uuid"
@@ -247,64 +247,64 @@ func (c *Control) DeleteServiceStep() func(ctx echo.Context) error {
 	return MakeMiddlewareFunc(binder, operator, HttpResponse)
 }
 
-// Update ServiceStep (client)
-// @Description Update a Service Step
-// @Accept json
-// @Produce json
-// @Tags server
-// @Router /client/service/{service_uuid}/step/{uuid} [put]
-// @Param service_uuid path string true "ServiceStep 의 Uuid"
-// @Param uuid         path string true "ServiceStep 의 Uuid"
-// @Param step         body stepv1.HttpReqServiceStep true "HttpReqServiceStep"
-// @Success 200
-func (c *Control) UpdateClientServiceStep() func(ctx echo.Context) error {
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
-		}
-		if len(req["service_uuid"].(string)) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-		if len(req["uuid"].(string)) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-		body := new(stepv1.HttpReqServiceStep)
-		err := ctx.Bind(body)
-		if err != nil {
-			return nil, ErrorBindRequestObject(err)
-		}
-		req["_"] = body
-		return req, nil
-	}
-	operator := func(v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]interface{})
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		service_uuid, ok := req["service_uuid"].(string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		uuid, ok := req["uuid"].(string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		body, ok := req["_"].(*stepv1.HttpReqServiceStep)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+// // Update ServiceStep (client)
+// // @Description Update a Service Step
+// // @Accept json
+// // @Produce json
+// // @Tags server/service_step
+// // @Router /client/service/{service_uuid}/step/{uuid} [put]
+// // @Param service_uuid path string true "ServiceStep 의 Uuid"
+// // @Param uuid         path string true "ServiceStep 의 Uuid"
+// // @Param step         body stepv1.HttpReqServiceStep true "HttpReqServiceStep"
+// // @Success 200
+// func (c *Control) UpdateClientServiceStep() func(ctx echo.Context) error {
+// 	binder := func(ctx echo.Context) (interface{}, error) {
+// 		req := make(map[string]interface{})
+// 		for _, it := range ctx.ParamNames() {
+// 			req[it] = ctx.Param(it)
+// 		}
+// 		if len(req["service_uuid"].(string)) == 0 {
+// 			return nil, ErrorInvaliedRequestParameter()
+// 		}
+// 		if len(req["uuid"].(string)) == 0 {
+// 			return nil, ErrorInvaliedRequestParameter()
+// 		}
+// 		body := new(stepv1.HttpReqServiceStep)
+// 		err := ctx.Bind(body)
+// 		if err != nil {
+// 			return nil, ErrorBindRequestObject(err)
+// 		}
+// 		req["_"] = body
+// 		return req, nil
+// 	}
+// 	operator := func(v interface{}) (interface{}, error) {
+// 		req, ok := v.(map[string]interface{})
+// 		if !ok {
+// 			return nil, ErrorFailedCast()
+// 		}
+// 		service_uuid, ok := req["service_uuid"].(string)
+// 		if !ok {
+// 			return nil, ErrorFailedCast()
+// 		}
+// 		uuid, ok := req["uuid"].(string)
+// 		if !ok {
+// 			return nil, ErrorFailedCast()
+// 		}
+// 		body, ok := req["_"].(*stepv1.HttpReqServiceStep)
+// 		if !ok {
+// 			return nil, ErrorFailedCast()
+// 		}
 
-		body.ServiceStep.ServiceUuid = service_uuid
-		body.ServiceStep.Uuid = uuid
+// 		body.ServiceStep.ServiceUuid = service_uuid
+// 		body.ServiceStep.Uuid = uuid
 
-		err := operator.NewServiceStep(c.db).
-			Update(body.ServiceStep)
-		if err != nil {
-			return nil, err
-		}
-		return nil, nil
-	}
+// 		err := operator.NewServiceStep(c.db).
+// 			Update(body.ServiceStep)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		return nil, nil
+// 	}
 
-	return MakeMiddlewareFunc(binder, operator, HttpResponse)
-}
+// 	return MakeMiddlewareFunc(binder, operator, HttpResponse)
+// }

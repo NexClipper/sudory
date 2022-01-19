@@ -1,4 +1,47 @@
 definitions:
+  v1.HttpReqClientSideService:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      cluster_uuid:
+        description: 클러스터 UUID
+        type: string
+      epoch:
+        description: 'Epoch -1: infinite, 0 :'
+        type: integer
+      interval:
+        description: Interval
+        type: integer
+      name:
+        description: label name
+        type: string
+      result:
+        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
+        type: string
+      status:
+        description: Status
+        type: integer
+      step_count:
+        description: 스탭 카운트
+        type: integer
+      step_position:
+        description: 스탭 Position
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/v1.ServiceStep'
+        type: array
+      summary:
+        description: label summary
+        type: string
+      type:
+        description: 'Type; 0: Once, 1: repeat(epoch, interval)'
+        type: integer
+      uuid:
+        description: UUID
+        type: string
+    type: object
   v1.HttpReqService:
     properties:
       api_version:
@@ -16,6 +59,9 @@ definitions:
       name:
         description: label name
         type: string
+      result:
+        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
+        type: string
       status:
         description: Status
         type: integer
@@ -25,6 +71,49 @@ definitions:
       step_position:
         description: 스탭 Position
         type: integer
+      summary:
+        description: label summary
+        type: string
+      type:
+        description: 'Type; 0: Once, 1: repeat(epoch, interval)'
+        type: integer
+      uuid:
+        description: UUID
+        type: string
+    type: object
+  v1.HttpReqServiceCreate:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      cluster_uuid:
+        description: 클러스터 UUID
+        type: string
+      epoch:
+        description: 'Epoch -1: infinite, 0 :'
+        type: integer
+      interval:
+        description: Interval
+        type: integer
+      name:
+        description: label name
+        type: string
+      result:
+        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
+        type: string
+      status:
+        description: Status
+        type: integer
+      step_count:
+        description: 스탭 카운트
+        type: integer
+      step_position:
+        description: 스탭 Position
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/v1.ServiceStep'
+        type: array
       summary:
         description: label summary
         type: string
@@ -127,6 +216,73 @@ definitions:
         description: UUID
         type: string
     type: object
+  v1.HttpReqTemplateCreate:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      commands:
+        items:
+          $ref: '#/definitions/v1.TemplateCommand'
+        type: array
+      name:
+        description: label name
+        type: string
+      origin:
+        description: |-
+          origin
+          @example: predefined, userdefined
+        type: string
+      summary:
+        description: label summary
+        type: string
+      uuid:
+        description: UUID
+        type: string
+    type: object
+  v1.HttpRspClientSideService:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      cluster_uuid:
+        description: 클러스터 UUID
+        type: string
+      epoch:
+        description: 'Epoch -1: infinite, 0 :'
+        type: integer
+      interval:
+        description: Interval
+        type: integer
+      name:
+        description: label name
+        type: string
+      result:
+        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
+        type: string
+      status:
+        description: Status
+        type: integer
+      step_count:
+        description: 스탭 카운트
+        type: integer
+      step_position:
+        description: 스탭 Position
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/v1.ServiceStep'
+        type: array
+      summary:
+        description: label summary
+        type: string
+      type:
+        description: 'Type; 0: Once, 1: repeat(epoch, interval)'
+        type: integer
+      uuid:
+        description: UUID
+        type: string
+    type: object
   v1.HttpRspService:
     properties:
       api_version:
@@ -143,6 +299,9 @@ definitions:
         type: integer
       name:
         description: label name
+        type: string
+      result:
+        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
         type: string
       status:
         description: Status
@@ -213,6 +372,10 @@ definitions:
       api_version:
         description: api version
         type: string
+      commands:
+        items:
+          $ref: '#/definitions/v1.TemplateCommand'
+        type: array
       name:
         description: label name
         type: string
@@ -269,6 +432,37 @@ definitions:
         description: UUID
         type: string
     type: object
+  v1.TemplateCommand:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      args:
+        additionalProperties:
+          type: string
+        description: arguments
+        type: object
+      method:
+        description: |-
+          메소드
+          @example: "kubernetes.deployment.get.v1", "kubernetes.pod.list.v1"
+        type: string
+      name:
+        description: label name
+        type: string
+      sequence:
+        description: 순서
+        type: integer
+      summary:
+        description: label summary
+        type: string
+      template_uuid:
+        description: 템플릿 UUID
+        type: string
+      uuid:
+        description: UUID
+        type: string
+    type: object
 info:
   contact:
     email: jaehoon@nexclipper.io
@@ -278,15 +472,23 @@ info:
   version: 0.0.1
 paths:
   /client/service:
-    get:
+    put:
       consumes:
       - application/json
       description: Get a Servicies
       parameters:
-      - description: Service 의 ClusterUuid
+      - description: Client 의 ClusterUuid
         in: query
         name: cluster_uuid
         type: string
+      - description: HttpReqClientSideService
+        in: body
+        name: service
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/v1.HttpReqClientSideService'
+          type: array
       produces:
       - application/json
       responses:
@@ -294,44 +496,15 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.HttpRspService'
+              $ref: '#/definitions/v1.HttpRspClientSideService'
             type: array
       tags:
-      - server
-  /client/service/{service_uuid}/step/{uuid}:
-    put:
-      consumes:
-      - application/json
-      description: Update a Service Step
-      parameters:
-      - description: ServiceStep 의 Uuid
-        in: path
-        name: service_uuid
-        required: true
-        type: string
-      - description: ServiceStep 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      - description: HttpReqServiceStep
-        in: body
-        name: step
-        required: true
-        schema:
-          $ref: '#/definitions/v1.HttpReqServiceStep'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      tags:
-      - server
+      - client/service
   /server/service:
     get:
       consumes:
       - application/json
-      description: Get a Servicies
+      description: Find []Service
       parameters:
       - description: Service 의 ClusterUuid
         in: query
@@ -355,25 +528,25 @@ paths:
               $ref: '#/definitions/v1.HttpRspService'
             type: array
       tags:
-      - server
+      - server/service
     post:
       consumes:
       - application/json
       description: Create a Service
       parameters:
-      - description: HttpReqService
+      - description: HttpReqServiceCreate
         in: body
         name: service
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqService'
+          $ref: '#/definitions/v1.HttpReqServiceCreate'
       produces:
       - application/json
       responses:
         "200":
           description: ""
       tags:
-      - server
+      - server/service
   /server/service/{service_uuid}/step:
     get:
       consumes:
@@ -395,7 +568,7 @@ paths:
               $ref: '#/definitions/v1.HttpRspServiceStep'
             type: array
       tags:
-      - server
+      - server/service_step
     post:
       consumes:
       - application/json
@@ -418,7 +591,7 @@ paths:
         "200":
           description: ""
       tags:
-      - server
+      - server/service_step
   /server/service/{service_uuid}/step/{uuid}:
     delete:
       consumes:
@@ -441,7 +614,7 @@ paths:
         "200":
           description: ""
       tags:
-      - server
+      - server/service_step
     get:
       consumes:
       - application/json
@@ -465,7 +638,7 @@ paths:
           schema:
             $ref: '#/definitions/v1.HttpRspServiceStep'
       tags:
-      - server
+      - server/service_step
     put:
       consumes:
       - application/json
@@ -493,7 +666,7 @@ paths:
         "200":
           description: ""
       tags:
-      - server
+      - server/service_step
   /server/service/{uuid}:
     delete:
       consumes:
@@ -511,7 +684,7 @@ paths:
         "200":
           description: ""
       tags:
-      - server
+      - server/service
     get:
       consumes:
       - application/json
@@ -530,7 +703,7 @@ paths:
           schema:
             $ref: '#/definitions/v1.HttpRspService'
       tags:
-      - server
+      - server/service
     put:
       consumes:
       - application/json
@@ -553,7 +726,7 @@ paths:
         "200":
           description: ""
       tags:
-      - server
+      - server/service
   /server/template:
     get:
       consumes:
@@ -582,25 +755,25 @@ paths:
               $ref: '#/definitions/v1.HttpRspTemplate'
             type: array
       tags:
-      - server
+      - server/template
     post:
       consumes:
       - application/json
       description: Create a template
       parameters:
-      - description: HttpReqTemplate
+      - description: HttpReqTemplateCreate
         in: body
         name: template
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqTemplate'
+          $ref: '#/definitions/v1.HttpReqTemplateCreate'
       produces:
       - application/json
       responses:
         "200":
           description: ""
       tags:
-      - server
+      - server/template
   /server/template/{template_uuid}/command:
     get:
       consumes:
@@ -622,7 +795,7 @@ paths:
               $ref: '#/definitions/v1.HttpRspTemplate'
             type: array
       tags:
-      - server
+      - server/template_command
     post:
       consumes:
       - application/json
@@ -645,7 +818,7 @@ paths:
         "200":
           description: ""
       tags:
-      - server
+      - server/template_command
   /server/template/{template_uuid}/command/{uuid}:
     delete:
       consumes:
@@ -668,7 +841,7 @@ paths:
         "200":
           description: ""
       tags:
-      - server
+      - server/template_command
     get:
       consumes:
       - application/json
@@ -692,7 +865,7 @@ paths:
           schema:
             $ref: '#/definitions/v1.HttpRspTemplate'
       tags:
-      - server
+      - server/template_command
     put:
       consumes:
       - application/json
@@ -720,7 +893,7 @@ paths:
         "200":
           description: ""
       tags:
-      - server
+      - server/template_command
   /server/template/{uuid}:
     delete:
       consumes:
@@ -738,7 +911,7 @@ paths:
         "200":
           description: ""
       tags:
-      - server
+      - server/template
     get:
       consumes:
       - application/json
@@ -757,12 +930,16 @@ paths:
           schema:
             $ref: '#/definitions/v1.HttpRspTemplate'
       tags:
-      - server
+      - server/template
     put:
       consumes:
       - application/json
       description: Update a template
       parameters:
+      - description: Template 의 Uuid
+        in: path
+        name: uuid
+        type: string
       - description: HttpReqTemplate
         in: body
         name: template
@@ -775,5 +952,5 @@ paths:
         "200":
           description: ""
       tags:
-      - server
+      - server/template
 swagger: "2.0"

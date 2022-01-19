@@ -4,6 +4,11 @@ import (
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 )
 
+// CreateService
+//  @return error
+//  @method insert
+//  @from Service
+//  @condition DbSchemaService
 func (d *DBManipulator) CreateService(m servicev1.DbSchemaService) error {
 	var err error
 	tx := d.session()
@@ -26,12 +31,11 @@ func (d *DBManipulator) CreateService(m servicev1.DbSchemaService) error {
 	return nil
 }
 
-/* GetService
-   @return DbSchemaService, error
-   @method get
-   @from Service
-   @condition uuid
-*/
+// GetService
+//  @return DbSchemaService, error
+//  @method get
+//  @from Service
+//  @condition uuid
 func (d *DBManipulator) GetService(uuid string) (*servicev1.DbSchemaService, error) {
 	tx := d.session()
 
@@ -49,7 +53,7 @@ func (d *DBManipulator) GetService(uuid string) (*servicev1.DbSchemaService, err
 }
 
 /* FindService
-   @return []servicev1.DbSchemaService, error
+   @return []DbSchemaService, error
    @method find
    @from Service
    @condition where, args
@@ -68,12 +72,11 @@ func (d *DBManipulator) FindService(where string, args ...interface{}) ([]servic
 	return model, nil
 }
 
-/* UpdateService
-   @return error
-   @method update
-   @from Service
-   @condition DbSchemaService
-*/
+// UpdateService
+//  @return error
+//  @method update
+//  @from Service
+//  @condition DbSchemaService
 func (d *DBManipulator) UpdateService(m servicev1.DbSchemaService) error {
 	var err error
 	tx := d.session()
@@ -97,12 +100,11 @@ func (d *DBManipulator) UpdateService(m servicev1.DbSchemaService) error {
 	return nil
 }
 
-/* DeleteService
-   @return error
-   @method delete
-   @from Service
-   @condition uuid
-*/
+// DeleteService
+//  @return error
+//  @method delete
+//  @from Service
+//  @condition uuid
 func (d *DBManipulator) DeleteService(uuid string) error {
 	var err error
 	tx := d.session()
