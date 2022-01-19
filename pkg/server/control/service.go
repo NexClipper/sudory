@@ -304,7 +304,7 @@ func (c *Control) GetClientServicies() func(ctx echo.Context) error {
 		//서비스 상태 값이 완료 상태보다 작은것
 		where := "cluster_uuid = ? AND status < ?"
 		cluster_uuid := req["cluster_uuid"]
-		status := servicev1.StatusDone
+		status := servicev1.StatusSuccess
 
 		records, err := operator.NewService(c.db).
 			Find(where, cluster_uuid, status)

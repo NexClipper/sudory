@@ -9,11 +9,11 @@ import (
 type Status int32
 
 const (
-	StatusRegiste Status = 0
-	StatusSend    Status = 1 << 0
-	StatusRun     Status = 1 << 1
-	StatusDone    Status = 1 << 2
-	StatusError   Status = 1 << 3
+	StatusRegiste    Status = 0
+	StatusSend       Status = 1 << 0
+	StatusProcessing Status = 1 << 1
+	StatusSuccess    Status = 1 << 2
+	StatusFail       Status = 1 << 3
 )
 
 //ServiceProperty Property
@@ -52,6 +52,23 @@ func (DbSchemaService) TableName() string {
 	return "service"
 }
 
+type ClientSideServiceProperty struct {
+	//클러스터 UUID
+	ClusterUuid string `json:"cluster_uuid"`
+	//Type; 0: Once, 1: repeat(epoch, interval)
+	Type int32 `json:"type,omitempty"`
+	//Epoch -1: infinite, 0 :
+	Epoch int32 `json:"epoch,omitempty"`
+	//Interval
+	Interval int32 `json:"interval,omitempty"`
+}
+
+type ClientSideService struct {
+	metav1.LabelMeta          `json:",inline" ` //inline labelmeta
+	ClientSideServiceProperty `json:",inline"`
+	Steps                     []stepv1.ServiceStep
+}
+
 //HTTP REQUEST BODY: SERVICE
 type HttpReqService struct {
 	Service `json:",inline"`
@@ -63,21 +80,20 @@ type HttpReqServiceWithSteps struct {
 	Steps   []stepv1.ServiceStep `json:"steps,inline"`
 }
 
-//HTTP REQUEST BODY: SERVICE (client)
-type HttpReqServiceClient struct {
-	ClusterUuid string               `json:"cluster_uuid"`
-	Steps       []stepv1.ServiceStep `json:",inline"`
-}
-
 //HTTP RESPONSE BODY: SERVICE
 type HttpRspService struct {
 	Service `json:",inline"`
 	Steps   []stepv1.ServiceStep `json:"steps,inline"`
 }
 
-//HTTP RESPONSE BODY: SERVICIES
-type HttpRspServicies struct {
-	Service []HttpRspService
+//HTTP REQUEST BODY: SERVICEs (client)
+type HttpReqClientSideService struct {
+	Stervicies []ClientSideService `json:",inline"`
+}
+
+//HTTP RESPONSE BODY: SERVICEs (client)
+type HttpRspClientSideService struct {
+	Stervicies []ClientSideService `json:",inline"`
 }
 
 //변환 DbSchema -> Service

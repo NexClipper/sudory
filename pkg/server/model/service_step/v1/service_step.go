@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"time"
+
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	"github.com/NexClipper/sudory/pkg/server/model/orm"
 )
@@ -18,6 +20,10 @@ type ServiceStepProperty struct {
 	Status int32 `json:"status,omitempty" xorm:"int notnull default(1) 'status' comment('status')"`
 	//Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
 	Result string `json:"result,omitempty" xorm:"varchar(255) notnull default('') 'result' comment('result')"`
+	//Started 스탭 시작 시간
+	Started time.Time `json:"srated,omitempty" xorm:"datetime null  comment('step start time')"`
+	//Started 스탭 완료 시간
+	Ended time.Time `json:"ended,omitempty" xorm:"datetime null  comment(step end time)"`
 }
 
 type ServiceStep struct {
