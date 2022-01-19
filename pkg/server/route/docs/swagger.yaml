@@ -1,48 +1,4 @@
 definitions:
-  model.Catalogue:
-    properties:
-      name:
-        type: string
-    type: object
-  model.Catalogues:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/model.Catalogue'
-        type: array
-    type: object
-  model.Cluster:
-    properties:
-      created:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      updated:
-        type: string
-    type: object
-  model.ReqClient:
-    properties:
-      cluster_id:
-        type: integer
-      ip:
-        type: string
-      machine_id:
-        type: string
-      port:
-        type: integer
-    type: object
-  model.ReqCluster:
-    properties:
-      name:
-        type: string
-    type: object
-  model.ReqToken:
-    properties:
-      key:
-        type: string
-    type: object
   v1.HttpReqService:
     properties:
       api_version:
@@ -89,6 +45,9 @@ definitions:
           type: string
         description: arguments
         type: object
+      ended:
+        description: Started 스탭 완료 시간
+        type: string
       method:
         description: 메소드
         type: string
@@ -103,6 +62,9 @@ definitions:
         type: integer
       service_uuid:
         description: 서비스 Uuid
+        type: string
+      srated:
+        description: Started 스탭 시작 시간
         type: string
       status:
         description: Status 상태
@@ -215,6 +177,9 @@ definitions:
           type: string
         description: arguments
         type: object
+      ended:
+        description: Started 스탭 완료 시간
+        type: string
       method:
         description: 메소드
         type: string
@@ -229,6 +194,9 @@ definitions:
         type: integer
       service_uuid:
         description: 서비스 Uuid
+        type: string
+      srated:
+        description: Started 스탭 시작 시간
         type: string
       status:
         description: Status 상태
@@ -270,6 +238,9 @@ definitions:
           type: string
         description: arguments
         type: object
+      ended:
+        description: Started 스탭 완료 시간
+        type: string
       method:
         description: 메소드
         type: string
@@ -284,6 +255,9 @@ definitions:
         type: integer
       service_uuid:
         description: 서비스 Uuid
+        type: string
+      srated:
+        description: Started 스탭 시작 시간
         type: string
       status:
         description: Status 상태
@@ -303,25 +277,6 @@ info:
   title: SUDORY
   version: 0.0.1
 paths:
-  /client/regist:
-    post:
-      consumes:
-      - application/json
-      description: Regist a Client
-      parameters:
-      - description: Client의 정보
-        in: body
-        name: client
-        required: true
-        schema:
-          $ref: '#/definitions/model.ReqClient'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      tags:
-      - client
   /client/service:
     get:
       consumes:
@@ -365,81 +320,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/v1.HttpReqServiceStep'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      tags:
-      - server
-  /server/catalogue:
-    get:
-      description: Get a Catalogues
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.Catalogues'
-      tags:
-      - server
-  /server/cluster:
-    post:
-      consumes:
-      - application/json
-      description: Create a Cluster
-      parameters:
-      - description: Cluster의 정보
-        in: body
-        name: cluster
-        required: true
-        schema:
-          $ref: '#/definitions/model.ReqCluster'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      tags:
-      - server
-  /server/cluster/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Get a Cluster
-      parameters:
-      - description: Cluster의 ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.Cluster'
-      tags:
-      - server
-  /server/cluster/{id}/token:
-    post:
-      consumes:
-      - application/json
-      description: Create a Token
-      parameters:
-      - description: cluster id
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Token의 정보
-        in: body
-        name: token
-        required: true
-        schema:
-          $ref: '#/definitions/model.ReqToken'
       produces:
       - application/json
       responses:

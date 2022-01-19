@@ -26,36 +26,6 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/client/regist": {
-            "post": {
-                "description": "Regist a Client",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "client"
-                ],
-                "parameters": [
-                    {
-                        "description": "Client의 정보",
-                        "name": "client",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.ReqClient"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
         "/client/service": {
             "get": {
                 "description": "Get a Servicies",
@@ -123,123 +93,6 @@ var doc = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/v1.HttpReqServiceStep"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/server/catalogue": {
-            "get": {
-                "description": "Get a Catalogues",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.Catalogues"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/cluster": {
-            "post": {
-                "description": "Create a Cluster",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server"
-                ],
-                "parameters": [
-                    {
-                        "description": "Cluster의 정보",
-                        "name": "cluster",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.ReqCluster"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/server/cluster/{id}": {
-            "get": {
-                "description": "Get a Cluster",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Cluster의 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.Cluster"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/cluster/{id}/token": {
-            "post": {
-                "description": "Create a Token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "cluster id",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Token의 정보",
-                        "name": "token",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.ReqToken"
                         }
                     }
                 ],
@@ -939,75 +792,6 @@ var doc = `{
         }
     },
     "definitions": {
-        "model.Catalogue": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.Catalogues": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Catalogue"
-                    }
-                }
-            }
-        },
-        "model.Cluster": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.ReqClient": {
-            "type": "object",
-            "properties": {
-                "cluster_id": {
-                    "type": "integer"
-                },
-                "ip": {
-                    "type": "string"
-                },
-                "machine_id": {
-                    "type": "string"
-                },
-                "port": {
-                    "type": "integer"
-                }
-            }
-        },
-        "model.ReqCluster": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.ReqToken": {
-            "type": "object",
-            "properties": {
-                "key": {
-                    "type": "string"
-                }
-            }
-        },
         "v1.HttpReqService": {
             "type": "object",
             "properties": {
@@ -1071,6 +855,10 @@ var doc = `{
                         "type": "string"
                     }
                 },
+                "ended": {
+                    "description": "Started 스탭 완료 시간",
+                    "type": "string"
+                },
                 "method": {
                     "description": "메소드",
                     "type": "string"
@@ -1089,6 +877,10 @@ var doc = `{
                 },
                 "service_uuid": {
                     "description": "서비스 Uuid",
+                    "type": "string"
+                },
+                "srated": {
+                    "description": "Started 스탭 시작 시간",
                     "type": "string"
                 },
                 "status": {
@@ -1239,6 +1031,10 @@ var doc = `{
                         "type": "string"
                     }
                 },
+                "ended": {
+                    "description": "Started 스탭 완료 시간",
+                    "type": "string"
+                },
                 "method": {
                     "description": "메소드",
                     "type": "string"
@@ -1257,6 +1053,10 @@ var doc = `{
                 },
                 "service_uuid": {
                     "description": "서비스 Uuid",
+                    "type": "string"
+                },
+                "srated": {
+                    "description": "Started 스탭 시작 시간",
                     "type": "string"
                 },
                 "status": {
@@ -1312,6 +1112,10 @@ var doc = `{
                         "type": "string"
                     }
                 },
+                "ended": {
+                    "description": "Started 스탭 완료 시간",
+                    "type": "string"
+                },
                 "method": {
                     "description": "메소드",
                     "type": "string"
@@ -1330,6 +1134,10 @@ var doc = `{
                 },
                 "service_uuid": {
                     "description": "서비스 Uuid",
+                    "type": "string"
+                },
+                "srated": {
+                    "description": "Started 스탭 시작 시간",
                     "type": "string"
                 },
                 "status": {
