@@ -22,7 +22,7 @@ spec:
                 configMapKeyRef:
                   name: sudory-configmap
                   key: server
-              name: S_CLUSTER_ID
+            - name: S_CLUSTER_ID
               valueFrom:
                 configMapKeyRef:
                   name: sudory-configmap

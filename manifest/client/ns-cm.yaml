@@ -9,5 +9,5 @@ metadata:
   name: sudory-configmap
   namespace: sudory
 data:
-  server: "'192.168.10.0:8099'"
+  server: "http://dev.nexclipper.io:8099"
   clusterid: "1"
