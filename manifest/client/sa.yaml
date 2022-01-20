@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata: 
+  name: sudory-controller
+  namespace: sudory
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sudory-controller
+  namespace: sudory 
+rules:
+- apiGroups: [""]
+  resources: ["namespaces",]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sodory-controller
+subjects:
+- kind: ServiceAccount
+  name: sudory-controller
+  namespace: sudory 
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sudory-controller

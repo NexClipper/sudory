@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sudory-client
+  namespace: sudory
+spec:
+  selector:
+    matchLabels:
+      sudory:  client
+  replicas: 1 
+  template:
+    metadata:
+      labels:
+        sudory: client
+    spec:
+      containers:
+        - name: sudory-client
+          image: p8s.me/nexclipper/sudory-client:0.1.3
+          env:
+            - name: S_SERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: server
+              name: S_CLUSTER_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: clusterid
