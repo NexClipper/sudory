@@ -22,7 +22,7 @@ func main() {
 	}
 
 	if len(*clusterid) == 0 {
-		log.Fatalf("Client must have server('%s').\n", *clusterid)
+		log.Fatalf("Client must have clusterid('%s').\n", *clusterid)
 	}
 
 	// get k8s client
