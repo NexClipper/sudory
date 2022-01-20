@@ -19,15 +19,15 @@ func newNamespaces(c *Client) *namespaces {
 	return &namespaces{c: c}
 }
 
-func (ns *namespaces) Get(name string) (*corev1.Namespace, error) {
-	return ns.c.client.CoreV1().Namespaces().Get(context.TODO(), name, metav1.GetOptions{})
+func (ns *namespaces) Get(ctx context.Context, name string) (*corev1.Namespace, error) {
+	return ns.c.client.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
 }
 
-func (ns *namespaces) List(labels map[string]string) (*corev1.NamespaceList, error) {
+func (ns *namespaces) List(ctx context.Context, labels map[string]string) (*corev1.NamespaceList, error) {
 	labelsString, err := convertMapToLabelSelector(labels)
 	if err != nil {
 		return nil, err
 	}
 
-	return ns.c.client.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{LabelSelector: labelsString})
+	return ns.c.client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{LabelSelector: labelsString})
 }

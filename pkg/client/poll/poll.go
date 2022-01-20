@@ -10,7 +10,7 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/service"
-	v1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
+	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 )
 
 const defaultPollingInterval = 5 // * time.Second
@@ -19,22 +19,21 @@ type Poller struct {
 	token            string
 	server           string
 	machineID        string
+	clusterId        string
 	client           *httpclient.HttpClient
 	pollingScheduler *gocron.Scheduler
 	serviceScheduler *service.ServiceScheduler
 }
 
-func NewPoller(token, server string, serviceScheduler *service.ServiceScheduler) *Poller {
+func NewPoller(token, server, clusterId string, serviceScheduler *service.ServiceScheduler) *Poller {
 	id, err := machineid.ID()
 	if err != nil {
 		return nil
 	}
 
-	//log.Printf("machine id: %s", id)
-
 	uri := server + "/client/service"
 
-	return &Poller{token: token, server: server, machineID: id, client: httpclient.NewHttpClient(uri, token), pollingScheduler: gocron.NewScheduler(time.UTC), serviceScheduler: serviceScheduler}
+	return &Poller{token: token, server: server, machineID: id, clusterId: clusterId, client: httpclient.NewHttpClient(uri, token), pollingScheduler: gocron.NewScheduler(time.UTC), serviceScheduler: serviceScheduler}
 }
 
 func (p *Poller) Start() {
@@ -48,29 +47,34 @@ func (p *Poller) ChangePollingInterval(interval int) {
 }
 
 func (p *Poller) poll() {
-	// Get services's status
-	// servicesWillUpdate := p.serviceScheduler.GetServices()
+	// Get updated services. If the service is done, it is deleted.
+	updatedServices := p.serviceScheduler.GetDeleteServicesUpdated()
 
-	// TODO: services' status -> reqData
+	// services -> reqData
+	reqData := service.ServiceListClientToServer(updatedServices)
 
-	reqData := &v1.HttpRspClientSideService{}
-
-	body, err := p.client.PutJson(reqData)
+	body, err := p.client.PutJson(map[string]string{"cluster_uuid": p.clusterId}, reqData)
 	if err != nil {
+		p.serviceScheduler.RepairUpdateFailedServices(updatedServices)
 		log.Printf(err.Error())
 		return
 	}
 
-	// TODO: If server updated service's status, remove completed services.
-
-	respData := &v1.HttpReqClientSideService{}
-	if err := json.Unmarshal(body, respData); err != nil {
+	respData := []servicev1.HttpRspClientSideService{}
+	if err := json.Unmarshal(body, &respData); err != nil {
 		log.Printf(err.Error())
 		return
 	}
 
-	// TODO: respData -> services
-	recvServices := make(map[string]*service.Service)
+	if len(respData) == 0 {
+		log.Printf("Recived 0 service from server.")
+		return
+	}
+
+	// respData -> services
+	recvServices := service.ServiceListServerToClient(respData)
+	// Delete duplicated services.
+	recvServices = p.serviceScheduler.DeleteDuplicatedServices(recvServices)
 
 	// Register new services.
 	p.serviceScheduler.RegisterServices(recvServices)

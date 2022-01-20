@@ -42,7 +42,7 @@ func main() {
 	serviceScheduler := service.NewScheduler()
 	serviceScheduler.Start()
 
-	poller := poll.NewPoller("", *server, serviceScheduler)
+	poller := poll.NewPoller("", *server, *clusterid, serviceScheduler)
 
 	// polling
 	poller.Start()

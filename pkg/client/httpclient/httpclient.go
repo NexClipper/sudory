@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 )
 
 type HttpClient struct {
@@ -17,24 +18,32 @@ func NewHttpClient(uri, token string) *HttpClient {
 	return &HttpClient{url: uri, token: token}
 }
 
-func (h *HttpClient) PutJson(data interface{}) ([]byte, error) {
+func (h *HttpClient) PutJson(param map[string]string, data interface{}) ([]byte, error) {
+	var buffer *bytes.Buffer
+
 	// Marshal data -> json data
-	var bodyData []byte
 	if data != nil {
-		var err error
-		bodyData, err = json.Marshal(data)
+		bodyData, err := json.Marshal(data)
 		if err != nil {
 			return nil, err
 		}
+		buffer = bytes.NewBuffer(bodyData)
 	}
 
 	// Create request
-	req, err := http.NewRequest(http.MethodPut, h.url, bytes.NewBuffer(bodyData))
+	req, err := http.NewRequest(http.MethodPut, h.url, buffer)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	// TODO: req.Header.Add("token", h.token)
+
+	// Add param
+	q := url.Values{}
+	for k, v := range param {
+		q.Add(k, v)
+	}
+	req.URL.RawQuery = q.Encode()
 
 	// Request to update services's status to server.
 	resp, err := http.DefaultClient.Do(req)
@@ -55,24 +64,32 @@ func (h *HttpClient) PutJson(data interface{}) ([]byte, error) {
 	return body, nil
 }
 
-func (h *HttpClient) PostJson(data interface{}) ([]byte, error) {
+func (h *HttpClient) PostJson(param map[string]string, data interface{}) ([]byte, error) {
+	var buffer *bytes.Buffer
+
 	// Marshal data -> json data
-	var bodyData []byte
 	if data != nil {
-		var err error
-		bodyData, err = json.Marshal(data)
+		bodyData, err := json.Marshal(data)
 		if err != nil {
 			return nil, err
 		}
+		buffer = bytes.NewBuffer(bodyData)
 	}
 
 	// Create request
-	req, err := http.NewRequest(http.MethodPost, h.url, bytes.NewBuffer(bodyData))
+	req, err := http.NewRequest(http.MethodPost, h.url, buffer)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "json/application")
 	// req.Header.Add("token", h.token)
+
+	// Add param
+	q := url.Values{}
+	for k, v := range param {
+		q.Add(k, v)
+	}
+	req.URL.RawQuery = q.Encode()
 
 	// Request to update services's status to server.
 	resp, err := http.DefaultClient.Do(req)
