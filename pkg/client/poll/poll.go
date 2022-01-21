@@ -25,15 +25,15 @@ type Poller struct {
 	serviceScheduler *service.ServiceScheduler
 }
 
-func NewPoller(token, server, clusterId string, serviceScheduler *service.ServiceScheduler) *Poller {
+func NewPoller(token, server, clusterId string, serviceScheduler *service.ServiceScheduler) (*Poller, error) {
 	id, err := machineid.ID()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	uri := server + "/client/service"
 
-	return &Poller{token: token, server: server, machineID: id, clusterId: clusterId, client: httpclient.NewHttpClient(uri, token), pollingScheduler: gocron.NewScheduler(time.UTC), serviceScheduler: serviceScheduler}
+	return &Poller{token: token, server: server, machineID: id, clusterId: clusterId, client: httpclient.NewHttpClient(uri, token), pollingScheduler: gocron.NewScheduler(time.UTC), serviceScheduler: serviceScheduler}, nil
 }
 
 func (p *Poller) Start() {

@@ -42,7 +42,10 @@ func main() {
 	serviceScheduler := service.NewScheduler()
 	serviceScheduler.Start()
 
-	poller := poll.NewPoller("", *server, *clusterid, serviceScheduler)
+	poller, err := poll.NewPoller("", *server, *clusterid, serviceScheduler)
+	if err != nil {
+		log.Fatalf("Failed to create poller : %v.\n", err)
+	}
 
 	// polling
 	poller.Start()
