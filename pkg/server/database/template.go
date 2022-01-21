@@ -9,17 +9,8 @@ import (
 //  @method insert
 //  @from Template
 //  @condition []templatev1.DbSchemaTemplate
-func (d *DBManipulator) CreateTemplate(m templatev1.DbSchemaTemplate) error {
-	var err error
-	tx := d.session()
-	tx.Begin()
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+func (ctx Session) CreateTemplate(m templatev1.DbSchemaTemplate) error {
+	tx := ctx.Tx()
 
 	affect, err := tx.Insert(&m)
 	if err != nil {
@@ -36,8 +27,8 @@ func (d *DBManipulator) CreateTemplate(m templatev1.DbSchemaTemplate) error {
 //  @method get
 //  @from Template
 //  @condition uuid
-func (d *DBManipulator) GetTemplate(uuid string) (*templatev1.DbSchemaTemplate, error) {
-	tx := d.session()
+func (ctx Session) GetTemplate(uuid string) (*templatev1.DbSchemaTemplate, error) {
+	tx := ctx.Tx()
 
 	var record = new(templatev1.DbSchemaTemplate)
 	//SELECT * FROM {table} WHERE uuid = ? LIMIT 1
@@ -58,8 +49,8 @@ func (d *DBManipulator) GetTemplate(uuid string) (*templatev1.DbSchemaTemplate, 
 //  @method find
 //  @from Template
 //  @condition where, args
-func (d *DBManipulator) FindTemplate(where string, args ...interface{}) ([]templatev1.DbSchemaTemplate, error) {
-	tx := d.session()
+func (ctx Session) FindTemplate(where string, args ...interface{}) ([]templatev1.DbSchemaTemplate, error) {
+	tx := ctx.Tx()
 
 	//SELECT * FROM template WHERE [cond]
 	model := make([]templatev1.DbSchemaTemplate, 0)
@@ -77,17 +68,8 @@ func (d *DBManipulator) FindTemplate(where string, args ...interface{}) ([]templ
 //  @method update
 //  @from Template
 //  @condition DbSchemaTemplate
-func (d *DBManipulator) UpdateTemplate(m templatev1.DbSchemaTemplate) error {
-	var err error
-	tx := d.session()
-	tx.Begin()
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+func (ctx Session) UpdateTemplate(m templatev1.DbSchemaTemplate) error {
+	tx := ctx.Tx()
 
 	affect, err := tx.Where("uuid = ?", m.Uuid).
 		Update(&m)
@@ -105,17 +87,8 @@ func (d *DBManipulator) UpdateTemplate(m templatev1.DbSchemaTemplate) error {
 //  @method delete
 //  @from Template
 //  @condition uuid
-func (d *DBManipulator) DeleteTemplate(uuid string) error {
-	var err error
-	tx := d.session()
-	tx.Begin()
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+func (ctx Session) DeleteTemplate(uuid string) error {
+	tx := ctx.Tx()
 
 	record := new(templatev1.DbSchemaTemplate)
 	//DELETE FROM {table} WHERE uuid = ?

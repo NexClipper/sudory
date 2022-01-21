@@ -9,17 +9,8 @@ import (
 //  @method insert
 //  @from Service
 //  @condition DbSchemaService
-func (d *DBManipulator) CreateService(m servicev1.DbSchemaService) error {
-	var err error
-	tx := d.session()
-	tx.Begin()
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+func (ctx Session) CreateService(m servicev1.DbSchemaService) error {
+	tx := ctx.Tx()
 
 	affect, err := tx.Insert(&m)
 	if err != nil {
@@ -36,8 +27,8 @@ func (d *DBManipulator) CreateService(m servicev1.DbSchemaService) error {
 //  @method get
 //  @from Service
 //  @condition uuid
-func (d *DBManipulator) GetService(uuid string) (*servicev1.DbSchemaService, error) {
-	tx := d.session()
+func (ctx Session) GetService(uuid string) (*servicev1.DbSchemaService, error) {
+	tx := ctx.Tx()
 
 	record := new(servicev1.DbSchemaService)
 	has, err := tx.Where("uuid = ?", uuid).
@@ -52,14 +43,13 @@ func (d *DBManipulator) GetService(uuid string) (*servicev1.DbSchemaService, err
 	return record, err
 }
 
-/* FindService
-   @return []DbSchemaService, error
-   @method find
-   @from Service
-   @condition where, args
-*/
-func (d *DBManipulator) FindService(where string, args ...interface{}) ([]servicev1.DbSchemaService, error) {
-	tx := d.session()
+// FindService
+//  @return []DbSchemaService, error
+//  @method find
+//  @from Service
+//  @condition where, args
+func (ctx Session) FindService(where string, args ...interface{}) ([]servicev1.DbSchemaService, error) {
+	tx := ctx.Tx()
 
 	//SELECT * FROM {table} WHERE [cond]
 	var model = make([]servicev1.DbSchemaService, 0)
@@ -77,17 +67,8 @@ func (d *DBManipulator) FindService(where string, args ...interface{}) ([]servic
 //  @method update
 //  @from Service
 //  @condition DbSchemaService
-func (d *DBManipulator) UpdateService(m servicev1.DbSchemaService) error {
-	var err error
-	tx := d.session()
-	tx.Begin()
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+func (ctx Session) UpdateService(m servicev1.DbSchemaService) error {
+	tx := ctx.Tx()
 
 	affect, err := tx.Where("uuid = ?", m.Uuid).
 		Update(&m)
@@ -105,17 +86,8 @@ func (d *DBManipulator) UpdateService(m servicev1.DbSchemaService) error {
 //  @method delete
 //  @from Service
 //  @condition uuid
-func (d *DBManipulator) DeleteService(uuid string) error {
-	var err error
-	tx := d.session()
-	tx.Begin()
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+func (ctx Session) DeleteService(uuid string) error {
+	tx := ctx.Tx()
 
 	record := new(servicev1.DbSchemaService)
 	//DELETE FROM {table} WHERE uuid = ?

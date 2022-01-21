@@ -475,7 +475,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Get a Servicies
+      description: Get a Service
       parameters:
       - description: Client 의 ClusterUuid
         in: query

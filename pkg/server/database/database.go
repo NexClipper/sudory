@@ -54,3 +54,6 @@ func (d *DBManipulator) session() *xorm.Session {
 func (d *DBManipulator) Close() {
 	d.engine.Close()
 }
+func (d *DBManipulator) Engine() *xorm.Engine {
+	return d.engine
+}

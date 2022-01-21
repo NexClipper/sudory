@@ -7,11 +7,15 @@ import (
 
 //TemplateCommand
 type TemplateCommand struct {
-	db *database.DBManipulator
+	// db *database.DBManipulator
+	db database.Context
 }
 
-func NewTemplateCommand(d *database.DBManipulator) *TemplateCommand {
-	return &TemplateCommand{db: d}
+// func NewTemplateCommand(d *database.DBManipulator) *TemplateCommand {
+// 	return &TemplateCommand{db: d}
+// }
+func NewTemplateCommand(ctx database.Context) *TemplateCommand {
+	return &TemplateCommand{db: ctx}
 }
 
 func (o *TemplateCommand) Create(model tcommandv1.TemplateCommand) error {

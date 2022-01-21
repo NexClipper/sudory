@@ -9,17 +9,8 @@ import (
 //  @method insert
 //  @from ServiceStep
 //  @condition []DbSchemaServiceStep
-func (d *DBManipulator) CreateServiceStep(m stepv1.DbSchemaServiceStep) error {
-	var err error
-	tx := d.session()
-	tx.Begin()
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+func (ctx Session) CreateServiceStep(m stepv1.DbSchemaServiceStep) error {
+	tx := ctx.Tx()
 
 	affect, err := tx.Insert(&m)
 	if err != nil {
@@ -36,8 +27,8 @@ func (d *DBManipulator) CreateServiceStep(m stepv1.DbSchemaServiceStep) error {
 //  @method get
 //  @from ServiceStep
 //  @condition uuid
-func (d *DBManipulator) GetServiceStep(uuid string) (*stepv1.DbSchemaServiceStep, error) {
-	tx := d.session()
+func (ctx Session) GetServiceStep(uuid string) (*stepv1.DbSchemaServiceStep, error) {
+	tx := ctx.Tx()
 
 	record := new(stepv1.DbSchemaServiceStep)
 	has, err := tx.Where("uuid = ?", uuid).
@@ -57,8 +48,8 @@ func (d *DBManipulator) GetServiceStep(uuid string) (*stepv1.DbSchemaServiceStep
 //  @method find
 //  @from ServiceStep
 //  @condition where, args
-func (d *DBManipulator) FindServiceStep(where string, args ...interface{}) ([]stepv1.DbSchemaServiceStep, error) {
-	tx := d.session()
+func (ctx Session) FindServiceStep(where string, args ...interface{}) ([]stepv1.DbSchemaServiceStep, error) {
+	tx := ctx.Tx()
 
 	//SELECT * FROM {table} WHERE [cond]
 	model := make([]stepv1.DbSchemaServiceStep, 0)
@@ -75,17 +66,8 @@ func (d *DBManipulator) FindServiceStep(where string, args ...interface{}) ([]st
 //  @method update
 //  @from ServiceStep
 //  @condition DbSchemaServiceStep
-func (d *DBManipulator) UpdateServiceStep(m stepv1.DbSchemaServiceStep) error {
-	var err error
-	tx := d.session()
-	tx.Begin()
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+func (ctx Session) UpdateServiceStep(m stepv1.DbSchemaServiceStep) error {
+	tx := ctx.Tx()
 
 	affect, err := tx.Where("uuid = ?", m.Uuid).
 		Update(&m)
@@ -103,17 +85,8 @@ func (d *DBManipulator) UpdateServiceStep(m stepv1.DbSchemaServiceStep) error {
 //  @method delete
 //  @from ServiceStep
 //  @condition uuid
-func (d *DBManipulator) DeleteServiceStep(uuid string) error {
-	var err error
-	tx := d.session()
-	tx.Begin()
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+func (ctx Session) DeleteServiceStep(uuid string) error {
+	tx := ctx.Tx()
 
 	record := new(stepv1.DbSchemaServiceStep)
 	//DELETE FROM {table} WHERE uuid = ?

@@ -56,7 +56,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router.e.PUT("/server/service/:service_uuid/step/:uuid", controller.UpdateServiceStep())
 	router.e.DELETE("/server/service/:service_uuid/step/:uuid", controller.DeleteServiceStep())
 	//route /client/service*
-	router.e.PUT("/client/service", controller.GetClientServicies())
+	router.e.PUT("/client/service", controller.PullClientServices())
 
 	/*TODO: 라우트 연결 기능 구현
 	router.e.POST("/server/cluster", controller.CreateCluster)

@@ -7,15 +7,15 @@ import (
 
 //ServiceStep
 type ServiceStep struct {
-	db *database.DBManipulator
+	ctx database.Context
 }
 
-func NewServiceStep(d *database.DBManipulator) *ServiceStep {
-	return &ServiceStep{db: d}
+func NewServiceStep(ctx database.Context) *ServiceStep {
+	return &ServiceStep{ctx: ctx}
 }
 
 func (o *ServiceStep) Create(model stepv1.ServiceStep) error {
-	err := o.db.CreateServiceStep(stepv1.DbSchemaServiceStep{ServiceStep: model})
+	err := o.ctx.CreateServiceStep(stepv1.DbSchemaServiceStep{ServiceStep: model})
 	if err != nil {
 		return err
 	}
@@ -24,7 +24,7 @@ func (o *ServiceStep) Create(model stepv1.ServiceStep) error {
 }
 
 func (o *ServiceStep) Get(uuid string) (*stepv1.ServiceStep, error) {
-	record, err := o.db.GetServiceStep(uuid)
+	record, err := o.ctx.GetServiceStep(uuid)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (o *ServiceStep) Get(uuid string) (*stepv1.ServiceStep, error) {
 }
 
 func (o *ServiceStep) Find(where string, args ...interface{}) ([]stepv1.ServiceStep, error) {
-	r, err := o.db.FindServiceStep(where, args...)
+	r, err := o.ctx.FindServiceStep(where, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (o *ServiceStep) Find(where string, args ...interface{}) ([]stepv1.ServiceS
 }
 
 func (o *ServiceStep) Update(model stepv1.ServiceStep) error {
-	err := o.db.UpdateServiceStep(stepv1.DbSchemaServiceStep{ServiceStep: model})
+	err := o.ctx.UpdateServiceStep(stepv1.DbSchemaServiceStep{ServiceStep: model})
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (o *ServiceStep) Update(model stepv1.ServiceStep) error {
 
 func (o *ServiceStep) Delete(uuid string) error {
 
-	err := o.db.DeleteServiceStep(uuid)
+	err := o.ctx.DeleteServiceStep(uuid)
 	if err != nil {
 		return err
 	}

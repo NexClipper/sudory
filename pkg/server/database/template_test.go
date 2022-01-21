@@ -35,7 +35,7 @@ func TestTemplateCRUD(t *testing.T) {
 		return engine
 	}
 
-	database := DBManipulator{engine: newEngine()}
+	database := NewContext(newEngine())
 
 	Are := func(expect interface{}, actual interface{}, equal, diff func(string)) {
 

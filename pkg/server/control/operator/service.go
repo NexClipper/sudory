@@ -7,15 +7,15 @@ import (
 
 //Service
 type Service struct {
-	db *database.DBManipulator
+	ctx database.Context
 }
 
-func NewService(d *database.DBManipulator) *Service {
-	return &Service{db: d}
+func NewService(ctx database.Context) *Service {
+	return &Service{ctx: ctx}
 }
 
 func (o *Service) Create(model servicev1.Service) error {
-	err := o.db.CreateService(servicev1.DbSchemaService{Service: model})
+	err := o.ctx.CreateService(servicev1.DbSchemaService{Service: model})
 	if err != nil {
 		return err
 	}
@@ -24,7 +24,7 @@ func (o *Service) Create(model servicev1.Service) error {
 }
 
 func (o *Service) Get(uuid string) (*servicev1.Service, error) {
-	record, err := o.db.GetService(uuid)
+	record, err := o.ctx.GetService(uuid)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (o *Service) Get(uuid string) (*servicev1.Service, error) {
 }
 
 func (o *Service) Find(where string, args ...interface{}) ([]servicev1.Service, error) {
-	r, err := o.db.FindService(where, args...)
+	r, err := o.ctx.FindService(where, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (o *Service) Find(where string, args ...interface{}) ([]servicev1.Service, 
 }
 
 func (o *Service) Update(model servicev1.Service) error {
-	err := o.db.UpdateService(servicev1.DbSchemaService{Service: model})
+	err := o.ctx.UpdateService(servicev1.DbSchemaService{Service: model})
 	if err != nil {
 		return err
 	}
@@ -54,20 +54,20 @@ func (o *Service) Update(model servicev1.Service) error {
 
 func (o *Service) Delete(uuid string) error {
 
-	err := o.db.DeleteService(uuid)
+	err := o.ctx.DeleteService(uuid)
 	if err != nil {
 		return err
 	}
 
 	//Service Step 레코드 삭제
 	where := "service_uuid = ?"
-	record, err := o.db.FindServiceStep(where, uuid)
+	record, err := o.ctx.FindServiceStep(where, uuid)
 	if err != nil {
 		return err
 	}
 
 	for _, it := range record {
-		err := o.db.DeleteServiceStep(it.Uuid)
+		err := o.ctx.DeleteServiceStep(it.Uuid)
 		if err != nil {
 			return err
 		}

@@ -28,7 +28,7 @@ var doc = `{
     "paths": {
         "/client/service": {
             "put": {
-                "description": "Get a Servicies",
+                "description": "Get a Service",
                 "consumes": [
                     "application/json"
                 ],

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
+	"github.com/NexClipper/sudory/pkg/server/database"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
@@ -27,20 +28,20 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(v interface{}) (interface{}, error) {
+	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
 		req, ok := v.(*servicev1.HttpReqServiceCreate)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 		//create service
-		err := operator.NewService(c.db).
+		err := operator.NewService(ctx).
 			Create(req.Service)
 		if err != nil {
 			return nil, err
 		}
 		//create step
 		err = foreach_step(req.Steps, func(step stepv1.ServiceStep) error {
-			if err := operator.NewServiceStep(c.db).
+			if err := operator.NewServiceStep(ctx).
 				Create(step); err != nil {
 				return err
 			}
@@ -53,7 +54,13 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 		return nil, nil
 	}
 
-	return MakeMiddlewareFunc(binder, operator, HttpResponse)
+	return MakeMiddlewareFunc(Option{
+		Engine:        c.db.Engine(),
+		Binder:        binder,
+		Operator:      operator,
+		HttpResponser: HttpResponse,
+		BlockMaker:    Lock,
+	})
 }
 
 // Find []Service
@@ -74,7 +81,7 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(v interface{}) (interface{}, error) {
+	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
 		req, ok := v.(map[string]string)
 		if !ok {
 			return nil, ErrorFailedCast()
@@ -95,7 +102,7 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 		}
 		//find service
 		where := build(" AND ")
-		services, err := operator.NewService(c.db).
+		services, err := operator.NewService(ctx).
 			Find(where, args...)
 		if err != nil {
 			return nil, err
@@ -106,7 +113,7 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 			service_uuid := service.Uuid
 			where := "service_uuid = ?"
 			//find steps
-			steps, err := operator.NewServiceStep(c.db).
+			steps, err := operator.NewServiceStep(ctx).
 				Find(where, service_uuid)
 			if err != nil {
 				return err
@@ -120,7 +127,14 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 
 		return pop(), nil //pop
 	}
-	return MakeMiddlewareFunc(binder, operator, HttpResponse)
+
+	return MakeMiddlewareFunc(Option{
+		Engine:        c.db.Engine(),
+		Binder:        binder,
+		Operator:      operator,
+		HttpResponser: HttpResponse,
+		BlockMaker:    NoLock,
+	})
 }
 
 // Get Service
@@ -142,14 +156,14 @@ func (c *Control) GetService() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(v interface{}) (interface{}, error) {
+	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
 		req, ok := v.(map[string]string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 		//get service
 		uuid := req["uuid"]
-		service, err := operator.NewService(c.db).
+		service, err := operator.NewService(ctx).
 			Get(uuid)
 		if err != nil {
 			return nil, err
@@ -157,14 +171,21 @@ func (c *Control) GetService() func(ctx echo.Context) error {
 		//find step
 		where := "service_uuid = ?"
 		service_uuid := req["uuid"]
-		steps, err := operator.NewServiceStep(c.db).Find(where, service_uuid)
+		steps, err := operator.NewServiceStep(ctx).Find(where, service_uuid)
 		if err != nil {
 			return nil, err
 		}
 
 		return &servicev1.HttpRspService{Service: *service, Steps: steps}, nil
 	}
-	return MakeMiddlewareFunc(binder, operator, HttpResponse)
+
+	return MakeMiddlewareFunc(Option{
+		Engine:        c.db.Engine(),
+		Binder:        binder,
+		Operator:      operator,
+		HttpResponser: HttpResponse,
+		BlockMaker:    NoLock,
+	})
 }
 
 // Update Service
@@ -194,7 +215,7 @@ func (c *Control) UpdateService() func(ctx echo.Context) error {
 
 		return req, nil
 	}
-	operator := func(v interface{}) (interface{}, error) {
+	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
 		req, ok := v.(map[string]interface{})
 		if !ok {
 			return nil, ErrorFailedCast()
@@ -210,7 +231,7 @@ func (c *Control) UpdateService() func(ctx echo.Context) error {
 
 		body.Service.Uuid = uuid
 		//update service
-		err := operator.NewService(c.db).
+		err := operator.NewService(ctx).
 			Update(body.Service)
 		if err != nil {
 			return nil, err
@@ -218,7 +239,13 @@ func (c *Control) UpdateService() func(ctx echo.Context) error {
 		return nil, nil
 	}
 
-	return MakeMiddlewareFunc(binder, operator, HttpResponse)
+	return MakeMiddlewareFunc(Option{
+		Engine:        c.db.Engine(),
+		Binder:        binder,
+		Operator:      operator,
+		HttpResponser: HttpResponse,
+		BlockMaker:    Lock,
+	})
 }
 
 // Delete Service
@@ -240,7 +267,7 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(v interface{}) (interface{}, error) {
+	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
 		req, ok := v.(map[string]string)
 		if !ok {
 			return nil, ErrorFailedCast()
@@ -249,14 +276,14 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 		//find step
 		where := "service_uuid = ?"
 		service_uuid := req["uuid"]
-		steps, err := operator.NewServiceStep(c.db).
+		steps, err := operator.NewServiceStep(ctx).
 			Find(where, service_uuid)
 		if err != nil {
 			return nil, err
 		}
 		//delete step
 		err = foreach_step(steps, func(step stepv1.ServiceStep) error {
-			err := operator.NewServiceStep(c.db).
+			err := operator.NewServiceStep(ctx).
 				Delete(step.Uuid)
 			if err != nil {
 				return err
@@ -269,7 +296,7 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 
 		//delete service
 		uuid := req["uuid"]
-		err = operator.NewService(c.db).
+		err = operator.NewService(ctx).
 			Delete(uuid)
 		if err != nil {
 			return nil, err
@@ -277,11 +304,18 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 
 		return nil, nil
 	}
-	return MakeMiddlewareFunc(binder, operator, HttpResponse)
+
+	return MakeMiddlewareFunc(Option{
+		Engine:        c.db.Engine(),
+		Binder:        binder,
+		Operator:      operator,
+		HttpResponser: HttpResponse,
+		BlockMaker:    Lock,
+	})
 }
 
 // Pull []Service (client)
-// @Description Get a Servicies
+// @Description Get a Service
 // @Accept json
 // @Produce json
 // @Tags client/service
@@ -289,7 +323,7 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 // @Param cluster_uuid query string false "Client 의 ClusterUuid"
 // @Param service      body []v1.HttpReqClientSideService true "HttpReqClientSideService"
 // @Success 200 {array} v1.HttpRspClientSideService
-func (c *Control) GetClientServicies() func(ctx echo.Context) error {
+func (c *Control) PullClientServices() func(ctx echo.Context) error {
 	binder := func(ctx echo.Context) (interface{}, error) {
 		req := make(map[string]interface{})
 		for key, _ := range ctx.QueryParams() {
@@ -306,7 +340,7 @@ func (c *Control) GetClientServicies() func(ctx echo.Context) error {
 		req["_"] = body
 		return req, nil
 	}
-	operator := func(v interface{}) (interface{}, error) {
+	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
 		req, ok := v.(map[string]interface{})
 		if !ok {
 			return nil, ErrorFailedCast()
@@ -320,7 +354,7 @@ func (c *Control) GetClientServicies() func(ctx echo.Context) error {
 		err := foreach_client_service(body, func(service servicev1.Service, steps []stepv1.ServiceStep) error {
 
 			//update service
-			err := operator.NewService(c.db).
+			err := operator.NewService(ctx).
 				Update(service)
 			if err != nil {
 				return err
@@ -328,7 +362,7 @@ func (c *Control) GetClientServicies() func(ctx echo.Context) error {
 
 			//update step
 			err = foreach_step(steps, func(step stepv1.ServiceStep) error {
-				err := operator.NewServiceStep(c.db).
+				err := operator.NewServiceStep(ctx).
 					Update(step)
 				if err != nil {
 					return err
@@ -350,7 +384,7 @@ func (c *Control) GetClientServicies() func(ctx echo.Context) error {
 		cluster_uuid := req["cluster_uuid"].(string)
 		status := servicev1.StatusSuccess //상태 값이 완료 상태보다 작은것
 
-		services, err := operator.NewService(c.db).
+		services, err := operator.NewService(ctx).
 			Find(where, cluster_uuid, status)
 		if err != nil {
 			return nil, err
@@ -361,7 +395,7 @@ func (c *Control) GetClientServicies() func(ctx echo.Context) error {
 			service_uuid := service.Uuid
 			where := "service_uuid = ?"
 			//find steps
-			steps, err := operator.NewServiceStep(c.db).
+			steps, err := operator.NewServiceStep(ctx).
 				Find(where, service_uuid)
 			if err != nil {
 				return err
@@ -375,7 +409,14 @@ func (c *Control) GetClientServicies() func(ctx echo.Context) error {
 
 		return pop(), nil //pop
 	}
-	return MakeMiddlewareFunc(binder, operator, HttpResponse)
+
+	return MakeMiddlewareFunc(Option{
+		Engine:        c.db.Engine(),
+		Binder:        binder,
+		Operator:      operator,
+		HttpResponser: HttpResponse,
+		BlockMaker:    Lock,
+	})
 }
 
 func foreach_step(elems []stepv1.ServiceStep, fn func(stepv1.ServiceStep) error) error {

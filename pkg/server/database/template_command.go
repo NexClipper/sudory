@@ -9,17 +9,8 @@ import (
 //  @method insert
 //  @from TemplateCommand
 //  @condition DbSchemaTemplateCommand
-func (d *DBManipulator) CreateTemplateCommand(model tcommandv1.DbSchemaTemplateCommand) error {
-	var err error
-	tx := d.session()
-	tx.Begin()
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+func (ctx Session) CreateTemplateCommand(model tcommandv1.DbSchemaTemplateCommand) error {
+	tx := ctx.Tx()
 
 	affect, err := tx.Insert(&model)
 	if err != nil {
@@ -36,8 +27,8 @@ func (d *DBManipulator) CreateTemplateCommand(model tcommandv1.DbSchemaTemplateC
 //  @method get
 //  @from TemplateCommand
 //  @condition: uuid
-func (d *DBManipulator) GetTemplateCommand(uuid string) (*tcommandv1.DbSchemaTemplateCommand, error) {
-	tx := d.session()
+func (ctx Session) GetTemplateCommand(uuid string) (*tcommandv1.DbSchemaTemplateCommand, error) {
+	tx := ctx.Tx()
 
 	var record = new(tcommandv1.DbSchemaTemplateCommand)
 	//SELECT * FROM {table} WHERE uuid = ? LIMIT 1
@@ -58,8 +49,8 @@ func (d *DBManipulator) GetTemplateCommand(uuid string) (*tcommandv1.DbSchemaTem
 //  @method find
 //  @from TemplateCommand
 //  @condition where, args
-func (d *DBManipulator) FindTemplateCommand(where string, args ...interface{}) ([]tcommandv1.DbSchemaTemplateCommand, error) {
-	tx := d.session()
+func (ctx Session) FindTemplateCommand(where string, args ...interface{}) ([]tcommandv1.DbSchemaTemplateCommand, error) {
+	tx := ctx.Tx()
 
 	var records = make([]tcommandv1.DbSchemaTemplateCommand, 0)
 	//SELECT * FROM {table} WHERE [cond]
@@ -79,17 +70,8 @@ func (d *DBManipulator) FindTemplateCommand(where string, args ...interface{}) (
 //  @condition DbSchemaTemplateCommand
 //  @comment [panic] message: golang panic hash of unhashable type {noun pointer data struct}
 //     	원인: xorm Update or Insert 등의 반환 기능이 있는 메소드 호출 하면서 패닉 발생 값을 포인터로 넘긴다
-func (d *DBManipulator) UpdateTemplateCommand(model tcommandv1.DbSchemaTemplateCommand) error {
-	var err error
-	tx := d.session()
-	tx.Begin()
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+func (ctx Session) UpdateTemplateCommand(model tcommandv1.DbSchemaTemplateCommand) error {
+	tx := ctx.Tx()
 
 	//아이디를 조건으로 업데이트
 	affect, err := tx.Where("uuid = ?", model.Uuid).
@@ -108,17 +90,8 @@ func (d *DBManipulator) UpdateTemplateCommand(model tcommandv1.DbSchemaTemplateC
 //  @method delete
 //  @from TemplateCommand
 //  @condition uuid
-func (d *DBManipulator) DeleteTemplateCommand(uuid string) error {
-	var err error
-	tx := d.session()
-	tx.Begin()
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+func (ctx Session) DeleteTemplateCommand(uuid string) error {
+	tx := ctx.Tx()
 
 	var model = new(tcommandv1.DbSchemaTemplateCommand)
 	//아이디를 조건으로 업데이트
