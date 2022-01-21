@@ -31,6 +31,23 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router := &Route{e: echo.New(), db: db}
 	controller := control.New(db)
 
+	//route /client/service*
+	router.e.PUT("/client/service", controller.PullService())
+	//route /client/auth*
+	router.e.PUT("/client/auth", controller.AuthClient())
+
+	//route /server/client*
+	router.e.GET("/server/client", controller.FindClient())
+	router.e.GET("/server/client/:uuid", controller.GetClient())
+	router.e.POST("/server/client", controller.CreateClient())
+	router.e.PUT("/server/client/:uuid", controller.UpdateClient())
+	router.e.DELETE("/server/client/:uuid", controller.DeleteClient())
+	//route /server/cluster*
+	router.e.GET("/server/cluster", controller.FindCluster())
+	router.e.GET("/server/cluster/:uuid", controller.GetCluster())
+	router.e.POST("/server/cluster", controller.CreateCluster())
+	router.e.PUT("/server/cluster/:uuid", controller.UpdateCluster())
+	router.e.DELETE("/server/cluster/:uuid", controller.DeleteCluster())
 	//route /server/template*
 	router.e.GET("/server/template", controller.FindTemplate())
 	router.e.GET("/server/template/:uuid", controller.GetTemplate())
@@ -55,20 +72,14 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router.e.POST("/server/service/:service_uuid/step", controller.CreateServiceStep())
 	router.e.PUT("/server/service/:service_uuid/step/:uuid", controller.UpdateServiceStep())
 	router.e.DELETE("/server/service/:service_uuid/step/:uuid", controller.DeleteServiceStep())
-	//route /client/service*
-	router.e.PUT("/client/service", controller.PullClientServices())
 
 	/*TODO: 라우트 연결 기능 구현
-	router.e.POST("/server/cluster", controller.CreateCluster)
-	router.e.GET("/server/cluster/:id", controller.GetCluster)
 	router.e.POST("/server/cluster/:id/token", controller.CreateToken)
 
 	//route /server/catalogue
 	router.e.GET("/server/catalogue", controller.GetCatalogue)
 
 	router.e.POST("/client/regist", controller.CreateClient)
-	//route /client/service
-	// router.e.PUT("/client/service", controller.GetService)
 	*/
 	router.e.GET("/swagger/*", echoSwagger.WrapHandler)
 

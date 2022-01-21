@@ -101,7 +101,7 @@ func (ctx Session) DeleteTemplateCommand(uuid string) error {
 		return err
 	}
 	if !(0 < affect) {
-		return ErrorNoAffecte()
+		return nil //idempotent
 	}
 	return nil
 }

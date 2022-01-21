@@ -2,53 +2,63 @@ package operator
 
 import (
 	"github.com/NexClipper/sudory/pkg/server/database"
-	"github.com/NexClipper/sudory/pkg/server/model"
-	"github.com/labstack/echo/v4"
+	clientv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
 )
 
 type Client struct {
-	db *database.DBManipulator
-
-	ID        uint64
-	MachineID string
-	ClusterID uint64
-	IP        string
-	Port      int
-
-	Response ResponseFn
+	ctx database.Context
 }
 
-func NewClient(d *database.DBManipulator) Operator {
-	return &Client{db: d}
+func NewClient(ctx database.Context) *Client {
+	return &Client{ctx: ctx}
 }
 
-func (o *Client) toModel() *model.Client {
-	m := &model.Client{
-		ID:        o.ID,
-		MachineID: o.MachineID,
-		ClusterID: o.ClusterID,
-		IP:        o.IP,
-		Port:      o.Port,
-	}
-
-	return m
-}
-
-func (o *Client) Create(ctx echo.Context) error {
-	client := o.toModel()
-
-	_, err := o.db.CreateClient(client)
+func (o *Client) Create(model clientv1.Client) error {
+	err := o.ctx.CreateClient(clientv1.DbSchemaClient{Client: model})
 	if err != nil {
 		return err
-	}
-
-	if o.Response != nil {
-		o.Response(ctx, nil)
 	}
 
 	return nil
 }
 
-func (o *Client) Get(ctx echo.Context) error {
+func (o *Client) Get(uuid string) (*clientv1.Client, error) {
+
+	record, err := o.ctx.GetClient(uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	return &record.Client, nil
+}
+
+func (o *Client) Find(where string, args ...interface{}) ([]clientv1.Client, error) {
+	r, err := o.ctx.FindClient(where, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	records := clientv1.TransFormDbSchema(r)
+
+	return records, nil
+}
+
+func (o *Client) Update(model clientv1.Client) error {
+
+	err := o.ctx.UpdateClient(clientv1.DbSchemaClient{Client: model})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *Client) Delete(uuid string) error {
+
+	err := o.ctx.DeleteClient(uuid)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

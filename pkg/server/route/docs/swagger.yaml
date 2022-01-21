@@ -1,4 +1,22 @@
 definitions:
+  v1.HttpReqClient:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      cluster_uuid:
+        description: ClusterUuid
+        type: string
+      name:
+        description: label name
+        type: string
+      summary:
+        description: label summary
+        type: string
+      uuid:
+        description: UUID
+        type: string
+    type: object
   v1.HttpReqClientSideService:
     properties:
       api_version:
@@ -38,6 +56,21 @@ definitions:
       type:
         description: 'Type; 0: Once, 1: repeat(epoch, interval)'
         type: integer
+      uuid:
+        description: UUID
+        type: string
+    type: object
+  v1.HttpReqCluster:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      name:
+        description: label name
+        type: string
+      summary:
+        description: label summary
+        type: string
       uuid:
         description: UUID
         type: string
@@ -240,6 +273,24 @@ definitions:
         description: UUID
         type: string
     type: object
+  v1.HttpRspClient:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      cluster_uuid:
+        description: ClusterUuid
+        type: string
+      name:
+        description: label name
+        type: string
+      summary:
+        description: label summary
+        type: string
+      uuid:
+        description: UUID
+        type: string
+    type: object
   v1.HttpRspClientSideService:
     properties:
       api_version:
@@ -279,6 +330,21 @@ definitions:
       type:
         description: 'Type; 0: Once, 1: repeat(epoch, interval)'
         type: integer
+      uuid:
+        description: UUID
+        type: string
+    type: object
+  v1.HttpRspCluster:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      name:
+        description: label name
+        type: string
+      summary:
+        description: label summary
+        type: string
       uuid:
         description: UUID
         type: string
@@ -471,11 +537,36 @@ info:
   title: SUDORY
   version: 0.0.1
 paths:
+  /client/auth:
+    post:
+      consumes:
+      - application/json
+      description: Auth a client
+      parameters:
+      - description: Client 의 Uuid
+        in: query
+        name: client_uuid
+        required: true
+        type: string
+      - description: Cluster 의 Uuid
+        in: query
+        name: cluster_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspClient'
+      tags:
+      - client/auth
   /client/service:
     put:
       consumes:
       - application/json
-      description: Get a Service
+      description: Pull a Service
       parameters:
       - description: Client 의 ClusterUuid
         in: query
@@ -500,6 +591,216 @@ paths:
             type: array
       tags:
       - client/service
+  /server/client:
+    get:
+      consumes:
+      - application/json
+      description: Find client
+      parameters:
+      - description: Client 의 Uuid
+        in: query
+        name: uuid
+        type: string
+      - description: Client 의 Name
+        in: query
+        name: name
+        type: string
+      - description: Client 의 ClusterUuid
+        in: query
+        name: cluster_uuid
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.HttpRspClient'
+            type: array
+      tags:
+      - server/client
+    post:
+      consumes:
+      - application/json
+      description: Create a client
+      parameters:
+      - description: HttpReqClient
+        in: body
+        name: client
+        required: true
+        schema:
+          $ref: '#/definitions/v1.HttpReqClient'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/client
+  /server/client/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a client
+      parameters:
+      - description: Client 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/client
+    get:
+      consumes:
+      - application/json
+      description: Get a client
+      parameters:
+      - description: Client 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspClient'
+      tags:
+      - server/client
+    put:
+      consumes:
+      - application/json
+      description: Update a client
+      parameters:
+      - description: Client 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: HttpReqClient
+        in: body
+        name: client
+        required: true
+        schema:
+          $ref: '#/definitions/v1.HttpReqClient'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/client
+  /server/cluster:
+    get:
+      consumes:
+      - application/json
+      description: Find cluster
+      parameters:
+      - description: Cluster 의 Uuid
+        in: query
+        name: uuid
+        type: string
+      - description: Cluster 의 Name
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.HttpRspCluster'
+            type: array
+      tags:
+      - server/cluster
+    post:
+      consumes:
+      - application/json
+      description: Create a cluster
+      parameters:
+      - description: HttpReqCluster
+        in: body
+        name: client
+        required: true
+        schema:
+          $ref: '#/definitions/v1.HttpReqCluster'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/cluster
+  /server/cluster/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a cluster
+      parameters:
+      - description: Cluster 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/cluster
+    get:
+      consumes:
+      - application/json
+      description: Get a cluster
+      parameters:
+      - description: Cluster 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspCluster'
+      tags:
+      - server/cluster
+    put:
+      consumes:
+      - application/json
+      description: Update a cluster
+      parameters:
+      - description: Cluster 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: HttpReqCluster
+        in: body
+        name: client
+        required: true
+        schema:
+          $ref: '#/definitions/v1.HttpReqCluster'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/cluster
   /server/service:
     get:
       consumes:
@@ -778,7 +1079,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get a template command
+      description: Get template commands
       parameters:
       - description: HttpReqTemplate 의 Uuid
         in: path

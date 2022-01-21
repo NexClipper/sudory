@@ -66,8 +66,8 @@ func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
 	})
 }
 
-// Get Template Command
-// @Description Get a template command
+// Get Template Commands
+// @Description Get template commands
 // @Accept json
 // @Produce json
 // @Tags server/template_command

@@ -2,57 +2,62 @@ package operator
 
 import (
 	"github.com/NexClipper/sudory/pkg/server/database"
-	"github.com/NexClipper/sudory/pkg/server/model"
-	"github.com/labstack/echo/v4"
+	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 )
 
 type Cluster struct {
-	db *database.DBManipulator
-
-	ID   uint64
-	Name string
-
-	Response ResponseFn
+	ctx database.Context
 }
 
-func NewCluster(d *database.DBManipulator) Operator {
-	return &Cluster{db: d}
+func NewCluster(ctx database.Context) *Cluster {
+	return &Cluster{ctx: ctx}
 }
 
-func (o *Cluster) toModel() *model.Cluster {
-	m := &model.Cluster{
-		ID:   o.ID,
-		Name: o.Name,
-	}
-
-	return m
-}
-
-func (o *Cluster) Create(ctx echo.Context) error {
-	cluster := o.toModel()
-
-	_, err := o.db.CreateCluster(cluster)
+func (o *Cluster) Create(model clusterv1.Cluster) error {
+	err := o.ctx.CreateCluster(clusterv1.DbSchemaCluster{Cluster: model})
 	if err != nil {
 		return err
-	}
-
-	if o.Response != nil {
-		o.Response(ctx, nil)
 	}
 
 	return nil
 }
 
-func (o *Cluster) Get(ctx echo.Context) error {
-	cluster := o.toModel()
+func (o *Cluster) Get(uuid string) (*clusterv1.Cluster, error) {
 
-	m, err := o.db.GetCluster(cluster)
+	record, err := o.ctx.GetCluster(uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	return &record.Cluster, nil
+}
+
+func (o *Cluster) Find(where string, args ...interface{}) ([]clusterv1.Cluster, error) {
+	r, err := o.ctx.FindCluster(where, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	records := clusterv1.TransFormDbSchema(r)
+
+	return records, nil
+}
+
+func (o *Cluster) Update(model clusterv1.Cluster) error {
+
+	err := o.ctx.UpdateCluster(clusterv1.DbSchemaCluster{Cluster: model})
 	if err != nil {
 		return err
 	}
 
-	if o.Response != nil {
-		o.Response(ctx, m)
+	return nil
+}
+
+func (o *Cluster) Delete(uuid string) error {
+
+	err := o.ctx.DeleteCluster(uuid)
+	if err != nil {
+		return err
 	}
 
 	return nil

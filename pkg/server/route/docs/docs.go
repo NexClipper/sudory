@@ -26,9 +26,47 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/client/auth": {
+            "post": {
+                "description": "Auth a client",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "client/auth"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client 의 Uuid",
+                        "name": "client_uuid",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cluster 의 Uuid",
+                        "name": "cluster_uuid",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspClient"
+                        }
+                    }
+                }
+            }
+        },
         "/client/service": {
             "put": {
-                "description": "Get a Service",
+                "description": "Pull a Service",
                 "consumes": [
                     "application/json"
                 ],
@@ -67,6 +105,330 @@ var doc = `{
                                 "$ref": "#/definitions/v1.HttpRspClientSideService"
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/server/client": {
+            "get": {
+                "description": "Find client",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/client"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client 의 Uuid",
+                        "name": "uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Client 의 Name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Client 의 ClusterUuid",
+                        "name": "cluster_uuid",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.HttpRspClient"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a client",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/client"
+                ],
+                "parameters": [
+                    {
+                        "description": "HttpReqClient",
+                        "name": "client",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpReqClient"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/client/{uuid}": {
+            "get": {
+                "description": "Get a client",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/client"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspClient"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a client",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/client"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "HttpReqClient",
+                        "name": "client",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpReqClient"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a client",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/client"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/cluster": {
+            "get": {
+                "description": "Find cluster",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/cluster"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cluster 의 Uuid",
+                        "name": "uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cluster 의 Name",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.HttpRspCluster"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a cluster",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/cluster"
+                ],
+                "parameters": [
+                    {
+                        "description": "HttpReqCluster",
+                        "name": "client",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpReqCluster"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/cluster/{uuid}": {
+            "get": {
+                "description": "Get a cluster",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/cluster"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cluster 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspCluster"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a cluster",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/cluster"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cluster 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "HttpReqCluster",
+                        "name": "client",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpReqCluster"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a cluster",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/cluster"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cluster 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
                     }
                 }
             }
@@ -493,7 +855,7 @@ var doc = `{
         },
         "/server/template/{template_uuid}/command": {
             "get": {
-                "description": "Get a template command",
+                "description": "Get template commands",
                 "consumes": [
                     "application/json"
                 ],
@@ -766,6 +1128,31 @@ var doc = `{
         }
     },
     "definitions": {
+        "v1.HttpReqClient": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "description": "ClusterUuid",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
         "v1.HttpReqClientSideService": {
             "type": "object",
             "properties": {
@@ -818,6 +1205,27 @@ var doc = `{
                 "type": {
                     "description": "Type; 0: Once, 1: repeat(epoch, interval)",
                     "type": "integer"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpReqCluster": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
                 },
                 "uuid": {
                     "description": "UUID",
@@ -1089,6 +1497,31 @@ var doc = `{
                 }
             }
         },
+        "v1.HttpRspClient": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "description": "ClusterUuid",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
         "v1.HttpRspClientSideService": {
             "type": "object",
             "properties": {
@@ -1141,6 +1574,27 @@ var doc = `{
                 "type": {
                     "description": "Type; 0: Once, 1: repeat(epoch, interval)",
                     "type": "integer"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpRspCluster": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
                 },
                 "uuid": {
                     "description": "UUID",

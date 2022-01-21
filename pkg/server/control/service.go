@@ -314,133 +314,133 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 	})
 }
 
-// Pull []Service (client)
-// @Description Get a Service
-// @Accept json
-// @Produce json
-// @Tags client/service
-// @Router /client/service [put]
-// @Param cluster_uuid query string false "Client 의 ClusterUuid"
-// @Param service      body []v1.HttpReqClientSideService true "HttpReqClientSideService"
-// @Success 200 {array} v1.HttpRspClientSideService
-func (c *Control) PullClientServices() func(ctx echo.Context) error {
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for key, _ := range ctx.QueryParams() {
-			req[key] = ctx.QueryParam(key)
-		}
-		if len(req["cluster_uuid"].(string)) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-		body := make([]servicev1.HttpReqClientSideService, 0)
-		err := ctx.Bind(&body)
-		if err != nil {
-			return nil, ErrorBindRequestObject(err)
-		}
-		req["_"] = body
-		return req, nil
-	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]interface{})
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		body, ok := req["_"].([]servicev1.HttpReqClientSideService)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+// // Pull []Service (client)
+// // @Description Get a Service
+// // @Accept json
+// // @Produce json
+// // @Tags client/service
+// // @Router /client/service [put]
+// // @Param cluster_uuid query string false "Client 의 ClusterUuid"
+// // @Param service      body []v1.HttpReqClientSideService true "HttpReqClientSideService"
+// // @Success 200 {array} v1.HttpRspClientSideService
+// func (c *Control) PullClientServices() func(ctx echo.Context) error {
+// 	binder := func(ctx echo.Context) (interface{}, error) {
+// 		req := make(map[string]interface{})
+// 		for key, _ := range ctx.QueryParams() {
+// 			req[key] = ctx.QueryParam(key)
+// 		}
+// 		if len(req["cluster_uuid"].(string)) == 0 {
+// 			return nil, ErrorInvaliedRequestParameter()
+// 		}
+// 		body := make([]servicev1.HttpReqClientSideService, 0)
+// 		err := ctx.Bind(&body)
+// 		if err != nil {
+// 			return nil, ErrorBindRequestObject(err)
+// 		}
+// 		req["_"] = body
+// 		return req, nil
+// 	}
+// 	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
+// 		req, ok := v.(map[string]interface{})
+// 		if !ok {
+// 			return nil, ErrorFailedCast()
+// 		}
+// 		body, ok := req["_"].([]servicev1.HttpReqClientSideService)
+// 		if !ok {
+// 			return nil, ErrorFailedCast()
+// 		}
 
-		//update service
-		err := foreach_client_service(body, func(service servicev1.Service, steps []stepv1.ServiceStep) error {
+// 		//update service
+// 		err := foreach_client_service(body, func(service servicev1.Service, steps []stepv1.ServiceStep) error {
 
-			//update service
-			err := operator.NewService(ctx).
-				Update(service)
-			if err != nil {
-				return err
-			}
+// 			//update service
+// 			err := operator.NewService(ctx).
+// 				Update(service)
+// 			if err != nil {
+// 				return err
+// 			}
 
-			//update step
-			err = foreach_step(steps, func(step stepv1.ServiceStep) error {
-				err := operator.NewServiceStep(ctx).
-					Update(step)
-				if err != nil {
-					return err
-				}
-				return nil
-			})
-			if err != nil {
-				return err
-			}
+// 			//update step
+// 			err = foreach_step(steps, func(step stepv1.ServiceStep) error {
+// 				err := operator.NewServiceStep(ctx).
+// 					Update(step)
+// 				if err != nil {
+// 					return err
+// 				}
+// 				return nil
+// 			})
+// 			if err != nil {
+// 				return err
+// 			}
 
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
+// 			return nil
+// 		})
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-		//find service
-		where := "cluster_uuid = ? AND status < ?"
-		cluster_uuid := req["cluster_uuid"].(string)
-		status := servicev1.StatusSuccess //상태 값이 완료 상태보다 작은것
+// 		//find service
+// 		where := "cluster_uuid = ? AND status < ?"
+// 		cluster_uuid := req["cluster_uuid"].(string)
+// 		status := servicev1.StatusSuccess //상태 값이 완료 상태보다 작은것
 
-		services, err := operator.NewService(ctx).
-			Find(where, cluster_uuid, status)
-		if err != nil {
-			return nil, err
-		}
-		//make response
-		push, pop := servicev1.HttpRspBuilder(len(services))
-		err = foreach_service(services, func(service servicev1.Service) error {
-			service_uuid := service.Uuid
-			where := "service_uuid = ?"
-			//find steps
-			steps, err := operator.NewServiceStep(ctx).
-				Find(where, service_uuid)
-			if err != nil {
-				return err
-			}
-			push(service, steps) //push
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
+// 		services, err := operator.NewService(ctx).
+// 			Find(where, cluster_uuid, status)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		//make response
+// 		push, pop := servicev1.HttpRspBuilder(len(services))
+// 		err = foreach_service(services, func(service servicev1.Service) error {
+// 			service_uuid := service.Uuid
+// 			where := "service_uuid = ?"
+// 			//find steps
+// 			steps, err := operator.NewServiceStep(ctx).
+// 				Find(where, service_uuid)
+// 			if err != nil {
+// 				return err
+// 			}
+// 			push(service, steps) //push
+// 			return nil
+// 		})
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-		return pop(), nil //pop
-	}
+// 		return pop(), nil //pop
+// 	}
 
-	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
-		BlockMaker:    Lock,
-	})
-}
+// 	return MakeMiddlewareFunc(Option{
+// 		Engine:        c.db.Engine(),
+// 		Binder:        binder,
+// 		Operator:      operator,
+// 		HttpResponser: HttpResponse,
+// 		BlockMaker:    Lock,
+// 	})
+// }
 
-func foreach_step(elems []stepv1.ServiceStep, fn func(stepv1.ServiceStep) error) error {
-	for _, it := range elems {
-		if err := fn(it); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+// func foreach_step(elems []stepv1.ServiceStep, fn func(stepv1.ServiceStep) error) error {
+// 	for _, it := range elems {
+// 		if err := fn(it); err != nil {
+// 			return err
+// 		}
+// 	}
+// 	return nil
+// }
 
-func foreach_service(elems []servicev1.Service, fn func(servicev1.Service) error) error {
-	for _, it := range elems {
-		if err := fn(it); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-func foreach_client_service(elems []servicev1.HttpReqClientSideService, fn func(servicev1.Service, []stepv1.ServiceStep) error) error {
-	for _, it := range elems {
-		if err := fn(it.Service, it.Steps); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+// func foreach_service(elems []servicev1.Service, fn func(servicev1.Service) error) error {
+// 	for _, it := range elems {
+// 		if err := fn(it); err != nil {
+// 			return err
+// 		}
+// 	}
+// 	return nil
+// }
+// func foreach_client_service(elems []servicev1.HttpReqClientSideService, fn func(servicev1.Service, []stepv1.ServiceStep) error) error {
+// 	for _, it := range elems {
+// 		if err := fn(it.Service, it.Steps); err != nil {
+// 			return err
+// 		}
+// 	}
+// 	return nil
+// }

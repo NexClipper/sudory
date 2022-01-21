@@ -1,20 +1,101 @@
 package database
 
-import "github.com/NexClipper/sudory/pkg/server/model"
+import (
+	clientv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
+)
 
-func (d *DBManipulator) CreateClient(m *model.Client) (int64, error) {
-	tx := d.session()
-	tx.Begin()
+// CreateClient
+//  @return error
+//  @method insert
+//  @from Client
+//  @condition clientv1.DbSchemaClient
+func (ctx Session) CreateClient(m clientv1.DbSchemaClient) error {
+	tx := ctx.Tx()
 
-	cnt, err := tx.Insert(m)
+	affect, err := tx.Insert(&m)
+	if err != nil {
+		return err
+	}
+	if !(0 < affect) {
+		return ErrorNoAffecte()
+	}
+	return nil
+}
 
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+// GetClient
+//  @return DbSchemaClient, error
+//  @method get
+//  @from Client
+//  @condition uuid
+func (ctx Session) GetClient(uuid string) (*clientv1.DbSchemaClient, error) {
+	tx := ctx.Tx()
 
-	return cnt, err
+	var record = new(clientv1.DbSchemaClient)
+	has, err := tx.Where("uuid = ?", uuid).
+		Get(record)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, ErrorRecordWasNotFound()
+	}
+
+	return record, nil
+}
+
+// FindClient
+//  @return []clientv1.DbSchemaClient, error
+//  @method find
+//  @from Client
+//  @condition where, args
+func (ctx Session) FindClient(where string, args ...interface{}) ([]clientv1.DbSchemaClient, error) {
+	tx := ctx.Tx()
+
+	model := make([]clientv1.DbSchemaClient, 0)
+	err := tx.Where(where, args...).
+		Find(&model)
+	if err != nil {
+		return nil, err
+	}
+
+	return model, nil
+}
+
+// UpdateClient
+//  @return error
+//  @method update
+//  @from Client
+//  @condition DbSchemaClient
+func (ctx Session) UpdateClient(m clientv1.DbSchemaClient) error {
+	tx := ctx.Tx()
+
+	affect, err := tx.Where("uuid = ?", m.Uuid).
+		Update(&m)
+	if err != nil {
+		return err
+	}
+	if !(0 < affect) {
+		return ErrorNoAffecte()
+	}
+	return nil
+}
+
+// DeleteClient
+//  @return error
+//  @method delete
+//  @from Client
+//  @condition uuid
+func (ctx Session) DeleteClient(uuid string) error {
+	tx := ctx.Tx()
+
+	record := new(clientv1.DbSchemaClient)
+	affect, err := tx.Where("uuid = ?", uuid).
+		Delete(record)
+	if err != nil {
+		return err
+	}
+	if !(0 < affect) {
+		return nil //idempotent
+	}
+	return nil
 }

@@ -96,7 +96,7 @@ func (ctx Session) DeleteServiceStep(uuid string) error {
 		return err
 	}
 	if !(0 < affect) {
-		return ErrorNoAffecte()
+		return nil //idempotent
 	}
 	return nil
 }

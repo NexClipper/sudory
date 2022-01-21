@@ -1,47 +1,39 @@
 package view
 
-import (
-	"net/http"
+// type CreateClient struct {
+// 	opr *operator.Client
+// }
 
-	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/model"
-	"github.com/labstack/echo/v4"
-)
+// func NewCreateClient(o operator.Operator) Viewer {
+// 	return &CreateClient{opr: o.(*operator.Client)}
+// }
 
-type CreateClient struct {
-	opr *operator.Client
-}
+// func (v *CreateClient) fromModel(m *model.ReqClient) {
+// 	v.opr.MachineID = m.MachineID
+// 	v.opr.ClusterID = m.ClusterID
+// 	v.opr.IP = m.IP
+// 	v.opr.Port = m.Port
+// 	v.opr.Response = v.Response
+// }
 
-func NewCreateClient(o operator.Operator) Viewer {
-	return &CreateClient{opr: o.(*operator.Client)}
-}
+// func (v *CreateClient) Request(ctx echo.Context) error {
+// 	reqModel := &model.ReqClient{}
+// 	if err := ctx.Bind(reqModel); err != nil {
+// 		return ctx.JSON(http.StatusBadRequest, nil)
+// 	}
 
-func (v *CreateClient) fromModel(m *model.ReqClient) {
-	v.opr.MachineID = m.MachineID
-	v.opr.ClusterID = m.ClusterID
-	v.opr.IP = m.IP
-	v.opr.Port = m.Port
-	v.opr.Response = v.Response
-}
+// 	v.fromModel(reqModel)
+// 	if err := v.opr.Create(ctx); err != nil {
+// 		return ctx.JSON(http.StatusInternalServerError, nil)
+// 	}
 
-func (v *CreateClient) Request(ctx echo.Context) error {
-	reqModel := &model.ReqClient{}
-	if err := ctx.Bind(reqModel); err != nil {
-		return ctx.JSON(http.StatusBadRequest, nil)
-	}
+// 	return nil
+// }
 
-	v.fromModel(reqModel)
-	if err := v.opr.Create(ctx); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, nil)
-	}
+// func (v *CreateClient) Response(ctx echo.Context, m model.Modeler) error {
+// 	if err := ctx.JSON(http.StatusOK, nil); err != nil {
+// 		return err
+// 	}
 
-	return nil
-}
-
-func (v *CreateClient) Response(ctx echo.Context, m model.Modeler) error {
-	if err := ctx.JSON(http.StatusOK, nil); err != nil {
-		return err
-	}
-
-	return nil
-}
+// 	return nil
+// }

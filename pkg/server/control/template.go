@@ -155,9 +155,9 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 			}
 			join(fmt.Sprintf("%s LIKE ?", key)) //조건문 만들기
 		}
+		where := build(" AND ")
 
 		//find template
-		where := build(" AND ")
 		templates, err := operator.NewTemplate(ctx).
 			Find(where, args...)
 		if err != nil {

@@ -8,7 +8,7 @@ import (
 //  @return error
 //  @method insert
 //  @from Template
-//  @condition []templatev1.DbSchemaTemplate
+//  @condition templatev1.DbSchemaTemplate
 func (ctx Session) CreateTemplate(m templatev1.DbSchemaTemplate) error {
 	tx := ctx.Tx()
 
@@ -98,7 +98,7 @@ func (ctx Session) DeleteTemplate(uuid string) error {
 		return err
 	}
 	if !(0 < affect) {
-		return ErrorNoAffecte()
+		return nil //idempotent
 	}
 	return nil
 }

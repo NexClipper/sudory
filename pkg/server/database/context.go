@@ -1,10 +1,12 @@
 package database
 
 import (
+	clientv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
+	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
-	tcommandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
+	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
 	"xorm.io/xorm"
 )
 
@@ -14,6 +16,18 @@ type Context interface {
 	Tx() *xorm.Session //get a session
 	Close() error      //close session
 
+	//client
+	CreateClient(m clientv1.DbSchemaClient) error
+	GetClient(uuid string) (*clientv1.DbSchemaClient, error)
+	FindClient(where string, args ...interface{}) ([]clientv1.DbSchemaClient, error)
+	UpdateClient(m clientv1.DbSchemaClient) error
+	DeleteClient(uuid string) error
+	//cluster
+	CreateCluster(m clusterv1.DbSchemaCluster) error
+	GetCluster(uuid string) (*clusterv1.DbSchemaCluster, error)
+	FindCluster(where string, args ...interface{}) ([]clusterv1.DbSchemaCluster, error)
+	UpdateCluster(m clusterv1.DbSchemaCluster) error
+	DeleteCluster(uuid string) error
 	//template
 	CreateTemplate(m templatev1.DbSchemaTemplate) error
 	GetTemplate(uuid string) (*templatev1.DbSchemaTemplate, error)
@@ -21,10 +35,10 @@ type Context interface {
 	UpdateTemplate(m templatev1.DbSchemaTemplate) error
 	DeleteTemplate(uuid string) error
 	//template command
-	CreateTemplateCommand(model tcommandv1.DbSchemaTemplateCommand) error
-	GetTemplateCommand(uuid string) (*tcommandv1.DbSchemaTemplateCommand, error)
-	FindTemplateCommand(where string, args ...interface{}) ([]tcommandv1.DbSchemaTemplateCommand, error)
-	UpdateTemplateCommand(model tcommandv1.DbSchemaTemplateCommand) error
+	CreateTemplateCommand(model commandv1.DbSchemaTemplateCommand) error
+	GetTemplateCommand(uuid string) (*commandv1.DbSchemaTemplateCommand, error)
+	FindTemplateCommand(where string, args ...interface{}) ([]commandv1.DbSchemaTemplateCommand, error)
+	UpdateTemplateCommand(model commandv1.DbSchemaTemplateCommand) error
 	DeleteTemplateCommand(uuid string) error
 	//service
 	CreateService(m servicev1.DbSchemaService) error
