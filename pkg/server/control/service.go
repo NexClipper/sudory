@@ -176,7 +176,9 @@ func (c *Control) GetService() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		return &servicev1.HttpRspService{Service: *service, Steps: steps}, nil
+		rsp := &servicev1.HttpRspService{Service: *service, Steps: steps}
+
+		return rsp, nil
 	}
 
 	return MakeMiddlewareFunc(Option{

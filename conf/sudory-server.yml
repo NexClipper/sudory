@@ -11,3 +11,29 @@ database:
   maxconnlifetime: 1
   showsql: false
   loglevel: warn
+
+events: 
+  - listener:
+    type: 'webhook'
+    name: 'client poll'
+    pattern: '/client/poll'
+    option:
+      method: post
+      url: 'http://localhost:8000/'
+      content-type: 'application/json'
+      timeout: 30  
+  - listener:
+    type: 'webhook'
+    name: 'client --all'
+    pattern: '/client/*'
+    option:
+      method: post
+      url: 'http://localhost:8000/'
+      content-type: 'application/json'
+      timeout: 30
+  - listener:
+    type: 'file'
+    name: 'server --all'
+    pattern: '/server/*'
+    option:
+      path: ./log/server.log

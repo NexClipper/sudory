@@ -1,0 +1,15 @@
+events: 
+  - listener:
+    type: 'webhook'
+    name: 'client-poll'
+    pattern: 'client-poll'
+    option:
+      method: post
+      url: 'http://localhost:8000/'
+      content-type: 'application/json'
+  - listener:
+    type: "file"
+    name: 'client-poll'
+    pattern: 'client-*'
+    option:
+      path: ./client-poll.log

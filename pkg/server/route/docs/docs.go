@@ -66,7 +66,7 @@ var doc = `{
         },
         "/client/service": {
             "put": {
-                "description": "Pull a Service",
+                "description": "Poll a Service",
                 "consumes": [
                     "application/json"
                 ],

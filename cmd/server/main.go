@@ -5,6 +5,7 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/config"
 	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/events"
 	"github.com/NexClipper/sudory/pkg/server/route"
 )
 
@@ -23,6 +24,17 @@ func main() {
 	}
 
 	r := route.New(cfg, db)
+
+	//events new
+	ecfg, err := events.New(*configPath)
+	if err != nil {
+		panic(err)
+	}
+	err = ecfg.Regist() //events Regist
+	if err != nil {
+		panic(err)
+	}
+	defer events.Manager.Stop()
 
 	r.Start(cfg.Host.Port)
 }

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/events"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/labstack/echo/v4"
 	"github.com/syndtr/goleveldb/leveldb/errors"
@@ -73,7 +74,15 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 
 	return func(ctx echo.Context) error {
 
-		req, err := exec_bind(opt.Binder, ctx)
+		var err error
+		var req, rsp interface{}
+
+		//event invoke
+		defer func() {
+			events.Invoke(ctx, req, rsp, err)
+		}()
+
+		req, err = exec_bind(opt.Binder, ctx)
 		if ErrorWithHandler(err,
 			func(err error) { println(err) },
 			//additional error handler
@@ -85,7 +94,7 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 			return err //return
 		}
 
-		rsp, err := exec_operate(opt.Operator, req)
+		rsp, err = exec_operate(opt.Operator, req)
 		if ErrorWithHandler(err,
 			func(err error) { println(err) },
 			//additional error handler

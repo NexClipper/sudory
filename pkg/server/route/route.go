@@ -32,9 +32,9 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	controller := control.New(db)
 
 	//route /client/service*
-	router.e.PUT("/client/service", controller.PullService())
+	router.e.PUT("/client/service", controller.PollService())
 	//route /client/auth*
-	router.e.PUT("/client/auth", controller.AuthClient())
+	router.e.POST("/client/auth", controller.AuthClient())
 
 	//route /server/client*
 	router.e.GET("/server/client", controller.FindClient())

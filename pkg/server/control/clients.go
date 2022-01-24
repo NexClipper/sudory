@@ -12,8 +12,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// Pull []Service (client)
-// @Description Pull a Service
+// Poll []Service (client)
+// @Description Poll a Service
 // @Accept json
 // @Produce json
 // @Tags client/service
@@ -21,7 +21,7 @@ import (
 // @Param cluster_uuid query string false "Client 의 ClusterUuid"
 // @Param service      body []v1.HttpReqClientSideService true "HttpReqClientSideService"
 // @Success 200 {array} v1.HttpRspClientSideService
-func (c *Control) PullService() func(ctx echo.Context) error {
+func (c *Control) PollService() func(ctx echo.Context) error {
 	binder := func(ctx echo.Context) (interface{}, error) {
 		req := make(map[string]interface{})
 		for key, _ := range ctx.QueryParams() {
