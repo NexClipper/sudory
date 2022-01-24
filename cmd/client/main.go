@@ -2,14 +2,18 @@ package main
 
 import (
 	"flag"
-	"log"
 	"os"
 	"os/signal"
 
 	"github.com/NexClipper/sudory/pkg/client/k8s"
+	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/client/poll"
 	"github.com/NexClipper/sudory/pkg/client/service"
 )
+
+func init() {
+	log.New()
+}
 
 func main() {
 	server := flag.String("server", "http://localhost:8099", "sudory server url")
@@ -31,13 +35,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create k8s.NewClient : %v.\n", err)
 	}
-	log.Printf("Created k8s clientset.\n")
+	log.Debugf("Created k8s clientset.\n")
 
 	// check k8s's api-server status
 	if err := client.RawRequest().CheckApiServerStatus(); err != nil {
 		log.Fatalf("CheckApiServerStatus is failed : %v.\n", err)
 	}
-	log.Printf("Successed to check K8s's api-server status.\n")
+	log.Debugf("Successed to check K8s's api-server status.\n")
 
 	serviceScheduler := service.NewScheduler()
 	serviceScheduler.Start()

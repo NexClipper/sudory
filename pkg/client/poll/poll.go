@@ -2,13 +2,13 @@ package poll
 
 import (
 	"encoding/json"
-	"log"
 	"time"
 
 	"github.com/go-co-op/gocron"
 	"github.com/panta/machineid"
 
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
+	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/client/service"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 )
@@ -56,18 +56,18 @@ func (p *Poller) poll() {
 	body, err := p.client.PutJson(map[string]string{"cluster_uuid": p.clusterId}, reqData)
 	if err != nil {
 		p.serviceScheduler.RepairUpdateFailedServices(updatedServices)
-		log.Printf(err.Error())
+		log.Errorf(err.Error())
 		return
 	}
 
 	respData := []servicev1.HttpRspClientSideService{}
 	if err := json.Unmarshal(body, &respData); err != nil {
-		log.Printf(err.Error())
+		log.Errorf(err.Error())
 		return
 	}
-
+	log.Debugf("Recived %d service from server.", len(respData))
+	
 	if len(respData) == 0 {
-		log.Printf("Recived 0 service from server.")
 		return
 	}
 

@@ -2,6 +2,8 @@ package service
 
 import (
 	"time"
+
+	"github.com/NexClipper/sudory/pkg/client/log"
 )
 
 type ServiceExecutor struct {
@@ -80,8 +82,10 @@ func NewStepExecutor(step Step) (*StepExecutor, error) {
 func (se *StepExecutor) Execute() Result {
 	res, err := se.commander.Run()
 	if err != nil {
+		log.Errorf("Failed to Execute method : %s.\n", se.step.Command.Method)
 		return Result{err: err}
 	}
+	log.Debugf("Executed method : %s.\n", se.step.Command.Method)
 
 	return Result{body: res}
 }
