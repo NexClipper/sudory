@@ -22,9 +22,18 @@ func ErrorJwtInvalidSignature() error {
 	return errors.New("invalid signature")
 }
 
-// JWT ew
+// JWT new
 //  make new JWT
-func New(token map[string]interface{}, secret string) string {
+func New(payload map[string]interface{}, secret []byte) (jwt string, err error) {
+	defer func() {
+		var ok bool
+		if r := recover(); r != nil {
+			err, ok = r.(error)
+			if !ok {
+				panic(r)
+			}
+		}
+	}()
 
 	//define header
 	var head = map[string]interface{}{
@@ -32,28 +41,28 @@ func New(token map[string]interface{}, secret string) string {
 		"typ": "JWT",
 	}
 
-	json_mashal := json.Marshal
-	json_mashal_ := func(v interface{}) []byte {
-		value := func(a []byte, _ error) []byte { return a }
-		return value(json_mashal(v))
+	json_mashal := func(v interface{}) []byte {
+		json_mashal := json.Marshal
+		right := func(b []byte, err error) []byte {
+			if err != nil {
+				panic(err)
+			}
+			return b
+		}
+		return right(json_mashal(v))
 	}
 
-	encoder := base64.URLEncoding.EncodeToString
-	encoder_ := func(src []byte) string {
-		return strings.ReplaceAll(encoder(src), "=", "")
-	}
+	header := byte_encoder(json_mashal(head))                               //make header
+	payload_ := byte_encoder(json_mashal(payload))                          //make payload
+	signature := byte_encoder(HMACSHA256(header, payload_, []byte(secret))) //make signature
+	jwt = strings.Join([]string{header, payload_, signature}, ".")          //make jwt
 
-	header := encoder_(json_mashal_(head))                         //make header
-	payload := encoder_(json_mashal_(token))                       //make payload
-	signature := encoder_(_HMACSHA256(header, payload, secret))    //make signature
-	jwt := strings.Join([]string{header, payload, signature}, ".") //make jwt
-
-	return jwt
+	return jwt, err
 }
 
 // JWT Verify
 //  valied signature
-func Verify(jwt string, secret string) error {
+func Verify(jwt string, secret []byte) error {
 
 	parts := strings.Split(jwt, ".") //split diffrent parts
 
@@ -61,34 +70,28 @@ func Verify(jwt string, secret string) error {
 		return ErrorJwtInvalidLength()
 	}
 
-	signature_ := _HMACSHA256(parts[jwt_header], parts[jwt_payload], secret) //make signature
+	signature := byte_encoder(HMACSHA256(parts[jwt_header], parts[jwt_payload], []byte(secret))) //make signature
 
-	if parts[jwt_signature] != string(signature_) { //compare
+	if parts[jwt_signature] != signature { //compare
 		return ErrorJwtInvalidSignature()
 	}
 
 	return nil
 }
 
-// GetToken
-//  get a token part of jwt
-func GetToken(jwt string, secret string) (map[string]interface{}, error) {
-	var err error
-
-	padd_recover := func(s string) string {
-		mod := len(s) % 4
-		if mod == 0 {
-			return s
+// GetPayload
+//  get a payload part of jwt
+func GetPayload(jwt string) (payload map[string]interface{}, err error) {
+	defer func() {
+		var ok bool
+		if r := recover(); r != nil {
+			err, ok = r.(error)
+			if !ok {
+				panic(r)
+			}
 		}
+	}()
 
-		padd := strings.Repeat("=", 4-mod)
-		return s + padd
-	}
-	decoder := base64.URLEncoding.DecodeString
-	decoder_ := func(s string) []byte {
-		value := func(a []byte, _ error) []byte { return a }
-		return value(decoder(padd_recover(s)))
-	}
 	json_unmashal := json.Unmarshal
 
 	jwt_ := strings.Split(jwt, ".") //split diffrent parts
@@ -97,13 +100,13 @@ func GetToken(jwt string, secret string) (map[string]interface{}, error) {
 		return nil, ErrorJwtInvalidLength()
 	}
 
-	token := make(map[string]interface{})
-	err = json_unmashal(decoder_(jwt_[jwt_payload]), &token) //token unmashal
+	payload = make(map[string]interface{})
+	err = json_unmashal(byte_decoder(jwt_[jwt_payload]), &payload) //unmashal
 	if err != nil {
 		return nil, err
 	}
 
-	return token, nil
+	return payload, nil
 }
 
 // HMACSHA256
@@ -112,9 +115,32 @@ func GetToken(jwt string, secret string) (map[string]interface{}, error) {
 //  	base64UrlEncode(payload),
 //		secret
 //    )
-func _HMACSHA256(header, payload, secret string) []byte {
-	h := hmac.New(sha256.New, []byte(secret))                     //use hmac
+func HMACSHA256(header, payload string, secret []byte) []byte {
+	h := hmac.New(sha256.New, secret)                             //use hmac
 	h.Write([]byte(strings.Join([]string{header, payload}, "."))) //hmac write
 	signature := h.Sum(nil)                                       //hmac sum
 	return signature
+}
+
+func byte_encoder(src []byte) string {
+	encoder := base64.URLEncoding.EncodeToString
+	return strings.ReplaceAll(encoder(src), "=", "")
+}
+
+func byte_decoder(s string) []byte {
+	decoder := base64.URLEncoding.DecodeString
+	padd_recover := func(s string) string {
+		mod := len(s) % 4
+		if mod == 0 {
+			return s
+		}
+		return s + strings.Repeat("=", 4-mod)
+	}
+	right := func(b []byte, err error) []byte {
+		if err != nil {
+			panic(err)
+		}
+		return b
+	}
+	return right(decoder(padd_recover(s)))
 }

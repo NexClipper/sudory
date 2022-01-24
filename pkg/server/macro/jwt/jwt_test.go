@@ -1,34 +1,36 @@
 package macro
 
 import (
+	"log"
 	"testing"
 )
 
-func TestMakeJwt(t *testing.T) {
-	const secret = "your-256-bit-secret"
+const _secret_ = "your-256-bit-secret"
+const _jwt_ = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1MTYyMzkwMjIsIm5hbWUiOiJKb2huIERvZSIsInN1YiI6IjEyMzQ1Njc4OTAifQ.fdOPQ05ZfRhkST2-rIWgUpbqUsVhkkNVNcuG7Ki0s-8"
 
-	body := map[string]interface{}{
+func TestNew(t *testing.T) {
+
+	payload := map[string]interface{}{
 		"sub":  "1234567890",
 		"name": "John Doe",
 		"iat":  1516239022,
 	}
 
-	const jwt_ = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1MTYyMzkwMjIsIm5hbWUiOiJKb2huIERvZSIsInN1YiI6IjEyMzQ1Njc4OTAifQ.fdOPQ05ZfRhkST2-rIWgUpbqUsVhkkNVNcuG7Ki0s-8"
+	jwt, err := New(payload, []byte(_secret_))
 
-	jwt := New(body, secret)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	if jwt != jwt_ {
-		t.Errorf("\nexpect:'%s' \nactual: '%s'", jwt_, jwt)
+	if jwt != _jwt_ {
+		t.Errorf("\nexpect:'%s' \nactual: '%s'", _jwt_, jwt)
 	}
 
 	println(jwt)
 }
-func TestVerifyJWT(t *testing.T) {
-	const secret = "your-256-bit-secret"
+func TestVerify(t *testing.T) {
 
-	jwt := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1MTYyMzkwMjIsIm5hbWUiOiJKb2huIERvZSIsInN1YiI6IjEyMzQ1Njc4OTAifQ.fdOPQ05ZfRhkST2-rIWgUpbqUsVhkkNVNcuG7Ki0s-8"
-
-	err := Verify(jwt, secret)
+	err := Verify(_jwt_, []byte(_secret_))
 
 	if err != nil {
 		t.Error(err)
@@ -36,12 +38,9 @@ func TestVerifyJWT(t *testing.T) {
 
 }
 
-func TestGetJwtPayload(t *testing.T) {
-	const secret = "your-256-bit-secret"
+func TestGetPayload(t *testing.T) {
 
-	jwt := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1MTYyMzkwMjIsIm5hbWUiOiJKb2huIERvZSIsInN1YiI6IjEyMzQ1Njc4OTAifQ.fdOPQ05ZfRhkST2-rIWgUpbqUsVhkkNVNcuG7Ki0s-8"
-
-	payload, err := GetToken(jwt, secret)
+	payload, err := GetPayload(_jwt_)
 
 	if err != nil {
 		t.Error(err)
@@ -49,6 +48,16 @@ func TestGetJwtPayload(t *testing.T) {
 
 	if payload == nil {
 		t.Error("empty")
+	}
+
+	if payload["name"].(string) != "John Doe" {
+		t.Errorf("expect: '%v', actual: '%v'\n", "John Doe", payload["name"])
+	}
+	if payload["sub"].(string) != "1234567890" {
+		t.Errorf("expect: '%v', actual: '%v'\n", "1234567890", payload["sub"])
+	}
+	if payload["iat"].(float64) != 1516239022 {
+		t.Errorf("expect: '%v', actual: '%v'\n", 1516239022, payload["iat"])
 	}
 
 }
