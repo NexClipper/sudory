@@ -20,6 +20,7 @@ func (se *ServiceExecutor) Execute() (err error) {
 
 	defer func() {
 		if err != nil {
+			log.Errorf(err.Error())
 			se.service.Status = ServiceStatusFailed
 			se.service.Result = result
 			se.SendStatusUpdate()

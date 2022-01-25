@@ -31,9 +31,7 @@ func NewPoller(token, server, clusterId string, serviceScheduler *service.Servic
 		return nil, err
 	}
 
-	uri := server + "/client/service"
-
-	return &Poller{token: token, server: server, machineID: id, clusterId: clusterId, client: httpclient.NewHttpClient(uri, token), pollingScheduler: gocron.NewScheduler(time.UTC), serviceScheduler: serviceScheduler}, nil
+	return &Poller{token: token, server: server, machineID: id, clusterId: clusterId, client: httpclient.NewHttpClient(server, token, 0, 0), pollingScheduler: gocron.NewScheduler(time.UTC), serviceScheduler: serviceScheduler}, nil
 }
 
 func (p *Poller) Start() {
@@ -53,7 +51,13 @@ func (p *Poller) poll() {
 	// services -> reqData
 	reqData := service.ServiceListClientToServer(updatedServices)
 
-	body, err := p.client.PutJson(map[string]string{"cluster_uuid": p.clusterId}, reqData)
+	jsonb, err := json.Marshal(reqData)
+	if err != nil {
+		p.serviceScheduler.RepairUpdateFailedServices(updatedServices)
+		log.Errorf(err.Error())
+	}
+
+	body, err := p.client.PutJson("/client/service", map[string]string{"cluster_uuid": p.clusterId}, jsonb)
 	if err != nil {
 		p.serviceScheduler.RepairUpdateFailedServices(updatedServices)
 		log.Errorf(err.Error())
@@ -66,7 +70,7 @@ func (p *Poller) poll() {
 		return
 	}
 	log.Debugf("Recived %d service from server.", len(respData))
-	
+
 	if len(respData) == 0 {
 		return
 	}

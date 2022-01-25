@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/k8s"
 	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/client/poll"
@@ -27,6 +28,10 @@ func main() {
 
 	if len(*clusterid) == 0 {
 		log.Fatalf("Client must have clusterid('%s').\n", *clusterid)
+	}
+
+	if err := httpclient.ValidateURL(*server); err != nil {
+		log.Fatalf(err.Error())
 	}
 
 	// get k8s client
