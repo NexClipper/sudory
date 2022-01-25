@@ -33,6 +33,7 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
+
 		//create service
 		err := operator.NewService(ctx).
 			Create(req.Service)
@@ -50,6 +51,10 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, err
 		}
+
+		//Service Chaining
+		operator.NewService(ctx).
+			Chaining(req.Service.Uuid)
 
 		return OK(), nil
 	}
@@ -284,7 +289,7 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, err
 		}
-		//delete step
+		//delete steps
 		err = foreach_step(steps, func(step stepv1.ServiceStep) error {
 			err := operator.NewServiceStep(ctx).
 				Delete(step.Uuid)

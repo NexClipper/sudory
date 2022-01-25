@@ -3,6 +3,7 @@ package control
 import (
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
 	"github.com/NexClipper/sudory/pkg/server/database"
+	. "github.com/NexClipper/sudory/pkg/server/macro"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/labstack/echo/v4"
 )
@@ -50,11 +51,16 @@ func (c *Control) CreateServiceStep() func(ctx echo.Context) error {
 
 		body.ServiceStep.ServiceUuid = service_uuid
 
+		//스탭 생성
 		err := operator.NewServiceStep(ctx).
 			Create(body.ServiceStep)
 		if err != nil {
 			return nil, err
 		}
+
+		//Service Chaining
+		operator.NewService(ctx).
+			Chaining(service_uuid)
 
 		return OK(), nil
 	}
@@ -159,7 +165,7 @@ func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 		Binder:        binder,
 		Operator:      operator,
 		HttpResponser: HttpResponse,
-		BlockMaker:    Lock,
+		BlockMaker:    NoLock,
 	})
 }
 
@@ -265,11 +271,25 @@ func (c *Control) DeleteServiceStep() func(ctx echo.Context) error {
 		_ = req["service_uuid"]
 		uuid := req["uuid"]
 
-		err := operator.NewServiceStep(ctx).
+		//조회 해서 레코드가 없으면 종료
+		step, err := operator.NewServiceStep(ctx).
+			Get(uuid)
+		if Eqaul(err, database.ErrorRecordWasNotFound()) {
+			return OK(), nil //idempotent
+		} else if err != nil {
+			return nil, err
+		}
+
+		//삭제
+		err = operator.NewServiceStep(ctx).
 			Delete(uuid)
 		if err != nil {
 			return nil, err
 		}
+
+		//Service Chaining
+		operator.NewService(ctx).
+			Chaining(step.ServiceUuid)
 
 		return OK(), nil
 	}
