@@ -31,9 +31,9 @@ events:
       url: 'http://localhost:8000/'
       content-type: 'application/json'
       timeout: 30
-  - listener:
-    type: 'file'
-    name: 'server --all'
-    pattern: '/server/*'
-    option:
-      path: ./log/server.log
+  # - listener:
+  #   type: 'file'
+  #   name: 'server --all'
+  #   pattern: '/server/*'
+  #   option:
+  #     path: ./log/server.log
