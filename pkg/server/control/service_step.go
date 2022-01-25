@@ -55,7 +55,8 @@ func (c *Control) CreateServiceStep() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, err
 		}
-		return nil, nil
+
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -219,7 +220,8 @@ func (c *Control) UpdateServiceStep() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, err
 		}
-		return nil, nil
+
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -269,7 +271,7 @@ func (c *Control) DeleteServiceStep() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		return nil, nil
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{

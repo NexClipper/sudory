@@ -51,7 +51,7 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		return nil, nil
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -238,7 +238,8 @@ func (c *Control) UpdateService() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, err
 		}
-		return nil, nil
+
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -304,7 +305,7 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		return nil, nil
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{

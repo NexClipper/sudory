@@ -46,8 +46,11 @@ func (c *Control) CreateCluster() func(ctx echo.Context) error {
 
 		err := operator.NewCluster(ctx).
 			Create(body.Cluster)
+		if err != nil {
+			return nil, err
+		}
 
-		return nil, err
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -208,7 +211,8 @@ func (c *Control) UpdateCluster() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, err
 		}
-		return nil, nil
+
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -252,7 +256,8 @@ func (c *Control) DeleteCluster() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, err
 		}
-		return nil, nil
+
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{

@@ -52,7 +52,7 @@ func (c *Control) CreateTemplate() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		return nil, nil
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -240,7 +240,8 @@ func (c *Control) UpdateTemplate() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, err
 		}
-		return nil, nil
+
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -307,7 +308,7 @@ func (c *Control) DeleteTemplate() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		return nil, nil
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{

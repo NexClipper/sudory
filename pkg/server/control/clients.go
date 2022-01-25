@@ -203,11 +203,14 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		if client == nil || cluster == nil {
-			return nil, errors.New("")
+		if client == nil {
+			return nil, errors.New("not found client record")
+		}
+		if cluster == nil {
+			return nil, errors.New("not found cluster record")
 		}
 
-		return nil, nil
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{

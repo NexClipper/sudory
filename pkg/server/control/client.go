@@ -46,8 +46,11 @@ func (c *Control) CreateClient() func(ctx echo.Context) error {
 
 		err := operator.NewClient(ctx).
 			Create(body.Client)
+		if err != nil {
+			return nil, err
+		}
 
-		return nil, err
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -209,7 +212,8 @@ func (c *Control) UpdateClient() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, err
 		}
-		return nil, nil
+
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -253,7 +257,8 @@ func (c *Control) DeleteClient() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, err
 		}
-		return nil, nil
+
+		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{

@@ -68,6 +68,7 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		if response == nil {
 			return errors.New("without responser")
 		}
+
 		err := response(ctx, status, v) //exec report
 		if err != nil {
 			return err
@@ -120,6 +121,7 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 			}
 			return err //return
 		}
+
 		err = exec_response(opt.HttpResponser, ctx, http.StatusOK, rsp)
 		if ErrorWithHandler(err,
 			func(err error) { println(err) },
@@ -168,4 +170,11 @@ func NoLock(engine *xorm.Engine, operate func(ctx database.Context) (interface{}
 	*/
 	v, err = operate(ctx)
 	return v, err
+}
+
+func OK() interface{} {
+	return []interface{}{
+		200,
+		"OK",
+	}
 }
