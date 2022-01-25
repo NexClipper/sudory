@@ -4,7 +4,7 @@ LABEL version=0.1.0
 RUN apk update && apk add --no-cache openssh-client bash dbus
 
 COPY ./bin/client/sudory-client /
-COPY ./conf/client/entrypoint.sh /
+COPY ./conf/script/client/entrypoint.sh /
 
 ENV S_SERVER_URL ""
 ENV S_CLUSTER_ID ""
