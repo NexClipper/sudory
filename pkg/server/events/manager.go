@@ -43,7 +43,7 @@ func NewManager(handler ErrorHandler) *EventManager {
 
 func Invoke(ctx echo.Context, req, rsp interface{}, err error) {
 
-	path := ctx.Path()
+	path := ctx.Request().URL.Path
 	method := ctx.Request().Method
 	status := ctx.Response().Status
 	query := ctx.QueryString()

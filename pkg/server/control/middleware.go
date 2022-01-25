@@ -1,7 +1,10 @@
 package control
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/events"
@@ -82,6 +85,18 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 			events.Invoke(ctx, req, rsp, err)
 		}()
 
+		//logging
+		defer func() {
+			path := ctx.Request().URL.Path
+			method := ctx.Request().Method
+			status := ctx.Response().Status
+			query := ctx.QueryString()
+			reqbody, _ := json.Marshal(req)
+			rspbody, _ := json.Marshal(rsp)
+
+			log.Printf("DEBUG: C: time='%v' method='%s' path='%s' query='%s' reqbody='%s'\n", time.Now(), method, path, query, string(reqbody))
+			log.Printf("DEBUG: S: time='%v' method='%s' path='%s' query='%s' rspbody='%s' status='%d'\n", time.Now(), method, path, query, string(rspbody), status)
+		}()
 		req, err = exec_bind(opt.Binder, ctx)
 		if ErrorWithHandler(err,
 			func(err error) { println(err) },
