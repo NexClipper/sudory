@@ -1,7 +1,6 @@
-package events
+package channels
 
 import (
-	"runtime"
 	"sync"
 )
 
@@ -46,10 +45,39 @@ func (me *SafeChannel) SafeSend(value T) bool {
 	return false
 }
 
-func PubSub(pub *SafeChannel, notify func(v interface{}), size ...int) (stop func()) {
+// Distribute
+//  sender(1) -> reciver(n,m)
+//  pub: input channel
+//  notify: call notify when the data is received
+//  n: reciver gorutine count
+//  m: reciver channel buffer size
+//  stop: stop
+func Distribute(pub *SafeChannel, notify func(v interface{}), n ...int) (stop func()) {
+
+	// reciver gorutine count
+	//  0보다 커야함
+	var gorutine_cnt int = 1
+	if 0 < len(n) {
+		gorutine_cnt = n[0]
+	}
+	if gorutine_cnt <= 0 {
+		gorutine_cnt = 1 //0보다 커야함
+	}
+
+	// reciver channel buffer size
+	//  음수는 안됨
+	var chan_size int = 0
+	if 1 < len(n) {
+		chan_size = n[1]
+	}
+	if chan_size < 0 {
+		chan_size = 0 //음수면 안됨
+	}
 
 	closing := make(chan struct{})
 	closed := make(chan struct{})
+
+	wg := sync.WaitGroup{}
 
 	//set stop
 	stop = func() {
@@ -58,12 +86,13 @@ func PubSub(pub *SafeChannel, notify func(v interface{}), size ...int) (stop fun
 			<-closed
 		case <-closed:
 		}
+		wg.Wait() //wg wait
 	}
 
 	go func() {
 
 		//new reciver
-		reciver := NewSafeChannel(size...)
+		reciver := NewSafeChannel(chan_size)
 
 		//sender
 		go func() {
@@ -89,22 +118,17 @@ func PubSub(pub *SafeChannel, notify func(v interface{}), size ...int) (stop fun
 		}()
 
 		//reciver
-		num_cpu := runtime.NumCPU()
-		wg := sync.WaitGroup{}
-		wg.Add(num_cpu) // wg add
-		for n := 0; n < num_cpu; n++ {
+		wg.Add(gorutine_cnt) // wg add
+		for n := 0; n < gorutine_cnt; n++ {
 			go func() {
-				defer wg.Done() //wg done
-
+				defer func() {
+					wg.Done() //wg done
+				}()
 				for v := range reciver.C {
-					if args, ok := v.(map[string]interface{}); ok {
-						notify(args) //notify
-					}
+					notify(v) //notify
 				}
 			}()
 		}
-
-		wg.Wait() //wg wait
 	}()
 	return
 }

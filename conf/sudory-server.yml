@@ -12,28 +12,29 @@ database:
   showsql: false
   loglevel: warn
 
-events: 
-  - listener:
-    type: 'webhook'
+events:
+  - event:
     name: 'client poll'
     pattern: '/client/poll'
-    option:
+    buzy-timeout: 15
+    listeners:
+    - listener:
+      type: 'webhook'
       method: post
       url: 'http://localhost:8000/'
       content-type: 'application/json'
       timeout: 30  
-  - listener:
-    type: 'webhook'
+    # - listener: 
+    #   type: 'file'
+    #   path: ./log/server.log
+  - event:
     name: 'client --all'
     pattern: '/client/*'
-    option:
+    listeners:
+    - listener:
+      type: 'webhook'
       method: post
       url: 'http://localhost:8000/'
       content-type: 'application/json'
       timeout: 30
-  # - listener:
-  #   type: 'file'
-  #   name: 'server --all'
-  #   pattern: '/server/*'
-  #   option:
-  #     path: ./log/server.log
+

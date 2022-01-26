@@ -1,154 +1,93 @@
 package events
 
 import (
-	"context"
-	"encoding/json"
 	"log"
-	"regexp"
-	"runtime"
-	"sync"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/NexClipper/sudory/pkg/server/macro/channels"
 )
 
-type EventArgs struct {
-	Sender string
-	Args   interface{}
-}
+// ErrorHandler
+type ErrorHandler func(fmt string, v ...interface{})
 
+// EventManager
 type EventManager struct {
-	Stop         context.CancelFunc
-	ErrorHandler ErrorHandler
-	sender       *SafeChannel
+	// Stop         context.CancelFunc
+	errorHandler  ErrorHandler
+	eventContexts []EventContexter
 }
 
-type ErrorHandler func(ctx ListenerContext, value interface{}, err error)
-
-func defaultErrorHandler(ctx ListenerContext, value interface{}, err error) {
-	buf, _ := json.Marshal(value)
-	log.Printf("event error handler name='%s' type='%s' dest='%s' value='%s' error='%v'\n", ctx.Name(), ctx.Type(), ctx.Dest(), string(buf), err)
-}
-
-func NewManager(handler ErrorHandler) *EventManager {
+// NewManager
+func NewManager(eventContexts []EventContexter, handler ErrorHandler) *EventManager {
 	if handler == nil {
-		handler = defaultErrorHandler
+		handler = log.Printf //default logger
 	}
 
 	return &EventManager{
-		ErrorHandler: handler,
-		sender:       NewSafeChannel(0), //new sender
+		errorHandler:  handler,
+		eventContexts: eventContexts,
 	}
 }
 
-func Invoke(ctx echo.Context, req, rsp interface{}, err error) {
+// notify
+//  이밴트 리스너로 전달
+func (manager EventManager) notify(args *EventArgs) {
+	for _, ectx := range manager.eventContexts {
 
-	path := ctx.Request().URL.Path
-	method := ctx.Request().Method
-	status := ctx.Response().Status
-	query := ctx.QueryString()
+		//값 가공
+		args_ := map[string]interface{}{
+			"name":  ectx.Name(), //이벤트 이름 추가
+			"issue": time.Now(),  //시간 추가
+			"args":  args.Args,
+		}
 
-	args := map[string]interface{}{
-		"path":    path,
-		"query":   query,
-		"method":  method,
-		"reqbody": req,
-		"rspbody": rsp,
-		"status":  status,
-	}
-	if err != nil {
-		args["error"] = err.Error()
+		ectx.Raise(EventArgs{Sender: args.Sender, Args: args_}, manager.errorHandler)
 	}
 
-	Manager.sender.SafeSend(args)
 }
 
-func (me *EventManager) Start() {
-	wg := sync.WaitGroup{}
+func (manager EventManager) Activate(sender *channels.SafeChannel, n ...int) func() {
 
-	//new reciver
-	reciver := NewSafeChannel(0)
-
-	closing := make(chan struct{})
-	closed := make(chan struct{})
-
-	//set stop
-	me.Stop = func() {
-		select {
-		case closing <- struct{}{}:
-			<-closed
-		case <-closed:
-		}
+	// reciver gorutine count
+	//  0보다 커야함
+	var gorutine_cnt int = 1
+	if 0 < len(n) {
+		gorutine_cnt = n[0]
+	}
+	if gorutine_cnt <= 0 {
+		gorutine_cnt = 1 //0보다 커야함
 	}
 
-	//sender
-	go func() {
-		defer func() {
-			close(closed)
-			reciver.SafeClose()
-		}()
+	// reciver channel buffer size
+	//  음수는 안됨
+	var chan_size int = 0
+	if 1 < len(n) {
+		chan_size = n[1]
+	}
+	if chan_size < 0 {
+		chan_size = 0 //음수면 안됨
+	}
 
-		for {
-			select {
-			case <-closing:
-				return
-			default:
+	notify := func(v interface{}) {
+		args, _ := v.(*EventArgs) //입력 받은 이벤트 데이터, 캐스트 해본다
+		manager.notify(args)
+	}
+
+	stop := channels.Distribute(sender, notify, gorutine_cnt, chan_size) //setting Distribute
+	deactivate := func() {
+		//채널 종료
+		stop()
+
+		//이벤트 종료 기다림
+		for _, event := range manager.eventContexts {
+			event_, ok := event.(Waiter)
+			if ok {
+				event_.Wait()
 			}
-
-			select {
-			case <-closing:
-				return
-			case v := <-me.sender.C:
-				reciver.SafeSend(v)
-			}
-		}
-	}()
-
-	//reciver
-	num_cpu := runtime.NumCPU()
-	wg.Add(num_cpu) // wg add
-	for n := 0; n < num_cpu; n++ {
-		go func() {
-			defer wg.Done() //wg done
-
-			for v := range reciver.C {
-				if args, ok := v.(map[string]interface{}); ok {
-					notify(args, me.ErrorHandler) //notify
-				}
-			}
-		}()
-	}
-
-	wg.Wait() //wg wait
-}
-
-func notify(args map[string]interface{}, err_handler ErrorHandler) {
-
-	foreach := func(ctxs []ListenerContext, fn func(ctx ListenerContext)) {
-		for _, listener := range ctxs {
-			fn(listener)
-		}
-	}
-
-	path := args["path"].(string)
-	for pattern, ctxs := range Listeners {
-
-		rx, _ := regexp.Compile(pattern)
-
-		ok := rx.Match([]byte(path))
-		if ok {
-			foreach(ctxs, func(ctx ListenerContext) {
-				err := ctx.Raise(map[string]interface{}{
-					"name": ctx.Name(),
-					"type": ctx.Type(),
-					"time": time.Now(),
-					"args": args,
-				})
-				if err != nil {
-					err_handler(ctx, args, err)
-				}
-			})
 		}
 
+		//파일 리스너를 위한, 파일 핸들러 종료
+		Files.CloseFileAll()
 	}
+	return deactivate
 }

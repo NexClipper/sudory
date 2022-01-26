@@ -14,38 +14,46 @@
 ## config listener
 
 - 설정 파일의 정의
-  - 공통 설정
-    - events: 이벤트 정의 시작
-    - listener: 리스터 정의 시작
-    - type: 리스터 타입
-    - name: 리스너 이름
-    - pattern: http header path 정규식 매칭 패턴
-    - option: 리스터 옵션 정의 시작
-  - type-webhook
+  - events: 이벤트 정의 배열
+  - event: 이벤트 정의 시작
+  - name: 이벤트 이름
+  - pattern: EventArgs.Sender와 정규식 패턴 매칭
+  - listeners: 리스너 정의 배열
+  - listener: 리스너 정의 시작
+  - type: 리스너 타입
+  - config listener-type-webhook:
     - method: http method
     - url: http url
     - content-type: http content-type
     - timeout: http timeout
-  - type-file
+  - config listener-type-file:
     - path: 파일 경로
 
 ```yaml
-events: 
-  - listener:
-    type: 'webhook'
+events:
+  - event:
+    name: 'client poll'
+    pattern: '/client/poll'
+    listeners:
+    - listener:
+      type: 'webhook'
+      method: post
+      url: 'http://localhost:8000/'
+      content-type: 'application/json'
+      timeout: 30  
+    - listener: 
+      type: 'file'
+      path: ./log/server.log
+  - event:
     name: 'client --all'
     pattern: '/client/*'
-    option:
+    listeners:
+    - listener:
+      type: 'webhook'
       method: post
       url: 'http://localhost:8000/'
       content-type: 'application/json'
       timeout: 30
-  - listener:
-    type: 'file'
-    name: 'server --all'
-    pattern: '/server/*'
-    option:
-      path: ../log/server.log
 ```
 
 ## example code
@@ -56,17 +64,32 @@ events:
 import "github.com/NexClipper/sudory/pkg/server/events"
 
 func main() {
-    //events new
-    ecfg, err := events.New(*configPath)
-    if err != nil {
-        panic(err)
-    }
-    err = ecfg.Regist() //events Regist
-    if err != nil {
-        panic(err)
-    }
-    defer events.Manager.Stop() //event stop
+    //process init here
     
+    //events
+    var eventContexts []events.EventContexter
+    var eventConfig *events.Configs
+    //event config
+    if eventConfig, err = events.NewConfig(*configPath); err != nil { //config file load
+        panic(err)
+    }
+    //event config vaild
+    if err = eventConfig.Vaild(); err != nil { //config vaild
+        panic(err)
+    }
+    //event config make listener
+    if eventContexts, err = eventConfig.MakeEventListener(); err != nil { //events regist listener
+        panic(err)
+    }
+    //event manager
+    eventInvoke := channels.NewSafeChannel(0)
+    manager := events.NewManager(eventContexts, log.Printf)
+    deactivate := manager.Activate(eventInvoke, len(eventContexts)) //manager activate
+    defer func() {
+        deactivate() //stop when closing
+    }()
+    events.Invoke = func(v *events.EventArgs) { eventInvoke.SafeSend(v) } //setting invoker
+
     //process loop here
 }
 ```
@@ -76,14 +99,33 @@ func main() {
 ```golang
 import "github.com/NexClipper/sudory/pkg/server/events"
 
-func middleware(ctx echo.Context) error {
+func fn(ctx echo.Context) error {
 
     var err error
     var req, rsp interface{}
 
     //event invoke
     defer func() {
-        events.Invoke(ctx, req, rsp, err)
+
+        path := ctx.Request().URL.Path
+        method := ctx.Request().Method
+        status := ctx.Response().Status
+        query := ctx.QueryString()
+  
+        args := map[string]interface{}{
+            "path":    path,
+            "query":   query,
+            "method":  method,
+            "reqbody": req,
+            "rspbody": rsp,
+            "status":  status,
+            "error":   err,
+        }
+  
+        if err == nil {
+            delete(args, "error")
+        }
+        events.Invoke(&events.EventArgs{Sender: path, Args: args})
     }()
 
     //request & response here

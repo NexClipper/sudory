@@ -10,71 +10,69 @@ import (
 )
 
 type WebhookListenOption struct {
-	Type    string `yaml:"type,omitempty"`
-	Name    string `yaml:"name,omitempty"`
-	Pattern string `yaml:"pattern,omitempty"`
-	Option  struct {
-		Method      string `yaml:"method,omitempty"`
-		Url         string `yaml:"url,omitempty"`
-		ContentType string `yaml:"content-type,omitempty"`
-		Timeout     int32  `yaml:"timeout,omitempty"`
-	} `yaml:"option,omitempty"`
+	Type        string `yaml:"type,omitempty"`
+	Method      string `yaml:"method,omitempty"`
+	Url         string `yaml:"url,omitempty"`
+	ContentType string `yaml:"content-type,omitempty"`
+	Timeout     int32  `yaml:"timeout,omitempty"`
 }
 
 type WebhookListen struct {
-	opt WebhookListenOption
 	mux sync.Mutex
+
+	config EventConfig
+	opt    WebhookListenOption
 }
 
 //check implementation
-var _ ListenerContext = (*WebhookListen)(nil)
+var _ ListenerContexter = (*WebhookListen)(nil)
 
-func NewWebhookEventListener(opt WebhookListenOption) ListenerContext {
+func NewWebhookEventListener(config EventConfig, opt WebhookListenOption) ListenerContexter {
 
-	if len(opt.Option.Method) == 0 {
-		opt.Option.Method = http.MethodGet //set default Method
+	if len(opt.Method) == 0 {
+		opt.Method = http.MethodGet //set default Method
 	}
-	opt.Option.Method = strings.ToUpper(opt.Option.Method) //Method to upper
+	opt.Method = strings.ToUpper(opt.Method) //Method to upper
 
-	if opt.Option.Timeout == 0 {
-		opt.Option.Timeout = 15 //set default timeout
+	if opt.Timeout == 0 {
+		opt.Timeout = 15 //set default timeout
 	}
 
-	return &WebhookListen{opt: opt}
+	return &WebhookListen{config: config, opt: opt}
 }
-func (me *WebhookListen) Type() string {
-	return "webhook"
-}
-func (me *WebhookListen) Name() string {
-	return me.opt.Name
-}
-func (me *WebhookListen) Pattern() string {
-	return me.opt.Pattern
-}
-func (me *WebhookListen) Dest() string {
-	return me.opt.Option.Url
+func (ctx *WebhookListen) Type() string {
+	return ListenerTypeWebhook.String()
 }
 
-func (me *WebhookListen) Raise(v interface{}) error {
-	me.mux.Lock()
-	defer me.mux.Unlock()
-	return me.raise(v)
+func (ctx *WebhookListen) Name() string {
+	return ctx.config.Name
 }
 
-func (me *WebhookListen) raise(v interface{}) error {
+func (ctx *WebhookListen) Summary() string {
+	return fmt.Sprintf("%s %s", strings.ToUpper(ctx.opt.Method), ctx.opt.Url)
+}
+
+func (ctx *WebhookListen) Raise(v interface{}) error {
+	ctx.mux.Lock()
+	defer ctx.mux.Unlock()
+
+	return webhook_raise(ctx.opt, v)
+}
+
+func webhook_raise(opt WebhookListenOption, v interface{}) error {
 	buffer, err := serialize_json(v)
 	if err != nil {
 		return err
 	}
 	// Create request
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(me.opt.Option.Timeout)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(opt.Timeout)*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, me.opt.Option.Method, me.opt.Option.Url, buffer)
+	req, err := http.NewRequestWithContext(ctx, opt.Method, opt.Url, buffer)
 	if err != nil {
 		return err
 	}
-	if 0 < len(me.opt.Option.ContentType) {
-		req.Header.Set("Content-Type", me.opt.Option.ContentType) //set content-type
+	if 0 < len(opt.ContentType) {
+		req.Header.Set("Content-Type", opt.ContentType) //set content-type
 	}
 	// // Add param
 	// q := url.Values{}

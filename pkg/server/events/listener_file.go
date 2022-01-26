@@ -3,78 +3,60 @@ package events
 import (
 	"bytes"
 	"encoding/json"
-	"os"
-	"path"
-	"sync"
 )
 
 type FileListenOption struct {
-	Type    string `yaml:"type,omitempty"`
-	Name    string `yaml:"name,omitempty"`
-	Pattern string `yaml:"pattern,omitempty"`
-	Option  struct {
-		Path string `yaml:"path,omitempty"`
-	} `yaml:"option,omitempty"`
+	Type string `yaml:"type,omitempty"`
+	Path string `yaml:"path,omitempty"`
 }
 type FileListener struct {
-	opt FileListenOption
-	mux sync.Mutex
+	config EventConfig
+	opt    FileListenOption
 }
 
 //check implementation
-var _ ListenerContext = (*FileListener)(nil)
+var _ ListenerContexter = (*FileListener)(nil)
 
-func NewFileListener(opt FileListenOption) ListenerContext {
-	dir := path.Dir(opt.Option.Path)
-	_, err := os.Stat(dir)
-	if os.IsNotExist(err) {
-		err = os.MkdirAll(dir, 0700)
-		if err != nil {
-			panic(err) //didn't make mkdir
-		}
+func NewFileListener(config EventConfig, opt FileListenOption) (ListenerContexter, error) {
+
+	err := Files.OpenFile(opt.Path)
+	if err != nil {
+		return nil, err
 	}
-	return &FileListener{opt: opt}
+
+	return &FileListener{config: config, opt: opt}, nil
 }
-func (me *FileListener) Type() string {
-	return "file"
-}
-func (me *FileListener) Name() string {
-	return me.opt.Name
-}
-func (me *FileListener) Pattern() string {
-	return me.opt.Pattern
-}
-func (me *FileListener) Dest() string {
-	return me.opt.Option.Path
+func (me FileListener) Type() string {
+	return ListenerTypeFile.String()
 }
 
-func (me *FileListener) Raise(v interface{}) error {
-	me.mux.Lock()
-	defer me.mux.Unlock()
-	return me.raise(v)
+func (me FileListener) Name() string {
+	return me.config.Name
 }
 
-func (me *FileListener) raise(v interface{}) error {
+func (me FileListener) Summary() string {
+	return me.opt.Path
+}
+
+func (ctx FileListener) Raise(v interface{}) error {
+	return file_raise(ctx.opt, v)
+}
+
+func file_raise(opt FileListenOption, v interface{}) error {
 
 	buffer, err := serialize_json(v)
 	if err != nil {
 		return err
 	}
 
-	fd, err := os.OpenFile(me.opt.Option.Path, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	_, err = Files.WriteFile(opt.Path,
+		buffer.Bytes(),
+		[]byte{'\n'},
+	)
 	if err != nil {
 		return err
 	}
-	defer fd.Close()
 
-	_, err = fd.Write(buffer.Bytes())
-	if err != nil {
-		return err
-	}
-	_, err = fd.Write([]byte{'\n'})
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

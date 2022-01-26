@@ -83,7 +83,26 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 
 		//event invoke
 		defer func() {
-			events.Invoke(ctx, req, rsp, err)
+
+			path := ctx.Request().URL.Path
+			method := ctx.Request().Method
+			status := ctx.Response().Status
+			query := ctx.QueryString()
+
+			args := map[string]interface{}{
+				"path":    path,
+				"query":   query,
+				"method":  method,
+				"reqbody": req,
+				"rspbody": rsp,
+				"status":  status,
+				"error":   err,
+			}
+
+			if err == nil {
+				delete(args, "error")
+			}
+			events.Invoke(&events.EventArgs{Sender: path, Args: args})
 		}()
 
 		//logging
