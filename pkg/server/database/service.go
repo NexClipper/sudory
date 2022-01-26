@@ -12,8 +12,7 @@ import (
 func (ctx Session) CreateService(m servicev1.DbSchemaService) error {
 	tx := ctx.Tx()
 
-	affect, err := tx.
-		AllCols().Insert(&m)
+	affect, err := tx.Insert(&m)
 	if err != nil {
 		return err
 	}
@@ -72,7 +71,7 @@ func (ctx Session) UpdateService(m servicev1.DbSchemaService) error {
 	tx := ctx.Tx()
 
 	affect, err := tx.Where("uuid = ?", m.Uuid).
-		AllCols().Update(&m)
+		Update(&m)
 	if err != nil {
 		return err
 	}

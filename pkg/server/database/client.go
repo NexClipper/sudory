@@ -12,8 +12,7 @@ import (
 func (ctx Session) CreateClient(m clientv1.DbSchemaClient) error {
 	tx := ctx.Tx()
 
-	affect, err := tx.
-		AllCols().Insert(&m)
+	affect, err := tx.Insert(&m)
 	if err != nil {
 		return err
 	}
@@ -71,7 +70,7 @@ func (ctx Session) UpdateClient(m clientv1.DbSchemaClient) error {
 	tx := ctx.Tx()
 
 	affect, err := tx.Where("uuid = ?", m.Uuid).
-		AllCols().Update(&m)
+		Update(&m)
 	if err != nil {
 		return err
 	}
