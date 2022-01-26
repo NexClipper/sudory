@@ -3,6 +3,7 @@ package service
 import (
 	"time"
 
+	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 )
 
@@ -79,7 +80,7 @@ func ServiceListServerToClient(server []servicev1.HttpRspClientSideService) map[
 			serv.Steps = append(serv.Steps, &Step{
 				Id:       i,
 				ParentId: serv.Id,
-				Command:  &StepCommand{Method: s.Method, Args: s.Args}})
+				Command:  &StepCommand{Method: *s.Method, Args: s.Args}})
 		}
 		client[v.Uuid] = serv
 	}
@@ -98,22 +99,22 @@ func ServiceListClientToServer(client map[string]ServiceChecked) []servicev1.Htt
 		serv := servicev1.HttpReqClientSideService{Service: v.service.serverData.Service, Steps: v.service.serverData.Steps}
 		switch v.service.Status {
 		case ServiceStatusPreparing, ServiceStatusStart, ServiceStatusProcessing:
-			serv.Service.Status = int32(servicev1.StatusProcessing)
+			serv.Service.Status = newist.Int32(int32(servicev1.StatusProcessing))
 		case ServiceStatusSuccess:
-			serv.Service.Status = int32(servicev1.StatusSuccess)
+			serv.Service.Status = newist.Int32(int32(servicev1.StatusSuccess))
 		case ServiceStatusFailed:
-			serv.Service.Status = int32(servicev1.StatusFail)
+			serv.Service.Status = newist.Int32(int32(servicev1.StatusFail))
 		}
 
 		if v.service.Result.body != "" {
-			serv.Service.Result = v.service.Result.body
+			serv.Service.Result = newist.String(v.service.Result.body)
 		}
 		if v.service.Result.err != nil {
-			serv.Service.Result = v.service.Result.err.Error()
+			serv.Service.Result = newist.String(v.service.Result.err.Error())
 		}
 
 		for i, s := range v.service.Steps {
-			serv.Steps[i].Status = int32(s.Status)
+			serv.Steps[i].Status = newist.Int32(int32(s.Status))
 		}
 
 		server = append(server, serv)

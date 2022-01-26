@@ -8,17 +8,17 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
-	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
+	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	"xorm.io/xorm"
 	"xorm.io/xorm/log"
 )
 
-//Test Template CRUD
-//테스트 목적: Template 테이블 기능
+//Test Service CRUD
+//테스트 목적: Service 테이블 기능
 //테스트 조건:
 //		로컬 호스트 mariadb 인스턴스
-//		v1.Template 테이블
-func TestTemplateCRUD(t *testing.T) {
+//		v1.Service 테이블
+func TestServiceCRUD(t *testing.T) {
 
 	newEngine := func() *xorm.Engine {
 		const (
@@ -53,47 +53,62 @@ func TestTemplateCRUD(t *testing.T) {
 		}
 	}
 
-	create_model := func() *templatev1.DbSchemaTemplate {
-		out := templatev1.DbSchemaTemplate{}
+	create_model := func() *servicev1.DbSchemaService {
+		out := servicev1.DbSchemaService{}
 
 		out.Uuid = "00001111222233334444555566667777"
-		out.Name = "(NEW) test-template"
-		out.Summary = newist.String("(NEW) test template")
+		out.Name = "(NEW) test-Service"
+		out.Summary = newist.String("(NEW) test Service")
 		out.ApiVersion = "v1"
-		out.Origin = newist.String("origin")
+		out.ClusterUuid = "00001111222233334444555566667777"
+		out.StepCount = newist.Int32(0)
+		out.StepPosition = newist.Int32(0)
+		out.Type = newist.Int32(0)
+		out.Epoch = newist.Int32(0)
+		out.Interval = newist.Int32(0)
+		out.Status = newist.Int32(0)
+		out.Result = newist.String("success")
 
 		return &out
 	}
-	update_model := func() *templatev1.DbSchemaTemplate {
-		out := templatev1.DbSchemaTemplate{}
+	update_model := func() *servicev1.DbSchemaService {
+		out := servicev1.DbSchemaService{}
 
 		out.Uuid = "00001111222233334444555566667777"
-		out.Name = "(UPDATED) test-template"
-		out.Summary = newist.String("(UPDATED) test template")
+		out.Name = "(UPDATED) test-Service"
+		out.Summary = newist.String("(UPDATED) test Service")
 		out.ApiVersion = "v1"
-		out.Origin = newist.String("changed-origin")
+		out.ClusterUuid = "00001111222233334444555566667777"
+		out.StepCount = newist.Int32(0)
+		out.StepPosition = newist.Int32(1)
+		out.Type = newist.Int32(2)
+		out.Epoch = newist.Int32(3)
+		out.Interval = newist.Int32(4)
+		out.Status = newist.Int32(5)
+		out.Result = newist.String("failed")
 
 		return &out
 	}
 
-	empty_model := func() *templatev1.DbSchemaTemplate {
-		return new(templatev1.DbSchemaTemplate)
+	empty_model := func() *servicev1.DbSchemaService {
+		return new(servicev1.DbSchemaService)
 	}
+
 	create := func() error {
-		err := ctx.CreateTemplate(*create_model())
+		err := ctx.CreateService(*create_model())
 		if err != nil {
 			return fmt.Errorf("created error with; %w", err)
 		}
-
 		return nil
 	} //생성
 
 	read := func() error {
-		record, err := ctx.GetTemplate(create_model().Uuid)
+		record, err := ctx.GetService(create_model().Uuid)
 		if err != nil {
 			return fmt.Errorf("read error with; %w", err)
 		}
 
+		//verbose
 		j, err := json.MarshalIndent(record, "", " ")
 		if err != nil {
 			return fmt.Errorf("read error with json; %w", err)
@@ -102,9 +117,9 @@ func TestTemplateCRUD(t *testing.T) {
 
 		return nil
 	} //조회
-	validate := func(model *templatev1.DbSchemaTemplate) func() error {
+	validate := func(model *servicev1.DbSchemaService) func() error {
 		return func() error {
-			record, err := ctx.GetTemplate(model.Uuid)
+			record, err := ctx.GetService(model.Uuid)
 			if err != nil {
 				return fmt.Errorf("validate error with; %w", err)
 			}
@@ -116,26 +131,23 @@ func TestTemplateCRUD(t *testing.T) {
 			Are(model.Name, record.Name, are_equl, are_diff)
 			Are(model.Summary, record.Summary, are_equl, are_diff)
 			Are(model.ApiVersion, record.ApiVersion, are_equl, are_diff)
-			Are(model.Origin, record.Origin, are_equl, are_diff)
 
 			return nil
 		}
 	} //데이터 정합 확인
 
 	update := func() error {
-		err := ctx.UpdateTemplate(*update_model())
+		err := ctx.UpdateService(*update_model())
 		if err != nil {
 			return fmt.Errorf("updated error with; %w", err)
 		}
-
 		return nil
 	} //데이터 갱신
 	delete := func() error {
-		err := ctx.DeleteTemplate(update_model().Uuid)
+		err := ctx.DeleteService(update_model().Uuid)
 		if err != nil {
 			return fmt.Errorf("deleted error with; %w", err)
 		}
-
 		return nil
 	} //삭제
 	clear := func() error {
@@ -144,7 +156,7 @@ func TestTemplateCRUD(t *testing.T) {
 		sqlrst, err := newEngine().
 			Exec(fmt.Sprintf("delete from %s where uuid = ?", table), create_model().Uuid)
 		if err != nil {
-			return fmt.Errorf("no record clear; %w", err)
+			return fmt.Errorf("clear error with; %w", err)
 		}
 
 		affect, err := sqlrst.RowsAffected()

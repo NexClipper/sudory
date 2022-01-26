@@ -23,7 +23,7 @@ func (c *Control) CreateServiceStep() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["service_uuid"].(string)) == 0 {
+		if len(req[__SERVICE_UUID__].(string)) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 
@@ -32,7 +32,7 @@ func (c *Control) CreateServiceStep() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, ErrorBindRequestObject(err)
 		}
-		req["_"] = body
+		req[__BODY__] = body
 		return req, nil
 	}
 	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
@@ -40,11 +40,11 @@ func (c *Control) CreateServiceStep() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		service_uuid, ok := req["service_uuid"].(string)
+		service_uuid, ok := req[__SERVICE_UUID__].(string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		body, ok := req["_"].(*stepv1.HttpReqServiceStep)
+		body, ok := req[__BODY__].(*stepv1.HttpReqServiceStep)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -88,7 +88,7 @@ func (c *Control) GetServiceSteps() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["service_uuid"]) == 0 {
+		if len(req[__SERVICE_UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		return req, nil
@@ -100,7 +100,7 @@ func (c *Control) GetServiceSteps() func(ctx echo.Context) error {
 		}
 
 		where := "service_uuid = ?"
-		service_uuid := req["service_uuid"]
+		service_uuid := req[__SERVICE_UUID__]
 
 		record, err := operator.NewServiceStep(ctx).
 			Find(where, service_uuid)
@@ -134,10 +134,10 @@ func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["service_uuid"]) == 0 {
+		if len(req[__SERVICE_UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
-		if len(req["uuid"]) == 0 {
+		if len(req[__UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		return req, nil
@@ -148,8 +148,8 @@ func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 			return nil, ErrorFailedCast()
 		}
 
-		_ = req["service_uuid"]
-		uuid := req["uuid"]
+		_ = req[__SERVICE_UUID__]
+		uuid := req[__UUID__]
 
 		record, err := operator.NewServiceStep(ctx).
 			Get(uuid)
@@ -185,10 +185,10 @@ func (c *Control) UpdateServiceStep() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["service_uuid"].(string)) == 0 {
+		if len(req[__SERVICE_UUID__].(string)) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
-		if len(req["uuid"].(string)) == 0 {
+		if len(req[__UUID__].(string)) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 
@@ -197,7 +197,7 @@ func (c *Control) UpdateServiceStep() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, ErrorBindRequestObject(err)
 		}
-		req["_"] = body
+		req[__BODY__] = body
 
 		return req, nil
 	}
@@ -206,21 +206,24 @@ func (c *Control) UpdateServiceStep() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		service_uuid, ok := req["service_uuid"].(string)
+		service_uuid, ok := req[__SERVICE_UUID__].(string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		uuid, ok := req["uuid"].(string)
+		uuid, ok := req[__UUID__].(string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		body, ok := req["_"].(*stepv1.HttpReqServiceStep)
+		body, ok := req[__BODY__].(*stepv1.HttpReqServiceStep)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
+		//set service uuid from path
 		body.ServiceStep.ServiceUuid = service_uuid
+		//set uuid from path
 		body.ServiceStep.Uuid = uuid
+
 		err := operator.NewServiceStep(ctx).
 			Update(body.ServiceStep)
 		if err != nil {
@@ -254,10 +257,10 @@ func (c *Control) DeleteServiceStep() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["service_uuid"]) == 0 {
+		if len(req[__SERVICE_UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
-		if len(req["uuid"]) == 0 {
+		if len(req[__UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		return req, nil
@@ -268,8 +271,8 @@ func (c *Control) DeleteServiceStep() func(ctx echo.Context) error {
 			return nil, ErrorFailedCast()
 		}
 
-		_ = req["service_uuid"]
-		uuid := req["uuid"]
+		_ = req[__SERVICE_UUID__]
+		uuid := req[__UUID__]
 
 		//조회 해서 레코드가 없으면 종료
 		step, err := operator.NewServiceStep(ctx).
@@ -319,10 +322,10 @@ func (c *Control) DeleteServiceStep() func(ctx echo.Context) error {
 // 		for _, it := range ctx.ParamNames() {
 // 			req[it] = ctx.Param(it)
 // 		}
-// 		if len(req["service_uuid"].(string)) == 0 {
+// 		if len(req[__service_uuid_].(string)) == 0 {
 // 			return nil, ErrorInvaliedRequestParameter()
 // 		}
-// 		if len(req["uuid"].(string)) == 0 {
+// 		if len(req[__uuid__].(string)) == 0 {
 // 			return nil, ErrorInvaliedRequestParameter()
 // 		}
 // 		body := new(stepv1.HttpReqServiceStep)
@@ -330,7 +333,7 @@ func (c *Control) DeleteServiceStep() func(ctx echo.Context) error {
 // 		if err != nil {
 // 			return nil, ErrorBindRequestObject(err)
 // 		}
-// 		req["_"] = body
+// 		req[__body__] = body
 // 		return req, nil
 // 	}
 // 	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
@@ -338,15 +341,15 @@ func (c *Control) DeleteServiceStep() func(ctx echo.Context) error {
 // 		if !ok {
 // 			return nil, ErrorFailedCast()
 // 		}
-// 		service_uuid, ok := req["service_uuid"].(string)
+// 		service_uuid, ok := req[__service_uuid_].(string)
 // 		if !ok {
 // 			return nil, ErrorFailedCast()
 // 		}
-// 		uuid, ok := req["uuid"].(string)
+// 		uuid, ok := req[__uuid__].(string)
 // 		if !ok {
 // 			return nil, ErrorFailedCast()
 // 		}
-// 		body, ok := req["_"].(*stepv1.HttpReqServiceStep)
+// 		body, ok := req[__body__].(*stepv1.HttpReqServiceStep)
 // 		if !ok {
 // 			return nil, ErrorFailedCast()
 // 		}

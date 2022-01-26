@@ -1,13 +1,14 @@
-package database
+package database_test
 
 import (
 	"encoding/json"
 	"fmt"
 	"testing"
 
+	"github.com/NexClipper/sudory/pkg/server/database"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
-	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
-	tcommandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
+	"github.com/NexClipper/sudory/pkg/server/macro/newist"
+	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
 	"xorm.io/xorm"
 	"xorm.io/xorm/log"
 )
@@ -35,7 +36,7 @@ func TestTemplateCommandCRUD(t *testing.T) {
 		return engine
 	}
 
-	database := NewContext(newEngine())
+	ctx := database.NewContext(newEngine())
 
 	Are := func(expect interface{}, actual interface{}, equal, diff func(string)) {
 
@@ -52,57 +53,47 @@ func TestTemplateCommandCRUD(t *testing.T) {
 		}
 	}
 
-	const templateUuid = "cda6498a235d4f7eae19661d41bc154c"
-	create_model := func() *tcommandv1.DbSchemaTemplateCommand {
-		return &tcommandv1.DbSchemaTemplateCommand{
-			TemplateCommand: tcommandv1.TemplateCommand{
-				LabelMeta: metav1.LabelMeta{
-					Uuid:       templateUuid,
-					Name:       "(NEW) template_kube_get_pods",
-					Summary:    "(NEW) template_kube_get_pods: ...",
-					ApiVersion: "v1",
-				},
-				TemplateCommandProperty: tcommandv1.TemplateCommandProperty{
-					TemplateUuid: "template_uuid",
-					Sequence:     1,
-					Method:       "kube.pod.get.v1",
-					Args: map[string]string{
-						"name": "test_name",
-						"ns":   "test_namespace",
-					},
-				},
-			},
+	create_model := func() *commandv1.DbSchemaTemplateCommand {
+		out := commandv1.DbSchemaTemplateCommand{}
+
+		out.Uuid = "00001111222233334444555566667777"
+		out.Name = "(NEW) test-template-command"
+		out.Summary = newist.String("(NEW) test template command")
+		out.ApiVersion = "v1"
+		out.TemplateUuid = "00001111222233334444555566667777"
+		out.Sequence = newist.Int32(0)
+		out.Method = newist.String("test.method.get.v1")
+		out.Args = map[string]string{
+			"name":  "test-name",
+			"arg-1": "test-arg-1",
 		}
+
+		return &out
 	}
-	update_model := func() *tcommandv1.DbSchemaTemplateCommand {
-		return &tcommandv1.DbSchemaTemplateCommand{
-			TemplateCommand: tcommandv1.TemplateCommand{
-				LabelMeta: metav1.LabelMeta{
-					Uuid:       templateUuid,
-					Name:       "(UPDATE) template_kube_get_pods",
-					Summary:    "(UPDATE) template_kube_get_pods: ...",
-					ApiVersion: "v2",
-				},
-				TemplateCommandProperty: tcommandv1.TemplateCommandProperty{
-					TemplateUuid: "template_uuid",
-					Sequence:     2,
-					Method:       "kube.pod.get.v2",
-					Args: map[string]string{
-						"name": "update_name",
-						"ns":   "update_namespace",
-						"args": "test_args",
-					},
-				},
-			},
+	update_model := func() *commandv1.DbSchemaTemplateCommand {
+		out := commandv1.DbSchemaTemplateCommand{}
+
+		out.Uuid = "00001111222233334444555566667777"
+		out.Name = "(UPDATED) test-template-command"
+		out.Summary = newist.String("(UPDATED) test template command")
+		out.ApiVersion = "v1"
+		out.TemplateUuid = "00001111222233334444555566667777"
+		out.Sequence = newist.Int32(0)
+		out.Method = newist.String("test.method.get.v1")
+		out.Args = map[string]string{
+			"name":  "test-name",
+			"arg-1": "test-arg-1",
 		}
+
+		return &out
 	}
 
-	empty_model := func() *tcommandv1.DbSchemaTemplateCommand {
-		return new(tcommandv1.DbSchemaTemplateCommand)
+	empty_model := func() *commandv1.DbSchemaTemplateCommand {
+		return new(commandv1.DbSchemaTemplateCommand)
 	}
 
 	create := func() error {
-		err := database.CreateTemplateCommand(*create_model())
+		err := ctx.CreateTemplateCommand(*create_model())
 		if err != nil {
 			return fmt.Errorf("created error with; %w", err)
 		}
@@ -110,7 +101,7 @@ func TestTemplateCommandCRUD(t *testing.T) {
 	} //생성
 
 	read := func() error {
-		record, err := database.GetTemplateCommand(create_model().Uuid)
+		record, err := ctx.GetTemplateCommand(create_model().Uuid)
 		if err != nil {
 			return fmt.Errorf("read error with; %w", err)
 		}
@@ -124,9 +115,9 @@ func TestTemplateCommandCRUD(t *testing.T) {
 
 		return nil
 	} //조회
-	validate := func(model *tcommandv1.DbSchemaTemplateCommand) func() error {
+	validate := func(model *commandv1.DbSchemaTemplateCommand) func() error {
 		return func() error {
-			record, err := database.GetTemplateCommand(model.Uuid)
+			record, err := ctx.GetTemplateCommand(model.Uuid)
 			if err != nil {
 				return fmt.Errorf("validate error with; %w", err)
 			}
@@ -148,14 +139,14 @@ func TestTemplateCommandCRUD(t *testing.T) {
 	} //데이터 정합 확인
 
 	update := func() error {
-		err := database.UpdateTemplateCommand(*update_model())
+		err := ctx.UpdateTemplateCommand(*update_model())
 		if err != nil {
 			return fmt.Errorf("updated error with; %w", err)
 		}
 		return nil
 	} //데이터 갱신
 	delete := func() error {
-		err := database.DeleteTemplateCommand(update_model().Uuid)
+		err := ctx.DeleteTemplateCommand(update_model().Uuid)
 		if err != nil {
 			return fmt.Errorf("deleted error with; %w", err)
 		}

@@ -10,7 +10,7 @@ import (
 type TemplateProperty struct {
 	//origin
 	//@example: predefined, userdefined
-	Origin string `json:"origin,omitempty" xorm:"varchar(255) null 'origin' comment('origin')"`
+	Origin *string `json:"origin,omitempty" xorm:"varchar(255) null 'origin' comment('origin')"`
 }
 
 //Template

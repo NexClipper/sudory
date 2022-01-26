@@ -1,13 +1,14 @@
-package database
+package database_test
 
 import (
 	"encoding/json"
 	"fmt"
 	"testing"
 
+	"github.com/NexClipper/sudory/pkg/server/database"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
+	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	clientv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
-	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	"xorm.io/xorm"
 	"xorm.io/xorm/log"
 )
@@ -35,7 +36,7 @@ func TestClientCRUD(t *testing.T) {
 		return engine
 	}
 
-	database := NewContext(newEngine())
+	ctx := database.NewContext(newEngine())
 
 	Are := func(expect interface{}, actual interface{}, equal, diff func(string)) {
 
@@ -52,36 +53,27 @@ func TestClientCRUD(t *testing.T) {
 		}
 	}
 
-	const templateUuid = "cda6498a235d4f7eae19661d41bc154c"
 	create_model := func() *clientv1.DbSchemaClient {
-		return &clientv1.DbSchemaClient{
-			Client: clientv1.Client{
-				LabelMeta: metav1.LabelMeta{
-					Uuid:       templateUuid,
-					Name:       "(NEW) test-client-name",
-					Summary:    "(NEW) test client",
-					ApiVersion: "v1",
-				},
-				ClientProperty: clientv1.ClientProperty{
-					ClusterUuid: "cluster_uuid:1234",
-				},
-			},
-		}
+		out := clientv1.DbSchemaClient{}
+
+		out.Uuid = "00001111222233334444555566667777"
+		out.Name = "(NEW) test-client-name"
+		out.Summary = newist.String("(NEW) test client")
+		out.ApiVersion = "v1"
+		out.ClusterUuid = "cluster_uuid:1234"
+
+		return &out
 	}
 	update_model := func() *clientv1.DbSchemaClient {
-		return &clientv1.DbSchemaClient{
-			Client: clientv1.Client{
-				LabelMeta: metav1.LabelMeta{
-					Uuid:       templateUuid,
-					Name:       "(UPDATED) test-client-name",
-					Summary:    "(UPDATED) test client",
-					ApiVersion: "v2",
-				},
-				ClientProperty: clientv1.ClientProperty{
-					ClusterUuid: "cluster_uuid:4321",
-				},
-			},
-		}
+		out := clientv1.DbSchemaClient{}
+
+		out.Uuid = "00001111222233334444555566667777"
+		out.Name = "(UPDATED) test-client-name"
+		out.Summary = newist.String("(UPDATED) test client")
+		out.ApiVersion = "v1"
+		out.ClusterUuid = "cluster_uuid:4321"
+
+		return &out
 	}
 
 	empty_model := func() *clientv1.DbSchemaClient {
@@ -89,7 +81,7 @@ func TestClientCRUD(t *testing.T) {
 	}
 
 	create := func() error {
-		err := database.CreateClient(*create_model())
+		err := ctx.CreateClient(*create_model())
 		if err != nil {
 			return fmt.Errorf("created error with; %w", err)
 		}
@@ -97,7 +89,7 @@ func TestClientCRUD(t *testing.T) {
 	} //생성
 
 	read := func() error {
-		record, err := database.GetClient(create_model().Uuid)
+		record, err := ctx.GetClient(create_model().Uuid)
 		if err != nil {
 			return fmt.Errorf("read error with; %w", err)
 		}
@@ -113,7 +105,7 @@ func TestClientCRUD(t *testing.T) {
 	} //조회
 	validate := func(model *clientv1.DbSchemaClient) func() error {
 		return func() error {
-			record, err := database.GetClient(model.Uuid)
+			record, err := ctx.GetClient(model.Uuid)
 			if err != nil {
 				return fmt.Errorf("validate error with; %w", err)
 			}
@@ -132,14 +124,14 @@ func TestClientCRUD(t *testing.T) {
 	} //데이터 정합 확인
 
 	update := func() error {
-		err := database.UpdateClient(*update_model())
+		err := ctx.UpdateClient(*update_model())
 		if err != nil {
 			return fmt.Errorf("updated error with; %w", err)
 		}
 		return nil
 	} //데이터 갱신
 	delete := func() error {
-		err := database.DeleteClient(update_model().Uuid)
+		err := ctx.DeleteClient(update_model().Uuid)
 		if err != nil {
 			return fmt.Errorf("deleted error with; %w", err)
 		}

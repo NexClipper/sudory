@@ -1,13 +1,14 @@
-package database
+package database_test
 
 import (
 	"encoding/json"
 	"fmt"
 	"testing"
 
+	"github.com/NexClipper/sudory/pkg/server/database"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
+	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
-	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	"xorm.io/xorm"
 	"xorm.io/xorm/log"
 )
@@ -35,7 +36,7 @@ func TestClusterCRUD(t *testing.T) {
 		return engine
 	}
 
-	database := NewContext(newEngine())
+	ctx := database.NewContext(newEngine())
 
 	Are := func(expect interface{}, actual interface{}, equal, diff func(string)) {
 
@@ -52,32 +53,25 @@ func TestClusterCRUD(t *testing.T) {
 		}
 	}
 
-	const templateUuid = "cda6498a235d4f7eae19661d41bc154c"
 	create_model := func() *clusterv1.DbSchemaCluster {
-		return &clusterv1.DbSchemaCluster{
-			Cluster: clusterv1.Cluster{
-				LabelMeta: metav1.LabelMeta{
-					Uuid:       templateUuid,
-					Name:       "(NEW) test-cluster-name",
-					Summary:    "(NEW) test cluster",
-					ApiVersion: "v1",
-				},
-				ClusterProperty: clusterv1.ClusterProperty{},
-			},
-		}
+		out := clusterv1.DbSchemaCluster{}
+
+		out.Uuid = "00001111222233334444555566667777"
+		out.Name = "(NEW) test-cluster-name"
+		out.Summary = newist.String("(NEW) test cluster")
+		out.ApiVersion = "v1"
+
+		return &out
 	}
 	update_model := func() *clusterv1.DbSchemaCluster {
-		return &clusterv1.DbSchemaCluster{
-			Cluster: clusterv1.Cluster{
-				LabelMeta: metav1.LabelMeta{
-					Uuid:       templateUuid,
-					Name:       "(NEW) test-cluster-name",
-					Summary:    "(NEW) test cluster",
-					ApiVersion: "v1",
-				},
-				ClusterProperty: clusterv1.ClusterProperty{},
-			},
-		}
+		out := clusterv1.DbSchemaCluster{}
+
+		out.Uuid = "00001111222233334444555566667777"
+		out.Name = "(UPDATED) test-cluster-name"
+		out.Summary = newist.String("(UPDATED) test cluster")
+		out.ApiVersion = "v1"
+
+		return &out
 	}
 
 	empty_model := func() *clusterv1.DbSchemaCluster {
@@ -85,7 +79,7 @@ func TestClusterCRUD(t *testing.T) {
 	}
 
 	create := func() error {
-		err := database.CreateCluster(*create_model())
+		err := ctx.CreateCluster(*create_model())
 		if err != nil {
 			return fmt.Errorf("created error with; %w", err)
 		}
@@ -93,7 +87,7 @@ func TestClusterCRUD(t *testing.T) {
 	} //생성
 
 	read := func() error {
-		record, err := database.GetCluster(create_model().Uuid)
+		record, err := ctx.GetCluster(create_model().Uuid)
 		if err != nil {
 			return fmt.Errorf("read error with; %w", err)
 		}
@@ -109,7 +103,7 @@ func TestClusterCRUD(t *testing.T) {
 	} //조회
 	validate := func(model *clusterv1.DbSchemaCluster) func() error {
 		return func() error {
-			record, err := database.GetCluster(model.Uuid)
+			record, err := ctx.GetCluster(model.Uuid)
 			if err != nil {
 				return fmt.Errorf("validate error with; %w", err)
 			}
@@ -127,14 +121,14 @@ func TestClusterCRUD(t *testing.T) {
 	} //데이터 정합 확인
 
 	update := func() error {
-		err := database.UpdateCluster(*update_model())
+		err := ctx.UpdateCluster(*update_model())
 		if err != nil {
 			return fmt.Errorf("updated error with; %w", err)
 		}
 		return nil
 	} //데이터 갱신
 	delete := func() error {
-		err := database.DeleteCluster(update_model().Uuid)
+		err := ctx.DeleteCluster(update_model().Uuid)
 		if err != nil {
 			return fmt.Errorf("deleted error with; %w", err)
 		}

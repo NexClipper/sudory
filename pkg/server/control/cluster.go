@@ -31,7 +31,7 @@ func (c *Control) CreateCluster() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, ErrorBindRequestObject(err)
 		}
-		req["_"] = body
+		req[__BODY__] = body
 		return req, nil
 	}
 	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
@@ -39,7 +39,7 @@ func (c *Control) CreateCluster() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		body, ok := req["_"].(*clusterv1.HttpReqCluster)
+		body, ok := req[__BODY__].(*clusterv1.HttpReqCluster)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -132,7 +132,7 @@ func (c *Control) GetCluster() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["uuid"]) == 0 {
+		if len(req[__UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		return req, nil
@@ -143,7 +143,7 @@ func (c *Control) GetCluster() func(ctx echo.Context) error {
 			return nil, ErrorFailedCast()
 		}
 
-		uuid := req["uuid"]
+		uuid := req[__UUID__]
 		rst, err := operator.NewCluster(ctx).
 			Get(uuid)
 		if err != nil {
@@ -177,7 +177,7 @@ func (c *Control) UpdateCluster() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["uuid"].(string)) == 0 {
+		if len(req[__UUID__].(string)) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 
@@ -186,7 +186,7 @@ func (c *Control) UpdateCluster() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, ErrorBindRequestObject(err)
 		}
-		req["_"] = body
+		req[__BODY__] = body
 
 		return req, nil
 	}
@@ -195,15 +195,16 @@ func (c *Control) UpdateCluster() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		uuid, ok := req["uuid"].(string)
+		uuid, ok := req[__UUID__].(string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		body, ok := req["_"].(*clusterv1.HttpReqCluster)
+		body, ok := req[__BODY__].(*clusterv1.HttpReqCluster)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
+		//set uuid from path
 		body.Cluster.Uuid = uuid
 
 		err := operator.NewCluster(ctx).
@@ -239,7 +240,7 @@ func (c *Control) DeleteCluster() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["uuid"]) == 0 {
+		if len(req[__UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		return req, nil
@@ -250,7 +251,7 @@ func (c *Control) DeleteCluster() func(ctx echo.Context) error {
 			return nil, ErrorFailedCast()
 		}
 
-		uuid := req["uuid"]
+		uuid := req[__UUID__]
 		err := operator.NewCluster(ctx).
 			Delete(uuid)
 		if err != nil {

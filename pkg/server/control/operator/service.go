@@ -2,6 +2,7 @@ package operator
 
 import (
 	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 )
 
@@ -94,7 +95,7 @@ func (o *Service) Chaining(uuid string) error {
 	}
 
 	// 스탭 카운트 업데이트
-	service.StepCount = int32(len(steps))
+	service.StepCount = newist.Int32(int32(len(steps)))
 
 	//저장
 	err = o.ctx.UpdateService(*service)

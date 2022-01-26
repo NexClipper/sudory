@@ -19,7 +19,7 @@
 -- Current Database: `sudory`
 --
 
-CREATE DATABASE /*!32312 IF NOT EXISTS*/ `sudory` /*!40100 DEFAULT CHARACTER SET utf8mb4 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `sudory` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */;
 
 USE `sudory`;
 
@@ -40,7 +40,9 @@ CREATE TABLE `client` (
   `created` datetime DEFAULT NULL,
   `updated` datetime DEFAULT NULL,
   `deleted` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `UQE_client_uuid` (`uuid`),
+  KEY `IDX_client_cluster_uuid` (`cluster_uuid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='client 관리 테이블';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -60,7 +62,8 @@ CREATE TABLE `cluster` (
   `created` datetime DEFAULT NULL,
   `updated` datetime DEFAULT NULL,
   `deleted` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `UQE_cluster_uuid` (`uuid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='cluster 관리 테이블';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -73,17 +76,17 @@ DROP TABLE IF EXISTS `service`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `service` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `uuid` char(32) COLLATE utf8_bin NOT NULL,
-  `name` varchar(255) COLLATE utf8_bin NOT NULL,
-  `summary` varchar(255) COLLATE utf8_bin DEFAULT NULL,
-  `api_version` varchar(255) COLLATE utf8_bin NOT NULL,
-  `cluster_uuid` char(32) COLLATE utf8_bin NOT NULL COMMENT 'clusters uuid',
-  `step_count` int(11) DEFAULT 0,
-  `step_position` int(11) DEFAULT 0,
-  `type` int(11) DEFAULT 0,
-  `epoch` int(11) DEFAULT 0,
-  `interval` int(11) DEFAULT 0,
-  `status` int(11) NOT NULL DEFAULT 0 COMMENT 'status',
+  `uuid` char(32) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `summary` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  `api_version` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `cluster_uuid` char(32) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL COMMENT 'clusters uuid',
+  `step_count` int(11) DEFAULT NULL,
+  `step_position` int(11) DEFAULT NULL,
+  `type` int(11) DEFAULT NULL,
+  `epoch` int(11) DEFAULT NULL,
+  `interval` int(11) DEFAULT NULL,
+  `status` int(11) DEFAULT NULL COMMENT 'status',
   `result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `created` datetime DEFAULT NULL,
   `updated` datetime DEFAULT NULL,
@@ -92,7 +95,7 @@ CREATE TABLE `service` (
   UNIQUE KEY `UQE_service_uuid` (`uuid`),
   KEY `IDX_service_cluster_uuid` (`cluster_uuid`),
   KEY `IDX_service_status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -111,8 +114,8 @@ CREATE TABLE `service_step` (
   `service_uuid` char(32) COLLATE utf8_bin NOT NULL COMMENT 'services uuid',
   `sequence` int(11) NOT NULL COMMENT 'sequence',
   `method` varchar(255) COLLATE utf8_bin NOT NULL COMMENT 'method',
-  `args` text COLLATE utf8_bin DEFAULT NULL COMMENT 'args',
-  `status` int(11) NOT NULL DEFAULT 1 COMMENT 'status',
+  `args` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'args',
+  `status` int(11) NOT NULL COMMENT 'status',
   `result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'result',
   `started` datetime DEFAULT NULL,
   `ended` datetime DEFAULT NULL,
@@ -123,7 +126,7 @@ CREATE TABLE `service_step` (
   UNIQUE KEY `UQE_service_step_uuid` (`uuid`),
   KEY `IDX_service_step_service_uuid` (`service_uuid`),
   KEY `status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -139,7 +142,7 @@ CREATE TABLE `template` (
   `name` varchar(255) COLLATE utf8_bin NOT NULL,
   `summary` varchar(255) COLLATE utf8_bin DEFAULT NULL,
   `api_version` varchar(255) COLLATE utf8_bin NOT NULL COMMENT 'api version',
-  `origin` varchar(255) COLLATE utf8_bin NOT NULL DEFAULT '' COMMENT 'origin',
+  `origin` varchar(255) COLLATE utf8_bin NOT NULL COMMENT 'origin',
   `created` datetime DEFAULT NULL,
   `updated` datetime DEFAULT NULL,
   `deleted` datetime DEFAULT NULL,
@@ -162,8 +165,8 @@ CREATE TABLE `template_command` (
   `summary` varchar(255) COLLATE utf8_bin DEFAULT NULL,
   `api_version` varchar(255) COLLATE utf8_bin NOT NULL,
   `template_uuid` char(32) COLLATE utf8_bin NOT NULL COMMENT 'templates uuid',
-  `sequence` int(11) NOT NULL COMMENT 'sequence',
-  `method` varchar(255) COLLATE utf8_bin NOT NULL COMMENT 'method',
+  `sequence` int(11) DEFAULT NULL COMMENT 'sequence',
+  `method` varchar(255) COLLATE utf8_bin DEFAULT NULL COMMENT 'method',
   `args` text COLLATE utf8_bin DEFAULT NULL COMMENT 'arguments',
   `created` datetime DEFAULT NULL,
   `updated` datetime DEFAULT NULL,
@@ -183,4 +186,4 @@ CREATE TABLE `template_command` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-01-26  1:35:48
+-- Dump completed on 2022-01-26  8:52:07

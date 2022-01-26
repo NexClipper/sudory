@@ -112,6 +112,15 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, err
 		}
+
+		services_ := make([]servicev1.Service, 0, len(services))
+		foreach_service(services, func(service servicev1.Service) error {
+			service.Result = nil //서비스 조회에 결과 필드는 제거 (요청사항)
+			services_ = append(services_, service)
+			return nil
+		})
+		services = services_
+
 		//make respose
 		push, pop := servicev1.HttpRspBuilder(len(services))
 		err = foreach_service(services, func(service servicev1.Service) error {
@@ -156,7 +165,7 @@ func (c *Control) GetService() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["uuid"]) == 0 {
+		if len(req[__UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		return req, nil
@@ -167,19 +176,22 @@ func (c *Control) GetService() func(ctx echo.Context) error {
 			return nil, ErrorFailedCast()
 		}
 		//get service
-		uuid := req["uuid"]
+		uuid := req[__UUID__]
 		service, err := operator.NewService(ctx).
 			Get(uuid)
 		if err != nil {
 			return nil, err
 		}
+
 		//find step
 		where := "service_uuid = ?"
-		service_uuid := req["uuid"]
+		service_uuid := req[__UUID__]
 		steps, err := operator.NewServiceStep(ctx).Find(where, service_uuid)
 		if err != nil {
 			return nil, err
 		}
+
+		service.Result = nil //서비스 조회에 결과 필드는 제거 (요청사항)
 
 		rsp := &servicev1.HttpRspService{Service: *service, Steps: steps}
 
@@ -210,7 +222,7 @@ func (c *Control) UpdateService() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["uuid"].(string)) == 0 {
+		if len(req[__UUID__].(string)) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		body := new(servicev1.HttpReqService)
@@ -218,7 +230,7 @@ func (c *Control) UpdateService() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, ErrorBindRequestObject(err)
 		}
-		req["_"] = body
+		req[__BODY__] = body
 
 		return req, nil
 	}
@@ -227,16 +239,18 @@ func (c *Control) UpdateService() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		uuid, ok := req["uuid"].(string)
+		uuid, ok := req[__UUID__].(string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		body, ok := req["_"].(*servicev1.HttpReqService)
+		body, ok := req[__BODY__].(*servicev1.HttpReqService)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
+		//set uuid from path
 		body.Service.Uuid = uuid
+
 		//update service
 		err := operator.NewService(ctx).
 			Update(body.Service)
@@ -270,7 +284,7 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["uuid"]) == 0 {
+		if len(req[__UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		return req, nil
@@ -283,7 +297,7 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 
 		//find step
 		where := "service_uuid = ?"
-		service_uuid := req["uuid"]
+		service_uuid := req[__UUID__]
 		steps, err := operator.NewServiceStep(ctx).
 			Find(where, service_uuid)
 		if err != nil {
@@ -303,7 +317,7 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 		}
 
 		//delete service
-		uuid := req["uuid"]
+		uuid := req[__UUID__]
 		err = operator.NewService(ctx).
 			Delete(uuid)
 		if err != nil {
@@ -337,7 +351,7 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 // 		for key, _ := range ctx.QueryParams() {
 // 			req[key] = ctx.QueryParam(key)
 // 		}
-// 		if len(req["cluster_uuid"].(string)) == 0 {
+// 		if len(req[__cluster_uuid__].(string)) == 0 {
 // 			return nil, ErrorInvaliedRequestParameter()
 // 		}
 // 		body := make([]servicev1.HttpReqClientSideService, 0)
@@ -345,7 +359,7 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 // 		if err != nil {
 // 			return nil, ErrorBindRequestObject(err)
 // 		}
-// 		req["_"] = body
+// 		req[__body__] = body
 // 		return req, nil
 // 	}
 // 	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
@@ -353,7 +367,7 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 // 		if !ok {
 // 			return nil, ErrorFailedCast()
 // 		}
-// 		body, ok := req["_"].([]servicev1.HttpReqClientSideService)
+// 		body, ok := req[__body__].([]servicev1.HttpReqClientSideService)
 // 		if !ok {
 // 			return nil, ErrorFailedCast()
 // 		}
@@ -389,7 +403,7 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 
 // 		//find service
 // 		where := "cluster_uuid = ? AND status < ?"
-// 		cluster_uuid := req["cluster_uuid"].(string)
+// 		cluster_uuid := req[__cluster_uuid__].(string)
 // 		status := servicev1.StatusSuccess //상태 값이 완료 상태보다 작은것
 
 // 		services, err := operator.NewService(ctx).

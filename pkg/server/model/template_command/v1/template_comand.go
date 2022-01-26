@@ -10,10 +10,10 @@ type TemplateCommandProperty struct {
 	//템플릿 UUID
 	TemplateUuid string `json:"template_uuid" xorm:"char(32) notnull index 'template_uuid' comment('templates uuid')"`
 	//순서
-	Sequence int32 `json:"sequence,omitempty" xorm:"int notnull 'sequence' comment('sequence')"`
+	Sequence *int32 `json:"sequence,omitempty" xorm:"int null default(0) 'sequence' comment('sequence')"`
 	//메소드
 	//@example: "kubernetes.deployment.get.v1", "kubernetes.pod.list.v1"
-	Method string `json:"method,omitempty" xorm:"varchar(255) notnull 'method' comment('method')"`
+	Method *string `json:"method,omitempty" xorm:"varchar(255) null 'method' comment('method')"`
 	//arguments
 	Args map[string]string `json:"args,omitempty" xorm:"text null 'args' comment('args')"`
 }

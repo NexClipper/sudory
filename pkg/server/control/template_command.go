@@ -23,7 +23,7 @@ func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["template_uuid"].(string)) == 0 {
+		if len(req[__TEMPLATE_UUID__].(string)) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 
@@ -32,7 +32,7 @@ func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, ErrorBindRequestObject(err)
 		}
-		req["_"] = body
+		req[__BODY__] = body
 		return req, nil
 	}
 	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
@@ -40,11 +40,11 @@ func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		template_uuid, ok := req["template_uuid"].(string)
+		template_uuid, ok := req[__TEMPLATE_UUID__].(string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		body, ok := req["_"].(*commandv1.HttpReqTemplateCommand)
+		body, ok := req[__BODY__].(*commandv1.HttpReqTemplateCommand)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -84,7 +84,7 @@ func (c *Control) GetTemplateCommands() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["template_uuid"]) == 0 {
+		if len(req[__TEMPLATE_UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		return req, nil
@@ -96,7 +96,7 @@ func (c *Control) GetTemplateCommands() func(ctx echo.Context) error {
 		}
 
 		where := "template_uuid = ?"
-		template_uuid := req["template_uuid"]
+		template_uuid := req[__TEMPLATE_UUID__]
 
 		rst, err := operator.NewTemplateCommand(ctx).
 			Find(where, template_uuid)
@@ -129,10 +129,10 @@ func (c *Control) GetTemplateCommand() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["template_uuid"]) == 0 {
+		if len(req[__TEMPLATE_UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
-		if len(req["uuid"]) == 0 {
+		if len(req[__UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		return req, nil
@@ -143,8 +143,8 @@ func (c *Control) GetTemplateCommand() func(ctx echo.Context) error {
 			return nil, ErrorFailedCast()
 		}
 
-		_ = req["template_uuid"]
-		uuid := req["uuid"]
+		_ = req[__TEMPLATE_UUID__]
+		uuid := req[__UUID__]
 		rst, err := operator.NewTemplateCommand(ctx).
 			Get(uuid)
 		if err != nil {
@@ -179,10 +179,10 @@ func (c *Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["template_uuid"].(string)) == 0 {
+		if len(req[__TEMPLATE_UUID__].(string)) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
-		if len(req["uuid"].(string)) == 0 {
+		if len(req[__UUID__].(string)) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 
@@ -191,7 +191,7 @@ func (c *Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, ErrorBindRequestObject(err)
 		}
-		req["_"] = body
+		req[__BODY__] = body
 
 		return req, nil
 	}
@@ -200,20 +200,22 @@ func (c *Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		template_uuid, ok := req["template_uuid"].(string)
+		template_uuid, ok := req[__TEMPLATE_UUID__].(string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		uuid, ok := req["uuid"].(string)
+		uuid, ok := req[__UUID__].(string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		body, ok := req["_"].(*commandv1.HttpReqTemplateCommand)
+		body, ok := req[__BODY__].(*commandv1.HttpReqTemplateCommand)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
+		//set template uuid from path
 		body.TemplateCommand.TemplateUuid = template_uuid
+		//set uuid from path
 		body.TemplateCommand.Uuid = uuid
 
 		err := operator.NewTemplateCommand(ctx).
@@ -250,10 +252,10 @@ func (c *Control) DeleteTemplateCommand() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["template_uuid"]) == 0 {
+		if len(req[__TEMPLATE_UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
-		if len(req["uuid"]) == 0 {
+		if len(req[__UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		return req, nil
@@ -264,8 +266,8 @@ func (c *Control) DeleteTemplateCommand() func(ctx echo.Context) error {
 			return nil, ErrorFailedCast()
 		}
 
-		_ = req["template_uuid"]
-		uuid := req["uuid"]
+		_ = req[__TEMPLATE_UUID__]
+		uuid := req[__UUID__]
 		err := operator.NewTemplateCommand(ctx).
 			Delete(uuid)
 		if err != nil {

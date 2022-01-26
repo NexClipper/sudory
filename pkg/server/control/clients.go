@@ -27,7 +27,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		for key, _ := range ctx.QueryParams() {
 			req[key] = ctx.QueryParam(key)
 		}
-		if len(req["cluster_uuid"].(string)) == 0 {
+		if len(req[__CLUSTER_UUID__].(string)) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		body := make([]servicev1.HttpReqClientSideService, 0)
@@ -35,7 +35,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, ErrorBindRequestObject(err)
 		}
-		req["_"] = body
+		req[__BODY__] = body
 		return req, nil
 	}
 	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
@@ -43,7 +43,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		body, ok := req["_"].([]servicev1.HttpReqClientSideService)
+		body, ok := req[__BODY__].([]servicev1.HttpReqClientSideService)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -79,7 +79,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 
 		//find service
 		where := "cluster_uuid = ? AND status < ?"
-		cluster_uuid := req["cluster_uuid"].(string)
+		cluster_uuid := req[__CLUSTER_UUID__].(string)
 		status := servicev1.StatusSuccess //상태 값이 완료 상태보다 작은것
 
 		services, err := operator.NewService(ctx).
@@ -175,10 +175,10 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 		for key, _ := range ctx.QueryParams() {
 			req[key] = ctx.QueryParam(key)
 		}
-		if len(req["client_uuid"]) == 0 {
+		if len(req[__CLIENT_UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
-		if len(req["cluster_uuid"]) == 0 {
+		if len(req[__CLUSTER_UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		return req, nil
@@ -189,14 +189,14 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 			return nil, ErrorFailedCast()
 		}
 
-		client_uuid := req["client_uuid"]
+		client_uuid := req[__CLIENT_UUID__]
 		client, err := operator.NewClient(ctx).
 			Get(client_uuid)
 		if err != nil {
 			return nil, err
 		}
 
-		cluster_uuid := req["cluster_uuid"]
+		cluster_uuid := req[__CLUSTER_UUID__]
 		cluster, err := operator.NewCluster(ctx).
 			Get(cluster_uuid)
 		if err != nil {

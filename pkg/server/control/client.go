@@ -31,7 +31,7 @@ func (c *Control) CreateClient() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, ErrorBindRequestObject(err)
 		}
-		req["_"] = body
+		req[__BODY__] = body
 		return req, nil
 	}
 	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
@@ -39,7 +39,7 @@ func (c *Control) CreateClient() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		body, ok := req["_"].(*clinetv1.HttpReqClient)
+		body, ok := req[__BODY__].(*clinetv1.HttpReqClient)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -133,7 +133,7 @@ func (c *Control) GetClient() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["uuid"]) == 0 {
+		if len(req[__UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		return req, nil
@@ -144,7 +144,7 @@ func (c *Control) GetClient() func(ctx echo.Context) error {
 			return nil, ErrorFailedCast()
 		}
 
-		uuid := req["uuid"]
+		uuid := req[__UUID__]
 		rst, err := operator.NewClient(ctx).
 			Get(uuid)
 		if err != nil {
@@ -178,7 +178,7 @@ func (c *Control) UpdateClient() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["uuid"].(string)) == 0 {
+		if len(req[__UUID__].(string)) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 
@@ -187,7 +187,7 @@ func (c *Control) UpdateClient() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, ErrorBindRequestObject(err)
 		}
-		req["_"] = body
+		req[__BODY__] = body
 
 		return req, nil
 	}
@@ -196,15 +196,16 @@ func (c *Control) UpdateClient() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		uuid, ok := req["uuid"].(string)
+		uuid, ok := req[__UUID__].(string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		body, ok := req["_"].(*clinetv1.HttpReqClient)
+		body, ok := req[__BODY__].(*clinetv1.HttpReqClient)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
+		//set uuid from path
 		body.Client.Uuid = uuid
 
 		err := operator.NewClient(ctx).
@@ -240,7 +241,7 @@ func (c *Control) DeleteClient() func(ctx echo.Context) error {
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req["uuid"]) == 0 {
+		if len(req[__UUID__]) == 0 {
 			return nil, ErrorInvaliedRequestParameter()
 		}
 		return req, nil
@@ -251,7 +252,7 @@ func (c *Control) DeleteClient() func(ctx echo.Context) error {
 			return nil, ErrorFailedCast()
 		}
 
-		uuid := req["uuid"]
+		uuid := req[__UUID__]
 		err := operator.NewClient(ctx).
 			Delete(uuid)
 		if err != nil {

@@ -11,19 +11,19 @@ type ServiceStepProperty struct {
 	//서비스 Uuid
 	ServiceUuid string `json:"service_uuid" xorm:"char(32) notnull index 'service_uuid' comment('services uuid')"`
 	//순서
-	Sequence int32 `json:"sequence,omitempty" xorm:"int notnull 'sequence' comment('sequence')"`
+	Sequence *int32 `json:"sequence,omitempty" xorm:"int null default(0) 'sequence' comment('sequence')"`
 	//메소드
-	Method string `json:"method,omitempty" xorm:"varchar(255) notnull 'method' comment('method')"`
+	Method *string `json:"method,omitempty" xorm:"varchar(255) null 'method' comment('method')"`
 	//arguments
 	Args map[string]string `json:"args,omitempty" xorm:"text null 'args' comment('args')"`
 	//Status 상태
-	Status int32 `json:"status,omitempty" xorm:"int notnull default(1) 'status' comment('status')"`
+	Status *int32 `json:"status,omitempty" xorm:"int null index default(0) 'status' comment('status')"`
 	//Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
-	Result string `json:"result,omitempty" xorm:"longtext null 'result' comment('result')"`
+	Result *string `json:"result,omitempty" xorm:"longtext null 'result' comment('result')"`
 	//Started 스탭 시작 시간
-	Started time.Time `json:"srated,omitempty" xorm:"datetime null comment('step start time')"`
+	Started *time.Time `json:"srated,omitempty" xorm:"datetime null comment('step start time')"`
 	//Started 스탭 완료 시간
-	Ended time.Time `json:"ended,omitempty" xorm:"datetime null comment(step end time)"`
+	Ended *time.Time `json:"ended,omitempty" xorm:"datetime null comment(step end time)"`
 }
 
 type ServiceStep struct {
