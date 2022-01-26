@@ -1,0 +1,44 @@
+USE `sudory`;
+
+--
+-- 컬럼 위치 변경
+--
+
+ALTER TABLE `client`
+	CHANGE COLUMN `created` `created` DATETIME NULL DEFAULT NULL AFTER `cluster_uuid`,
+	CHANGE COLUMN `updated` `updated` DATETIME NULL DEFAULT NULL AFTER `created`,
+	CHANGE COLUMN `deleted` `deleted` DATETIME NULL DEFAULT NULL AFTER `updated`;
+
+ALTER TABLE `cluster`
+	CHANGE COLUMN `created` `created` DATETIME NULL DEFAULT NULL AFTER `api_version`,
+	CHANGE COLUMN `updated` `updated` DATETIME NULL DEFAULT NULL AFTER `created`,
+	CHANGE COLUMN `deleted` `deleted` DATETIME NULL DEFAULT NULL AFTER `updated`;
+
+ALTER TABLE `service`
+	CHANGE COLUMN `created` `created` DATETIME NULL DEFAULT NULL AFTER `result`,
+	CHANGE COLUMN `updated` `updated` DATETIME NULL DEFAULT NULL AFTER `created`,
+	CHANGE COLUMN `deleted` `deleted` DATETIME NULL DEFAULT NULL AFTER `updated`;
+	
+ALTER TABLE `service_step`
+	CHANGE COLUMN `created` `created` DATETIME NULL DEFAULT NULL AFTER `ended`,
+	CHANGE COLUMN `updated` `updated` DATETIME NULL DEFAULT NULL AFTER `created`,
+	CHANGE COLUMN `deleted` `deleted` DATETIME NULL DEFAULT NULL AFTER `updated`;
+	
+ALTER TABLE `service_step`
+	CHANGE COLUMN `created` `created` DATETIME NULL DEFAULT NULL AFTER `ended`,
+	CHANGE COLUMN `updated` `updated` DATETIME NULL DEFAULT NULL AFTER `created`,
+	CHANGE COLUMN `deleted` `deleted` DATETIME NULL DEFAULT NULL AFTER `updated`;
+	
+ALTER TABLE `template`
+	CHANGE COLUMN `created` `created` DATETIME NULL DEFAULT NULL AFTER `origin`,
+	CHANGE COLUMN `updated` `updated` DATETIME NULL DEFAULT NULL AFTER `created`,
+	CHANGE COLUMN `deleted` `deleted` DATETIME NULL DEFAULT NULL AFTER `updated`;
+	
+ALTER TABLE `template_command`
+	CHANGE COLUMN `created` `created` DATETIME NULL DEFAULT NULL AFTER `args`,
+	CHANGE COLUMN `updated` `updated` DATETIME NULL DEFAULT NULL AFTER `created`,
+	CHANGE COLUMN `deleted` `deleted` DATETIME NULL DEFAULT NULL AFTER `updated`;
+
+--
+-- 컬럼 위치 변경 
+--

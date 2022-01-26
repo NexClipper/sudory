@@ -32,16 +32,16 @@ DROP TABLE IF EXISTS `client`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `client` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `created` datetime DEFAULT NULL,
-  `updated` datetime DEFAULT NULL,
-  `deleted` datetime DEFAULT NULL,
   `uuid` char(32) COLLATE utf8_bin NOT NULL,
   `name` varchar(255) COLLATE utf8_bin NOT NULL,
   `summary` varchar(255) COLLATE utf8_bin DEFAULT NULL,
   `api_version` varchar(255) COLLATE utf8_bin NOT NULL,
-  `cluster_uuid` char(32) COLLATE utf8_bin NOT NULL COMMENT 'cluster uuid',
+  `cluster_uuid` char(32) COLLATE utf8_bin NOT NULL COMMENT 'clusters uuid',
+  `created` datetime DEFAULT NULL,
+  `updated` datetime DEFAULT NULL,
+  `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='client 관리 테이블';
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='client 관리 테이블';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -53,15 +53,15 @@ DROP TABLE IF EXISTS `cluster`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `cluster` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `created` datetime DEFAULT NULL,
-  `updated` datetime DEFAULT NULL,
-  `deleted` datetime DEFAULT NULL,
   `uuid` char(32) COLLATE utf8_bin NOT NULL,
   `name` varchar(255) COLLATE utf8_bin NOT NULL,
   `summary` varchar(255) COLLATE utf8_bin DEFAULT NULL,
   `api_version` varchar(255) COLLATE utf8_bin NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `updated` datetime DEFAULT NULL,
+  `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='cluster 관리 테이블';
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='cluster 관리 테이블';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -73,14 +73,11 @@ DROP TABLE IF EXISTS `service`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `service` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `created` datetime DEFAULT NULL,
-  `updated` datetime DEFAULT NULL,
-  `deleted` datetime DEFAULT NULL,
   `uuid` char(32) COLLATE utf8_bin NOT NULL,
   `name` varchar(255) COLLATE utf8_bin NOT NULL,
   `summary` varchar(255) COLLATE utf8_bin DEFAULT NULL,
   `api_version` varchar(255) COLLATE utf8_bin NOT NULL,
-  `cluster_uuid` char(32) COLLATE utf8_bin NOT NULL COMMENT 'cluster uuid',
+  `cluster_uuid` char(32) COLLATE utf8_bin NOT NULL COMMENT 'clusters uuid',
   `step_count` int(11) DEFAULT 0,
   `step_position` int(11) DEFAULT 0,
   `type` int(11) DEFAULT 0,
@@ -88,11 +85,14 @@ CREATE TABLE `service` (
   `interval` int(11) DEFAULT 0,
   `status` int(11) NOT NULL DEFAULT 0 COMMENT 'status',
   `result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `created` datetime DEFAULT NULL,
+  `updated` datetime DEFAULT NULL,
+  `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UQE_service_uuid` (`uuid`),
   KEY `IDX_service_cluster_uuid` (`cluster_uuid`),
   KEY `IDX_service_status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -104,9 +104,6 @@ DROP TABLE IF EXISTS `service_step`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `service_step` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `created` datetime DEFAULT NULL,
-  `updated` datetime DEFAULT NULL,
-  `deleted` datetime DEFAULT NULL,
   `uuid` char(32) COLLATE utf8_bin NOT NULL,
   `name` varchar(255) COLLATE utf8_bin NOT NULL,
   `summary` varchar(255) COLLATE utf8_bin DEFAULT NULL,
@@ -119,11 +116,14 @@ CREATE TABLE `service_step` (
   `result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'result',
   `started` datetime DEFAULT NULL,
   `ended` datetime DEFAULT NULL,
+  `created` datetime DEFAULT NULL,
+  `updated` datetime DEFAULT NULL,
+  `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UQE_service_step_uuid` (`uuid`),
   KEY `IDX_service_step_service_uuid` (`service_uuid`),
   KEY `status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -135,17 +135,17 @@ DROP TABLE IF EXISTS `template`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `template` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `created` datetime DEFAULT NULL,
-  `updated` datetime DEFAULT NULL,
-  `deleted` datetime DEFAULT NULL,
   `uuid` char(32) COLLATE utf8_bin NOT NULL,
   `name` varchar(255) COLLATE utf8_bin NOT NULL,
   `summary` varchar(255) COLLATE utf8_bin DEFAULT NULL,
   `api_version` varchar(255) COLLATE utf8_bin NOT NULL COMMENT 'api version',
   `origin` varchar(255) COLLATE utf8_bin NOT NULL DEFAULT '' COMMENT 'origin',
+  `created` datetime DEFAULT NULL,
+  `updated` datetime DEFAULT NULL,
+  `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='table template';
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='table template';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -157,9 +157,6 @@ DROP TABLE IF EXISTS `template_command`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `template_command` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `created` datetime DEFAULT NULL,
-  `updated` datetime DEFAULT NULL,
-  `deleted` datetime DEFAULT NULL,
   `uuid` char(32) COLLATE utf8_bin NOT NULL,
   `name` varchar(255) COLLATE utf8_bin NOT NULL,
   `summary` varchar(255) COLLATE utf8_bin DEFAULT NULL,
@@ -168,10 +165,13 @@ CREATE TABLE `template_command` (
   `sequence` int(11) NOT NULL COMMENT 'sequence',
   `method` varchar(255) COLLATE utf8_bin NOT NULL COMMENT 'method',
   `args` text COLLATE utf8_bin DEFAULT NULL COMMENT 'arguments',
+  `created` datetime DEFAULT NULL,
+  `updated` datetime DEFAULT NULL,
+  `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uuid` (`uuid`) USING BTREE,
   KEY `template_uuid` (`template_uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='table template command';
+) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='table template command';
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -183,4 +183,4 @@ CREATE TABLE `template_command` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-01-21  5:10:01
+-- Dump completed on 2022-01-26  1:35:48
