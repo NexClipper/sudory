@@ -12,7 +12,8 @@ import (
 func (ctx Session) CreateTemplateCommand(model tcommandv1.DbSchemaTemplateCommand) error {
 	tx := ctx.Tx()
 
-	affect, err := tx.Insert(&model)
+	affect, err := tx.
+		AllCols().Insert(&model)
 	if err != nil {
 		return err
 	}
@@ -75,7 +76,7 @@ func (ctx Session) UpdateTemplateCommand(model tcommandv1.DbSchemaTemplateComman
 
 	//아이디를 조건으로 업데이트
 	affect, err := tx.Where("uuid = ?", model.Uuid).
-		Update(&model)
+		AllCols().Update(&model)
 	if err != nil {
 		return err
 	}

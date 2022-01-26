@@ -12,7 +12,8 @@ import (
 func (ctx Session) CreateServiceStep(m stepv1.DbSchemaServiceStep) error {
 	tx := ctx.Tx()
 
-	affect, err := tx.Insert(&m)
+	affect, err := tx.
+		AllCols().Insert(&m)
 	if err != nil {
 		return err
 	}
@@ -70,7 +71,7 @@ func (ctx Session) UpdateServiceStep(m stepv1.DbSchemaServiceStep) error {
 	tx := ctx.Tx()
 
 	affect, err := tx.Where("uuid = ?", m.Uuid).
-		Update(&m)
+		AllCols().Update(&m)
 	if err != nil {
 		return err
 	}

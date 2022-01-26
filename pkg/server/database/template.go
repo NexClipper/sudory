@@ -12,7 +12,8 @@ import (
 func (ctx Session) CreateTemplate(m templatev1.DbSchemaTemplate) error {
 	tx := ctx.Tx()
 
-	affect, err := tx.Insert(&m)
+	affect, err := tx.
+		AllCols().Insert(&m)
 	if err != nil {
 		return err
 	}
@@ -72,7 +73,7 @@ func (ctx Session) UpdateTemplate(m templatev1.DbSchemaTemplate) error {
 	tx := ctx.Tx()
 
 	affect, err := tx.Where("uuid = ?", m.Uuid).
-		Update(&m)
+		AllCols().Update(&m)
 	if err != nil {
 		return err
 	}
