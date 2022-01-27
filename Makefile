@@ -1,5 +1,5 @@
 server:
-	go build -o /bin/server/sudory-server ./cmd/server
+	go build -o ./bin/server/sudory-server ./cmd/server
 
 client:
 	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ./bin/client/sudory-client ./cmd/client
