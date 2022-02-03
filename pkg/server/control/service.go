@@ -81,7 +81,7 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 func (c *Control) FindService() func(ctx echo.Context) error {
 	binder := func(ctx echo.Context) (interface{}, error) {
 		req := make(map[string]string)
-		for key, _ := range ctx.QueryParams() {
+		for key := range ctx.QueryParams() {
 			req[key] = ctx.QueryParam(key)
 		}
 		return req, nil
@@ -113,16 +113,11 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		services_ := make([]servicev1.Service, 0, len(services))
-		foreach_service(services, func(service servicev1.Service) error {
-			service.Result = nil //서비스 조회에 결과 필드는 제거 (요청사항)
-			services_ = append(services_, service)
-			return nil
-		})
-		services = services_
+		//서비스 조회에 결과 필드는 제거
+		services = map_service(services, service_exclude_result)
 
 		//make respose
-		push, pop := servicev1.HttpRspBuilder(len(services))
+		push, pull := servicev1.HttpRspBuilder(len(services))
 		err = foreach_service(services, func(service servicev1.Service) error {
 			service_uuid := service.Uuid
 			where := "service_uuid = ?"
@@ -139,7 +134,7 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		return pop(), nil //pop
+		return pull(), nil //pop
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -191,7 +186,62 @@ func (c *Control) GetService() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		service.Result = nil //서비스 조회에 결과 필드는 제거 (요청사항)
+		//서비스 조회에 결과 필드는 제거
+		*service = service_exclude_result(*service)
+
+		rsp := &servicev1.HttpRspService{Service: *service, Steps: steps}
+
+		return rsp, nil
+	}
+
+	return MakeMiddlewareFunc(Option{
+		Engine:        c.db.Engine(),
+		Binder:        binder,
+		Operator:      operator,
+		HttpResponser: HttpResponse,
+		BlockMaker:    NoLock,
+	})
+}
+
+// Get Service
+// @Description Get a Service
+// @Accept json
+// @Produce json
+// @Tags server/service
+// @Router /server/service/{uuid}/result [get]
+// @Param uuid path string true "Service 의 Uuid"
+// @Success 200 {object} v1.HttpRspService
+func (c *Control) GetServiceResult() func(ctx echo.Context) error {
+	binder := func(ctx echo.Context) (interface{}, error) {
+		req := make(map[string]string)
+		for _, it := range ctx.ParamNames() {
+			req[it] = ctx.Param(it)
+		}
+		if len(req[__UUID__]) == 0 {
+			return nil, ErrorInvaliedRequestParameter()
+		}
+		return req, nil
+	}
+	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
+		req, ok := v.(map[string]string)
+		if !ok {
+			return nil, ErrorFailedCast()
+		}
+		//get service
+		uuid := req[__UUID__]
+		service, err := operator.NewService(ctx).
+			Get(uuid)
+		if err != nil {
+			return nil, err
+		}
+
+		//find step
+		where := "service_uuid = ?"
+		service_uuid := req[__UUID__]
+		steps, err := operator.NewServiceStep(ctx).Find(where, service_uuid)
+		if err != nil {
+			return nil, err
+		}
 
 		rsp := &servicev1.HttpRspService{Service: *service, Steps: steps}
 
@@ -336,133 +386,9 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 	})
 }
 
-// // Pull []Service (client)
-// // @Description Get a Service
-// // @Accept json
-// // @Produce json
-// // @Tags client/service
-// // @Router /client/service [put]
-// // @Param cluster_uuid query string false "Client 의 ClusterUuid"
-// // @Param service      body []v1.HttpReqClientSideService true "HttpReqClientSideService"
-// // @Success 200 {array} v1.HttpRspClientSideService
-// func (c *Control) PullClientServices() func(ctx echo.Context) error {
-// 	binder := func(ctx echo.Context) (interface{}, error) {
-// 		req := make(map[string]interface{})
-// 		for key, _ := range ctx.QueryParams() {
-// 			req[key] = ctx.QueryParam(key)
-// 		}
-// 		if len(req[__cluster_uuid__].(string)) == 0 {
-// 			return nil, ErrorInvaliedRequestParameter()
-// 		}
-// 		body := make([]servicev1.HttpReqClientSideService, 0)
-// 		err := ctx.Bind(&body)
-// 		if err != nil {
-// 			return nil, ErrorBindRequestObject(err)
-// 		}
-// 		req[__body__] = body
-// 		return req, nil
-// 	}
-// 	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-// 		req, ok := v.(map[string]interface{})
-// 		if !ok {
-// 			return nil, ErrorFailedCast()
-// 		}
-// 		body, ok := req[__body__].([]servicev1.HttpReqClientSideService)
-// 		if !ok {
-// 			return nil, ErrorFailedCast()
-// 		}
-
-// 		//update service
-// 		err := foreach_client_service(body, func(service servicev1.Service, steps []stepv1.ServiceStep) error {
-
-// 			//update service
-// 			err := operator.NewService(ctx).
-// 				Update(service)
-// 			if err != nil {
-// 				return err
-// 			}
-
-// 			//update step
-// 			err = foreach_step(steps, func(step stepv1.ServiceStep) error {
-// 				err := operator.NewServiceStep(ctx).
-// 					Update(step)
-// 				if err != nil {
-// 					return err
-// 				}
-// 				return nil
-// 			})
-// 			if err != nil {
-// 				return err
-// 			}
-
-// 			return nil
-// 		})
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-// 		//find service
-// 		where := "cluster_uuid = ? AND status < ?"
-// 		cluster_uuid := req[__cluster_uuid__].(string)
-// 		status := servicev1.StatusSuccess //상태 값이 완료 상태보다 작은것
-
-// 		services, err := operator.NewService(ctx).
-// 			Find(where, cluster_uuid, status)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		//make response
-// 		push, pop := servicev1.HttpRspBuilder(len(services))
-// 		err = foreach_service(services, func(service servicev1.Service) error {
-// 			service_uuid := service.Uuid
-// 			where := "service_uuid = ?"
-// 			//find steps
-// 			steps, err := operator.NewServiceStep(ctx).
-// 				Find(where, service_uuid)
-// 			if err != nil {
-// 				return err
-// 			}
-// 			push(service, steps) //push
-// 			return nil
-// 		})
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-// 		return pop(), nil //pop
-// 	}
-
-// 	return MakeMiddlewareFunc(Option{
-// 		Engine:        c.db.Engine(),
-// 		Binder:        binder,
-// 		Operator:      operator,
-// 		HttpResponser: HttpResponse,
-// 		BlockMaker:    Lock,
-// 	})
-// }
-
-// func foreach_step(elems []stepv1.ServiceStep, fn func(stepv1.ServiceStep) error) error {
-// 	for _, it := range elems {
-// 		if err := fn(it); err != nil {
-// 			return err
-// 		}
-// 	}
-// 	return nil
-// }
-
-// func foreach_service(elems []servicev1.Service, fn func(servicev1.Service) error) error {
-// 	for _, it := range elems {
-// 		if err := fn(it); err != nil {
-// 			return err
-// 		}
-// 	}
-// 	return nil
-// }
-// func foreach_client_service(elems []servicev1.HttpReqClientSideService, fn func(servicev1.Service, []stepv1.ServiceStep) error) error {
-// 	for _, it := range elems {
-// 		if err := fn(it.Service, it.Steps); err != nil {
-// 			return err
-// 		}
-// 	}
-// 	return nil
-// }
+// service_exclude_result
+//  서비스 조회에 결과 필드는 제거
+func service_exclude_result(service servicev1.Service) servicev1.Service {
+	service.Result = nil //서비스 조회에 결과 필드는 제거
+	return service
+}

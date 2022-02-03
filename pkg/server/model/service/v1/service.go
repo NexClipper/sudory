@@ -9,7 +9,7 @@ import (
 type Status int32
 
 const (
-	StatusRegiste    Status = 0
+	StatusRegist     Status = 0
 	StatusSend       Status = 1 << 0
 	StatusProcessing Status = 1 << 1
 	StatusSuccess    Status = 1 << 2

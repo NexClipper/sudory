@@ -780,6 +780,37 @@ var doc = `{
                 }
             }
         },
+        "/server/service/{uuid}/result": {
+            "get": {
+                "description": "Get a Service",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/service"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Service 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspService"
+                        }
+                    }
+                }
+            }
+        },
         "/server/template": {
             "get": {
                 "description": "Find []template",

@@ -76,7 +76,7 @@ func (c *Control) FindClient() func(ctx echo.Context) error {
 
 	binder := func(ctx echo.Context) (interface{}, error) {
 		req := make(map[string]string)
-		for key, _ := range ctx.QueryParams() {
+		for key := range ctx.QueryParams() {
 			req[key] = ctx.QueryParam(key)
 		}
 		return req, nil

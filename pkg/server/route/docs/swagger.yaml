@@ -1028,6 +1028,26 @@ paths:
           description: ""
       tags:
       - server/service
+  /server/service/{uuid}/result:
+    get:
+      consumes:
+      - application/json
+      description: Get a Service
+      parameters:
+      - description: Service 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspService'
+      tags:
+      - server/service
   /server/template:
     get:
       consumes:

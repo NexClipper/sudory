@@ -24,7 +24,7 @@ import (
 func (c *Control) PollService() func(ctx echo.Context) error {
 	binder := func(ctx echo.Context) (interface{}, error) {
 		req := make(map[string]interface{})
-		for key, _ := range ctx.QueryParams() {
+		for key := range ctx.QueryParams() {
 			req[key] = ctx.QueryParam(key)
 		}
 		if len(req[__CLUSTER_UUID__].(string)) == 0 {
@@ -134,6 +134,7 @@ func foreach_service(elems []servicev1.Service, fn func(servicev1.Service) error
 	}
 	return nil
 }
+
 func foreach_client_service(elems []servicev1.HttpReqClientSideService, fn func(servicev1.Service, []stepv1.ServiceStep) error) error {
 	for _, it := range elems {
 		if err := fn(it.Service, it.Steps); err != nil {
@@ -141,6 +142,16 @@ func foreach_client_service(elems []servicev1.HttpReqClientSideService, fn func(
 		}
 	}
 	return nil
+}
+
+func map_service(elems []servicev1.Service, mapper func(servicev1.Service) servicev1.Service) []servicev1.Service {
+
+	rst := make([]servicev1.Service, len(elems))
+
+	for n := range elems {
+		rst[n] = mapper(elems[n])
+	}
+	return rst
 }
 
 // Auth Client
@@ -172,7 +183,7 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 
 	binder := func(ctx echo.Context) (interface{}, error) {
 		req := make(map[string]string)
-		for key, _ := range ctx.QueryParams() {
+		for key := range ctx.QueryParams() {
 			req[key] = ctx.QueryParam(key)
 		}
 		if len(req[__CLIENT_UUID__]) == 0 {
