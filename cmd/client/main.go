@@ -12,15 +12,14 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/service"
 )
 
-func init() {
-	log.New()
-}
-
 func main() {
 	server := flag.String("server", "http://localhost:8099", "sudory server url")
 	clusterid := flag.String("clusterid", "", "sudory client's cluster id")
+	loglevel := flag.String("loglevel", "debug", "sudory client's log level. One of: debug(defualt)|info|warn|error. ")
 
 	flag.Parse()
+
+	log.New(*loglevel)
 
 	if len(*server) == 0 {
 		log.Fatalf("Client must have server('%s').\n", *server)

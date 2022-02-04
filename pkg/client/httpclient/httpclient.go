@@ -7,6 +7,7 @@ import (
 	urlPkg "net/url"
 	"time"
 
+	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/hashicorp/go-retryablehttp"
 )
 
@@ -41,6 +42,7 @@ func (hc *HttpClient) Request(method, path string, params map[string]string, bod
 	// TODO: req.Header.Add("token", hc.token)
 
 	client := retryablehttp.NewClient()
+	client.Logger = &log.RetryableHttpLogger{}
 
 	client.RetryMax = hc.RetryMax
 	client.Backoff = func(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration {
