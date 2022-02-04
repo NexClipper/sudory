@@ -782,7 +782,7 @@ var doc = `{
         },
         "/server/service/{uuid}/result": {
             "get": {
-                "description": "Get a Service",
+                "description": "Get a Service with Result",
                 "consumes": [
                     "application/json"
                 ],

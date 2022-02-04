@@ -1032,7 +1032,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get a Service
+      description: Get a Service with Result
       parameters:
       - description: Service 의 Uuid
         in: path

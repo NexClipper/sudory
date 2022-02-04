@@ -203,8 +203,8 @@ func (c *Control) GetService() func(ctx echo.Context) error {
 	})
 }
 
-// Get Service
-// @Description Get a Service
+// Get Service Result
+// @Description Get a Service with Result
 // @Accept json
 // @Produce json
 // @Tags server/service
