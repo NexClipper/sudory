@@ -1,28 +1,28 @@
 #!/usr/bin/env bash
 
-USERNAME=$1
-PASSWORD=$2
-HOST=$3
-PORT=$4
-SCHEME=$5
-SQL_PATH=$6
-EXPORT_PATH=$7
-APP_USER=$8
-APP_PASSWD=$9
+HOST=$1
+PORT=$2
+SCHEME=$3
+SQL_PATH=$4
+EXPORT_PATH=$5
+ROOT_USERNAME=$6
+ROOT_PASSWORD=$7
+SERVER_USERNAME=$8
+SERVER_PASSWORD=$9
 
-echo USERNAME=${USERNAME}
-echo PASSWORD=${PASSWORD}
 echo HOST=${HOST}
 echo PORT=${PORT}
 echo SCHEME=${SCHEME}
 echo SQL_PATH=${SQL_PATH}
 echo EXPORT_PATH=${EXPORT_PATH}
-echo APP_USER=${APP_USER}
-echo APP_PASSWD=${APP_PASSWD}
+echo ROOT_USERNAME=${ROOT_USERNAME}
+echo ROOT_PASSWORD=${ROOT_PASSWORD}
+echo SERVER_USERNAME=${SERVER_USERNAME}
+echo SERVER_PASSWORD=${SERVER_PASSWORD}
 
 EXPORT_FILE=${EXPORT_PATH}/${SCHEME}_$(date +%Y%m%d%H%M).sql
 
-CMD_PRE="mysql --user=${USERNAME} --password=${PASSWORD} --host=${HOST} --port=${PORT}"
+CMD_PRE="mysql --user=${ROOT_USERNAME} --password=${ROOT_PASSWORD} --host=${HOST} --port=${PORT}"
 
 
 apk update
@@ -35,7 +35,7 @@ EXISTS=$(${CMD_PRE} --execute "show databases" | grep "${SCHEME}")
 if [[ ${EXISTS} != "" && ${EXPORT_PATH} != "" ]] ; then
 	echo "=============== start export for backup scheme ==============="
 	mkdir ${EXPORT_PATH}
-	CMD=$(mysqldump --user=${USERNAME} --password=${PASSWORD} --host=${HOST} --port=${PORT} -e --single-transaction -c ${SCHEME} > ${EXPORT_FILE})
+	CMD=$(mysqldump --user=${ROOT_USERNAME} --password=${ROOT_PASSWORD} --host=${HOST} --port=${PORT} -e --single-transaction -c ${SCHEME} > ${EXPORT_FILE})
 	echo "=============== complete export for backup scheme ==============="
 fi
 
@@ -52,8 +52,8 @@ else
 	cat > ${SQL_PATH}.execute <<- EOM
 		CREATE DATABASE IF NOT EXISTS \`${SCHEME}\` DEFAULT CHARACTER SET utf8;
 		USE \`${SCHEME}\`;
-		CREATE USER IF NOT EXISTS \`${APP_USER}\`@\`%\` IDENTIFIED BY '${APP_PASSWD}';
-		GRANT ALL PRIVILEGES ON \`${SCHEME}\`.* to \`${APP_USER}\`@\`%\`;
+		CREATE USER IF NOT EXISTS \`${SERVER_USERNAME}\`@\`%\` IDENTIFIED BY '${SERVER_PASSWORD}';
+		GRANT ALL PRIVILEGES ON \`${SCHEME}\`.* to \`${SERVER_USERNAME}\`@\`%\`;
 	EOM
 	
 	cat ${SQL_PATH}.create >> ${SQL_PATH}.execute

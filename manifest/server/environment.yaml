@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sudory
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sudory-configmap
+  namespace: sudory
+data:
+  db_host: "192.168.8.71"
+  db_port: "3306"
+  db_scheme: "sudory"
+  db_export_path: "."
+  db_root_username: "root"
+  db_server_username: "sudory"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sudory-secret
+type: Opaque
+data:
+  db_root_password: "cm9vdA=="
+  db_server_password: "c3Vkb3J5"

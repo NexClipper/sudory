@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sudory-server
+  namespace: sudory 
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8099
+      targetPort: 8099
+  selector:
+    sudory: server 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sudory-server
+  namespace: sudory
+spec:
+  selector:
+    matchLabels:
+      sudory: server
+  replicas: 1 
+  template:
+    metadata:
+      labels:
+        sudory: server
+    spec:
+      containers:
+        - name: sudory-server
+          image: p8s.me/nexclipper/sudory-server:0.1.0
+          ports:
+            - containerPort: 8099
+          env:
+            - name: SUDORY_DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: db_host
+            - name: SUDORY_DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: db_port
+            - name: SUDORY_DB_SCHEME
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: db_scheme
+            - name: SUDORY_DB_EXPORT_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: db_export_path
+            - name: SUDORY_DB_ROOT_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: db_root_username
+            - name: SUDORY_DB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sudory-secret
+                  key: db_root_userpassword
+            - name: SUDORY_DB_SERVER_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: db_server_username
+            - name: SUDORY_DB_SERVER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sudory-secret
+                  key: db_server_userpassword
