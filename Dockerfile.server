@@ -1,0 +1,16 @@
+FROM alpine:latest
+LABEL version=0.1.0
+
+RUN apk update && apk add bash mariadb-client
+
+RUN mkdir /app
+
+COPY ./bin/server/sudory-server /app/
+COPY ./conf/script/server/sudory.sql.create /app/
+COPY ./conf/script/server/sudory.sql.modify /app/
+COPY ./conf/script/server/entrypoint.sh /app/
+COPY ./conf/script/server/init-db.sh /app/
+
+
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]
+EXPOSE 8099

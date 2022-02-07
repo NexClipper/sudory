@@ -10,6 +10,13 @@ swagger:
 prep:
 	go install github.com/swaggo/swag/cmd/swag@latest
 
+docker:
+ifeq ($(target),server)
+	docker build -t p8s.me/nexclipper/sudory-server:$(version) -f Dockerfile.server .
+else
+	docker build -t p8s.me/nexclipper/sudory-client:$(version) -f Dockerfile.client .
+endif
+
 clean:
 	rm ./bin/server
 	rm ./bin/client
