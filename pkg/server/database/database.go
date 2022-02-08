@@ -1,6 +1,7 @@
 package database
 
 import (
+	"bytes"
 	"strings"
 	"time"
 
@@ -18,7 +19,7 @@ type DBManipulator struct {
 
 func New(cfg *config.Config) (*DBManipulator, error) {
 	db := &DBManipulator{}
-	engine, err := xorm.NewEngine(cfg.Database.Type, cfg.Database.DSN)
+	engine, err := xorm.NewEngine(cfg.Database.Type, formatDSN(cfg))
 	if err != nil {
 		return nil, err
 	}
@@ -56,4 +57,47 @@ func (d *DBManipulator) Close() {
 }
 func (d *DBManipulator) Engine() *xorm.Engine {
 	return d.engine
+}
+
+func formatDSN(cfg *config.Config) string {
+	db := cfg.Database
+	var buf bytes.Buffer
+
+	if len(db.Username) > 0 {
+		buf.WriteString(db.Username)
+		if len(db.Password) > 0 {
+			buf.WriteByte(':')
+			buf.WriteString(db.Password)
+		}
+		buf.WriteByte('@')
+	}
+
+	if len(db.Protocol) > 0 {
+		buf.WriteString(db.Protocol)
+		if len(db.Host) > 0 && len(db.Port) > 0 {
+			buf.WriteByte('(')
+			buf.WriteString(db.Host + ":" + db.Port)
+			buf.WriteByte(')')
+		}
+	}
+
+	buf.WriteByte('/')
+	buf.WriteString(db.Scheme)
+
+	if len(db.ConnParams) > 0 {
+		buf.WriteByte('?')
+		hasParam := false
+		for k, v := range db.ConnParams {
+			if len(v) > 0 {
+				if hasParam {
+					buf.WriteByte('&')
+				} else {
+					hasParam = true
+				}
+				buf.WriteString(k + "=" + v)
+			}
+		}
+	}
+
+	return buf.String()
 }

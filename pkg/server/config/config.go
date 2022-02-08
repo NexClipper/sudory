@@ -11,7 +11,13 @@ type Config struct {
 
 	Database struct {
 		Type            string
-		DSN             string
+		Protocol        string `default:"tcp"`
+		Host            string
+		Port            string
+		Scheme          string
+		Username        string
+		Password        string
+		ConnParams      map[string]string
 		MaxOpenConns    int
 		MaxIdleConns    int
 		MaxConnLifeTime int

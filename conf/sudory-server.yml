@@ -5,7 +5,16 @@ host:
 
 database:
   type: mysql
-  dsn: 'sudory:sudory@tcp(127.0.0.1:3306)/sudory?charset=utf8mb4&parseTime=True&loc=Local'
+  protocol: 'tcp'
+  host: '127.0.0.1'
+  port: '3306'
+  scheme: 'sudory'
+  username: 'sudory'
+  password: 'sudory'
+  connparams:
+    charset: 'utf8mb4'
+    parseTime: 'True'
+    loc: 'Local'
   maxopenconns: 15
   maxidleconns: 5
   maxconnlifetime: 1
