@@ -17,7 +17,6 @@ type Config struct {
 		DBName          string `env:"SUDORY_DB_SCHEME"`
 		Username        string `env:"SUDORY_DB_SERVER_USERNAME"`
 		Password        string `env:"SUDORY_DB_SERVER_PASSWORD"`
-		ConnParams      map[string]string
 		MaxOpenConns    int
 		MaxIdleConns    int
 		MaxConnLifeTime int

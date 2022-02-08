@@ -11,10 +11,6 @@ database:
   dbname: 'sudory'
   username: 'sudory'
   password: 'sudory'
-  connparams:
-    charset: 'utf8mb4'
-    parseTime: 'True'
-    loc: 'Local'
   maxopenconns: 15
   maxidleconns: 5
   maxconnlifetime: 1

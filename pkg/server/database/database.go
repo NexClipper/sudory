@@ -13,6 +13,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+const defaultDbConnParams = "charset=utf8mb4&parseTime=True&loc=Local"
+
 type DBManipulator struct {
 	engine *xorm.Engine
 }
@@ -84,19 +86,9 @@ func formatDSN(cfg *config.Config) string {
 	buf.WriteByte('/')
 	buf.WriteString(db.DBName)
 
-	if len(db.ConnParams) > 0 {
+	if len(defaultDbConnParams) > 0 {
 		buf.WriteByte('?')
-		hasParam := false
-		for k, v := range db.ConnParams {
-			if len(v) > 0 {
-				if hasParam {
-					buf.WriteByte('&')
-				} else {
-					hasParam = true
-				}
-				buf.WriteString(k + "=" + v)
-			}
-		}
+		buf.WriteString(defaultDbConnParams)
 	}
 
 	return buf.String()
