@@ -12,11 +12,11 @@ type Config struct {
 	Database struct {
 		Type            string
 		Protocol        string `default:"tcp"`
-		Host            string
-		Port            string
-		Scheme          string
-		Username        string
-		Password        string
+		Host            string `env:"SUDORY_DB_HOST"`
+		Port            string `env:"SUDORY_DB_PORT"`
+		DBName          string `env:"SUDORY_DB_SCHEME"`
+		Username        string `env:"SUDORY_DB_SERVER_USERNAME"`
+		Password        string `env:"SUDORY_DB_SERVER_PASSWORD"`
 		ConnParams      map[string]string
 		MaxOpenConns    int
 		MaxIdleConns    int
@@ -26,8 +26,10 @@ type Config struct {
 	}
 }
 
-func New(configPath string) (*Config, error) {
-	c := &Config{}
+func New(c *Config, configPath string) (*Config, error) {
+	if c == nil {
+		c = &Config{}
+	}
 	if err := configor.Load(c, configPath); err != nil {
 		return nil, err
 	}

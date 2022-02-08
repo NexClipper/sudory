@@ -12,10 +12,17 @@ import (
 )
 
 func main() {
+	cfg := &config.Config{}
+	flag.StringVar(&cfg.Database.Host, "db-host", "127.0.0.1", "Database's host")
+	flag.StringVar(&cfg.Database.Port, "db-port", "3306", "Database's port")
+	flag.StringVar(&cfg.Database.Username, "db-user", "", "Database's username")
+	flag.StringVar(&cfg.Database.Password, "db-passwd", "", "Database's password")
+	flag.StringVar(&cfg.Database.DBName, "db-dbname", "", "Database's dbname")
+
 	configPath := flag.String("config", "../../conf/sudory-server.yml", "Path to sudory-server's config file")
 	flag.Parse()
 
-	cfg, err := config.New(*configPath)
+	cfg, err := config.New(cfg, *configPath)
 	if err != nil {
 		panic(err)
 	}

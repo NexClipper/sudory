@@ -8,7 +8,7 @@ database:
   protocol: 'tcp'
   host: '127.0.0.1'
   port: '3306'
-  scheme: 'sudory'
+  dbname: 'sudory'
   username: 'sudory'
   password: 'sudory'
   connparams:

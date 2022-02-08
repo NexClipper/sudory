@@ -82,7 +82,7 @@ func formatDSN(cfg *config.Config) string {
 	}
 
 	buf.WriteByte('/')
-	buf.WriteString(db.Scheme)
+	buf.WriteString(db.DBName)
 
 	if len(db.ConnParams) > 0 {
 		buf.WriteByte('?')
