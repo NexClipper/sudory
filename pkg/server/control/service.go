@@ -93,16 +93,16 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 		}
 
 		args := make([]interface{}, 0)
-		join, build := StringJoin()
+		add, build := StringBuilder()
 
 		for key, val := range req {
 			switch key {
 			case "status":
 				args = append(args, val)
-				join(fmt.Sprintf("%s in (?)", key))
+				add(fmt.Sprintf("%s in (?)", key))
 			default:
 				args = append(args, val)
-				join(fmt.Sprintf("%s = ?", key))
+				add(fmt.Sprintf("%s = ?", key))
 			}
 		}
 		//find service
@@ -117,7 +117,7 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 		services = map_service(services, service_exclude_result)
 
 		//make respose
-		push, pull := servicev1.HttpRspBuilder(len(services))
+		rspadd, rspbuild := servicev1.HttpRspBuilder(len(services))
 		err = foreach_service(services, func(service servicev1.Service) error {
 			service_uuid := service.Uuid
 			where := "service_uuid = ?"
@@ -127,14 +127,14 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 			if err != nil {
 				return err
 			}
-			push(service, steps) //push
+			rspadd(service, steps) //push
 			return nil
 		})
 		if err != nil {
 			return nil, err
 		}
 
-		return pull(), nil //pop
+		return rspbuild(), nil //pop
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -345,30 +345,9 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 			return nil, ErrorFailedCast()
 		}
 
-		//find step
-		where := "service_uuid = ?"
-		service_uuid := req[__UUID__]
-		steps, err := operator.NewServiceStep(ctx).
-			Find(where, service_uuid)
-		if err != nil {
-			return nil, err
-		}
-		//delete steps
-		err = foreach_step(steps, func(step stepv1.ServiceStep) error {
-			err := operator.NewServiceStep(ctx).
-				Delete(step.Uuid)
-			if err != nil {
-				return err
-			}
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
-
 		//delete service
 		uuid := req[__UUID__]
-		err = operator.NewService(ctx).
+		err := operator.NewService(ctx).
 			Delete(uuid)
 		if err != nil {
 			return nil, err
@@ -391,4 +370,39 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 func service_exclude_result(service servicev1.Service) servicev1.Service {
 	service.Result = nil //서비스 조회에 결과 필드는 제거
 	return service
+}
+
+func foreach_step(elems []stepv1.ServiceStep, fn func(stepv1.ServiceStep) error) error {
+	for _, it := range elems {
+		if err := fn(it); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func foreach_service(elems []servicev1.Service, fn func(servicev1.Service) error) error {
+	for _, it := range elems {
+		if err := fn(it); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func foreach_client_service(elems []servicev1.HttpReqClientSideService, fn func(servicev1.Service, []stepv1.ServiceStep) error) error {
+	for _, it := range elems {
+		if err := fn(it.Service, it.Steps); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func map_service(elems []servicev1.Service, mapper func(servicev1.Service) servicev1.Service) []servicev1.Service {
+	rst := make([]servicev1.Service, len(elems))
+	for n := range elems {
+		rst[n] = mapper(elems[n])
+	}
+	return rst
 }

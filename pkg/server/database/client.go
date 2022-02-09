@@ -8,7 +8,7 @@ import (
 //  @return error
 //  @method insert
 //  @from Client
-//  @condition clientv1.DbSchemaClient
+//  @condition DbSchemaClient
 func (ctx Session) CreateClient(m clientv1.DbSchemaClient) error {
 	tx := ctx.Tx()
 
@@ -44,7 +44,7 @@ func (ctx Session) GetClient(uuid string) (*clientv1.DbSchemaClient, error) {
 }
 
 // FindClient
-//  @return []clientv1.DbSchemaClient, error
+//  @return []DbSchemaClient, error
 //  @method find
 //  @from Client
 //  @condition where, args

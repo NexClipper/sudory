@@ -8,10 +8,10 @@ import (
 
 func TestStringJoin(t *testing.T) {
 
-	jointer, builder := StringJoin()
+	adder, builder := StringBuilder()
 
 	for i := 0; i < 10; i++ {
-		jointer(i)
+		adder(i)
 	}
 
 	t.Log(builder(","))

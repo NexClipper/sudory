@@ -1,12 +1,16 @@
 package database
 
 import (
+	"github.com/NexClipper/sudory/pkg/server/database/query_parser"
 	clientv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
+	envv1 "github.com/NexClipper/sudory/pkg/server/model/environment/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
+	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
+	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
 	"xorm.io/xorm"
 )
 
@@ -52,6 +56,26 @@ type Context interface {
 	FindServiceStep(where string, args ...interface{}) ([]stepv1.DbSchemaServiceStep, error)
 	UpdateServiceStep(m stepv1.DbSchemaServiceStep) error
 	DeleteServiceStep(uuid string) error
+	//environment
+	CreateEnvironment(m envv1.DbSchemaEnvironment) error
+	GetEnvironment(uuid string) (*envv1.DbSchemaEnvironment, error)
+	FindEnvironment(where string, args ...interface{}) ([]envv1.DbSchemaEnvironment, error)
+	UpdateEnvironment(m envv1.DbSchemaEnvironment) error
+	DeleteEnvironment(uuid string) error
+	//session
+	CreateSession(m sessionv1.DbSchemaSession) error
+	GetSession(uuid string) (*sessionv1.DbSchemaSession, error)
+	FindSession(where string, args ...interface{}) ([]sessionv1.DbSchemaSession, error)
+	QuerySession(query *query_parser.QueryParser) ([]sessionv1.DbSchemaSession, error)
+	UpdateSession(m sessionv1.DbSchemaSession) error
+	DeleteSession(uuid string) error
+	//token
+	CreateToken(m tokenv1.DbSchemaToken) error
+	GetToken(uuid string) (*tokenv1.DbSchemaToken, error)
+	FindToken(where string, args ...interface{}) ([]tokenv1.DbSchemaToken, error)
+	QueryToken(query *query_parser.QueryParser) ([]tokenv1.DbSchemaToken, error)
+	UpdateToken(m tokenv1.DbSchemaToken) error
+	DeleteToken(uuid string) error
 }
 
 // Session

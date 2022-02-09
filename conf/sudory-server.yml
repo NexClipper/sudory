@@ -42,4 +42,3 @@ events:
       url: 'http://localhost:8000/'
       content-type: 'application/json'
       timeout: 30
-

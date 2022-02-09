@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func UuidNewString() string {
+func NewUuidString() string {
 	u := uuid.NewString()
 	return strings.Replace(u, "-", "", -1)
 
@@ -14,6 +14,6 @@ func UuidNewString() string {
 
 func EmptyUuid(s *string) {
 	if len(*s) == 0 {
-		*s = UuidNewString()
+		*s = NewUuidString()
 	}
 }

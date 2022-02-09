@@ -2,47 +2,75 @@ package operator
 
 import (
 	"github.com/NexClipper/sudory/pkg/server/database"
-	"github.com/NexClipper/sudory/pkg/server/model"
-	"github.com/labstack/echo/v4"
+	"github.com/NexClipper/sudory/pkg/server/database/query_parser"
+	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
 )
 
 type Token struct {
-	db *database.DBManipulator
-
-	ClusterID uint64
-	Key       string
-
-	Response ResponseFn
+	ctx database.Context
 }
 
-func NewToken(d *database.DBManipulator) Operator {
-	return &Token{db: d}
+func NewToken(ctx database.Context) *Token {
+	return &Token{ctx: ctx}
 }
 
-func (o *Token) toModel() *model.Token {
-	m := &model.Token{
-		ClusterID: o.ClusterID,
-		Key:       o.Key,
-	}
-
-	return m
-}
-
-func (o *Token) Create(ctx echo.Context) error {
-	token := o.toModel()
-
-	_, err := o.db.CreateToken(token)
+func (o *Token) Create(model tokenv1.Token) error {
+	err := o.ctx.CreateToken(tokenv1.DbSchemaToken{Token: model})
 	if err != nil {
 		return err
-	}
-
-	if o.Response != nil {
-		o.Response(ctx, nil)
 	}
 
 	return nil
 }
 
-func (o *Token) Get(ctx echo.Context) error {
+func (o *Token) Get(uuid string) (*tokenv1.Token, error) {
+
+	record, err := o.ctx.GetToken(uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	return &record.Token, nil
+}
+
+func (o *Token) Find(where string, args ...interface{}) ([]tokenv1.Token, error) {
+	r, err := o.ctx.FindToken(where, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	records := tokenv1.TransFormDbSchema(r)
+
+	return records, nil
+}
+
+func (o *Token) Query(cond *query_parser.QueryParser) ([]tokenv1.Token, error) {
+	r, err := o.ctx.QueryToken(cond)
+	if err != nil {
+		return nil, err
+	}
+
+	records := tokenv1.TransFormDbSchema(r)
+
+	return records, nil
+}
+
+func (o *Token) Update(model tokenv1.Token) error {
+
+	err := o.ctx.UpdateToken(tokenv1.DbSchemaToken{Token: model})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *Token) Delete(uuid string) error {
+
+	err := o.ctx.DeleteToken(uuid)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

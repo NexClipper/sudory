@@ -144,7 +144,7 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 		}
 		//make condition
 		args := make([]interface{}, 0)
-		join, build := StringJoin()
+		add, build := StringBuilder()
 
 		for key, val := range req {
 			switch key {
@@ -153,7 +153,7 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 			default:
 				args = append(args, fmt.Sprintf("%%%s%%", val))
 			}
-			join(fmt.Sprintf("%s LIKE ?", key)) //조건문 만들기
+			add(fmt.Sprintf("%s LIKE ?", key)) //조건문 만들기
 		}
 		where := build(" AND ")
 
@@ -164,7 +164,7 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 			return nil, err
 		}
 		//make response
-		push, pop := templatev1.HttpRspBuilder(len(templates))
+		rspadd, rspbuild := templatev1.HttpRspBuilder(len(templates))
 		err = foreach_template(templates, func(template templatev1.Template) error {
 			template_uuid := template.Uuid
 			where := "template_uuid = ?"
@@ -174,13 +174,13 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 			if err != nil {
 				return err
 			}
-			push(template, commands) //넣
+			rspadd(template, commands) //넣
 			return nil
 		})
 		if err != nil {
 			return nil, err
 		}
-		return pop(), nil //pop
+		return rspbuild(), nil //pop
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -281,30 +281,9 @@ func (c *Control) DeleteTemplate() func(ctx echo.Context) error {
 			return nil, ErrorFailedCast()
 		}
 
-		//find command
-		where := "template_uuid = ?"
-		template_uuid := req[__UUID__]
-		commands, err := operator.NewTemplateCommand(ctx).
-			Find(where, template_uuid)
-		if err != nil {
-			return nil, err
-		}
-		//delete command
-		err = foreach_command(commands, func(command commandv1.TemplateCommand) error {
-			err := operator.NewTemplateCommand(ctx).
-				Delete(command.Uuid)
-			if err != nil {
-				return err
-			}
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
-
 		//delete template
 		uuid := req[__UUID__]
-		err = operator.NewTemplate(ctx).
+		err := operator.NewTemplate(ctx).
 			Delete(uuid)
 		if err != nil {
 			return nil, err

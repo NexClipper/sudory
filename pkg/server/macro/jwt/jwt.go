@@ -1,4 +1,4 @@
-package macro
+package jwt
 
 import (
 	"crypto/hmac"
@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"reflect"
 	"strings"
 )
 
@@ -22,9 +23,16 @@ func ErrorJwtInvalidSignature() error {
 	return errors.New("invalid signature")
 }
 
+func ErrorJwtBindPayloadNonePointer() error {
+	return errors.New("jwt bind payload none pointer")
+}
+func ErrorJwtBindPayloadNil() error {
+	return errors.New("jwt bind payload nil")
+}
+
 // JWT new
 //  make new JWT
-func New(payload map[string]interface{}, secret []byte) (jwt string, err error) {
+func New(payload interface{}, secret []byte) (jwt string, err error) {
 	defer func() {
 		var ok bool
 		if r := recover(); r != nil {
@@ -42,6 +50,7 @@ func New(payload map[string]interface{}, secret []byte) (jwt string, err error) 
 	}
 
 	json_mashal := func(v interface{}) []byte {
+		// json_mashal := func(v interface{}) ([]byte, error) { return json.MarshalIndent(v, "", " ") }
 		json_mashal := json.Marshal
 		right := func(b []byte, err error) []byte {
 			if err != nil {
@@ -92,11 +101,9 @@ func GetPayload(jwt string) (payload map[string]interface{}, err error) {
 		}
 	}()
 
-	json_unmashal := json.Unmarshal
-
 	jwt_ := strings.Split(jwt, ".") //split diffrent parts
 
-	if len(jwt_) != 3 {
+	if len(jwt_) < 2 {
 		return nil, ErrorJwtInvalidLength()
 	}
 
@@ -107,6 +114,39 @@ func GetPayload(jwt string) (payload map[string]interface{}, err error) {
 	}
 
 	return payload, nil
+}
+
+func BindPayload(jwt string, payload interface{}) (err error) {
+	defer func() {
+		var ok bool
+		if r := recover(); r != nil {
+			err, ok = r.(error)
+			if !ok {
+				panic(r)
+			}
+		}
+	}()
+
+	if payload == nil {
+		return ErrorJwtBindPayloadNil()
+	}
+
+	if reflect.ValueOf(payload).Kind() != reflect.Ptr {
+		return ErrorJwtBindPayloadNonePointer()
+	}
+
+	jwt_ := strings.Split(jwt, ".") //split diffrent parts
+
+	if len(jwt_) != 3 {
+		return ErrorJwtInvalidLength()
+	}
+
+	err = json_unmashal(byte_decoder(jwt_[jwt_payload]), payload) //unmashal
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // HMACSHA256
@@ -124,7 +164,7 @@ func HMACSHA256(header, payload string, secret []byte) []byte {
 
 func byte_encoder(src []byte) string {
 	encoder := base64.URLEncoding.EncodeToString
-	return strings.ReplaceAll(encoder(src), "=", "")
+	return strings.ReplaceAll(encoder(src), "=", "") //remove padd
 }
 
 func byte_decoder(s string) []byte {
@@ -142,5 +182,7 @@ func byte_decoder(s string) []byte {
 		}
 		return b
 	}
-	return right(decoder(padd_recover(s)))
+	return right(decoder(padd_recover(s))) //recover padd
 }
+
+var json_unmashal = json.Unmarshal

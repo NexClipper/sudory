@@ -58,12 +58,7 @@ func (o *Template) Update(model templatev1.Template) error {
 
 func (o *Template) Delete(uuid string) error {
 
-	err := o.ctx.DeleteTemplate(uuid)
-	if err != nil {
-		return err
-	}
-
-	//Template Command 레코드 삭제
+	//Template Command 삭제
 	where := "template_uuid = ?"
 	record, err := o.ctx.FindTemplateCommand(where, uuid)
 	if err != nil {
@@ -75,6 +70,11 @@ func (o *Template) Delete(uuid string) error {
 		if err != nil {
 			return err
 		}
+	}
+	//Template 삭제
+	err = o.ctx.DeleteTemplate(uuid)
+	if err != nil {
+		return err
 	}
 
 	return nil

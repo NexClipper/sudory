@@ -12,7 +12,7 @@ func TestClientSync(t *testing.T) {
 
 		engine := newEngine()
 
-		model := new(clinetv1.Client)
+		model := new(clinetv1.DbSchemaClient)
 
 		err := engine.Sync(model)
 

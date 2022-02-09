@@ -349,6 +349,23 @@ definitions:
         description: UUID
         type: string
     type: object
+  v1.HttpRspEnvironment:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      name:
+        description: label name
+        type: string
+      summary:
+        description: label summary
+        type: string
+      uuid:
+        description: UUID
+        type: string
+      value:
+        type: string
+    type: object
   v1.HttpRspService:
     properties:
       api_version:
@@ -433,6 +450,31 @@ definitions:
         description: UUID
         type: string
     type: object
+  v1.HttpRspSession:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      expiration_time:
+        type: string
+      issued_at_time:
+        type: string
+      name:
+        description: label name
+        type: string
+      summary:
+        description: label summary
+        type: string
+      token:
+        type: string
+      user_kind:
+        type: string
+      user_uuid:
+        type: string
+      uuid:
+        description: UUID
+        type: string
+    type: object
   v1.HttpRspTemplate:
     properties:
       api_version:
@@ -452,6 +494,31 @@ definitions:
         type: string
       summary:
         description: label summary
+        type: string
+      uuid:
+        description: UUID
+        type: string
+    type: object
+  v1.HttpRspToken:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      expiration_time:
+        type: string
+      issued_at_time:
+        type: string
+      name:
+        description: label name
+        type: string
+      summary:
+        description: label summary
+        type: string
+      token:
+        type: string
+      user_kind:
+        type: string
+      user_uuid:
         type: string
       uuid:
         description: UUID
@@ -540,17 +607,22 @@ paths:
   /client/auth:
     post:
       consumes:
-      - application/json
+      - application/x-www-form-urlencoded
       description: Auth a client
       parameters:
-      - description: Client 의 Uuid
-        in: query
-        name: client_uuid
+      - description: assertion=<bearer-token>
+        in: formData
+        name: assertion
         required: true
         type: string
       - description: Cluster 의 Uuid
-        in: query
+        in: formData
         name: cluster_uuid
+        required: true
+        type: string
+      - description: Client 의 Uuid
+        in: formData
+        name: client_uuid
         required: true
         type: string
       produces:
@@ -558,8 +630,12 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            x-sudory-client-token:
+              description: x-sudory-client-token
+              type: string
           schema:
-            $ref: '#/definitions/v1.HttpRspClient'
+            type: string
       tags:
       - client/auth
   /client/service:
@@ -568,9 +644,10 @@ paths:
       - application/json
       description: Poll a Service
       parameters:
-      - description: Client 의 ClusterUuid
-        in: query
-        name: cluster_uuid
+      - description: client session token
+        in: header
+        name: x-sudory-client-token
+        required: true
         type: string
       - description: HttpReqClientSideService
         in: body
@@ -585,6 +662,10 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            x-sudory-client-token:
+              description: x-sudory-client-token
+              type: string
           schema:
             items:
               $ref: '#/definitions/v1.HttpRspClientSideService'
@@ -801,6 +882,83 @@ paths:
           description: ""
       tags:
       - server/cluster
+  /server/environment:
+    get:
+      consumes:
+      - application/json
+      description: Find Environment
+      parameters:
+      - description: Environment 의 Uuid
+        in: query
+        name: uuid
+        type: string
+      - description: Environment 의 Summary
+        in: query
+        name: summary
+        type: string
+      - description: Environment 의 Name
+        in: query
+        name: name
+        type: string
+      - description: Environment 의 Value
+        in: query
+        name: value
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.HttpRspEnvironment'
+            type: array
+      tags:
+      - server/environment
+  /server/environment/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: Get a Environment
+      parameters:
+      - description: Environment 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspEnvironment'
+      tags:
+      - server/environment
+    put:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Update a Environment
+      parameters:
+      - description: Environment 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: Environment 의 Value
+        in: formData
+        name: value
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspEnvironment'
+      tags:
+      - server/environment
   /server/service:
     get:
       consumes:
@@ -1048,6 +1206,88 @@ paths:
             $ref: '#/definitions/v1.HttpRspService'
       tags:
       - server/service
+  /server/session:
+    get:
+      consumes:
+      - application/json
+      description: Find Session
+      parameters:
+      - description: Session 의 Uuid
+        in: query
+        name: uuid
+        type: string
+      - description: Session 의 Name
+        in: query
+        name: name
+        type: string
+      - description: Session 의 user_kind
+        in: query
+        name: user_kind
+        type: string
+      - description: Session 의 user_uuid
+        in: query
+        name: user_uuid
+        type: string
+      - description: Pagination 의 limit
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination 의 page
+        in: query
+        name: page
+        type: integer
+      - description: Pagination 의 order
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.HttpRspSession'
+            type: array
+      tags:
+      - server/session
+  /server/session/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a Session
+      parameters:
+      - description: Session 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/session
+    get:
+      consumes:
+      - application/json
+      description: Get a Session
+      parameters:
+      - description: Session 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspSession'
+      tags:
+      - server/session
   /server/template:
     get:
       consumes:
@@ -1274,4 +1514,172 @@ paths:
           description: ""
       tags:
       - server/template
+  /server/token:
+    get:
+      consumes:
+      - application/json
+      description: Find Token
+      parameters:
+      - description: Token 의 Uuid
+        in: query
+        name: uuid
+        type: string
+      - description: Token 의 Name
+        in: query
+        name: name
+        type: string
+      - description: Token 의 user_kind
+        in: query
+        name: user_kind
+        type: string
+      - description: Token 의 user_uuid
+        in: query
+        name: user_uuid
+        type: string
+      - description: Token 의 token
+        in: query
+        name: token
+        type: string
+      - description: Pagination 의 limit
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination 의 page
+        in: query
+        name: page
+        type: integer
+      - description: Pagination 의 order
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.HttpRspToken'
+            type: array
+      tags:
+      - server/token
+  /server/token/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a Token
+      parameters:
+      - description: Token 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/token
+    get:
+      consumes:
+      - application/json
+      description: Get a Token
+      parameters:
+      - description: Token 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspToken'
+      tags:
+      - server/token
+  /server/token/cluster:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Create a Cluster Token
+      parameters:
+      - description: Token 의 Name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Token 의 Summary
+        in: formData
+        name: summary
+        type: string
+      - description: Token 의 Token
+        in: formData
+        name: token
+        required: true
+        type: string
+      - description: Token 의 UserUuid
+        in: formData
+        name: user_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspToken'
+      tags:
+      - server/token
+  /server/token/cluster/{uuid}:
+    put:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Update Cluster Token
+      parameters:
+      - description: Token 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: Token 의 Name
+        in: formData
+        name: name
+        type: string
+      - description: Token 의 Summary
+        in: formData
+        name: summary
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspToken'
+      tags:
+      - server/token
+  /server/token/cluster/{uuid}/exp:
+    put:
+      consumes:
+      - application/json
+      description: Refresh Cluster Token Expiration Time
+      parameters:
+      - description: Token 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspToken'
+      tags:
+      - server/token
 swagger: "2.0"

@@ -45,6 +45,10 @@ func New(cfg *config.Config) (*DBManipulator, error) {
 	}
 	engine.SetMapper(names.SnakeMapper{})
 
+	//timezone setting
+	engine.SetTZLocation(time.Local) //app timezone Local
+	engine.SetTZDatabase(time.UTC)   //db timezone UTC
+
 	db.engine = engine
 
 	return db, nil

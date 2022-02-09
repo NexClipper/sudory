@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func StringJoin() (func(elems ...interface{}), func(sep string) string) {
+func StringBuilder() (func(elems ...interface{}), func(sep string) string) {
 	buf := make([]string, 0)
 
 	sprint := func(a interface{}) string {

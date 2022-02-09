@@ -65,28 +65,28 @@ func TestActivate(t *testing.T) {
 	var err error
 
 	//events
-	var eventContexts []events.EventContexter
-	var eventConfig *events.Config
+	var contexts []events.EventContexter
+	var config *events.Config
 	//event config
-	if eventConfig, err = events.NewConfig(test_config_filename); err != nil { //config file load
+	if config, err = events.NewConfig(test_config_filename); err != nil { //config file load
 		panic(err)
 	}
 	//config vaild
-	if err = eventConfig.Vaild(); err != nil {
+	if err = config.Vaild(); err != nil {
 		panic(err)
 	}
 	//event listener
-	if eventContexts, err = eventConfig.MakeEventListener(); err != nil { //events regist listener
+	if contexts, err = config.MakeEventListener(); err != nil { //events regist listener
 		panic(err)
 	}
 	//event manager
-	eventInvoke := channels.NewSafeChannel(0)
-	manager := events.NewManager(eventContexts, log.Printf)
-	deactivate := manager.Activate(eventInvoke, len(eventContexts)) //manager activate
+	sender := channels.NewSafeChannel(0)
+	manager := events.NewManager(sender, contexts, log.Printf)
+	deactivate := events.Activate(manager, len(contexts)) //manager activate
 	defer func() {
 		deactivate() //stop when closing
 	}()
-	events.Invoke = func(v *events.EventArgs) { eventInvoke.SafeSend(v) } //setting invoker
+	events.Invoke = manager.Invoker //setting invoker
 
 	count := 20
 
@@ -99,4 +99,5 @@ func TestActivate(t *testing.T) {
 			},
 		})
 	}
+
 }

@@ -89,7 +89,7 @@ func (c *Control) FindClient() func(ctx echo.Context) error {
 
 		//make condition
 		args := make([]interface{}, 0)
-		join, build := StringJoin()
+		add, build := StringBuilder()
 
 		for key, val := range req {
 			switch key {
@@ -98,15 +98,17 @@ func (c *Control) FindClient() func(ctx echo.Context) error {
 			default:
 				args = append(args, fmt.Sprintf("%%%s%%", val))
 			}
-			join(fmt.Sprintf("%s LIKE ?", key)) //조건문 만들기
+			add(fmt.Sprintf("%s LIKE ?", key)) //조건문 만들기
 		}
 		where := build(" AND ")
 
 		//find client
 		rst, err := operator.NewClient(ctx).
 			Find(where, args...)
-
-		return clinetv1.TransToHttpRsp(rst), err
+		if err != nil {
+			return nil, err
+		}
+		return clinetv1.TransToHttpRsp(rst), nil
 	}
 
 	return MakeMiddlewareFunc(Option{

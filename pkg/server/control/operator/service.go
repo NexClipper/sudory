@@ -55,12 +55,7 @@ func (o *Service) Update(model servicev1.Service) error {
 
 func (o *Service) Delete(uuid string) error {
 
-	err := o.ctx.DeleteService(uuid)
-	if err != nil {
-		return err
-	}
-
-	//Service Step 레코드 삭제
+	//Service Step 삭제
 	where := "service_uuid = ?"
 	record, err := o.ctx.FindServiceStep(where, uuid)
 	if err != nil {
@@ -72,6 +67,12 @@ func (o *Service) Delete(uuid string) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	//service 삭제
+	err = o.ctx.DeleteService(uuid)
+	if err != nil {
+		return err
 	}
 
 	return nil

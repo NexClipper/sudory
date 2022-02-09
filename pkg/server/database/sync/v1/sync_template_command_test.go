@@ -12,7 +12,7 @@ func TestTemplateCommandSync(t *testing.T) {
 
 		engine := newEngine()
 
-		model := new(commandv1.TemplateCommand)
+		model := new(commandv1.DbSchemaTemplateCommand)
 
 		err := engine.Sync(model)
 

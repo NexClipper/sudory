@@ -8,7 +8,7 @@ import (
 //  @return error
 //  @method insert
 //  @from Cluster
-//  @condition clusterv1.DbSchemaCluster
+//  @condition DbSchemaCluster
 func (ctx Session) CreateCluster(m clusterv1.DbSchemaCluster) error {
 	tx := ctx.Tx()
 
@@ -44,7 +44,7 @@ func (ctx Session) GetCluster(uuid string) (*clusterv1.DbSchemaCluster, error) {
 }
 
 // FindCluster
-//  @return []clusterv1.DbSchemaCluster, error
+//  @return []DbSchemaCluster, error
 //  @method find
 //  @from Cluster
 //  @condition where, args

@@ -30,7 +30,7 @@ var doc = `{
             "post": {
                 "description": "Auth a client",
                 "consumes": [
-                    "application/json"
+                    "application/x-www-form-urlencoded"
                 ],
                 "produces": [
                     "application/json"
@@ -41,16 +41,23 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Client 의 Uuid",
-                        "name": "client_uuid",
-                        "in": "query",
+                        "description": "assertion=\u003cbearer-token\u003e",
+                        "name": "assertion",
+                        "in": "formData",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "Cluster 의 Uuid",
                         "name": "cluster_uuid",
-                        "in": "query",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Client 의 Uuid",
+                        "name": "client_uuid",
+                        "in": "formData",
                         "required": true
                     }
                 ],
@@ -58,7 +65,13 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpRspClient"
+                            "type": "string"
+                        },
+                        "headers": {
+                            "x-sudory-client-token": {
+                                "type": "string",
+                                "description": "x-sudory-client-token"
+                            }
                         }
                     }
                 }
@@ -79,9 +92,10 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Client 의 ClusterUuid",
-                        "name": "cluster_uuid",
-                        "in": "query"
+                        "description": "client session token",
+                        "name": "x-sudory-client-token",
+                        "in": "header",
+                        "required": true
                     },
                     {
                         "description": "HttpReqClientSideService",
@@ -103,6 +117,12 @@ var doc = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/v1.HttpRspClientSideService"
+                            }
+                        },
+                        "headers": {
+                            "x-sudory-client-token": {
+                                "type": "string",
+                                "description": "x-sudory-client-token"
                             }
                         }
                     }
@@ -429,6 +449,124 @@ var doc = `{
                 "responses": {
                     "200": {
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/server/environment": {
+            "get": {
+                "description": "Find Environment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/environment"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Environment 의 Uuid",
+                        "name": "uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Environment 의 Summary",
+                        "name": "summary",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Environment 의 Name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Environment 의 Value",
+                        "name": "value",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.HttpRspEnvironment"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/server/environment/{uuid}": {
+            "get": {
+                "description": "Get a Environment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/environment"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Environment 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspEnvironment"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a Environment",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/environment"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Environment 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Environment 의 Value",
+                        "name": "value",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspEnvironment"
+                        }
                     }
                 }
             }
@@ -811,6 +949,132 @@ var doc = `{
                 }
             }
         },
+        "/server/session": {
+            "get": {
+                "description": "Find Session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/session"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session 의 Uuid",
+                        "name": "uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Session 의 Name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Session 의 user_kind",
+                        "name": "user_kind",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Session 의 user_uuid",
+                        "name": "user_uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Pagination 의 limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Pagination 의 page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pagination 의 order",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.HttpRspSession"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/server/session/{uuid}": {
+            "get": {
+                "description": "Get a Session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/session"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspSession"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a Session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/session"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/server/template": {
             "get": {
                 "description": "Find []template",
@@ -1145,6 +1409,263 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "Template 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/token": {
+            "get": {
+                "description": "Find Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token 의 Uuid",
+                        "name": "uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token 의 Name",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token 의 user_kind",
+                        "name": "user_kind",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token 의 user_uuid",
+                        "name": "user_uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token 의 token",
+                        "name": "token",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Pagination 의 limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Pagination 의 page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pagination 의 order",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.HttpRspToken"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/server/token/cluster": {
+            "post": {
+                "description": "Create a Cluster Token",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token 의 Name",
+                        "name": "name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token 의 Summary",
+                        "name": "summary",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token 의 Token",
+                        "name": "token",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token 의 UserUuid",
+                        "name": "user_uuid",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspToken"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/token/cluster/{uuid}": {
+            "put": {
+                "description": "Update Cluster Token",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token 의 Name",
+                        "name": "name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token 의 Summary",
+                        "name": "summary",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspToken"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/token/cluster/{uuid}/exp": {
+            "put": {
+                "description": "Refresh Cluster Token Expiration Time",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspToken"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/token/{uuid}": {
+            "get": {
+                "description": "Get a Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspToken"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token 의 Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -1633,6 +2154,30 @@ var doc = `{
                 }
             }
         },
+        "v1.HttpRspEnvironment": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "v1.HttpRspService": {
             "type": "object",
             "properties": {
@@ -1748,6 +2293,42 @@ var doc = `{
                 }
             }
         },
+        "v1.HttpRspSession": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "expiration_time": {
+                    "type": "string"
+                },
+                "issued_at_time": {
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "user_kind": {
+                    "type": "string"
+                },
+                "user_uuid": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
         "v1.HttpRspTemplate": {
             "type": "object",
             "properties": {
@@ -1771,6 +2352,42 @@ var doc = `{
                 },
                 "summary": {
                     "description": "label summary",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpRspToken": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "expiration_time": {
+                    "type": "string"
+                },
+                "issued_at_time": {
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "user_kind": {
+                    "type": "string"
+                },
+                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {

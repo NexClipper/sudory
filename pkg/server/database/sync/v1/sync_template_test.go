@@ -12,7 +12,7 @@ func TestTemplateSync(t *testing.T) {
 
 		engine := newEngine()
 
-		model := new(clinetv1.Template)
+		model := new(clinetv1.DbSchemaTemplate)
 
 		err := engine.Sync(model)
 

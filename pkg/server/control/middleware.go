@@ -14,15 +14,13 @@ import (
 	"xorm.io/xorm"
 )
 
-type Binder func(echo.Context) (interface{}, error)
+// type Binder func(echo.Context) (interface{}, error)
 
 type Operator func(database.Context, interface{}) (interface{}, error)
 
 type OperationBlockHandler func(engine *xorm.Engine, fn func(ctx database.Context) (interface{}, error)) (interface{}, error)
 
-type HttpResponser func(echo.Context, int, interface{}) error
-
-type CustomReporter func(interface{}) error
+// type HttpResponser func(echo.Context, int, interface{}) error
 
 type Option struct {
 	*xorm.Engine
@@ -30,7 +28,6 @@ type Option struct {
 	Operator
 	BlockMaker OperationBlockHandler
 	HttpResponser
-	CustomReporters []CustomReporter
 }
 
 // MakeMiddlewareFunc
@@ -162,9 +159,8 @@ func Lock(engine *xorm.Engine, operate func(ctx database.Context) (interface{}, 
 	var err error
 
 	ctx := database.NewContext(engine)
-	/*
-		defer func() { ctx.Close() }()
-	*/
+	defer func() { ctx.Close() }()
+
 	tx := ctx.Tx()
 	tx.Begin() //begin transaction
 	defer func() {
@@ -176,7 +172,6 @@ func Lock(engine *xorm.Engine, operate func(ctx database.Context) (interface{}, 
 	}()
 
 	v, err = operate(ctx)
-
 	return v, err
 }
 func NoLock(engine *xorm.Engine, operate func(ctx database.Context) (interface{}, error)) (interface{}, error) {
@@ -184,16 +179,12 @@ func NoLock(engine *xorm.Engine, operate func(ctx database.Context) (interface{}
 	var err error
 
 	ctx := database.NewContext(engine)
-	/*
-		defer func() { ctx.Close() }()
-	*/
+	defer func() { ctx.Close() }()
+
 	v, err = operate(ctx)
 	return v, err
 }
 
 func OK() interface{} {
-	return []interface{}{
-		200,
-		"OK",
-	}
+	return "OK"
 }

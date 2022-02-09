@@ -44,7 +44,7 @@ func (ctx Session) GetServiceStep(uuid string) (*stepv1.DbSchemaServiceStep, err
 }
 
 // FindServiceStep
-//  @return []stepv1.DbSchemaServiceStep, error
+//  @return []DbSchemaServiceStep, error
 //  @method find
 //  @from ServiceStep
 //  @condition where, args

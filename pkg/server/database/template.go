@@ -8,7 +8,7 @@ import (
 //  @return error
 //  @method insert
 //  @from Template
-//  @condition templatev1.DbSchemaTemplate
+//  @condition DbSchemaTemplate
 func (ctx Session) CreateTemplate(m templatev1.DbSchemaTemplate) error {
 	tx := ctx.Tx()
 
@@ -45,7 +45,7 @@ func (ctx Session) GetTemplate(uuid string) (*templatev1.DbSchemaTemplate, error
 }
 
 // FindTemplate
-//  @return []templatev1.DbSchemaTemplate, error
+//  @return []DbSchemaTemplate, error
 //  @method find
 //  @from Template
 //  @condition where, args

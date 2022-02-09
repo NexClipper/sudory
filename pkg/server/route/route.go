@@ -23,12 +23,11 @@ import (
 )
 
 type Route struct {
-	e  *echo.Echo
-	db *database.DBManipulator
+	e *echo.Echo
 }
 
 func New(cfg *config.Config, db *database.DBManipulator) *Route {
-	router := &Route{e: echo.New(), db: db}
+	router := &Route{e: echo.New()}
 	controller := control.New(db)
 
 	//route /client/service*
@@ -73,6 +72,21 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router.e.POST("/server/service/:service_uuid/step", controller.CreateServiceStep())
 	router.e.PUT("/server/service/:service_uuid/step/:uuid", controller.UpdateServiceStep())
 	router.e.DELETE("/server/service/:service_uuid/step/:uuid", controller.DeleteServiceStep())
+	//route /server/environment*
+	router.e.GET("/server/environment", controller.FindEnvironment())
+	router.e.GET("/server/environment/:uuid", controller.GetEnvironment())
+	router.e.PUT("/server/environment/:uuid", controller.UpdateEnvironment())
+	//route /server/session*
+	router.e.GET("/server/session", controller.FindSession())
+	router.e.GET("/server/session/:uuid", controller.GetSession())
+	router.e.DELETE("/server/session/:uuid", controller.DeleteSession())
+	//route /server/token*
+	router.e.GET("/server/token", controller.FindToken())
+	router.e.GET("/server/token/:uuid", controller.GetToken())
+	router.e.POST("/server/token/cluster", controller.CreateClusterToken())
+	router.e.PUT("/server/token/cluster/:uuid", controller.UpdateClusterToken())
+	router.e.PUT("/server/token/cluster/:uuid/exp", controller.RefreshClusterTokenExpirationTime())
+	router.e.DELETE("/server/token/:uuid", controller.DeleteToken())
 
 	/*TODO: 라우트 연결 기능 구현
 	router.e.POST("/server/cluster/:id/token", controller.CreateToken)
@@ -95,18 +109,14 @@ func (r *Route) Start(port int32) error {
 		}
 	}()
 
-	quit := make(chan os.Signal)
+	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
+	<-quit
 
-	select {
-	case <-quit:
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		if err := r.e.Shutdown(ctx); err != nil {
-			r.db.Close()
-			return err
-		}
-		r.db.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := r.e.Shutdown(ctx); err != nil {
+		return err
 	}
 
 	return nil

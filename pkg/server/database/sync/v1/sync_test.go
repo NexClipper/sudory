@@ -9,4 +9,7 @@ func TestAllSync(t *testing.T) {
 	TestServiceSync(t)         //4
 	TestTemplateCommandSync(t) //5
 	TestTemplateSync(t)        //6
+	TestEnvironmentSync(t)     //7
+	TestSessionSync(t)         //8
+	TestTokenSync(t)           //9
 }
