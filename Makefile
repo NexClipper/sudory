@@ -1,21 +1,25 @@
-server:
-	go build -o ./bin/server/sudory-server ./cmd/server
-
-client:
-	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ./bin/client/sudory-client ./cmd/client
-
-swagger:
-	cd pkg/server/route;go generate
 
 prep:
 	go install github.com/swaggo/swag/cmd/swag@v1.7.8
 
-docker:
-ifeq ($(target),server)
-	docker build -t p8s.me/nexclipper/sudory-server:$(version) -f Dockerfile.server .
+swagger:
+	cd pkg/server/route;go generate
+
+docker-login:
+	docker login ${register} -u ${user}
+
+go-build:
+ifeq (${target},server)
+	go build -o ./bin/${target}/sudory-${target} ./cmd/${target}
 else
-	docker build -t p8s.me/nexclipper/sudory-client:$(version) -f Dockerfile.client .
+	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ./bin/${target}/sudory-${target} ./cmd/${target}
 endif
+
+docker-build:
+	docker build -t ${image}-${target}:$(version) -f Dockerfile.${target} .
+
+docker-push:
+	docker push ${image}-${target}:${version}
 
 clean:
 	rm ./bin/server

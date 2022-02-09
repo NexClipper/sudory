@@ -1,11 +1,27 @@
 # sudory
 
-image build(server)  
+## Make Example
+
+source build
 ```
-$ make docker type=server version=0.1.0
+$ make go-build target=server
 ```
 
-image build(client)
+docker login
 ```
-$ make docker type=client version=0.1.0
+$ make docker-login register=p8s.me user=blah
+```
+
+image build(server / client)  
+```
+$ make docker-build image=p8s.me/nexclipper/sudory target=server version=0.1.0
+
+or
+
+$ make docker-build image=p8s.me/nexclipper/sudory target=client version=0.1.0
+```
+
+image push
+```
+$ make docker-push image=p8s.me/nexclipper/sudory target=server version=0.1.0
 ```
