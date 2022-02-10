@@ -9,11 +9,7 @@ docker-login:
 	docker login ${register} -u ${user}
 
 go-build:
-ifeq (${target},server)
-	go build -o ./bin/${target}/sudory-${target} ./cmd/${target}
-else
 	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ./bin/${target}/sudory-${target} ./cmd/${target}
-endif
 
 docker-build:
 	docker build -t ${image}-${target}:$(version) -f Dockerfile.${target} .
