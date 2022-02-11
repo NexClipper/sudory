@@ -19,7 +19,6 @@ const (
 	__CLUSTER_UUID__  = "cluster_uuid"
 	__CLIENT_UUID__   = "client_uuid"
 	__TOKEN__         = "token"
-	__USER_UUID__     = "user_uuid"
 	__VALUE__         = "value"
 	__SERVICE_UUID__  = "service_uuid"
 	__TEMPLATE_UUID__ = "template_uuid"

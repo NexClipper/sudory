@@ -533,9 +533,11 @@ var doc = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/server/environment/{uuid}/value": {
             "put": {
-                "description": "Update a Environment",
+                "description": "Update Environment Value",
                 "consumes": [
                     "application/x-www-form-urlencoded"
                 ],
@@ -1500,7 +1502,7 @@ var doc = `{
             "post": {
                 "description": "Create a Cluster Token",
                 "consumes": [
-                    "application/x-www-form-urlencoded"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -1510,31 +1512,13 @@ var doc = `{
                 ],
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Token 의 Name",
-                        "name": "name",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token 의 Summary",
-                        "name": "summary",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token 의 Token",
-                        "name": "token",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token 의 UserUuid",
-                        "name": "user_uuid",
-                        "in": "formData",
-                        "required": true
+                        "description": "HttpReqToken",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpReqToken"
+                        }
                     }
                 ],
                 "responses": {
@@ -1547,11 +1531,11 @@ var doc = `{
                 }
             }
         },
-        "/server/token/cluster/{uuid}": {
+        "/server/token/cluster/{uuid}/expire": {
             "put": {
-                "description": "Update Cluster Token",
+                "description": "Expire Cluster Token",
                 "consumes": [
-                    "application/x-www-form-urlencoded"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -1566,18 +1550,6 @@ var doc = `{
                         "name": "uuid",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token 의 Name",
-                        "name": "name",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token 의 Summary",
-                        "name": "summary",
-                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -1590,9 +1562,9 @@ var doc = `{
                 }
             }
         },
-        "/server/token/cluster/{uuid}/exp": {
+        "/server/token/cluster/{uuid}/refresh": {
             "put": {
-                "description": "Refresh Cluster Token Expiration Time",
+                "description": "Refresh Cluster Token Time",
                 "consumes": [
                     "application/json"
                 ],
@@ -1674,6 +1646,46 @@ var doc = `{
                 "responses": {
                     "200": {
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/server/token/{uuid}/label": {
+            "put": {
+                "description": "Update Token Label",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Token 의 LabelMeta",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.LabelMeta"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspToken"
+                        }
                     }
                 }
             }
@@ -2049,6 +2061,42 @@ var doc = `{
                 }
             }
         },
+        "v1.HttpReqToken": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "expiration_time": {
+                    "type": "string"
+                },
+                "issued_at_time": {
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "user_kind": {
+                    "type": "string"
+                },
+                "user_uuid": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
         "v1.HttpRspClient": {
             "type": "object",
             "properties": {
@@ -2388,6 +2436,27 @@ var doc = `{
                     "type": "string"
                 },
                 "user_uuid": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.LabelMeta": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "label summary",
                     "type": "string"
                 },
                 "uuid": {

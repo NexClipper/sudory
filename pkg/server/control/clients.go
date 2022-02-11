@@ -23,7 +23,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type ClienPlayload struct {
+type ClientPlayload struct {
 	Exp          time.Time `json:"exp,omitempty"`           //expiration_time
 	Iat          time.Time `json:"iat,omitempty"`           //issued_at_time
 	Uuid         string    `json:"uuid,omitempty"`          //token_uuid
@@ -48,14 +48,14 @@ func (e SessionTokenError) Error() string {
 
 // Poll []Service (client)
 // @Description Poll a Service
-// @Accept json
-// @Produce json
-// @Tags client/service
-// @Router /client/service [put]
-// @Param x-sudory-client-token header string                        true "client session token"
-// @Param service               body   []v1.HttpReqClientSideService true "HttpReqClientSideService"
-// @Success 200 {array}  v1.HttpRspClientSideService
-// @Header  200 {string} x-sudory-client-token "x-sudory-client-token"
+// @Accept      json
+// @Produce     json
+// @Tags        client/service
+// @Router      /client/service [put]
+// @Param       x-sudory-client-token header string                        true "client session token"
+// @Param       service               body   []v1.HttpReqClientSideService true "HttpReqClientSideService"
+// @Success     200 {array}  v1.HttpRspClientSideService
+// @Header      200 {string} x-sudory-client-token "x-sudory-client-token"
 func (c *Control) PollService() func(ctx echo.Context) error {
 
 	binder := func(ctx echo.Context) (interface{}, error) {
@@ -129,22 +129,21 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		payload, ok := req[__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__].(*ClienPlayload)
+		payload, ok := req[__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__].(*ClientPlayload)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
 		//find service
-		where := "cluster_uuid = ? AND ? < status AND status < ?"
-		cluster_uuid := payload.ClusterUuid
-		if !ok {
-			return nil, ErrorFailedCast()
+		where := "cluster_uuid = ? AND status BETWEEN ? AND ?"
+		args := []interface{}{
+			payload.ClusterUuid,
+			servicev1.StatusAssignment,
+			servicev1.StatusProcessing,
 		}
-		status_regist := servicev1.StatusRegist
-		status_success := servicev1.StatusSuccess
 
 		services, err := operator.NewService(ctx.Database).
-			Find(where, cluster_uuid, status_regist, status_success)
+			Find(where, args...)
 		if err != nil {
 			return nil, err
 		}
@@ -179,15 +178,15 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 
 // Auth Client
 // @Description Auth a client
-// @Accept x-www-form-urlencoded
-// @Produce json
-// @Tags client/auth
-// @Router /client/auth [post]
-// @Param assertion    formData string true "assertion=<bearer-token>"
-// @Param cluster_uuid formData string true "Cluster 의 Uuid"
-// @Param client_uuid  formData string true "Client 의 Uuid"
-// @Success 200 {string} ok
-// @Header  200 {string} x-sudory-client-token "x-sudory-client-token"
+// @Accept      x-www-form-urlencoded
+// @Produce     json
+// @Tags        client/auth
+// @Router      /client/auth [post]
+// @Param       assertion    formData string true "assertion=<bearer-token>"
+// @Param       cluster_uuid formData string true "Cluster 의 Uuid"
+// @Param       client_uuid  formData string true "Client 의 Uuid"
+// @Success     200 {string} ok
+// @Header      200 {string} x-sudory-client-token "x-sudory-client-token"
 func (c *Control) AuthClient() func(ctx echo.Context) error {
 
 	binder := func(ctx echo.Context) (interface{}, error) {
@@ -276,7 +275,7 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 		iat := time.Now()
 		exp := env.ClientSessionExpirationTime(iat)
 
-		payload := &ClienPlayload{
+		payload := &ClientPlayload{
 			Exp:          exp,
 			Iat:          iat,
 			Uuid:         token_uuid,
@@ -307,7 +306,7 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		session := newSession(*payload, session_token_value)
+		session := newClientSession(*payload, session_token_value)
 
 		//save session
 		err = operator.NewSession(ctx.Database).
@@ -329,7 +328,7 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 	})
 }
 
-func newSession(payload ClienPlayload, token string) sessionv1.Session {
+func newClientSession(payload ClientPlayload, token string) sessionv1.Session {
 	session := sessionv1.Session{}
 	session.Uuid = payload.Uuid
 	session.UserUuid = payload.ClientUuid
@@ -357,7 +356,7 @@ func verifyClientSessionToken(engine *xorm.Engine) func(ctx echo.Context) error 
 			return NewClientSessionTokenError(http.StatusForbidden, fmt.Errorf("jwt verify: %w", err))
 		}
 
-		payload := new(ClienPlayload)
+		payload := new(ClientPlayload)
 		err = jwt.BindPayload(token, payload)
 		if err != nil {
 			return NewClientSessionTokenError(http.StatusForbidden, fmt.Errorf("jwt bind payload: %w", err))
@@ -379,7 +378,7 @@ func verifyClientSessionToken(engine *xorm.Engine) func(ctx echo.Context) error 
 			return NewClientSessionTokenError(http.StatusInternalServerError, fmt.Errorf("create new jwt: %w", err))
 		}
 
-		session := newSession(*payload, new_token)
+		session := newClientSession(*payload, new_token)
 		//udpate session
 		err = operator.NewSession(ctx.Database).
 			Update(session)
@@ -395,6 +394,10 @@ func verifyClientSessionToken(engine *xorm.Engine) func(ctx echo.Context) error 
 
 	return func(ctx echo.Context) error {
 
+		left := func(v interface{}, err error) error {
+			return err
+		}
+
 		block := MakeBlockNoLock
 
 		err := left(block(engine, func(ctx OperateContext) (interface{}, error) {
@@ -405,18 +408,14 @@ func verifyClientSessionToken(engine *xorm.Engine) func(ctx echo.Context) error 
 	}
 }
 
-func left(v interface{}, err error) error {
-	return err
-}
-
-func getClientTokenPayload(ctx echo.Context) *ClienPlayload {
+func getClientTokenPayload(ctx echo.Context) *ClientPlayload {
 	//get token
 	token := ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
 	if len(token) == 0 {
 		return nil
 	}
 
-	payload := new(ClienPlayload)
+	payload := new(ClientPlayload)
 
 	err := jwt.BindPayload(token, payload)
 	if err != nil {

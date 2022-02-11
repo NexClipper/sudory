@@ -13,14 +13,14 @@ import (
 
 // Find Environment
 // @Description Find Environment
-// @Accept json
-// @Produce json
-// @Tags server/environment
-// @Router /server/environment [get]
-// @Param uuid         query string false "Environment 의 Uuid"
-// @Param summary      query string false "Environment 의 Summary"
-// @Param name         query string false "Environment 의 Name"
-// @Param value        query string false "Environment 의 Value"
+// @Accept      json
+// @Produce     json
+// @Tags        server/environment
+// @Router      /server/environment [get]
+// @Param       uuid    query string false "Environment 의 Uuid"
+// @Param       summary query string false "Environment 의 Summary"
+// @Param       name    query string false "Environment 의 Name"
+// @Param       value   query string false "Environment 의 Value"
 // @Success 200 {array} v1.HttpRspEnvironment
 func (c *Control) FindEnvironment() func(ctx echo.Context) error {
 
@@ -70,31 +70,31 @@ func (c *Control) FindEnvironment() func(ctx echo.Context) error {
 
 // Get Environment
 // @Description Get a Environment
-// @Accept json
-// @Produce json
-// @Tags server/environment
-// @Router /server/environment/{uuid} [get]
-// @Param uuid          path string true "Environment 의 Uuid"
+// @Accept      json
+// @Produce     json
+// @Tags        server/environment
+// @Router      /server/environment/{uuid} [get]
+// @Param       uuid path string true "Environment 의 Uuid"
 // @Success 200 {object} v1.HttpRspEnvironment
 func (c *Control) GetEnvironment() func(ctx echo.Context) error {
 
 	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]string)
+		req := make(map[string]interface{})
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req[__UUID__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
+		if _, ok := macro.MapString(req, __UUID__); !ok {
+			return nil, ErrorInvaliedRequestParameterName(__UUID__)
 		}
 		return req, nil
 	}
 	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]string)
+		req, ok := ctx.Req.(map[string]interface{})
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
-		uuid := req[__UUID__]
+		uuid, _ := macro.MapString(req, __UUID__)
 		rst, err := operator.NewEnvironment(ctx.Database).
 			Get(uuid)
 		if err != nil {
@@ -110,16 +110,16 @@ func (c *Control) GetEnvironment() func(ctx echo.Context) error {
 	})
 }
 
-// Update Environment
-// @Description Update a Environment
-// @Accept x-www-form-urlencoded
-// @Produce json
-// @Tags server/environment
-// @Router /server/environment/{uuid} [put]
-// @Param uuid   path     string  true "Environment 의 Uuid"
-// @Param value  formData string true "Environment 의 Value"
+// UpdateEnvironmentValue
+// @Description Update Environment Value
+// @Accept      x-www-form-urlencoded
+// @Produce     json
+// @Tags        server/environment
+// @Router      /server/environment/{uuid}/value [put]
+// @Param       uuid   path     string true "Environment 의 Uuid"
+// @Param       value  formData string true "Environment 의 Value"
 // @Success 200 {object} v1.HttpRspEnvironment
-func (c *Control) UpdateEnvironment() func(ctx echo.Context) error {
+func (c *Control) UpdateEnvironmentValue() func(ctx echo.Context) error {
 
 	binder := func(ctx echo.Context) (interface{}, error) {
 		req := make(map[string]interface{})
@@ -137,10 +137,10 @@ func (c *Control) UpdateEnvironment() func(ctx echo.Context) error {
 			req[key] = ctx.FormValue(key)
 		}
 		if _, ok := macro.MapString(req, __UUID__); !ok {
-			return nil, ErrorInvaliedRequestParameter()
+			return nil, ErrorInvaliedRequestParameterName(__UUID__)
 		}
 		if _, ok := macro.MapString(req, __VALUE__); !ok {
-			return nil, ErrorInvaliedRequestParameter()
+			return nil, ErrorInvaliedRequestParameterName(__VALUE__)
 		}
 		return req, nil
 	}
@@ -149,14 +149,9 @@ func (c *Control) UpdateEnvironment() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		uuid, ok := macro.MapString(req, __UUID__)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		value, ok := macro.MapString(req, __VALUE__)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+
+		uuid, _ := macro.MapString(req, __UUID__)
+		value, _ := macro.MapString(req, __VALUE__)
 
 		//get record
 		env, err := operator.NewEnvironment(ctx.Database).Get(uuid)

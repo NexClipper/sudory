@@ -8,7 +8,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/query_parser"
 	"github.com/NexClipper/sudory/pkg/server/macro"
-	"github.com/NexClipper/sudory/pkg/server/macro/newist"
+	labelv1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
 	"github.com/NexClipper/sudory/pkg/server/status/env"
 	"github.com/labstack/echo/v4"
@@ -22,98 +22,58 @@ const (
 
 // CreateClusterToken
 // @Description Create a Cluster Token
-// @Accept x-www-form-urlencoded
-// @Produce json
-// @Tags server/token
-// @Router /server/token/cluster [post]
-// @Param name         formData string true  "Token 의 Name"
-// @Param summary      formData string false "Token 의 Summary"
-// @Param token        formData string true  "Token 의 Token"
-// @Param user_uuid    formData string true  "Token 의 UserUuid"
-// @Success 200 {object} v1.HttpRspToken
+// @Accept      json
+// @Produce     json
+// @Tags        server/token
+// @Router      /server/token/cluster [post]
+// @Param       object body v1.HttpReqToken true "HttpReqToken"
+// @Success     200 {object} v1.HttpRspToken
 func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 
 	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		// for _, it := range ctx.ParamNames() {
-		// 	req[it] = ctx.Param(it)
-		// }
-		// for key := range ctx.QueryParams() {
-		// 	req[key] = ctx.QueryParam(key)
-		// }
-		formdatas, err := ctx.FormParams()
+		body := new(tokenv1.HttpReqToken)
+		err := ctx.Bind(body)
 		if err != nil {
-			return nil, err
+			return nil, ErrorBindRequestObject(err)
 		}
-		for key := range formdatas {
-			req[key] = ctx.FormValue(key)
+		if len(body.Token.Name) == 0 {
+			return nil, ErrorInvaliedRequestParameterName("Token.Name")
 		}
-		if !macro.MapFound(req, __NAME__) {
-			return nil, ErrorInvaliedRequestParameter()
+		if len(body.Token.UserUuid) == 0 {
+			return nil, ErrorInvaliedRequestParameterName("Token.UserUuid")
 		}
-
-		//lint:ignore SA9003 auto-generated
-		if !macro.MapFound(req, __SUMMARY__) {
-			//(optional)
+		if len(body.Token.Token) == 0 {
+			return nil, ErrorInvaliedRequestParameterName("Token.Token")
 		}
-
-		if !macro.MapFound(req, __TOKEN__) {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-
-		if !macro.MapFound(req, __USER_UUID__) {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-
-		return req, nil
+		return body, nil
 	}
 	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
+		body, ok := ctx.Req.(*tokenv1.HttpReqToken)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
-		//new uuid
-		user_kind := token_user_kind_cluster
+		token := body.Token
 
-		name, ok := macro.MapString(req, __NAME__)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		summary, _ := macro.MapString(req, __SUMMARY__)
-
-		token, ok := macro.MapString(req, __TOKEN__)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		user_uuid, ok := macro.MapString(req, __USER_UUID__)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-
-		//vaild token_user
-		err := vaildTokenUser(ctx.Database, user_kind, user_uuid)
+		//vaild
+		err := vaildTokenUser(ctx.Database, token_user_kind_cluster, token.UserUuid)
 		if err != nil {
 			return nil, err
 		}
 
-		new_token := tokenv1.Token{}
-		new_token.LabelMeta = NewLabelMeta(name, summary)
-		new_token.UserKind = user_kind
-		new_token.UserUuid = user_uuid
-		new_token.Token = token
-
 		//property
-		new_token = tokenExpirationTime(new_token)
+		token.LabelMeta = NewLabelMeta(token.Name, token.Summary)
+		token.UserKind = token_user_kind_cluster
+		token.IssuedAtTime, token.ExpirationTime = BearerTokenTimeIssueNow()
 
 		//create
 		err = operator.NewToken(ctx.Database).
-			Create(new_token)
+			Create(token)
 		if err != nil {
 			return nil, err
 		}
 
-		return tokenv1.HttpRspToken{Token: new_token}, nil
+		return tokenv1.HttpRspToken{Token: token}, nil
 	}
 
 	return MakeMiddlewareFunc_experimental(Option_experimental{
@@ -125,19 +85,19 @@ func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 
 // FindToken
 // @Description Find Token
-// @Accept json
-// @Produce json
-// @Tags server/token
-// @Router /server/token [get]
-// @Param uuid         query string false "Token 의 Uuid"
-// @Param name         query string false "Token 의 Name"
-// @Param user_kind    query string false "Token 의 user_kind"
-// @Param user_uuid    query string false "Token 의 user_uuid"
-// @Param token        query string false "Token 의 token"
-// @Param limit        query int    false "Pagination 의 limit"
-// @Param page         query int    false "Pagination 의 page"
-// @Param order        query string false "Pagination 의 order"
-// @Success 200 {array} v1.HttpRspToken
+// @Accept      json
+// @Produce     json
+// @Tags        server/token
+// @Router      /server/token [get]
+// @Param       uuid         query string false "Token 의 Uuid"
+// @Param       name         query string false "Token 의 Name"
+// @Param       user_kind    query string false "Token 의 user_kind"
+// @Param       user_uuid    query string false "Token 의 user_uuid"
+// @Param       token        query string false "Token 의 token"
+// @Param       limit        query int    false "Pagination 의 limit"
+// @Param       page         query int    false "Pagination 의 page"
+// @Param       order        query string false "Pagination 의 order"
+// @Success     200 {array} v1.HttpRspToken
 func (c *Control) FindToken() func(ctx echo.Context) error {
 
 	binder := func(ctx echo.Context) (interface{}, error) {
@@ -181,32 +141,33 @@ func (c *Control) FindToken() func(ctx echo.Context) error {
 
 // GetToken
 // @Description Get a Token
-// @Accept json
-// @Produce json
-// @Tags server/token
-// @Router /server/token/{uuid} [get]
-// @Param uuid          path string true "Token 의 Uuid"
-// @Success 200 {object} v1.HttpRspToken
+// @Accept      json
+// @Produce     json
+// @Tags        server/token
+// @Router      /server/token/{uuid} [get]
+// @Param       uuid path string true "Token 의 Uuid"
+// @Success     200 {object} v1.HttpRspToken
 func (c *Control) GetToken() func(ctx echo.Context) error {
 
 	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]string)
+		req := make(map[string]interface{})
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
 
-		if len(req[__UUID__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
+		if _, ok := macro.MapString(req, __UUID__); !ok {
+			return nil, ErrorInvaliedRequestParameterName(__UUID__)
 		}
 		return req, nil
 	}
 	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]string)
+		req, ok := ctx.Req.(map[string]interface{})
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
-		uuid := req[__UUID__]
+		uuid, _ := macro.MapString(req, __UUID__)
+
 		rst, err := operator.NewToken(ctx.Database).
 			Get(uuid)
 		if err != nil {
@@ -222,46 +183,36 @@ func (c *Control) GetToken() func(ctx echo.Context) error {
 	})
 }
 
-// UpdateClusterToken
-// @Description Update Cluster Token
-// @Accept x-www-form-urlencoded
-// @Produce json
-// @Tags server/token
-// @Router /server/token/cluster/{uuid} [put]
-// @Param uuid         path     string true  "Token 의 Uuid"
-// @Param name         formData string false "Token 의 Name"
-// @Param summary      formData string false "Token 의 Summary"
-// @Success 200 {object} v1.HttpRspToken
-func (c *Control) UpdateClusterToken() func(ctx echo.Context) error {
+// UpdateTokenLabel
+// @Description Update Token Label
+// @Accept      json
+// @Produce     json
+// @Tags        server/token
+// @Router		/server/token/{uuid}/label [put]
+// @Param       uuid   path string true "Token 의 Uuid"
+// @Param       object body v1.LabelMeta true "Token 의 LabelMeta"
+// @Success 	200 {object} v1.HttpRspToken
+func (c *Control) UpdateTokenLabel() func(ctx echo.Context) error {
 
 	binder := func(ctx echo.Context) (interface{}, error) {
 		req := make(map[string]interface{})
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		for key := range ctx.QueryParams() {
-			req[key] = ctx.QueryParam(key)
-		}
-		formdatas, err := ctx.FormParams()
+
+		body := new(labelv1.LabelMeta)
+		err := ctx.Bind(body)
 		if err != nil {
-			return nil, err
+			return nil, ErrorBindRequestObject(err)
 		}
-		for key := range formdatas {
-			req[key] = ctx.FormValue(key)
+		req[__BODY__] = body
+
+		if _, ok := macro.MapString(req, __UUID__); !ok {
+			return nil, ErrorInvaliedRequestParameterName(__UUID__)
 		}
 
-		if !macro.MapFound(req, __UUID__) {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-
-		//lint:ignore SA9003 auto-generated
-		if !macro.MapFound(req, __NAME__) {
-			//(optional)
-		}
-
-		//lint:ignore SA9003 auto-generated
-		if !macro.MapFound(req, __SUMMARY__) {
-			//(optional)
+		if len(body.Name) == 0 {
+			return nil, ErrorInvaliedRequestParameterName("LabelMeta.Name")
 		}
 
 		return req, nil
@@ -271,51 +222,28 @@ func (c *Control) UpdateClusterToken() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		user_kind := token_user_kind_cluster
 
-		uuid, ok := macro.MapString(req, __UUID__)
-		if !ok {
+		uuid, _ := macro.MapString(req, __UUID__)
+
+		label, _ := req[__BODY__].(*labelv1.LabelMeta)
+		if label == nil {
 			return nil, ErrorFailedCast()
 		}
 
 		//get token
-		where := `uuid = ? AND user_kind = ?`
-		tokens, err := operator.NewToken(ctx.Database).
-			Find(where, uuid, user_kind)
+		token, err := operator.NewToken(ctx.Database).
+			Get(uuid)
 		if err != nil {
 			return nil, err
 		}
-
-		first := func() *tokenv1.Token {
-			for _, it := range tokens {
-				return &it
-			}
-			return nil
-		}
-		token := first()
 
 		if token == nil {
 			return nil, fmt.Errorf("record was not found: token")
 		}
 
-		//vaild token_user
-		err = vaildTokenUser(ctx.Database, token.UserKind, token.UserUuid)
-		if err != nil {
-			return nil, err
-		}
-
-		//set uuid from path
-		token.Uuid = uuid
-
-		//update value
-
-		if name, ok := macro.MapString(req, __NAME__); ok {
-			token.Name = name
-		}
-
-		if summary, ok := macro.MapString(req, __SUMMARY__); ok {
-			token.Summary = newist.String(summary)
-		}
+		//property
+		token.Name = label.Name
+		token.Summary = label.Summary
 
 		//update record
 		err = operator.NewToken(ctx.Database).
@@ -334,15 +262,15 @@ func (c *Control) UpdateClusterToken() func(ctx echo.Context) error {
 	})
 }
 
-// RefreshClusterTokenExpirationTime
-// @Description Refresh Cluster Token Expiration Time
-// @Accept json
-// @Produce json
-// @Tags server/token
-// @Router /server/token/cluster/{uuid}/exp [put]
-// @Param uuid    path string true "Token 의 Uuid"
-// @Success 200 {object} v1.HttpRspToken
-func (c *Control) RefreshClusterTokenExpirationTime() func(ctx echo.Context) error {
+// RefreshClusterTokenTime
+// @Description Refresh Cluster Token Time
+// @Accept      json
+// @Produce     json
+// @Tags        server/token
+// @Router      /server/token/cluster/{uuid}/refresh [put]
+// @Param       uuid    path string true "Token 의 Uuid"
+// @Success     200 {object} v1.HttpRspToken
+func (c *Control) RefreshClusterTokenTime() func(ctx echo.Context) error {
 
 	binder := func(ctx echo.Context) (interface{}, error) {
 		req := make(map[string]interface{})
@@ -350,7 +278,7 @@ func (c *Control) RefreshClusterTokenExpirationTime() func(ctx echo.Context) err
 			req[it] = ctx.Param(it)
 		}
 		if _, ok := macro.MapString(req, __UUID__); !ok {
-			return nil, ErrorInvaliedRequestParameter()
+			return nil, ErrorInvaliedRequestParameterName(__UUID__)
 		}
 
 		return req, nil
@@ -360,10 +288,8 @@ func (c *Control) RefreshClusterTokenExpirationTime() func(ctx echo.Context) err
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		uuid, ok := macro.MapString(req, __UUID__)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+
+		uuid, _ := macro.MapString(req, __UUID__)
 
 		token, err := operator.NewToken(ctx.Database).
 			Get(uuid)
@@ -371,15 +297,64 @@ func (c *Control) RefreshClusterTokenExpirationTime() func(ctx echo.Context) err
 			return nil, err
 		}
 
-		//vaild token_user
-		err = vaildTokenUser(ctx.Database, token.UserKind, token.UserUuid)
+		//property
+		//만료시간 연장
+		token.IssuedAtTime, token.ExpirationTime = BearerTokenTimeIssueNow()
+
+		err = operator.NewToken(ctx.Database).
+			Update(*token)
+		if err != nil {
+			return nil, err
+		}
+
+		return tokenv1.HttpRspToken{Token: *token}, nil
+	}
+
+	return MakeMiddlewareFunc_experimental(Option_experimental{
+		Binder:        binder,
+		Operator:      MakeBlockWithLock(c.db.Engine(), operator),
+		HttpResponser: HttpResponse,
+	})
+}
+
+// ExpireClusterToken
+// @Description Expire Cluster Token
+// @Accept      json
+// @Produce     json
+// @Tags        server/token
+// @Router      /server/token/cluster/{uuid}/expire [put]
+// @Param       uuid    path string true "Token 의 Uuid"
+// @Success     200 {object} v1.HttpRspToken
+func (c *Control) ExpireClusterToken() func(ctx echo.Context) error {
+
+	binder := func(ctx echo.Context) (interface{}, error) {
+		req := make(map[string]interface{})
+		for _, it := range ctx.ParamNames() {
+			req[it] = ctx.Param(it)
+		}
+		if _, ok := macro.MapString(req, __UUID__); !ok {
+			return nil, ErrorInvaliedRequestParameterName(__UUID__)
+		}
+
+		return req, nil
+	}
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]interface{})
+		if !ok {
+			return nil, ErrorFailedCast()
+		}
+
+		uuid, _ := macro.MapString(req, __UUID__)
+
+		token, err := operator.NewToken(ctx.Database).
+			Get(uuid)
 		if err != nil {
 			return nil, err
 		}
 
 		//property
-		//만료시간 연장
-		*token = tokenExpirationTime(*token)
+		//현재 시간으로 만료시간 설정
+		token.IssuedAtTime, token.ExpirationTime = time.Now(), time.Now()
 
 		err = operator.NewToken(ctx.Database).
 			Update(*token)
@@ -399,31 +374,32 @@ func (c *Control) RefreshClusterTokenExpirationTime() func(ctx echo.Context) err
 
 // DeleteToken
 // @Description Delete a Token
-// @Accept json
-// @Produce json
-// @Tags server/token
-// @Router /server/token/{uuid} [delete]
-// @Param uuid path string true "Token 의 Uuid"
-// @Success 200
+// @Accept      json
+// @Produce     json
+// @Tags        server/token
+// @Router      /server/token/{uuid} [delete]
+// @Param       uuid path string true "Token 의 Uuid"
+// @Success     200
 func (c *Control) DeleteToken() func(ctx echo.Context) error {
 
 	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]string)
+		req := make(map[string]interface{})
 		for _, it := range ctx.ParamNames() {
 			req[it] = ctx.Param(it)
 		}
-		if len(req[__UUID__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
+		if _, ok := macro.MapString(req, __UUID__); !ok {
+			return nil, ErrorInvaliedRequestParameterName(__UUID__)
 		}
 		return req, nil
 	}
 	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]string)
+		req, ok := ctx.Req.(map[string]interface{})
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
-		uuid := req[__UUID__]
+		uuid, _ := macro.MapString(req, __UUID__)
+
 		err := operator.NewToken(ctx.Database).
 			Delete(uuid)
 		if err != nil {
@@ -457,12 +433,8 @@ func vaildTokenUser(ctx database.Context, user_kind, user_uuid string) error {
 	return nil
 }
 
-func tokenExpirationTime(token tokenv1.Token) tokenv1.Token {
+func BearerTokenTimeIssueNow() (time.Time, time.Time) {
 	iat := time.Now()
 	exp := env.BearerTokenExpirationTime(iat)
-
-	token.IssuedAtTime = iat
-	token.ExpirationTime = exp
-
-	return token
+	return iat, exp
 }

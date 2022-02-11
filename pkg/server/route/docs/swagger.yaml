@@ -273,6 +273,31 @@ definitions:
         description: UUID
         type: string
     type: object
+  v1.HttpReqToken:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      expiration_time:
+        type: string
+      issued_at_time:
+        type: string
+      name:
+        description: label name
+        type: string
+      summary:
+        description: label summary
+        type: string
+      token:
+        type: string
+      user_kind:
+        type: string
+      user_uuid:
+        type: string
+      uuid:
+        description: UUID
+        type: string
+    type: object
   v1.HttpRspClient:
     properties:
       api_version:
@@ -519,6 +544,21 @@ definitions:
       user_kind:
         type: string
       user_uuid:
+        type: string
+      uuid:
+        description: UUID
+        type: string
+    type: object
+  v1.LabelMeta:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      name:
+        description: label name
+        type: string
+      summary:
+        description: label summary
         type: string
       uuid:
         description: UUID
@@ -935,10 +975,11 @@ paths:
             $ref: '#/definitions/v1.HttpRspEnvironment'
       tags:
       - server/environment
+  /server/environment/{uuid}/value:
     put:
       consumes:
       - application/x-www-form-urlencoded
-      description: Update a Environment
+      description: Update Environment Value
       parameters:
       - description: Environment 의 Uuid
         in: path
@@ -1600,58 +1641,63 @@ paths:
             $ref: '#/definitions/v1.HttpRspToken'
       tags:
       - server/token
-  /server/token/cluster:
-    post:
-      consumes:
-      - application/x-www-form-urlencoded
-      description: Create a Cluster Token
-      parameters:
-      - description: Token 의 Name
-        in: formData
-        name: name
-        required: true
-        type: string
-      - description: Token 의 Summary
-        in: formData
-        name: summary
-        type: string
-      - description: Token 의 Token
-        in: formData
-        name: token
-        required: true
-        type: string
-      - description: Token 의 UserUuid
-        in: formData
-        name: user_uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.HttpRspToken'
-      tags:
-      - server/token
-  /server/token/cluster/{uuid}:
+  /server/token/{uuid}/label:
     put:
       consumes:
-      - application/x-www-form-urlencoded
-      description: Update Cluster Token
+      - application/json
+      description: Update Token Label
       parameters:
       - description: Token 의 Uuid
         in: path
         name: uuid
         required: true
         type: string
-      - description: Token 의 Name
-        in: formData
-        name: name
-        type: string
-      - description: Token 의 Summary
-        in: formData
-        name: summary
+      - description: Token 의 LabelMeta
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v1.LabelMeta'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspToken'
+      tags:
+      - server/token
+  /server/token/cluster:
+    post:
+      consumes:
+      - application/json
+      description: Create a Cluster Token
+      parameters:
+      - description: HttpReqToken
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v1.HttpReqToken'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspToken'
+      tags:
+      - server/token
+  /server/token/cluster/{uuid}/expire:
+    put:
+      consumes:
+      - application/json
+      description: Expire Cluster Token
+      parameters:
+      - description: Token 의 Uuid
+        in: path
+        name: uuid
+        required: true
         type: string
       produces:
       - application/json
@@ -1662,11 +1708,11 @@ paths:
             $ref: '#/definitions/v1.HttpRspToken'
       tags:
       - server/token
-  /server/token/cluster/{uuid}/exp:
+  /server/token/cluster/{uuid}/refresh:
     put:
       consumes:
       - application/json
-      description: Refresh Cluster Token Expiration Time
+      description: Refresh Cluster Token Time
       parameters:
       - description: Token 의 Uuid
         in: path

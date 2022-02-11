@@ -75,7 +75,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	//route /server/environment*
 	router.e.GET("/server/environment", controller.FindEnvironment())
 	router.e.GET("/server/environment/:uuid", controller.GetEnvironment())
-	router.e.PUT("/server/environment/:uuid", controller.UpdateEnvironment())
+	router.e.PUT("/server/environment/:uuid/value", controller.UpdateEnvironmentValue())
 	//route /server/session*
 	router.e.GET("/server/session", controller.FindSession())
 	router.e.GET("/server/session/:uuid", controller.GetSession())
@@ -83,10 +83,12 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	//route /server/token*
 	router.e.GET("/server/token", controller.FindToken())
 	router.e.GET("/server/token/:uuid", controller.GetToken())
-	router.e.POST("/server/token/cluster", controller.CreateClusterToken())
-	router.e.PUT("/server/token/cluster/:uuid", controller.UpdateClusterToken())
-	router.e.PUT("/server/token/cluster/:uuid/exp", controller.RefreshClusterTokenExpirationTime())
+	router.e.PUT("/server/token/:uuid/label", controller.UpdateTokenLabel())
 	router.e.DELETE("/server/token/:uuid", controller.DeleteToken())
+	//route /server/token/cluster/*
+	router.e.POST("/server/token/cluster", controller.CreateClusterToken())
+	router.e.PUT("/server/token/cluster/:uuid/refresh", controller.RefreshClusterTokenTime())
+	router.e.PUT("/server/token/cluster/:uuid/expire", controller.ExpireClusterToken())
 
 	/*TODO: 라우트 연결 기능 구현
 	router.e.POST("/server/cluster/:id/token", controller.CreateToken)
