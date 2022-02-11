@@ -7,7 +7,6 @@ import (
 )
 
 func (p *Poller) HandShake() error {
-	p.machineID = "client_uuid1"
 	b := []byte(fmt.Sprintf("assertion=%s&cluster_uuid=%s&client_uuid=%s", p.bearerToken, p.clusterId, p.machineID))
 
 	_, err := p.client.PostForm("/client/auth", nil, b)
