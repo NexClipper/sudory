@@ -81,7 +81,7 @@ func (c *Control) CreateServiceStep() func(ctx echo.Context) error {
 // @Tags server/service_step
 // @Router /server/service/{service_uuid}/step [get]
 // @Param service_uuid path string true "ServiceStep 의 service_uuid"
-// @Success 200 {array} stepv1.HttpRspServiceStep
+// @Success 200 {array} v1.HttpRspServiceStep
 func (c *Control) GetServiceSteps() func(ctx echo.Context) error {
 	binder := func(ctx echo.Context) (interface{}, error) {
 		req := make(map[string]string)
@@ -127,7 +127,7 @@ func (c *Control) GetServiceSteps() func(ctx echo.Context) error {
 // @Router /server/service/{service_uuid}/step/{uuid} [get]
 // @Param service_uuid path string true "ServiceStep 의 service_uuid"
 // @Param uuid         path string true "ServiceStep 의 Uuid"
-// @Success 200 {object} stepv1.HttpRspServiceStep
+// @Success 200 {object} v1.HttpRspServiceStep
 func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 	binder := func(ctx echo.Context) (interface{}, error) {
 		req := make(map[string]string)

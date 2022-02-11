@@ -51,9 +51,9 @@ ALTER TABLE `service`
 	CHANGE COLUMN `cluster_uuid` `cluster_uuid` CHAR(32) NOT NULL COMMENT 'clusters uuid' COLLATE 'utf8_bin' AFTER `api_version`;
 
 ALTER TABLE `service`
-	DROP INDEX `IDX_service_type`,
-	DROP INDEX `IDX_service_interval`,
-	DROP INDEX `IDX_service_epoch`;
+	DROP INDEX IF EXISTS `IDX_service_type`,
+	DROP INDEX IF EXISTS `IDX_service_interval`,
+	DROP INDEX IF EXISTS `IDX_service_epoch`;
 
 ALTER TABLE `service_step`
 	CHANGE COLUMN `status` `status` INT(11) NOT NULL COMMENT 'status' AFTER `args`;
@@ -67,4 +67,58 @@ ALTER TABLE `template_command`
 
 --
 -- (FIN) 필드에 포인터 사용으로 기존 컬럼 속성에 따른 변경 
+--
+
+
+--
+-- OSS-76
+--
+
+-- DROP TABLE IF EXISTS `environment`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `environment` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `uuid` char(32) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `summary` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  `api_version` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `value` text CHARACTER SET utf8 COLLATE utf8_bin NOT NULL COMMENT 'value',
+  `created` datetime DEFAULT NULL,
+  `updated` datetime DEFAULT NULL,
+  `deleted` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uuid` (`uuid`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+-- DROP TABLE IF EXISTS `session`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `session` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `uuid` char(32) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `summary` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  `api_version` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `user_kind` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL COMMENT 'user_type',
+  `user_uuid` char(32) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL COMMENT 'user_uuid',
+  `token` text CHARACTER SET utf8 COLLATE utf8_bin NOT NULL COMMENT 'token',
+  `issued_at_time` datetime NOT NULL COMMENT 'issued as time',
+  `expiration_time` datetime NOT NULL COMMENT 'expiration time',
+  `created` datetime DEFAULT NULL,
+  `updated` datetime DEFAULT NULL,
+  `deleted` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uuid` (`uuid`) USING BTREE,
+  KEY `user_uuid` (`user_uuid`),
+  KEY `user_type` (`user_kind`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+ALTER TABLE `template`
+	CHANGE COLUMN `origin` `origin` VARCHAR(255) NULL COMMENT 'origin' COLLATE 'utf8_bin' AFTER `api_version`;
+
+--
+-- (FIN) OSS-76
 --
