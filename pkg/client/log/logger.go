@@ -1,6 +1,7 @@
 package log
 
 import (
+	"fmt"
 	"log"
 	"strings"
 	"sync"
@@ -34,11 +35,37 @@ func New(level string) *Logger {
 
 	return glogger
 }
-func (l *Logger) SetLevel(level string) {
+
+func (l *Logger) GetLevel() string {
+	l.m.RLock()
+	defer l.m.RUnlock()
+
+	switch l.lv {
+	case levelError | levelWarn | levelInfo | levelDebug:
+		return "debug"
+	case levelError | levelWarn | levelInfo:
+		return "info"
+	case levelError | levelWarn:
+		return "warn"
+	case levelError:
+		return "error"
+	}
+
+	return ""
+}
+
+func (l *Logger) SetLevel(level string) error {
+	lv := strings.ToLower(level)
+	prevLv := l.GetLevel()
+
+	if lv == prevLv {
+		return fmt.Errorf("logger level(%s) you want to change is the same as the previous logger level(%s)", lv, prevLv)
+	}
+
 	l.m.Lock()
 	defer l.m.Unlock()
 
-	switch strings.ToLower(level) {
+	switch lv {
 	case "debug":
 		l.lv = levelError | levelWarn | levelInfo | levelDebug
 	case "info":
@@ -48,6 +75,8 @@ func (l *Logger) SetLevel(level string) {
 	case "error":
 		l.lv = levelError
 	}
+
+	return nil
 }
 
 func GetLogger() *Logger {

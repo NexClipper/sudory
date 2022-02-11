@@ -11,6 +11,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/client/service"
+	"github.com/NexClipper/sudory/pkg/server/macro/jwt"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 )
 
@@ -46,7 +47,7 @@ func (p *Poller) Start() {
 
 func (p *Poller) ChangePollingInterval(interval int) error {
 	if p.pollingInterval == interval || interval < minPollingInterval {
-		return fmt.Errorf("failed to change polling interval: interval(%d) you want to change is the same as the previous interval(%d) or less than the minimum interval(%d)", interval, p.pollingInterval, minPollingInterval)
+		return fmt.Errorf("interval(%d) you want to change is the same as the previous interval(%d) or less than the minimum interval(%d)", interval, p.pollingInterval, minPollingInterval)
 	}
 
 	p.pollingInterval = interval
@@ -76,6 +77,8 @@ func (p *Poller) poll() {
 		return
 	}
 
+	p.ChangeClientConfigFromToken()
+
 	respData := []servicev1.HttpRspClientSideService{}
 	if body != nil {
 		if err := json.Unmarshal(body, &respData); err != nil {
@@ -96,4 +99,37 @@ func (p *Poller) poll() {
 
 	// Register new services.
 	p.serviceScheduler.RegisterServices(recvServices)
+}
+
+func (p *Poller) ChangeClientConfigFromToken() {
+	cfgM := make(map[string]interface{})
+
+	if err := jwt.BindPayload(p.client.GetToken(), &cfgM); err != nil {
+		log.Warnf("Failed to bind payload : %v\n", err)
+		return
+	}
+
+	if v, b := cfgM["poll-interval"]; b {
+		if pollInterval, ok := v.(float64); !ok {
+			log.Warnf("Failed to assert type for poll-interval(%v).", v)
+		} else {
+			if err := p.ChangePollingInterval(int(pollInterval)); err != nil {
+				log.Warnf("Failed to change polling interval : %v\n", err)
+			} else {
+				log.Debugf("Change polling interval to %v\n", pollInterval)
+			}
+		}
+	}
+
+	if v, b := cfgM["Loglevel"]; b {
+		if logLevel, ok := v.(string); !ok {
+			log.Warnf("Failed to assert type for Loglevel(%v).\n", v)
+		} else {
+			if err := log.GetLogger().SetLevel(logLevel); err != nil {
+				log.Warnf("Failed to change logger level : %v.\n", err)
+			} else {
+				log.Debugf("Changed logger level to %s\n", logLevel)
+			}
+		}
+	}
 }
