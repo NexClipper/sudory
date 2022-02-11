@@ -356,7 +356,10 @@ var doc = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspCluster"
+                        }
                     }
                 }
             }
@@ -422,7 +425,10 @@ var doc = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspCluster"
+                        }
                     }
                 }
             },

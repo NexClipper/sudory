@@ -340,7 +340,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspCluster"
+                        }
                     }
                 }
             }
@@ -406,7 +409,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspCluster"
+                        }
                     }
                 }
             },

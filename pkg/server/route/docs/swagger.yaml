@@ -859,7 +859,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspCluster'
       tags:
       - server/cluster
   /server/cluster/{uuid}:
@@ -919,7 +921,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspCluster'
       tags:
       - server/cluster
   /server/environment:
