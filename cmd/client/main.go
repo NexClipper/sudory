@@ -15,6 +15,7 @@ import (
 func main() {
 	server := flag.String("server", "http://localhost:8099", "sudory server url")
 	clusterid := flag.String("clusterid", "", "sudory client's cluster id")
+	token := flag.String("token", "", "sudory client's token for server connection")
 	loglevel := flag.String("loglevel", "debug", "sudory client's log level. One of: debug(defualt)|info|warn|error. ")
 
 	flag.Parse()
@@ -50,9 +51,13 @@ func main() {
 	serviceScheduler := service.NewScheduler()
 	serviceScheduler.Start()
 
-	poller, err := poll.NewPoller("", *server, *clusterid, serviceScheduler)
+	poller, err := poll.NewPoller(*token, *server, *clusterid, serviceScheduler)
 	if err != nil {
 		log.Fatalf("Failed to create poller : %v.\n", err)
+	}
+
+	if err := poller.HandShake(); err != nil {
+		log.Fatalf("Failed to handshake : %v.\n", err)
 	}
 
 	// polling

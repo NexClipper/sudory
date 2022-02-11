@@ -20,7 +20,7 @@ const (
 )
 
 type Poller struct {
-	token            string
+	bearerToken      string
 	server           string
 	machineID        string
 	clusterId        string
@@ -30,13 +30,13 @@ type Poller struct {
 	serviceScheduler *service.ServiceScheduler
 }
 
-func NewPoller(token, server, clusterId string, serviceScheduler *service.ServiceScheduler) (*Poller, error) {
+func NewPoller(bearerToken, server, clusterId string, serviceScheduler *service.ServiceScheduler) (*Poller, error) {
 	id, err := machineid.ID()
 	if err != nil {
 		return nil, err
 	}
 
-	return &Poller{token: token, server: server, machineID: id, clusterId: clusterId, client: httpclient.NewHttpClient(server, token, 0, 0), pollingInterval: defaultPollingInterval, pollingScheduler: gocron.NewScheduler(time.UTC), serviceScheduler: serviceScheduler}, nil
+	return &Poller{bearerToken: bearerToken, server: server, machineID: id, clusterId: clusterId, client: httpclient.NewHttpClient(server, "", 0, 0), pollingInterval: defaultPollingInterval, pollingScheduler: gocron.NewScheduler(time.UTC), serviceScheduler: serviceScheduler}, nil
 }
 
 func (p *Poller) Start() {
@@ -69,7 +69,7 @@ func (p *Poller) poll() {
 		log.Errorf(err.Error())
 	}
 
-	body, err := p.client.PutJson("/client/service", map[string]string{"cluster_uuid": p.clusterId}, jsonb)
+	body, err := p.client.PutJson("/client/service", nil, jsonb)
 	if err != nil {
 		p.serviceScheduler.RepairUpdateFailedServices(updatedServices)
 		log.Errorf(err.Error())
@@ -77,9 +77,11 @@ func (p *Poller) poll() {
 	}
 
 	respData := []servicev1.HttpRspClientSideService{}
-	if err := json.Unmarshal(body, &respData); err != nil {
-		log.Errorf(err.Error())
-		return
+	if body != nil {
+		if err := json.Unmarshal(body, &respData); err != nil {
+			log.Errorf(err.Error())
+			return
+		}
 	}
 	log.Debugf("Recived %d service from server.", len(respData))
 

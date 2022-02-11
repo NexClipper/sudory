@@ -11,6 +11,8 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 )
 
+const CustomHeaderClientToken = "x-sudory-client-token"
+
 type HttpClient struct {
 	url           string
 	token         string
@@ -20,6 +22,10 @@ type HttpClient struct {
 
 func NewHttpClient(url, token string, retryMax, retryInterval int) *HttpClient {
 	return &HttpClient{url: url, token: token, RetryMax: retryMax, RetryInterval: retryInterval}
+}
+
+func (hc *HttpClient) GetToken() string {
+	return hc.token
 }
 
 func (hc *HttpClient) Request(method, path string, params map[string]string, bodyType string, rawBody []byte) ([]byte, error) {
@@ -39,7 +45,9 @@ func (hc *HttpClient) Request(method, path string, params map[string]string, bod
 
 	}
 
-	// TODO: req.Header.Add("token", hc.token)
+	if hc.token != "" {
+		req.Header.Add(CustomHeaderClientToken, hc.token)
+	}
 
 	client := retryablehttp.NewClient()
 	client.Logger = &log.RetryableHttpLogger{}
@@ -61,6 +69,10 @@ func (hc *HttpClient) Request(method, path string, params map[string]string, bod
 		return nil, fmt.Errorf("received http status error code : %d", resp.StatusCode)
 	}
 
+	if recvToken := resp.Header.Get(CustomHeaderClientToken); recvToken != "" {
+		hc.token = recvToken
+	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -79,6 +91,10 @@ func (c *HttpClient) Post(path string, params map[string]string, rawBody []byte)
 
 func (c *HttpClient) PostJson(path string, params map[string]string, rawBody []byte) ([]byte, error) {
 	return c.Request("POST", path, params, "application/json", rawBody)
+}
+
+func (c *HttpClient) PostForm(path string, params map[string]string, rawBody []byte) ([]byte, error) {
+	return c.Request("POST", path, params, "application/x-www-form-urlencoded", rawBody)
 }
 
 func (c *HttpClient) Put(path string, params map[string]string, rawBody []byte) ([]byte, error) {
