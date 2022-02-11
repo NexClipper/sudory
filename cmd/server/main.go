@@ -16,6 +16,11 @@ import (
 	"xorm.io/xorm"
 )
 
+func init() {
+	println("init timezone UTC")
+	time.Local = time.UTC //set timezone UTC
+}
+
 func main() {
 	cfg := &config.Config{}
 	flag.StringVar(&cfg.Database.Host, "db-host", "127.0.0.1", "Database's host")
