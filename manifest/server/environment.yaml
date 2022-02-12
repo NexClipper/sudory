@@ -20,6 +20,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: sudory-secret
+  namespace: sudory
 type: Opaque
 data:
   db_root_password: "cm9vdA=="

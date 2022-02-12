@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
         - name: sudory-server
-          image: p8s.me/nexclipper/sudory-server:0.1.1
+          image: p8s.me/nexclipper/sudory-server:0.1.7
           ports:
             - containerPort: 8099
           env:
@@ -61,7 +61,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sudory-secret
-                  key: db_root_userpassword
+                  key: db_root_password
             - name: SUDORY_DB_SERVER_USERNAME
               valueFrom:
                 configMapKeyRef:
@@ -71,4 +71,4 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sudory-secret
-                  key: db_server_userpassword
+                  key: db_server_password
