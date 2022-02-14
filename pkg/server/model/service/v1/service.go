@@ -10,11 +10,10 @@ type Status int32
 
 const (
 	StatusRegist     Status = 0
-	StatusAssignment Status = 1 << 0
-	StatusSend       Status = 1 << 1
-	StatusProcessing Status = 1 << 2
-	StatusSuccess    Status = 1 << 3
-	StatusFail       Status = 1 << 4
+	StatusSend       Status = 1 << 0
+	StatusProcessing Status = 1 << 1
+	StatusSuccess    Status = 1 << 2
+	StatusFail       Status = 1 << 3
 )
 
 //ServiceProperty Property

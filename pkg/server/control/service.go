@@ -381,6 +381,14 @@ func foreach_step(elems []stepv1.ServiceStep, fn func(stepv1.ServiceStep) error)
 	return nil
 }
 
+func map_step(elems []stepv1.ServiceStep, mapper func(stepv1.ServiceStep) stepv1.ServiceStep) []stepv1.ServiceStep {
+	rst := make([]stepv1.ServiceStep, len(elems))
+	for n := range elems {
+		rst[n] = mapper(elems[n])
+	}
+	return rst
+}
+
 func foreach_service(elems []servicev1.Service, fn func(servicev1.Service) error) error {
 	for _, it := range elems {
 		if err := fn(it); err != nil {

@@ -13,6 +13,7 @@ import (
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/jwt"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
+	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
@@ -95,31 +96,28 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		//update service
 		err := foreach_client_service(body, func(service servicev1.Service, steps []stepv1.ServiceStep) error {
 
-			//update step
-			err := foreach_step(steps, func(step stepv1.ServiceStep) error {
-
-				//스탭의 상태가 StatusSend 보다 크다면
+			//service.Status 초기화
+			//service.Status; 상태가 가장큰 step의 Status
+			//service.StepPosition; 상태가 가장큰 step의 Sequence
+			service.Status = newist.Int32(int32(servicev1.StatusRegist))
+			service.StepPosition = newist.Int32(0)
+			steps = map_step(steps, func(step stepv1.ServiceStep) stepv1.ServiceStep {
+				//step.Status 상태가 service.Status 보다 크다면
 				//서비스의 상태 정보를 해당 값으로 덮어쓰기
-				if int32(servicev1.StatusSend) < *step.Status {
-					service.StepPosition = newist.Int32(*step.Sequence) //position
-					service.Result = newist.String(*step.Result)        //result
+				if nullable.NewInt32(service.Status).Int32() < nullable.NewInt32(step.Status).Int32() {
+					service.Status = newist.Int32(nullable.NewInt32(step.Status).Int32())         //status
+					service.StepPosition = newist.Int32(nullable.NewInt32(step.Sequence).Int32()) //position
 				}
-				//update step
-				err := operator.NewServiceStep(ctx.Database).
-					Update(step)
-				if err != nil {
-					return err
-				}
-				return nil
+				return step
 			})
-			if err != nil {
+
+			//save step
+			if err := foreach_step(steps, operator.NewServiceStep(ctx.Database).Update); err != nil {
 				return err
 			}
 
-			//update service
-			err = operator.NewService(ctx.Database).
-				Update(service)
-			if err != nil {
+			//save service
+			if err := operator.NewService(ctx.Database).Update(service); err != nil {
 				return err
 			}
 
@@ -138,7 +136,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		where := "cluster_uuid = ? AND status BETWEEN ? AND ?"
 		args := []interface{}{
 			payload.ClusterUuid,
-			servicev1.StatusAssignment,
+			servicev1.StatusRegist,
 			servicev1.StatusProcessing,
 		}
 
@@ -158,6 +156,36 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			if err != nil {
 				return err
 			}
+
+			//service.Status 초기화
+			service.Status = newist.Int32(int32(servicev1.StatusRegist))
+			service.StepPosition = newist.Int32(0)
+
+			//check poll response
+			steps = map_step(steps, func(step stepv1.ServiceStep) stepv1.ServiceStep {
+				//StatusSend 보다 작으면 응답 전 업데이트
+				if nullable.NewInt32(service.Status).Int32() < int32(servicev1.StatusSend) {
+					service.Status = newist.Int32(int32(servicev1.StatusSend))
+				}
+
+				//step.Status 상태가 service.Status 보다 크다면
+				//서비스의 상태 정보를 해당 값으로 덮어쓰기
+				if nullable.NewInt32(service.Status).Int32() < nullable.NewInt32(step.Status).Int32() {
+					service.Status = newist.Int32(nullable.NewInt32(step.Status).Int32())         //status
+					service.StepPosition = newist.Int32(nullable.NewInt32(step.Sequence).Int32()) //position
+				}
+				return step
+			})
+
+			//save step
+			if err := foreach_step(steps, operator.NewServiceStep(ctx.Database).Update); err != nil {
+				return err
+			}
+			//save service
+			if err := operator.NewService(ctx.Database).Update(service); err != nil {
+				return err
+			}
+
 			push(service, steps) //push
 			return nil
 		})
