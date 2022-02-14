@@ -79,7 +79,7 @@ func (c *K8sCommander) GetCommandType() CommandType {
 }
 
 func (c *K8sCommander) ParseCommand(command *StepCommand) error {
-	mlist := strings.Split(command.Method, ".")
+	mlist := strings.SplitN(command.Method, ".", 4)
 
 	if len(mlist) != 4 {
 		return fmt.Errorf("there is not enough method(%s) for k8s. want(4) but got(%d)", command.Method, len(mlist))

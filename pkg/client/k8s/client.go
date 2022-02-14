@@ -1,8 +1,6 @@
 package k8s
 
 import (
-	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"path/filepath"
@@ -79,66 +77,32 @@ func GetClient() (*Client, error) {
 	return k8sClient, nil
 }
 
-func (c *Client) Pod(namespace string) *pods {
-	return newPods(c, namespace)
-}
-
 func (c *Client) RawRequest() *rawRequest {
 	return newRawRequest(c)
 }
 
 func (c *Client) ResourceRequest(gv schema.GroupVersion, resource, verb, namespace, name string, labels map[string]string) (string, error) {
-	var result interface{}
+	var result string
 	var err error
 
-	switch gv.Identifier() {
-	case "v1":
-		switch resource {
-		case "pod":
-			switch verb {
-			case "get":
-				result, err = c.Pod(namespace).Get(context.TODO(), name)
-				if err != nil {
-					break
-				}
-			case "list":
-				result, err = c.Pod(namespace).List(context.TODO(), labels)
-				if err != nil {
-					break
-				}
-			default:
-				err = fmt.Errorf("unknown verb(%s)", verb)
-			}
-		case "namespace":
-			switch verb {
-			case "get":
-				result, err = c.Namespace().Get(context.TODO(), name)
-				if err != nil {
-					break
-				}
-			case "list":
-				result, err = c.Namespace().List(context.TODO(), labels)
-				if err != nil {
-					break
-				}
-			default:
-				err = fmt.Errorf("unknown verb(%s)", verb)
-			}
-		default:
-			err = fmt.Errorf("unknown resource(%s)", resource)
+	switch verb {
+	case "get":
+		result, err = c.ResourceGet(gv, resource, namespace, name)
+		if err != nil {
+			break
+		}
+	case "list":
+		result, err = c.ResourceList(gv, resource, namespace, labels)
+		if err != nil {
+			break
 		}
 	default:
-		err = fmt.Errorf("unknown group version(%s)", gv.Identifier())
+		err = fmt.Errorf("unknown verb(%s)", verb)
 	}
 
 	if err != nil {
 		return "", err
 	}
 
-	b, err := json.Marshal(result)
-	if err != nil {
-		return "", err
-	}
-
-	return string(b), nil
+	return result, nil
 }
