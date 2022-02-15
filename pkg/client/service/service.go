@@ -115,6 +115,14 @@ func ServiceListClientToServer(client map[string]ServiceChecked) []servicev1.Htt
 
 		for i, s := range v.service.Steps {
 			serv.Steps[i].Status = newist.Int32(int32(s.Status))
+			switch s.Status {
+			case StepStatusPreparing, StepStatusProcessing:
+				serv.Steps[i].Status = newist.Int32(int32(servicev1.StatusProcessing))
+			case StepStatusSuccess:
+				serv.Steps[i].Status = newist.Int32(int32(servicev1.StatusSuccess))
+			case StepStatusFail:
+				serv.Steps[i].Status = newist.Int32(int32(servicev1.StatusFail))
+			}
 		}
 
 		server = append(server, serv)
