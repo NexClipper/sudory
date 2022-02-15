@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labstack/gommon/log"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 )
 
 type empty struct{}
@@ -114,7 +114,7 @@ func (ctx *EventContext) Raise(event_args EventArgs, error_handler ErrorHandler)
 			}, ctx.BuzyTimeout())
 
 			if buzy {
-				log.Error("Buzy")
+				logs.Error("Buzy")
 			}
 		}(listener, &event_args, error_handler)
 	}
