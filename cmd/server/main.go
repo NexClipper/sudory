@@ -31,6 +31,7 @@ func main() {
 
 	configPath := flag.String("config", "../../conf/sudory-server.yml", "Path to sudory-server's config file")
 	flag.Parse()
+	config.LazyInitLogger() //init logger
 
 	cfg, err := config.New(cfg, *configPath)
 	if err != nil {
