@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/NexClipper/sudory/pkg/client/k8s"
+	"github.com/NexClipper/sudory/pkg/server/macro"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -94,15 +95,25 @@ func (c *K8sCommander) ParseCommand(command *StepCommand) error {
 	c.resource = mlist[1]
 	c.verb = mlist[2]
 
-	for k, v := range command.Args {
-		if k == "namespace" {
-			c.namespace = v
-			delete(command.Args, k)
-		} else if k == "name" {
-			c.name = v
-			delete(command.Args, k)
-		}
+	if s, ok := macro.MapString(command.Args, "namespace"); ok {
+		c.namespace = s
+		delete(command.Args, "namespace")
 	}
+
+	if s, ok := macro.MapString(command.Args, "name"); ok {
+		c.name = s
+		delete(command.Args, "name")
+	}
+	// for k, v := range command.Args {
+	// 	if k == "namespace" {
+
+	// 		c.namespace = v
+	// 		delete(command.Args, k)
+	// 	} else if k == "name" {
+	// 		c.name = v
+	// 		delete(command.Args, k)
+	// 	}
+	// }
 	c.labels = command.Args
 
 	return nil

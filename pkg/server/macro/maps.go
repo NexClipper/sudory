@@ -1,6 +1,6 @@
 package macro
 
-func MapFound(m map[string]interface{}, key string) bool {
+func MapContain(m map[string]interface{}, key string) bool {
 	_, ok := m[key]
 	return ok
 }
@@ -13,18 +13,26 @@ func MapValue(m map[string]interface{}, key string) interface{} {
 	return v
 }
 
+func MapMap(m map[string]interface{}, key string) (map[string]interface{}, bool) {
+	if v, ok := m[key]; ok {
+		a, ok := v.(map[string]interface{})
+		return a, ok
+	}
+	return nil, false
+}
+
 func MapString(m map[string]interface{}, key string) (string, bool) {
 	if v, ok := m[key]; ok {
-		s, ok := v.(string)
-		return s, ok
+		a, ok := v.(string)
+		return a, ok
 	}
 	return "", false
 }
 
 func MapInt(m map[string]interface{}, key string) (int, bool) {
 	if v, ok := m[key]; ok {
-		s, ok := v.(int)
-		return s, ok
+		a, ok := v.(int)
+		return a, ok
 	}
 	return 0, false
 }
