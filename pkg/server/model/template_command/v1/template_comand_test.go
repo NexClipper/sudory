@@ -58,7 +58,7 @@ func NewServiceCommand() DbSchemaTemplateCommand {
 	out.TemplateUuid = "00001111222233334444555566667777"
 	out.Sequence = newist.Int32(0)
 	out.Method = newist.String("test.method.get.v1")
-	out.Args = map[string]string{
+	out.Args = map[string]interface{}{
 		"name":  "test-name",
 		"arg-1": "test-arg-1",
 	}

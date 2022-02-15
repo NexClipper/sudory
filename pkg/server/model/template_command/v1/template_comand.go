@@ -15,7 +15,7 @@ type TemplateCommandProperty struct {
 	//@example: "kubernetes.deployment.get.v1", "kubernetes.pod.list.v1"
 	Method *string `json:"method,omitempty" xorm:"varchar(255) null 'method' comment('method')"`
 	//arguments
-	Args map[string]string `json:"args,omitempty" xorm:"text null 'args' comment('args')"`
+	Args map[string]interface{} `json:"args,omitempty" xorm:"text null 'args' comment('args')"`
 }
 
 //MODEL: TEMPLATE_COMMAND

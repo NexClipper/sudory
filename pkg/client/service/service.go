@@ -49,7 +49,7 @@ const (
 
 type StepCommand struct {
 	Method string
-	Args   map[string]string
+	Args   map[string]interface{}
 }
 
 type Result struct {
