@@ -2,7 +2,6 @@ package operator
 
 import (
 	"github.com/NexClipper/sudory/pkg/server/database"
-	"github.com/NexClipper/sudory/pkg/server/database/query_parser"
 	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
 )
 
@@ -44,16 +43,16 @@ func (o *Token) Find(where string, args ...interface{}) ([]tokenv1.Token, error)
 	return records, nil
 }
 
-func (o *Token) Query(cond *query_parser.QueryParser) ([]tokenv1.Token, error) {
-	r, err := o.ctx.QueryToken(cond)
-	if err != nil {
-		return nil, err
-	}
+// func (o *Token) Query(cond *query_parser.QueryParser) ([]tokenv1.Token, error) {
+// 	r, err := o.ctx.QueryToken(cond)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	records := tokenv1.TransFormDbSchema(r)
+// 	records := tokenv1.TransFormDbSchema(r)
 
-	return records, nil
-}
+// 	return records, nil
+// }
 
 func (o *Token) Update(model tokenv1.Token) error {
 

@@ -2,7 +2,6 @@ package operator
 
 import (
 	"github.com/NexClipper/sudory/pkg/server/database"
-	"github.com/NexClipper/sudory/pkg/server/database/query_parser"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 )
 
@@ -44,16 +43,16 @@ func (o *Session) Find(where string, args ...interface{}) ([]sessionv1.Session, 
 	return records, nil
 }
 
-func (o *Session) Query(cond *query_parser.QueryParser) ([]sessionv1.Session, error) {
-	r, err := o.ctx.QuerySession(cond)
-	if err != nil {
-		return nil, err
-	}
+// func (o *Session) Query(cond *query_parser.QueryParser) ([]sessionv1.Session, error) {
+// 	r, err := o.ctx.QuerySession(cond)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	records := sessionv1.TransFormDbSchema(r)
+// 	records := sessionv1.TransFormDbSchema(r)
 
-	return records, nil
-}
+// 	return records, nil
+// }
 
 func (o *Session) Update(model sessionv1.Session) error {
 

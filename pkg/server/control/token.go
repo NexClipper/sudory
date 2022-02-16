@@ -94,9 +94,9 @@ func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 // @Param       user_kind    query string false "Token 의 user_kind"
 // @Param       user_uuid    query string false "Token 의 user_uuid"
 // @Param       token        query string false "Token 의 token"
-// @Param       limit        query int    false "Pagination 의 limit"
-// @Param       page         query int    false "Pagination 의 page"
-// @Param       order        query string false "Pagination 의 order"
+// #Param       limit        query int    false "Pagination 의 limit"
+// #Param       page         query int    false "Pagination 의 page"
+// #Param       order        query string false "Pagination 의 order"
 // @Success     200 {array} v1.HttpRspToken
 func (c *Control) FindToken() func(ctx echo.Context) error {
 
@@ -114,18 +114,20 @@ func (c *Control) FindToken() func(ctx echo.Context) error {
 		}
 
 		//make condition
-		query := query_parser.NewQueryParser(req, func(key string) (string, string) {
+		cond := query_parser.NewCondition(req, func(key string) (string, string, bool) {
 			switch key {
 			case "uuid", "user_uuid", "user_kind", "token":
-				return "=", "%s"
+				return "=", "%s", true
+			case "name":
+				return "LIKE", "%%%s%%", true
 			default:
-				return "LIKE", "%%%s%%"
+				return "", "", false
 			}
 		})
 
 		//find Token
 		rst, err := operator.NewToken(ctx.Database).
-			Query(query)
+			Find(cond.Where(), cond.Args()...)
 		if err != nil {
 			return nil, err
 		}

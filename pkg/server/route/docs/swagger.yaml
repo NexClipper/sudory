@@ -1273,18 +1273,6 @@ paths:
         in: query
         name: user_uuid
         type: string
-      - description: Pagination 의 limit
-        in: query
-        name: limit
-        type: integer
-      - description: Pagination 의 page
-        in: query
-        name: page
-        type: integer
-      - description: Pagination 의 order
-        in: query
-        name: order
-        type: string
       produces:
       - application/json
       responses:
@@ -1584,18 +1572,6 @@ paths:
       - description: Token 의 token
         in: query
         name: token
-        type: string
-      - description: Pagination 의 limit
-        in: query
-        name: limit
-        type: integer
-      - description: Pagination 의 page
-        in: query
-        name: page
-        type: integer
-      - description: Pagination 의 order
-        in: query
-        name: order
         type: string
       produces:
       - application/json

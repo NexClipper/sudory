@@ -1,7 +1,6 @@
 package database
 
 import (
-	"github.com/NexClipper/sudory/pkg/server/database/query_parser"
 	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
 )
 
@@ -63,23 +62,23 @@ func (ctx Session) FindToken(where string, args ...interface{}) ([]tokenv1.DbSch
 	return model, nil
 }
 
-// QueryToken
-//  @return []DbSchemaToken, error
-//  @method find
-//  @from Token
-//  @condition where, args
-func (ctx Session) QueryToken(query *query_parser.QueryParser) ([]tokenv1.DbSchemaToken, error) {
-	tx := ctx.Tx()
+// // QueryToken
+// //  @return []DbSchemaToken, error
+// //  @method find
+// //  @from Token
+// //  @condition where, args
+// func (ctx Session) QueryToken(query *query_parser.QueryParser) ([]tokenv1.DbSchemaToken, error) {
+// 	tx := ctx.Tx()
 
-	model := make([]tokenv1.DbSchemaToken, 0)
-	err := query.Prepare(tx).
-		Find(&model)
-	if err != nil {
-		return nil, err
-	}
+// 	model := make([]tokenv1.DbSchemaToken, 0)
+// 	err := query.Prepare(tx).
+// 		Find(&model)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return model, nil
-}
+// 	return model, nil
+// }
 
 // UpdateToken
 //  @return error

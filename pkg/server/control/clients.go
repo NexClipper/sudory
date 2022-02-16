@@ -271,12 +271,13 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 			"user_uuid": cluster_uuid,
 			"token":     assertion,
 		}
-		query := query_parser.NewQueryParser(m, func(key string) (string, string) {
-			return "=", "%s"
+
+		cond := query_parser.NewCondition(m, func(key string) (string, string, bool) {
+			return "=", "%s", true
 		})
 
 		tokens, err := operator.NewToken(ctx.Database).
-			Query(query)
+			Find(cond.Where(), cond.Args()...)
 		if err != nil {
 			return nil, err
 		}

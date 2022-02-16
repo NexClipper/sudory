@@ -11,7 +11,7 @@ type Condition struct {
 	args  []interface{}
 }
 
-type ConditionFilter func(key string) (string, string)
+type ConditionFilter func(key string) (string, string, bool)
 
 func NewCondition(m map[string]interface{}, filter ConditionFilter) *Condition {
 	if len(m) == 0 {
@@ -22,9 +22,11 @@ func NewCondition(m map[string]interface{}, filter ConditionFilter) *Condition {
 	add, build := StringBuilder()
 
 	for key, val := range m {
-		operator, format := filter(key)
-		args = append(args, fmt.Sprintf(format, val))
-		add(fmt.Sprintf("%s %s ?", key, operator)) //조건문 만들기
+		operator, format, ok := filter(key)
+		if ok {
+			args = append(args, fmt.Sprintf(format, val))
+			add(fmt.Sprintf("%s %s ?", key, operator)) //조건문 만들기
+		}
 	}
 
 	return &Condition{where: build(" AND "), args: args}

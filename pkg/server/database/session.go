@@ -1,7 +1,6 @@
 package database
 
 import (
-	"github.com/NexClipper/sudory/pkg/server/database/query_parser"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 )
 
@@ -63,23 +62,23 @@ func (ctx Session) FindSession(where string, args ...interface{}) ([]sessionv1.D
 	return model, nil
 }
 
-// QuerySession
-//  @return []DbSchemaSession, error
-//  @method find
-//  @from Session
-//  @condition where, args
-func (ctx Session) QuerySession(query *query_parser.QueryParser) ([]sessionv1.DbSchemaSession, error) {
-	tx := ctx.Tx()
+// // QuerySession
+// //  @return []DbSchemaSession, error
+// //  @method find
+// //  @from Session
+// //  @condition where, args
+// func (ctx Session) QuerySession(query *query_parser.QueryParser) ([]sessionv1.DbSchemaSession, error) {
+// 	tx := ctx.Tx()
 
-	model := make([]sessionv1.DbSchemaSession, 0)
-	err := query.Prepare(tx).
-		Find(&model)
-	if err != nil {
-		return nil, err
-	}
+// 	model := make([]sessionv1.DbSchemaSession, 0)
+// 	err := query.Prepare(tx).
+// 		Find(&model)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return model, nil
-}
+// 	return model, nil
+// }
 
 // UpdateSession
 //  @return error

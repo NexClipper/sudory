@@ -993,24 +993,6 @@ var doc = `{
                         "description": "Session 의 user_uuid",
                         "name": "user_uuid",
                         "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Pagination 의 limit",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Pagination 의 page",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Pagination 의 order",
-                        "name": "order",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1470,24 +1452,6 @@ var doc = `{
                         "type": "string",
                         "description": "Token 의 token",
                         "name": "token",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Pagination 의 limit",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Pagination 의 page",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Pagination 의 order",
-                        "name": "order",
                         "in": "query"
                     }
                 ],
