@@ -1,7 +1,7 @@
 package nullable
 
 type String struct {
-	s     string
+	value string
 	valid bool
 }
 
@@ -10,7 +10,7 @@ func NewString(v interface{}) *String {
 }
 
 func (n String) String() string {
-	return n.s
+	return n.value
 }
 func (n String) Valid() bool {
 	return n.valid
@@ -31,6 +31,6 @@ func (n *String) scan(v interface{}) *String {
 		ok = false
 	}
 
-	n.s, n.valid = s, ok
+	n.value, n.valid = s, ok
 	return n
 }

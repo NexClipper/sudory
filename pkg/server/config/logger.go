@@ -77,7 +77,9 @@ func init() {
 		logger.SetLevel(logger.Level(severity(cfg.Severity)))
 
 		//first log
-		logs.DebugS("init logger", "logfile", cfg.Filename, "compress", cfg.Compress)
+		logs.DebugS("init logger",
+			"log-severity", cfg.Severity, "log-system-event", cfg.SystemEvent, "log-system-eventname", cfg.SystemEventName, "log-verbose", cfg.Verbose,
+			"log-filename", cfg.Filename, "log-max-size", cfg.MaxSize, "log-max-age", cfg.MaxAge, "log-max-backups", cfg.MaxBackups, "log-compress", cfg.Compress)
 	}
 }
 
