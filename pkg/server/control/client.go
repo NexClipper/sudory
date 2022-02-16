@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/database"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	clinetv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
 	"github.com/labstack/echo/v4"
@@ -34,8 +33,8 @@ func (c *Control) CreateClient() func(ctx echo.Context) error {
 		req[__BODY__] = body
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]interface{})
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]interface{})
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -44,7 +43,7 @@ func (c *Control) CreateClient() func(ctx echo.Context) error {
 			return nil, ErrorFailedCast()
 		}
 
-		err := operator.NewClient(ctx).
+		err := operator.NewClient(ctx.Database).
 			Create(body.Client)
 		if err != nil {
 			return nil, err
@@ -54,11 +53,9 @@ func (c *Control) CreateClient() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    Lock,
 	})
 }
 
@@ -81,8 +78,8 @@ func (c *Control) FindClient() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]string)
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -103,7 +100,7 @@ func (c *Control) FindClient() func(ctx echo.Context) error {
 		where := build(" AND ")
 
 		//find client
-		rst, err := operator.NewClient(ctx).
+		rst, err := operator.NewClient(ctx.Database).
 			Find(where, args...)
 		if err != nil {
 			return nil, err
@@ -112,11 +109,9 @@ func (c *Control) FindClient() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Nolock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    NoLock,
 	})
 }
 
@@ -140,14 +135,14 @@ func (c *Control) GetClient() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]string)
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
 		uuid := req[__UUID__]
-		rst, err := operator.NewClient(ctx).
+		rst, err := operator.NewClient(ctx.Database).
 			Get(uuid)
 		if err != nil {
 			return nil, err
@@ -156,11 +151,9 @@ func (c *Control) GetClient() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Nolock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    NoLock,
 	})
 }
 
@@ -193,8 +186,8 @@ func (c *Control) UpdateClient() func(ctx echo.Context) error {
 
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]interface{})
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]interface{})
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -210,7 +203,7 @@ func (c *Control) UpdateClient() func(ctx echo.Context) error {
 		//set uuid from path
 		body.Client.Uuid = uuid
 
-		err := operator.NewClient(ctx).
+		err := operator.NewClient(ctx.Database).
 			Update(body.Client)
 		if err != nil {
 			return nil, err
@@ -220,11 +213,9 @@ func (c *Control) UpdateClient() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    Lock,
 	})
 }
 
@@ -248,14 +239,14 @@ func (c *Control) DeleteClient() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]string)
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
 		uuid := req[__UUID__]
-		err := operator.NewClient(ctx).
+		err := operator.NewClient(ctx.Database).
 			Delete(uuid)
 		if err != nil {
 			return nil, err
@@ -265,10 +256,8 @@ func (c *Control) DeleteClient() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    Lock,
 	})
 }

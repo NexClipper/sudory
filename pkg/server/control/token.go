@@ -76,9 +76,9 @@ func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 		return tokenv1.HttpRspToken{Token: token}, nil
 	}
 
-	return MakeMiddlewareFunc_experimental(Option_experimental{
+	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      MakeBlockWithLock(c.db.Engine(), operator),
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
 	})
 }
@@ -134,9 +134,9 @@ func (c *Control) FindToken() func(ctx echo.Context) error {
 		return tokenv1.TransToHttpRsp(rst), nil
 	}
 
-	return MakeMiddlewareFunc_experimental(Option_experimental{
+	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      MakeBlockNoLock(c.db.Engine(), operator),
+		Operator:      Nolock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
 	})
 }
@@ -178,9 +178,9 @@ func (c *Control) GetToken() func(ctx echo.Context) error {
 		return tokenv1.HttpRspToken{Token: *rst}, nil
 	}
 
-	return MakeMiddlewareFunc_experimental(Option_experimental{
+	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      MakeBlockNoLock(c.db.Engine(), operator),
+		Operator:      Nolock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
 	})
 }
@@ -257,9 +257,9 @@ func (c *Control) UpdateTokenLabel() func(ctx echo.Context) error {
 		return tokenv1.HttpRspToken{Token: *token}, nil
 	}
 
-	return MakeMiddlewareFunc_experimental(Option_experimental{
+	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      MakeBlockWithLock(c.db.Engine(), operator),
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
 	})
 }
@@ -312,9 +312,9 @@ func (c *Control) RefreshClusterTokenTime() func(ctx echo.Context) error {
 		return tokenv1.HttpRspToken{Token: *token}, nil
 	}
 
-	return MakeMiddlewareFunc_experimental(Option_experimental{
+	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      MakeBlockWithLock(c.db.Engine(), operator),
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
 	})
 }
@@ -367,9 +367,9 @@ func (c *Control) ExpireClusterToken() func(ctx echo.Context) error {
 		return tokenv1.HttpRspToken{Token: *token}, nil
 	}
 
-	return MakeMiddlewareFunc_experimental(Option_experimental{
+	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      MakeBlockWithLock(c.db.Engine(), operator),
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
 	})
 }
@@ -411,9 +411,9 @@ func (c *Control) DeleteToken() func(ctx echo.Context) error {
 		return OK(), nil
 	}
 
-	return MakeMiddlewareFunc_experimental(Option_experimental{
+	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      MakeBlockWithLock(c.db.Engine(), operator),
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
 	})
 }

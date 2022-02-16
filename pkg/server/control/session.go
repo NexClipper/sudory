@@ -2,7 +2,6 @@ package control
 
 import (
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/query_parser"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	"github.com/labstack/echo/v4"
@@ -31,8 +30,8 @@ func (c *Control) FindSession() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]interface{})
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]interface{})
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -49,7 +48,7 @@ func (c *Control) FindSession() func(ctx echo.Context) error {
 		})
 
 		//find Session
-		records, err := operator.NewSession(ctx).
+		records, err := operator.NewSession(ctx.Database).
 			Find(cond.Where(), cond.Args()...)
 		if err != nil {
 			return nil, err
@@ -59,11 +58,9 @@ func (c *Control) FindSession() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Nolock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    NoLock,
 	})
 }
 
@@ -87,14 +84,14 @@ func (c *Control) GetSession() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]string)
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
 		uuid := req[__UUID__]
-		rst, err := operator.NewSession(ctx).
+		rst, err := operator.NewSession(ctx.Database).
 			Get(uuid)
 		if err != nil {
 			return nil, err
@@ -103,11 +100,9 @@ func (c *Control) GetSession() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Nolock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    NoLock,
 	})
 }
 
@@ -131,14 +126,14 @@ func (c *Control) DeleteSession() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]string)
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
 		uuid := req[__UUID__]
-		err := operator.NewSession(ctx).
+		err := operator.NewSession(ctx.Database).
 			Delete(uuid)
 		if err != nil {
 			return nil, err
@@ -148,10 +143,8 @@ func (c *Control) DeleteSession() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    Lock,
 	})
 }

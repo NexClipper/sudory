@@ -12,6 +12,11 @@ func NewUuidString() string {
 
 }
 
+func NewUuid() uuid.UUID {
+	return uuid.New()
+
+}
+
 func EmptyUuid(s *string) {
 	if len(*s) == 0 {
 		*s = NewUuidString()

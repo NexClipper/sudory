@@ -9,6 +9,17 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/logs/internal/serialize"
 )
 
+func MKV(msg string, keysAndValues ...interface{}) string {
+
+	buf := bytes.Buffer{}
+
+	buf.WriteString(msg)
+
+	serialize.KVListFormat(&buf, keysAndValues...)
+
+	return buf.String()
+}
+
 func PrintS(msg string, keysAndValues ...interface{}) string {
 
 	buf := bytes.Buffer{}
@@ -20,9 +31,11 @@ func PrintS(msg string, keysAndValues ...interface{}) string {
 	return buf.String()
 }
 
-func PrintE(err error, keysAndValues ...interface{}) string {
+func PrintE(err error, msg string, keysAndValues ...interface{}) string {
 
 	buf := bytes.Buffer{}
+
+	buf.WriteString(strconv.Quote(msg))
 
 	serialize.KVListFormat(&buf, "err", err)
 
@@ -31,8 +44,8 @@ func PrintE(err error, keysAndValues ...interface{}) string {
 	return buf.String()
 }
 
-func DebugS(msg string, v ...interface{}) {
-	logger.DebugDepth(1, PrintS(msg, v...))
+func DebugS(msg string, keysAndValues ...interface{}) {
+	logger.DebugDepth(1, PrintS(msg, keysAndValues...))
 }
 func Debug(v ...interface{}) {
 	logger.DebugDepth(1, fmt.Sprint(v...))
@@ -47,8 +60,8 @@ func Debugf(format string, v ...interface{}) {
 	logger.DebugDepth(1, fmt.Sprintf(format, v...))
 }
 
-func InfoS(msg string, v ...interface{}) {
-	logger.InfoDepth(1, PrintS(msg, v...))
+func InfoS(msg string, keysAndValues ...interface{}) {
+	logger.InfoDepth(1, PrintS(msg, keysAndValues...))
 }
 func Info(v ...interface{}) {
 	logger.InfoDepth(1, fmt.Sprint(v...))
@@ -63,8 +76,8 @@ func Infof(format string, v ...interface{}) {
 	logger.InfoDepth(1, fmt.Sprintf(format, v...))
 }
 
-func WarningS(msg string, v ...interface{}) {
-	logger.WarningDepth(1, PrintS(msg, v...))
+func WarningS(msg string, keysAndValues ...interface{}) {
+	logger.WarningDepth(1, PrintS(msg, keysAndValues...))
 }
 func Warning(v ...interface{}) {
 	logger.WarningDepth(1, fmt.Sprint(v...))
@@ -79,8 +92,8 @@ func Warningf(format string, v ...interface{}) {
 	logger.WarningDepth(1, fmt.Sprintf(format, v...))
 }
 
-func ErrorS(err error, v ...interface{}) {
-	logger.ErrorDepth(1, PrintE(err, v...))
+func ErrorS(err error, msg string, keysAndValues ...interface{}) {
+	logger.ErrorDepth(1, PrintE(err, msg, keysAndValues...))
 }
 func Error(v ...interface{}) {
 	logger.ErrorDepth(1, fmt.Sprint(v...))
@@ -95,8 +108,8 @@ func Errorf(format string, v ...interface{}) {
 	logger.ErrorDepth(1, fmt.Sprintf(format, v...))
 }
 
-func FatalS(msg string, v ...interface{}) {
-	logger.FatalDepth(1, PrintS(msg, v...))
+func FatalS(msg string, keysAndValues ...interface{}) {
+	logger.FatalDepth(1, PrintS(msg, keysAndValues...))
 }
 func Fatal(v ...interface{}) {
 	logger.FatalDepth(1, fmt.Sprint(v...))

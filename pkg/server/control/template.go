@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/database"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
@@ -28,21 +27,21 @@ func (c *Control) CreateTemplate() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(*templatev1.HttpReqTemplateCreate)
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(*templatev1.HttpReqTemplateCreate)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
 		//create template
-		err := operator.NewTemplate(ctx).
+		err := operator.NewTemplate(ctx.Database).
 			Create(req.Template)
 		if err != nil {
 			return nil, err
 		}
 		//create command
 		err = foreach_command(req.Commands, func(command commandv1.TemplateCommand) error {
-			if err := operator.NewTemplateCommand(ctx).
+			if err := operator.NewTemplateCommand(ctx.Database).
 				Create(command); err != nil {
 				return err
 			}
@@ -56,11 +55,9 @@ func (c *Control) CreateTemplate() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    Lock,
 	})
 }
 
@@ -86,14 +83,14 @@ func (c *Control) GetTemplate() func(ctx echo.Context) error {
 
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]string)
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 		//get template
 		uuid := req[__UUID__]
-		template, err := operator.NewTemplate(ctx).
+		template, err := operator.NewTemplate(ctx.Database).
 			Get(uuid)
 		if err != nil {
 			return nil, err
@@ -101,7 +98,7 @@ func (c *Control) GetTemplate() func(ctx echo.Context) error {
 		//find command
 		where := "template_uuid = ?"
 		template_uuid := uuid
-		commands, err := operator.NewTemplateCommand(ctx).
+		commands, err := operator.NewTemplateCommand(ctx.Database).
 			Find(where, template_uuid)
 		if err != nil {
 			return nil, err
@@ -111,11 +108,9 @@ func (c *Control) GetTemplate() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Nolock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    NoLock,
 	})
 }
 
@@ -137,8 +132,8 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]string)
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -158,7 +153,7 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 		where := build(" AND ")
 
 		//find template
-		templates, err := operator.NewTemplate(ctx).
+		templates, err := operator.NewTemplate(ctx.Database).
 			Find(where, args...)
 		if err != nil {
 			return nil, err
@@ -169,7 +164,7 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 			template_uuid := template.Uuid
 			where := "template_uuid = ?"
 			//find commands
-			commands, err := operator.NewTemplateCommand(ctx).
+			commands, err := operator.NewTemplateCommand(ctx.Database).
 				Find(where, template_uuid)
 			if err != nil {
 				return err
@@ -184,11 +179,9 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Nolock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    NoLock,
 	})
 }
 
@@ -219,8 +212,8 @@ func (c *Control) UpdateTemplate() func(ctx echo.Context) error {
 		req[__BODY__] = body
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]interface{})
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]interface{})
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -237,7 +230,7 @@ func (c *Control) UpdateTemplate() func(ctx echo.Context) error {
 		body.Template.Uuid = uuid
 
 		//upate template
-		err := operator.NewTemplate(ctx).
+		err := operator.NewTemplate(ctx.Database).
 			Update(body.Template)
 		if err != nil {
 			return nil, err
@@ -247,11 +240,9 @@ func (c *Control) UpdateTemplate() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    Lock,
 	})
 }
 
@@ -275,15 +266,15 @@ func (c *Control) DeleteTemplate() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]string)
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
 		//delete template
 		uuid := req[__UUID__]
-		err := operator.NewTemplate(ctx).
+		err := operator.NewTemplate(ctx.Database).
 			Delete(uuid)
 		if err != nil {
 			return nil, err
@@ -293,11 +284,9 @@ func (c *Control) DeleteTemplate() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    Lock,
 	})
 }
 

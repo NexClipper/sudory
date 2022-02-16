@@ -34,19 +34,6 @@ type ClientPlayload struct {
 	Loglevel     string    `json:"Loglevel,omitempty"`      //config_loglevel
 }
 
-type SessionTokenError struct {
-	HttpStatus int
-	Err        error
-}
-
-func NewClientSessionTokenError(httpStatus int, err error) *SessionTokenError {
-	return &SessionTokenError{HttpStatus: httpStatus, Err: err}
-}
-
-func (e SessionTokenError) Error() string {
-	return fmt.Errorf("client session-token error: %w", e.Err).Error()
-}
-
 // Poll []Service (client)
 // @Description Poll a Service
 // @Accept      json
@@ -196,10 +183,10 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		return pop(), nil //pop
 	}
 
-	return MakeMiddlewareFunc_experimental(Option_experimental{
+	return MakeMiddlewareFunc(Option{
 		TokenVerifier: verifyClientSessionToken(c.db.Engine()),
 		Binder:        binder,
-		Operator:      MakeBlockWithLock(c.db.Engine(), operator),
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
 	})
 }
@@ -350,9 +337,9 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 		return OK(), nil
 	}
 
-	return MakeMiddlewareFunc_experimental(Option_experimental{
+	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      MakeBlockWithLock(c.db.Engine(), operator),
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
 	})
 }
@@ -382,18 +369,18 @@ func verifyClientSessionToken(engine *xorm.Engine) func(ctx echo.Context) error 
 		//jwt verify
 		err = jwt.Verify(token, []byte(env.ClientSessionSignatureSecret()))
 		if err != nil {
-			return NewClientSessionTokenError(http.StatusForbidden, fmt.Errorf("jwt verify: %w", err))
+			return WithCode(err, "jwt verify", http.StatusForbidden)
 		}
 
 		payload := new(ClientPlayload)
 		err = jwt.BindPayload(token, payload)
 		if err != nil {
-			return NewClientSessionTokenError(http.StatusForbidden, fmt.Errorf("jwt bind payload: %w", err))
+			return WithCode(err, "jwt bind payload", http.StatusForbidden)
 		}
 
 		//만료시간 비교
 		if time.Until(payload.Exp) < 0 {
-			return NewClientSessionTokenError(http.StatusForbidden, fmt.Errorf("expierd"))
+			return WithCode(err, "token expierd", http.StatusForbidden)
 		}
 
 		//reflesh payload
@@ -404,7 +391,7 @@ func verifyClientSessionToken(engine *xorm.Engine) func(ctx echo.Context) error 
 		//new jwt-new_token
 		new_token, err := jwt.New(payload, []byte(env.ClientSessionSignatureSecret()))
 		if err != nil {
-			return NewClientSessionTokenError(http.StatusInternalServerError, fmt.Errorf("create new jwt: %w", err))
+			return WithCode(err, "new jwt", http.StatusInternalServerError)
 		}
 
 		session := newClientSession(*payload, new_token)
@@ -412,7 +399,7 @@ func verifyClientSessionToken(engine *xorm.Engine) func(ctx echo.Context) error 
 		err = operator.NewSession(ctx.Database).
 			Update(session)
 		if err != nil {
-			return NewClientSessionTokenError(http.StatusInternalServerError, fmt.Errorf("update: %w", err))
+			return WithCode(err, "update session-token", http.StatusInternalServerError)
 		}
 
 		//save client session-token to header
@@ -427,12 +414,12 @@ func verifyClientSessionToken(engine *xorm.Engine) func(ctx echo.Context) error 
 			return err
 		}
 
-		block := MakeBlockNoLock
+		block := Nolock
 
 		err := left(block(engine, func(ctx OperateContext) (interface{}, error) {
 			err := operator(ctx)
 			return nil, err
-		})(ctx, nil))
+		})(OperateContext{Http: ctx}))
 		return err
 	}
 }

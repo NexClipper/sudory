@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
@@ -31,9 +30,9 @@ func (c *Control) CreateCluster() func(ctx echo.Context) error {
 
 		return body, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
+	operator := func(ctx OperateContext) (interface{}, error) {
 
-		body, ok := v.(*clusterv1.HttpReqCluster)
+		body, ok := ctx.Req.(*clusterv1.HttpReqCluster)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -44,7 +43,7 @@ func (c *Control) CreateCluster() func(ctx echo.Context) error {
 		cluster.LabelMeta = NewLabelMeta(body.Name, body.Summary)
 
 		//create
-		err := operator.NewCluster(ctx).
+		err := operator.NewCluster(ctx.Database).
 			Create(cluster)
 		if err != nil {
 			return nil, err
@@ -54,11 +53,9 @@ func (c *Control) CreateCluster() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    Lock,
 	})
 }
 
@@ -80,8 +77,8 @@ func (c *Control) FindCluster() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]string)
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]string)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -102,7 +99,7 @@ func (c *Control) FindCluster() func(ctx echo.Context) error {
 		where := build(" AND ")
 
 		//find client
-		clusters, err := operator.NewCluster(ctx).
+		clusters, err := operator.NewCluster(ctx.Database).
 			Find(where, args...)
 		if err != nil {
 			return nil, err
@@ -111,11 +108,9 @@ func (c *Control) FindCluster() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Nolock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    NoLock,
 	})
 }
 
@@ -139,14 +134,14 @@ func (c *Control) GetCluster() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]interface{})
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]interface{})
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
 		uuid, _ := macro.MapString(req, __UUID__)
-		cluster, err := operator.NewCluster(ctx).
+		cluster, err := operator.NewCluster(ctx.Database).
 			Get(uuid)
 		if err != nil {
 			return nil, err
@@ -155,11 +150,9 @@ func (c *Control) GetCluster() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Nolock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    NoLock,
 	})
 }
 
@@ -192,8 +185,8 @@ func (c *Control) UpdateCluster() func(ctx echo.Context) error {
 
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]interface{})
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]interface{})
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -209,7 +202,7 @@ func (c *Control) UpdateCluster() func(ctx echo.Context) error {
 		//set uuid from path
 		cluster.Uuid = uuid
 
-		err := operator.NewCluster(ctx).
+		err := operator.NewCluster(ctx.Database).
 			Update(cluster)
 		if err != nil {
 			return nil, err
@@ -219,11 +212,9 @@ func (c *Control) UpdateCluster() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    Lock,
 	})
 }
 
@@ -247,15 +238,15 @@ func (c *Control) DeleteCluster() func(ctx echo.Context) error {
 		}
 		return req, nil
 	}
-	operator := func(ctx database.Context, v interface{}) (interface{}, error) {
-		req, ok := v.(map[string]interface{})
+	operator := func(ctx OperateContext) (interface{}, error) {
+		req, ok := ctx.Req.(map[string]interface{})
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
 		uuid, _ := macro.MapString(req, __UUID__)
 
-		err := operator.NewCluster(ctx).
+		err := operator.NewCluster(ctx.Database).
 			Delete(uuid)
 		if err != nil {
 			return nil, err
@@ -265,10 +256,8 @@ func (c *Control) DeleteCluster() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Engine:        c.db.Engine(),
 		Binder:        binder,
-		Operator:      operator,
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
-		BlockMaker:    Lock,
 	})
 }

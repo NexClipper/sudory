@@ -61,9 +61,9 @@ func (c *Control) FindEnvironment() func(ctx echo.Context) error {
 		return envv1.TransToHttpRsp(rst), nil
 	}
 
-	return MakeMiddlewareFunc_experimental(Option_experimental{
+	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      MakeBlockNoLock(c.db.Engine(), operator),
+		Operator:      Nolock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
 	})
 }
@@ -103,9 +103,9 @@ func (c *Control) GetEnvironment() func(ctx echo.Context) error {
 		return envv1.HttpRspEnvironment{Environment: *rst}, nil
 	}
 
-	return MakeMiddlewareFunc_experimental(Option_experimental{
+	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      MakeBlockNoLock(c.db.Engine(), operator),
+		Operator:      Nolock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
 	})
 }
@@ -172,9 +172,9 @@ func (c *Control) UpdateEnvironmentValue() func(ctx echo.Context) error {
 		return env, nil
 	}
 
-	return MakeMiddlewareFunc_experimental(Option_experimental{
+	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      MakeBlockWithLock(c.db.Engine(), operator),
+		Operator:      Lock(c.db.Engine(), operator),
 		HttpResponser: HttpResponse,
 	})
 }

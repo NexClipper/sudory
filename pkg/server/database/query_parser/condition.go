@@ -15,7 +15,7 @@ type ConditionFilter func(key string) (string, string, bool)
 
 func NewCondition(m map[string]interface{}, filter ConditionFilter) *Condition {
 	if len(m) == 0 {
-		return nil
+		return &Condition{}
 	}
 
 	args := make([]interface{}, 0)

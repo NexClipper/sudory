@@ -11,7 +11,7 @@ const (
 	// // @Param grant_type   formData string true "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer"
 	// __GRANT_TYPE_VALUE__ = "urn:ietf:params:oauth:grant-type:jwt-bearer"
 
-	__BODY__    = "__body__" //request body 를 넘겨야 할 떄 사용하는 이름 (이벤트에서 json object KEY로 사용)
+	__BODY__    = "--data" //request body 를 넘겨야 할 떄 사용하는 이름 (이벤트에서 json object KEY로 사용)
 	__UUID__    = "uuid"
 	__NAME__    = "name"
 	__SUMMARY__ = "summary"
