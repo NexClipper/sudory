@@ -42,9 +42,9 @@ func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 		if len(body.Token.UserUuid) == 0 {
 			return nil, ErrorInvaliedRequestParameterName("Token.UserUuid")
 		}
-		if len(body.Token.Token) == 0 {
-			return nil, ErrorInvaliedRequestParameterName("Token.Token")
-		}
+		// if len(body.Token.Token) == 0 {
+		// 	return nil, ErrorInvaliedRequestParameterName("Token.Token")
+		// }
 		return body, nil
 	}
 	operator := func(ctx OperateContext) (interface{}, error) {
@@ -65,6 +65,7 @@ func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 		token.LabelMeta = NewLabelMeta(token.Name, token.Summary)
 		token.UserKind = token_user_kind_cluster
 		token.IssuedAtTime, token.ExpirationTime = BearerTokenTimeIssueNow()
+		token.Token = macro.NewUuidString()
 
 		//create
 		err = operator.NewToken(ctx.Database).
