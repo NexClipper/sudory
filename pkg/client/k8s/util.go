@@ -3,7 +3,7 @@ package k8s
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 func convertMapToLabelSelector(m map[string]string) (string, error) {
-	if len(m) <= 0 {
+	if len(m) == 0 {
 		return "", nil
 	}
 

@@ -65,7 +65,7 @@ func NewK8sCommander(command *StepCommand) (Commander, error) {
 	if err != nil {
 		return nil, err
 	}
-	cmdr := &K8sCommander{client: client}
+	cmdr := &K8sCommander{client: client, labels: make(map[string]string)}
 
 	err = cmdr.ParseCommand(command)
 	if err != nil {
@@ -97,24 +97,17 @@ func (c *K8sCommander) ParseCommand(command *StepCommand) error {
 
 	if s, ok := macro.MapString(command.Args, "namespace"); ok {
 		c.namespace = s
-		delete(command.Args, "namespace")
 	}
 
 	if s, ok := macro.MapString(command.Args, "name"); ok {
 		c.name = s
-		delete(command.Args, "name")
 	}
-	// for k, v := range command.Args {
-	// 	if k == "namespace" {
 
-	// 		c.namespace = v
-	// 		delete(command.Args, k)
-	// 	} else if k == "name" {
-	// 		c.name = v
-	// 		delete(command.Args, k)
-	// 	}
-	// }
-	c.labels = command.Args
+	if m, ok := macro.MapMap(command.Args, "labels"); ok {
+		for k, v := range m {
+			c.labels[k] = fmt.Sprintf("%v", v)
+		}
+	}
 
 	return nil
 }
