@@ -1,8 +1,11 @@
 package control
 
 import (
+	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
+	"sync"
 	"sync/atomic"
 
 	"github.com/NexClipper/logger"
@@ -146,39 +149,62 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		var (
 			err      error
 			req, rsp interface{}
-			tid      = ticker.Add(1) //get ticket
 
-			right     = func(b []byte, err error) []byte { return b }
+			onceTicketId sync.Once
+			ticketId     uint64
+			getTid       = func() uint64 {
+				onceTicketId.Do(func() {
+					ticketId = ticker.Add(1)
+				})
+				return ticketId
+			}
 			getPath   = func() string { return ctx.Request().URL.Path }
 			getMethod = func() string { return ctx.Request().Method }
 			getStatus = func() int { return ctx.Response().Status }
-			getQuery  = func() string { return ctx.QueryString() }
 			getParam  = func() string {
-
 				var s string
 				pnames := ctx.ParamNames()
 				for n := range pnames {
 					if 0 < len(s) {
-						s += "&"
+						s += ":"
 					}
-					s += pnames[n] + "="
+					s += pnames[n] + ","
 					s += ctx.Param(pnames[n])
 				}
 				return s
 			}
-			getReqbody = func() []byte { return right(json.Marshal(req)) }
-			getRspbody = func() []byte { return right(json.Marshal(rsp)) }
-			getTid     = func() uint64 { return tid }
+			getQuery    = func() string { return ctx.QueryString() }
+			onceReqBody sync.Once
+			reqBody     []byte
+			getReqbody  = func() []byte {
+				onceReqBody.Do(func() {
+					//body read all
+					//ranout buffer
+					//restore buffer again
+					b, err := ioutil.ReadAll(ctx.Request().Body)
+					if err != nil {
+						reqBody = []byte{}
+						return
+					}
+					//restore
+					ctx.Request().Body = ioutil.NopCloser(bytes.NewBuffer(b))
 
-			path   = getPath()
-			method = getMethod()
-			status = getStatus()
-			query  = getQuery()
-			param  = getParam()
-			// reqbody = get_reqbody()
-			reqbody []byte
-			rspbody []byte
+					reqBody = b
+				})
+				return reqBody
+			}
+			onceRspbody sync.Once
+			rspbody     []byte
+			getRspbody  = func() []byte {
+				onceRspbody.Do(func() {
+					right := func(b []byte, err error) []byte { return b }
+					rspbody = right(json.Marshal(rsp))
+				})
+				return rspbody
+			}
+		)
 
+		var (
 			tidSink         = logs.WithId(getTid())
 			errVerifyTkSink = tidSink.WithName("failed token verify")
 			errRspSink      = tidSink.WithName("failed response")
@@ -189,31 +215,39 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		//event invoke
 		defer func() {
 
-			args := map[string]interface{}{
-				"path":    path,
-				"query":   query,
-				"method":  method,
-				"reqbody": reqbody,
-				"rspbody": rspbody,
-				"status":  status,
-				"error":   err,
+			args := map[string]interface{}{}
+
+			args["path"] = getPath()
+			if 0 < len(getQuery()) {
+				args["query"] = getQuery()
+			}
+			if 0 < len(getParam()) {
+				args["param"] = getParam()
+			}
+			args["method"] = getMethod()
+			if 0 < len(getReqbody()) {
+				args["reqbody"] = getReqbody()
+			}
+			if 0 < len(getRspbody()) {
+				args["rspbody"] = getRspbody()
+			}
+			args["status"] = getStatus()
+			if err != nil {
+				args["error"] = err
 			}
 
-			if err == nil {
-				delete(args, "error")
-			}
-			events.Invoke(&events.EventArgs{Sender: path, Args: args})
+			events.Invoke(&events.EventArgs{Sender: getPath(), Args: args})
 		}()
 
 		requestSink := tidSink.WithName("C")
 		if logs.V(0) {
-			requestSink = requestSink.WithValue("method", method, "path", path)
+			requestSink = requestSink.WithValue("method", getMethod(), "path", getPath())
 			if logs.V(2) {
-				requestSink = requestSink.WithValue("param", param)
+				requestSink = requestSink.WithValue("param", getParam())
 				if logs.V(3) {
-					requestSink = requestSink.WithValue("query", query)
+					requestSink = requestSink.WithValue("query", getQuery())
 					if logs.V(5) {
-						requestSink = requestSink.WithValue("reqbody", reqbody)
+						requestSink = requestSink.WithValue("reqbody", getReqbody())
 					}
 				}
 			}
@@ -227,9 +261,9 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 				logger.Error(responseSink.WithName("error").WithError(err).String())
 			})
 			if logs.V(0) {
-				responseSink = responseSink.WithValue("status", status)
+				responseSink = responseSink.WithValue("status", getStatus())
 				if logs.V(5) {
-					responseSink = responseSink.WithValue("rspbody", rspbody)
+					responseSink = responseSink.WithValue("rspbody", getRspbody())
 				}
 			}
 			logger.V(0).Info(responseSink.String())
@@ -260,7 +294,7 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		}
 
 		req, err = exec_binder(opt.Binder, ctx)
-		reqbody = getReqbody()
+
 		if ErrorWithHandler(err,
 			func(err error) { logger.Error(errbindSink.String()) },
 			func(err error) {
@@ -273,7 +307,7 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		}
 
 		rsp, err = exec_operator(getTid(), opt.Operator, ctx, req)
-		rspbody = getRspbody()
+
 		if ErrorWithHandler(err,
 			func(err error) { logger.Error(errOperateSink.String()) },
 			func(err error) {

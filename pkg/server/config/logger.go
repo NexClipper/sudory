@@ -74,7 +74,7 @@ func init() {
 			Compress:   cfg.Compress,
 		}
 
-		logger.Init(cfg.SystemEventName, cfg.SystemEvent, cfg.Verbose, &rotate)
+		logger.Init(cfg.SystemEventName, cfg.Verbose, cfg.SystemEvent, &rotate)
 
 		logger.SetLevel(logger.Level(severity(cfg.Severity)))
 
