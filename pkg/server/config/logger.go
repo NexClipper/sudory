@@ -18,6 +18,7 @@ type LoggerConfig struct {
 	SystemEvent     bool   `env:"SUDORY_LOG_SYSTEM_EVENT"`
 	SystemEventName string `env:"SUDORY_LOG_SYSTEM_EVENT_NAME"`
 	Verbose         bool   `env:"SUDORY_LOG_VERBOSE"`
+	VerboseLevel    int    `env:"SUDORY_LOG_VERBOSELEVEL"`
 	Filename        string `env:"SUDORY_LOG_FILENAME"`
 	MaxSize         int    `env:"SUDORY_LOG_MAXSIZE"`
 	MaxAge          int    `env:"SUDORY_LOG_MAXAGE"`
@@ -47,7 +48,8 @@ func init() {
 	flag.StringVar(&cfg.Severity, "log-severity", "debug", "severity of log severity=debug,[info|information],[warn|warning],error,fatal")
 	flag.BoolVar(&cfg.SystemEvent, "log-system-event", true, "enabled system event")
 	flag.StringVar(&cfg.SystemEventName, "log-system-eventname", "nexclipper.io/sudory", "system event name")
-	flag.BoolVar(&cfg.Verbose, "log-verbose", false, "verbose")
+	flag.BoolVar(&cfg.Verbose, "log-verbose", false, "enabled verbose")
+	flag.IntVar(&cfg.VerboseLevel, "log-verbose-level", 0, "verbose level higher more detail max=5")
 
 	//file rotator (for lumberjack)
 	flag.StringVar(&cfg.Filename, "log-filename", "sudory.log", "log file name")
@@ -76,10 +78,12 @@ func init() {
 
 		logger.SetLevel(logger.Level(severity(cfg.Severity)))
 
+		logs.SetVerbose(cfg.VerboseLevel)
+
 		//first log
-		logs.DebugS("init logger",
+		logger.Debugln(logs.WithName("init logger").WithValue(
 			"log-severity", cfg.Severity, "log-system-event", cfg.SystemEvent, "log-system-eventname", cfg.SystemEventName, "log-verbose", cfg.Verbose,
-			"log-filename", cfg.Filename, "log-max-size", cfg.MaxSize, "log-max-age", cfg.MaxAge, "log-max-backups", cfg.MaxBackups, "log-compress", cfg.Compress)
+			"log-filename", cfg.Filename, "log-max-size", cfg.MaxSize, "log-max-age", cfg.MaxAge, "log-max-backups", cfg.MaxBackups, "log-compress", cfg.Compress).String())
 	}
 }
 

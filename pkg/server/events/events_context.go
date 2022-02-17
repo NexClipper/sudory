@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/NexClipper/sudory/pkg/server/macro/logs"
+	"github.com/NexClipper/logger"
 )
 
 type empty struct{}
@@ -114,7 +114,7 @@ func (ctx *EventContext) Raise(event_args EventArgs, error_handler ErrorHandler)
 			}, ctx.BuzyTimeout())
 
 			if buzy {
-				logs.Error("Buzy")
+				logger.Errorln("Buzy")
 			}
 		}(listener, &event_args, error_handler)
 	}

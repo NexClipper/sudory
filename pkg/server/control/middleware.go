@@ -3,12 +3,13 @@ package control
 import (
 	"encoding/json"
 	"net/http"
+	"sync/atomic"
 
+	"github.com/NexClipper/logger"
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/events"
 	"github.com/NexClipper/sudory/pkg/server/macro/exceptions"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	"github.com/google/uuid"
 
 	//lint:ignore ST1001 auto-generated
 	. "github.com/NexClipper/sudory/pkg/server/macro"
@@ -17,11 +18,19 @@ import (
 	"xorm.io/xorm"
 )
 
+type InterMiddlewarer interface {
+	Echo() echo.Context
+	Database() database.Context
+	Param() interface{} //request value
+	Body(i interface{}) error
+	Tid() uint64
+}
+
 type OperateContext struct {
 	Http     echo.Context
 	Database database.Context
 	Req      interface{} //request value
-	TaskId   uint32
+	TaskId   uint64
 }
 
 type (
@@ -51,6 +60,20 @@ type Option struct {
 	Operator Operator
 	HttpResponser
 }
+
+type Ticker interface {
+	Count(uint64) uint64
+}
+
+type Ticket struct {
+	uint64
+}
+
+func (ticker *Ticket) Add(d uint64) uint64 {
+	return atomic.AddUint64(&ticker.uint64, d)
+}
+
+var ticker = Ticket{}
 
 // MakeMiddlewareFunc
 //  @param: Option
@@ -88,7 +111,7 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		return
 	}
 
-	exec_operator := func(tid uint32, operate Operator, ctx echo.Context, v interface{}) (out interface{}, err error) {
+	exec_operator := func(tid uint64, operate Operator, ctx echo.Context, v interface{}) (out interface{}, err error) {
 		exceptions.Block{
 			Try: func() {
 				if operate == nil {
@@ -123,24 +146,44 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		var (
 			err      error
 			req, rsp interface{}
-			taskId   uuid.UUID = NewUuid()
+			tid      = ticker.Add(1) //get ticket
 
-			right       = func(b []byte, err error) []byte { return b }
-			get_path    = func() string { return ctx.Request().URL.Path }
-			get_method  = func() string { return ctx.Request().Method }
-			get_status  = func() int { return ctx.Response().Status }
-			get_query   = func() string { return ctx.QueryString() }
-			get_reqbody = func() []byte { return right(json.Marshal(req)) }
-			get_rspbody = func() []byte { return right(json.Marshal(rsp)) }
-			get_tid     = func() uint32 { return taskId.ID() }
+			right     = func(b []byte, err error) []byte { return b }
+			getPath   = func() string { return ctx.Request().URL.Path }
+			getMethod = func() string { return ctx.Request().Method }
+			getStatus = func() int { return ctx.Response().Status }
+			getQuery  = func() string { return ctx.QueryString() }
+			getParam  = func() string {
 
-			path   = get_path()
-			method = get_method()
-			status = get_status()
-			query  = get_query()
+				var s string
+				pnames := ctx.ParamNames()
+				for n := range pnames {
+					if 0 < len(s) {
+						s += "&"
+					}
+					s += pnames[n] + "="
+					s += ctx.Param(pnames[n])
+				}
+				return s
+			}
+			getReqbody = func() []byte { return right(json.Marshal(req)) }
+			getRspbody = func() []byte { return right(json.Marshal(rsp)) }
+			getTid     = func() uint64 { return tid }
+
+			path   = getPath()
+			method = getMethod()
+			status = getStatus()
+			query  = getQuery()
+			param  = getParam()
 			// reqbody = get_reqbody()
 			reqbody []byte
 			rspbody []byte
+
+			tidSink         = logs.WithId(getTid())
+			errVerifyTkSink = tidSink.WithName("failed token verify")
+			errRspSink      = tidSink.WithName("failed response")
+			errbindSink     = tidSink.WithName("failed bind")
+			errOperateSink  = tidSink.WithName("failed operate")
 		)
 
 		//event invoke
@@ -162,21 +205,39 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 			events.Invoke(&events.EventArgs{Sender: path, Args: args})
 		}()
 
+		requestSink := tidSink.WithName("C")
+		if logs.V(0) {
+			requestSink = requestSink.WithValue("method", method, "path", path)
+			if logs.V(2) {
+				requestSink = requestSink.WithValue("param", param)
+				if logs.V(3) {
+					requestSink = requestSink.WithValue("query", query)
+					if logs.V(5) {
+						requestSink = requestSink.WithValue("reqbody", reqbody)
+					}
+				}
+			}
+		}
+		logger.Info(requestSink.String())
+
 		//logging
 		defer func() {
-			logs.InfoS("C", "tid", get_tid(), "method", method, "path", path, "query", query)
-			logs.DebugS("C", "tid", get_tid(), "reqbody", reqbody)
-
+			responseSink := tidSink.WithName("S")
 			ErrorWithHandler(err, func(err error) {
-				logs.ErrorS(err, "S", "tid", get_tid())
+				logger.Error(responseSink.WithName("error").WithError(err).String())
 			})
-			logs.InfoS("S", "tid", get_tid(), "status", status)
-			logs.DebugS("S", "tid", get_tid(), "rspbody", rspbody)
+			if logs.V(0) {
+				responseSink = responseSink.WithValue("status", status)
+				if logs.V(5) {
+					responseSink = responseSink.WithValue("rspbody", rspbody)
+				}
+			}
+			logger.V(0).Info(responseSink.String())
 		}()
 
 		err = exec_token_verifier(opt.TokenVerifier, ctx)
 		if ErrorWithHandler(err,
-			func(err error) { logs.ErrorS(err, "verify token") },
+			func(err error) { logger.Error(errVerifyTkSink.WithError(err).String()) },
 			func(err error) {
 				type codecarrier interface {
 					Code() int
@@ -190,8 +251,8 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 				}
 
 				//세션-토큰 검증 오류
-				if err_ := ctx.String(status, err.Error()); err_ != nil {
-					logs.ErrorS(err_, "failed response", "body", err.Error())
+				if erro := ctx.String(status, err.Error()); erro != nil {
+					logger.Error(errRspSink.WithError(erro).WithValue("ebody", err).String())
 				}
 			}, //실패 응답
 		) {
@@ -199,26 +260,26 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		}
 
 		req, err = exec_binder(opt.Binder, ctx)
-		reqbody = get_reqbody()
+		reqbody = getReqbody()
 		if ErrorWithHandler(err,
-			func(err error) { logs.ErrorS(err, "bind request") },
+			func(err error) { logger.Error(errbindSink.String()) },
 			func(err error) {
-				if err_ := ctx.String(http.StatusBadRequest, err.Error()); err_ != nil {
-					logs.ErrorS(err_, "failed response", "body", err.Error())
+				if erro := ctx.String(http.StatusBadRequest, err.Error()); erro != nil {
+					logger.Error(errRspSink.WithError(erro).WithValue("ebody", err).String())
 				}
 			}, //실패 응답
 		) {
 			return err //return HandlerFunc
 		}
 
-		rsp, err = exec_operator(get_tid(), opt.Operator, ctx, req)
-		rspbody = get_rspbody()
+		rsp, err = exec_operator(getTid(), opt.Operator, ctx, req)
+		rspbody = getRspbody()
 		if ErrorWithHandler(err,
-			func(err error) { logs.ErrorS(err, "failed operate") },
+			func(err error) { logger.Error(errOperateSink.String()) },
 			func(err error) {
 				//내부작업 오류
-				if err_ := ctx.String(http.StatusInternalServerError, err.Error()); err_ != nil {
-					logs.ErrorS(err_, "failed response", "body", err.Error())
+				if erro := ctx.String(http.StatusInternalServerError, err.Error()); erro != nil {
+					logger.Error(errRspSink.WithError(erro).WithValue("ebody", err).String())
 				}
 			}, //실패 응답
 		) {
@@ -228,7 +289,7 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		err = exec_responser(opt.HttpResponser, ctx, http.StatusOK, rsp)
 		if ErrorWithHandler(err,
 			func(err error) {
-				logs.ErrorS(err, "failed response", "body", err.Error())
+				logger.Error(errRspSink.WithError(err).WithValue("body", rsp).String())
 			},
 		) {
 			//응답 오류
@@ -267,10 +328,8 @@ func Lock(engine *xorm.Engine, operate func(OperateContext) (interface{}, error)
 				defer func() {
 					if err != nil {
 						ctx.Database.Tx().Rollback() //rollback
-						logs.Debugln("tx rollbacked")
 					} else {
 						ctx.Database.Tx().Commit() //commit
-						logs.Debugln("tx commited")
 					}
 				}()
 
@@ -281,7 +340,6 @@ func Lock(engine *xorm.Engine, operate func(OperateContext) (interface{}, error)
 			},
 			Finally: func() {
 				ctx.Database.Tx().Close()
-				logs.Debugln("tx closed")
 			}}.Do()
 		return
 	}
@@ -302,7 +360,6 @@ func Nolock(engine *xorm.Engine, operate func(OperateContext) (interface{}, erro
 			},
 			Finally: func() {
 				ctx.Database.Tx().Close()
-				logs.Debugln("tx closed")
 			}}.Do()
 		return
 	}
