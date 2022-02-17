@@ -160,3 +160,14 @@ ALTER TABLE `service`
 --
 -- (FIN) OSS-113
 --
+
+--
+-- OSS-67
+--
+
+ALTER TABLE `service`
+	ADD COLUMN IF NOT EXISTS `assigned_client_uuid` CHAR(32) NULL AFTER `cluster_uuid`;
+
+--
+-- (FIN) OSS-67
+--
