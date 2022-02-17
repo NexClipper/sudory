@@ -147,3 +147,16 @@ ALTER TABLE `template`
 --
 -- (FIN) OSS-76
 --
+
+--
+-- OSS-113
+--
+
+ALTER TABLE `service`
+	ADD COLUMN IF NOT EXISTS `template_uuid` CHAR(32) NOT NULL AFTER `api_version`,
+	ADD COLUMN IF NOT EXISTS `origin_kind` VARCHAR(255) NOT NULL DEFAULT '' AFTER `template_uuid`,
+	ADD COLUMN IF NOT EXISTS `origin_uuid` CHAR(32) NOT NULL AFTER `origin_kind`;
+
+--
+-- (FIN) OSS-113
+--
