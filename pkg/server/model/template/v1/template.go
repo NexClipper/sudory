@@ -36,14 +36,19 @@ type HttpReqTemplate struct {
 	Template `json:",inline"`
 }
 
+//HTTP RESPONSE BODY: TEMPLATE
+type HttpRspTemplate struct {
+	Template `json:",inline"`
+}
+
 //HTTP REQUEST BODY: TEMPLATE with template_command
-type HttpReqTemplateCreate struct {
+type HttpReqTemplateWithCommands struct {
 	Template `json:",inline"`
 	Commands []commandv1.TemplateCommand `json:"commands"`
 }
 
 //HTTP RESPONSE BODY: TEMPLATE with template_command
-type HttpRspTemplate struct {
+type HttpRspTemplateWithCommands struct {
 	Template `json:",inline"`
 	Commands []commandv1.TemplateCommand `json:"commands"`
 }
@@ -58,14 +63,14 @@ func TransFormDbSchema(s []DbSchemaTemplate) []Template {
 }
 
 //Build Template -> HttpRsp
-func HttpRspBuilder(length int) (func(a Template, b []commandv1.TemplateCommand), func() []HttpRspTemplate) {
+func HttpRspBuilder(length int) (func(a Template, b []commandv1.TemplateCommand), func() []HttpRspTemplateWithCommands) {
 	var pos int = 0
-	queue := make([]HttpRspTemplate, length)
+	queue := make([]HttpRspTemplateWithCommands, length)
 	pusher := func(a Template, b []commandv1.TemplateCommand) {
-		queue[pos] = HttpRspTemplate{Template: a, Commands: b}
+		queue[pos] = HttpRspTemplateWithCommands{Template: a, Commands: b}
 		pos++
 	}
-	poper := func() []HttpRspTemplate {
+	poper := func() []HttpRspTemplateWithCommands {
 		return queue
 	}
 	return pusher, poper

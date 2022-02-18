@@ -18,13 +18,13 @@ const (
 	PaginationPage  = 1
 )
 
-func NewPagination(m map[string]interface{}) (*Pagination, map[string]interface{}) {
+func NewPagination(m map[string]string) (*Pagination, map[string]string) {
 
 	var (
-		found bool                   = false
-		query map[string]interface{} = make(map[string]interface{})
-		limit int                    = PaginationLimit
-		page  int                    = PaginationPage
+		found bool = false
+		query      = make(map[string]string)
+		limit int  = PaginationLimit
+		page  int  = PaginationPage
 		// order string                 = ""
 	)
 
@@ -33,12 +33,12 @@ func NewPagination(m map[string]interface{}) (*Pagination, map[string]interface{
 	}
 
 	if _, ok := m[__PAGINATION_LIMIT__]; ok {
-		limit, _ = strconv.Atoi(m[__PAGINATION_LIMIT__].(string))
+		limit, _ = strconv.Atoi(m[__PAGINATION_LIMIT__])
 
 		found = true
 	}
 	if _, ok := m[__PAGINATION_PAGE__]; ok {
-		page, _ = strconv.Atoi(m[__PAGINATION_PAGE__].(string))
+		page, _ = strconv.Atoi(m[__PAGINATION_PAGE__])
 		if page < 1 {
 			page = 1
 		}

@@ -6,12 +6,12 @@ type Order struct {
 	// query map[string]interface{}
 }
 
-func NewOrder(m map[string]interface{}) (*Order, map[string]interface{}) {
+func NewOrder(m map[string]string) (*Order, map[string]string) {
 
 	var (
-		found bool                   = false
-		query map[string]interface{} = make(map[string]interface{})
-		order string                 = ""
+		found bool   = false
+		query        = make(map[string]string)
+		order string = ""
 	)
 
 	for n := range m {
@@ -19,7 +19,7 @@ func NewOrder(m map[string]interface{}) (*Order, map[string]interface{}) {
 	}
 
 	if _, ok := m[__ORDER_ORDER__]; ok {
-		order, _ = m[__ORDER_ORDER__].(string)
+		order = m[__ORDER_ORDER__]
 
 		found = true
 	}

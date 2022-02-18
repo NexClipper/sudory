@@ -2,16 +2,23 @@ package control
 
 import (
 	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 func ErrorInvaliedRequestParameter() error {
-	return fmt.Errorf("invalied request params")
+	return fmt.Errorf("invalied request parameter")
 }
 func ErrorInvaliedRequestParameterName(name string) error {
-	return fmt.Errorf("invalied request param name='%s'", name)
+	return fmt.Errorf("invalied request parameter name='%s'", name)
 }
+
+// func ErrorInvaliedRequestParameterError(err error) error {
+// 	return errors.WithMessage(err, "invalied request parameter")
+// }
+
 func ErrorBindRequestObject(err error) error {
-	return fmt.Errorf("cannot bind request object; %w", err)
+	return errors.WithMessage(err, "cannot bind request")
 }
 func ErrorFailedCast() error {
 	return fmt.Errorf("failed cast")

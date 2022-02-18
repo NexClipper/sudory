@@ -2,53 +2,66 @@ package nullable
 
 import "strconv"
 
-type Int32 struct {
-	value int32
-	valid bool
+type nullInt32 struct {
+	int32
+	bool
 }
 
-func NewInt32(v interface{}) *Int32 {
-	return new(Int32).scan(v)
+func Int32(v interface{}) nullInt32 {
+	return *(new(nullInt32).scan(v))
 }
 
-func (nullable Int32) Int32() int32 {
-	return nullable.value
+func (nullable nullInt32) V() int32 {
+	return nullable.int32
 }
-func (nullable Int32) Valid() bool {
-	return nullable.valid
+func (nullable nullInt32) Ptr() *int32 {
+	return &nullable.int32
+}
+func (nullable nullInt32) OK() bool {
+	return nullable.bool
 }
 
-func (nullable *Int32) scan(v interface{}) *Int32 {
+func (nullable *nullInt32) scan(v interface{}) *nullInt32 {
 
-	nullable.value, nullable.valid = 0, false
+	nullable.int32, nullable.bool = 0, false
+
+	if v == nil {
+		return nullable
+	}
 
 	switch value := v.(type) {
 	case string:
 		if i, err := strconv.Atoi(value); err == nil {
-			nullable.value, nullable.valid = int32(i), true
+			nullable.int32, nullable.bool = int32(i), true
 		}
 	case *string:
-		if value == nil {
-			break
-		}
 		if i, err := strconv.Atoi(*value); err == nil {
-			nullable.value, nullable.valid = int32(i), true
+			nullable.int32, nullable.bool = int32(i), true
 		}
 	case int:
-		nullable.value, nullable.valid = int32(value), true
+		nullable.int32, nullable.bool = int32(value), true
 	case *int:
-		if value == nil {
-			break
-		}
-		nullable.value, nullable.valid = int32(*value), true
-
+		nullable.int32, nullable.bool = int32(*value), true
 	case int32:
-		nullable.value, nullable.valid = value, true
+		nullable.int32, nullable.bool = value, true
 	case *int32:
-		if value == nil {
-			break
-		}
-		nullable.value, nullable.valid = *value, true
+		nullable.int32, nullable.bool = *value, true
+	case int64:
+		nullable.int32, nullable.bool = int32(value), true //(overflow)
+	case *int64:
+		nullable.int32, nullable.bool = int32(*value), true //(overflow)
+	case uint:
+		nullable.int32, nullable.bool = int32(value), true //(overflow)
+	case *uint:
+		nullable.int32, nullable.bool = int32(*value), true //(overflow)
+	case uint32:
+		nullable.int32, nullable.bool = int32(value), true //(overflow)
+	case *uint32:
+		nullable.int32, nullable.bool = int32(*value), true //(overflow)
+	case uint64:
+		nullable.int32, nullable.bool = int32(value), true //(overflow)
+	case *uint64:
+		nullable.int32, nullable.bool = int32(*value), true //(overflow)
 	}
 
 	return nullable

@@ -75,7 +75,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	//route /server/environment*
 	router.e.GET("/server/environment", controller.FindEnvironment())
 	router.e.GET("/server/environment/:uuid", controller.GetEnvironment())
-	router.e.PUT("/server/environment/:uuid/value", controller.UpdateEnvironmentValue())
+	router.e.PUT("/server/environment", controller.UpdateEnvironmentValue())
 	//route /server/session*
 	router.e.GET("/server/session", controller.FindSession())
 	router.e.GET("/server/session/:uuid", controller.GetSession())

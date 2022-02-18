@@ -30,45 +30,48 @@ const (
 // @Success     200 {object} v1.HttpRspToken
 func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
+	const user_kind = token_user_kind_cluster
+
+	binder := func(ctx Contexter) error {
+
 		body := new(tokenv1.HttpReqToken)
-		err := ctx.Bind(body)
-		if err != nil {
-			return nil, ErrorBindRequestObject(err)
+		if err := ctx.Bind(body); err != nil {
+			return ErrorBindRequestObject(err)
 		}
+
 		if len(body.Token.Name) == 0 {
-			return nil, ErrorInvaliedRequestParameterName("Token.Name")
+			return ErrorInvaliedRequestParameterName("Token.Name")
 		}
 		if len(body.Token.UserUuid) == 0 {
-			return nil, ErrorInvaliedRequestParameterName("Token.UserUuid")
+			return ErrorInvaliedRequestParameterName("Token.UserUuid")
 		}
 		// if len(body.Token.Token) == 0 {
 		// 	return nil, ErrorInvaliedRequestParameterName("Token.Token")
 		// }
-		return body, nil
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		body, ok := ctx.Req.(*tokenv1.HttpReqToken)
+	operator := func(ctx Contexter) (interface{}, error) {
+		body, ok := ctx.Object().(*tokenv1.HttpReqToken)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
 		token := body.Token
 
-		//vaild
-		err := vaildTokenUser(ctx.Database, token_user_kind_cluster, token.UserUuid)
+		//vaild token user
+		err := vaildTokenUser(ctx.Database(), user_kind, token.UserUuid)
 		if err != nil {
 			return nil, err
 		}
 
 		//property
 		token.LabelMeta = NewLabelMeta(token.Name, token.Summary)
-		token.UserKind = token_user_kind_cluster
-		token.IssuedAtTime, token.ExpirationTime = BearerTokenTimeIssueNow()
+		token.UserKind = user_kind
+		token.IssuedAtTime, token.ExpirationTime = bearerTokenTimeIssueNow()
 		token.Token = macro.NewUuidString()
 
 		//create
-		err = operator.NewToken(ctx.Database).
+		err = operator.NewToken(ctx.Database()).
 			Create(token)
 		if err != nil {
 			return nil, err
@@ -79,8 +82,9 @@ func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Lock(c.db.Engine()),
 	})
 }
 
@@ -101,21 +105,16 @@ func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 // @Success     200 {array} v1.HttpRspToken
 func (c *Control) FindToken() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for key := range ctx.QueryParams() {
-			req[key] = ctx.QueryParam(key)
-		}
-		return req, nil
+	binder := func(ctx Contexter) error {
+		// if len(ctx.Query()) == 0 {
+		// 	return ErrorInvaliedRequestParameter()
+		// }
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+	operator := func(ctx Contexter) (interface{}, error) {
 
 		//make condition
-		cond := query_parser.NewCondition(req, func(key string) (string, string, bool) {
+		cond := query_parser.NewCondition(ctx.Querys(), func(key string) (string, string, bool) {
 			switch key {
 			case "uuid", "user_uuid", "user_kind", "token":
 				return "=", "%s", true
@@ -127,7 +126,7 @@ func (c *Control) FindToken() func(ctx echo.Context) error {
 		})
 
 		//find Token
-		rst, err := operator.NewToken(ctx.Database).
+		rst, err := operator.NewToken(ctx.Database()).
 			Find(cond.Where(), cond.Args()...)
 		if err != nil {
 			return nil, err
@@ -137,8 +136,9 @@ func (c *Control) FindToken() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Nolock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -152,26 +152,20 @@ func (c *Control) FindToken() func(ctx echo.Context) error {
 // @Success     200 {object} v1.HttpRspToken
 func (c *Control) GetToken() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
+	binder := func(ctx Contexter) error {
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
 
-		if _, ok := macro.MapString(req, __UUID__); !ok {
-			return nil, ErrorInvaliedRequestParameterName(__UUID__)
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
 		}
-		return req, nil
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+	operator := func(ctx Contexter) (interface{}, error) {
+		uuid := ctx.Params()[__UUID__]
 
-		uuid, _ := macro.MapString(req, __UUID__)
-
-		rst, err := operator.NewToken(ctx.Database).
+		rst, err := operator.NewToken(ctx.Database()).
 			Get(uuid)
 		if err != nil {
 			return nil, err
@@ -181,8 +175,9 @@ func (c *Control) GetToken() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Nolock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -197,44 +192,39 @@ func (c *Control) GetToken() func(ctx echo.Context) error {
 // @Success 	200 {object} v1.HttpRspToken
 func (c *Control) UpdateTokenLabel() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
+	binder := func(ctx Contexter) error {
+
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
+		}
+
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
 		}
 
 		body := new(labelv1.LabelMeta)
-		err := ctx.Bind(body)
-		if err != nil {
-			return nil, ErrorBindRequestObject(err)
-		}
-		req[__BODY__] = body
-
-		if _, ok := macro.MapString(req, __UUID__); !ok {
-			return nil, ErrorInvaliedRequestParameterName(__UUID__)
+		if err := ctx.Bind(body); err != nil {
+			return ErrorBindRequestObject(err)
 		}
 
 		if len(body.Name) == 0 {
-			return nil, ErrorInvaliedRequestParameterName("LabelMeta.Name")
+			return ErrorInvaliedRequestParameterName("LabelMeta.Name")
 		}
 
-		return req, nil
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
+	operator := func(ctx Contexter) (interface{}, error) {
+
+		body, ok := ctx.Object().(*labelv1.LabelMeta)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
+		uuid := ctx.Params()[__UUID__]
 
-		uuid, _ := macro.MapString(req, __UUID__)
-
-		label, _ := req[__BODY__].(*labelv1.LabelMeta)
-		if label == nil {
-			return nil, ErrorFailedCast()
-		}
+		label := body
 
 		//get token
-		token, err := operator.NewToken(ctx.Database).
+		token, err := operator.NewToken(ctx.Database()).
 			Get(uuid)
 		if err != nil {
 			return nil, err
@@ -249,7 +239,7 @@ func (c *Control) UpdateTokenLabel() func(ctx echo.Context) error {
 		token.Summary = label.Summary
 
 		//update record
-		err = operator.NewToken(ctx.Database).
+		err = operator.NewToken(ctx.Database()).
 			Update(*token)
 		if err != nil {
 			return nil, err
@@ -260,8 +250,9 @@ func (c *Control) UpdateTokenLabel() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -275,36 +266,29 @@ func (c *Control) UpdateTokenLabel() func(ctx echo.Context) error {
 // @Success     200 {object} v1.HttpRspToken
 func (c *Control) RefreshClusterTokenTime() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
-		}
-		if _, ok := macro.MapString(req, __UUID__); !ok {
-			return nil, ErrorInvaliedRequestParameterName(__UUID__)
+	binder := func(ctx Contexter) error {
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
 
-		return req, nil
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
+		}
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+	operator := func(ctx Contexter) (interface{}, error) {
+		uuid := ctx.Params()[__UUID__]
 
-		uuid, _ := macro.MapString(req, __UUID__)
-
-		token, err := operator.NewToken(ctx.Database).
+		token, err := operator.NewToken(ctx.Database()).
 			Get(uuid)
 		if err != nil {
 			return nil, err
 		}
 
 		//property
-		//만료시간 연장
-		token.IssuedAtTime, token.ExpirationTime = BearerTokenTimeIssueNow()
+		token.IssuedAtTime, token.ExpirationTime = bearerTokenTimeIssueNow() //만료시간 연장
 
-		err = operator.NewToken(ctx.Database).
+		err = operator.NewToken(ctx.Database()).
 			Update(*token)
 		if err != nil {
 			return nil, err
@@ -315,8 +299,9 @@ func (c *Control) RefreshClusterTokenTime() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -330,36 +315,29 @@ func (c *Control) RefreshClusterTokenTime() func(ctx echo.Context) error {
 // @Success     200 {object} v1.HttpRspToken
 func (c *Control) ExpireClusterToken() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
-		}
-		if _, ok := macro.MapString(req, __UUID__); !ok {
-			return nil, ErrorInvaliedRequestParameterName(__UUID__)
+	binder := func(ctx Contexter) error {
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
 
-		return req, nil
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
+		}
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+	operator := func(ctx Contexter) (interface{}, error) {
+		uuid := ctx.Params()[__UUID__]
 
-		uuid, _ := macro.MapString(req, __UUID__)
-
-		token, err := operator.NewToken(ctx.Database).
+		token, err := operator.NewToken(ctx.Database()).
 			Get(uuid)
 		if err != nil {
 			return nil, err
 		}
 
 		//property
-		//현재 시간으로 만료시간 설정
-		token.IssuedAtTime, token.ExpirationTime = time.Now(), time.Now()
+		token.IssuedAtTime, token.ExpirationTime = time.Now(), time.Now() //현재 시간으로 만료시간 설정
 
-		err = operator.NewToken(ctx.Database).
+		err = operator.NewToken(ctx.Database()).
 			Update(*token)
 		if err != nil {
 			return nil, err
@@ -370,8 +348,9 @@ func (c *Control) ExpireClusterToken() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -385,25 +364,19 @@ func (c *Control) ExpireClusterToken() func(ctx echo.Context) error {
 // @Success     200
 func (c *Control) DeleteToken() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
+	binder := func(ctx Contexter) error {
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
-		if _, ok := macro.MapString(req, __UUID__); !ok {
-			return nil, ErrorInvaliedRequestParameterName(__UUID__)
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
 		}
-		return req, nil
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+	operator := func(ctx Contexter) (interface{}, error) {
+		uuid := ctx.Params()[__UUID__]
 
-		uuid, _ := macro.MapString(req, __UUID__)
-
-		err := operator.NewToken(ctx.Database).
+		err := operator.NewToken(ctx.Database()).
 			Delete(uuid)
 		if err != nil {
 			return nil, err
@@ -414,8 +387,9 @@ func (c *Control) DeleteToken() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -436,7 +410,7 @@ func vaildTokenUser(ctx database.Context, user_kind, user_uuid string) error {
 	return nil
 }
 
-func BearerTokenTimeIssueNow() (time.Time, time.Time) {
+func bearerTokenTimeIssueNow() (time.Time, time.Time) {
 	iat := time.Now()
 	exp := env.BearerTokenExpirationTime(iat)
 	return iat, exp

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/macro"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	"github.com/labstack/echo/v4"
@@ -20,19 +19,17 @@ import (
 // @Success     200 {object} v1.HttpRspCluster
 func (c *Control) CreateCluster() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-
+	binder := func(ctx Contexter) error {
 		body := new(clusterv1.HttpReqCluster)
-		err := ctx.Bind(body)
-		if err != nil {
-			return nil, ErrorBindRequestObject(err)
+		if err := ctx.Bind(body); err != nil {
+			return ErrorBindRequestObject(err)
 		}
 
-		return body, nil
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
+	operator := func(ctx Contexter) (interface{}, error) {
 
-		body, ok := ctx.Req.(*clusterv1.HttpReqCluster)
+		body, ok := ctx.Object().(*clusterv1.HttpReqCluster)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -43,19 +40,20 @@ func (c *Control) CreateCluster() func(ctx echo.Context) error {
 		cluster.LabelMeta = NewLabelMeta(body.Name, body.Summary)
 
 		//create
-		err := operator.NewCluster(ctx.Database).
+		err := operator.NewCluster(ctx.Database()).
 			Create(cluster)
 		if err != nil {
 			return nil, err
 		}
 
-		return cluster, nil
+		return clusterv1.HttpRspCluster{Cluster: cluster}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Lock(c.db.Engine()),
 	})
 }
 
@@ -70,24 +68,15 @@ func (c *Control) CreateCluster() func(ctx echo.Context) error {
 // @Success     200 {array} v1.HttpRspCluster
 func (c *Control) FindCluster() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]string)
-		for key := range ctx.QueryParams() {
-			req[key] = ctx.QueryParam(key)
-		}
-		return req, nil
+	binder := func(ctx Contexter) error {
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-
+	operator := func(ctx Contexter) (interface{}, error) {
 		//make condition
 		args := make([]interface{}, 0)
 		add, build := StringBuilder()
 
-		for key, val := range req {
+		for key, val := range ctx.Querys() {
 			switch key {
 			case "uuid":
 				args = append(args, fmt.Sprintf("%s%%", val)) //앞 부분 부터 일치 해야함
@@ -99,7 +88,7 @@ func (c *Control) FindCluster() func(ctx echo.Context) error {
 		where := build(" AND ")
 
 		//find client
-		clusters, err := operator.NewCluster(ctx.Database).
+		clusters, err := operator.NewCluster(ctx.Database()).
 			Find(where, args...)
 		if err != nil {
 			return nil, err
@@ -109,8 +98,9 @@ func (c *Control) FindCluster() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Nolock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -124,24 +114,20 @@ func (c *Control) FindCluster() func(ctx echo.Context) error {
 // @Success     200 {object} v1.HttpRspCluster
 func (c *Control) GetCluster() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
-		}
-		if _, ok := macro.MapString(req, __UUID__); !ok {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-		return req, nil
-	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
-		if !ok {
-			return nil, ErrorFailedCast()
+	binder := func(ctx Contexter) error {
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
 
-		uuid, _ := macro.MapString(req, __UUID__)
-		cluster, err := operator.NewCluster(ctx.Database).
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
+		}
+		return nil
+	}
+	operator := func(ctx Contexter) (interface{}, error) {
+		uuid, _ := ctx.Params()[__UUID__]
+
+		cluster, err := operator.NewCluster(ctx.Database()).
 			Get(uuid)
 		if err != nil {
 			return nil, err
@@ -151,8 +137,9 @@ func (c *Control) GetCluster() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Nolock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -167,54 +154,47 @@ func (c *Control) GetCluster() func(ctx echo.Context) error {
 // @Success     200 {object} v1.HttpRspCluster
 func (c *Control) UpdateCluster() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
-		}
-		if _, ok := macro.MapString(req, __UUID__); !ok {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-
+	binder := func(ctx Contexter) error {
 		body := new(clusterv1.HttpReqCluster)
-		err := ctx.Bind(body)
-		if err != nil {
-			return nil, ErrorBindRequestObject(err)
+		if err := ctx.Bind(body); err != nil {
+			return ErrorBindRequestObject(err)
 		}
-		req[__BODY__] = body
 
-		return req, nil
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
+		}
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
+		}
+
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
+	operator := func(ctx Contexter) (interface{}, error) {
+		body, ok := ctx.Object().(*clusterv1.HttpReqCluster)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		uuid, _ := macro.MapString(req, __UUID__)
-
-		body, ok := req[__BODY__].(*clusterv1.HttpReqCluster)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+		uuid, _ := ctx.Params()[__UUID__]
 
 		cluster := body.Cluster
 
 		//set uuid from path
 		cluster.Uuid = uuid
 
-		err := operator.NewCluster(ctx.Database).
+		err := operator.NewCluster(ctx.Database()).
 			Update(cluster)
 		if err != nil {
 			return nil, err
 		}
 
-		return cluster, nil
+		return clusterv1.HttpRspCluster{Cluster: cluster}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Lock(c.db.Engine()),
 	})
 }
 
@@ -228,25 +208,20 @@ func (c *Control) UpdateCluster() func(ctx echo.Context) error {
 // @Success 200
 func (c *Control) DeleteCluster() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
+	binder := func(ctx Contexter) error {
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
-		if _, ok := macro.MapString(req, __UUID__); !ok {
-			return nil, ErrorInvaliedRequestParameter()
+
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
 		}
-		return req, nil
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+	operator := func(ctx Contexter) (interface{}, error) {
+		uuid, _ := ctx.Params()[__UUID__]
 
-		uuid, _ := macro.MapString(req, __UUID__)
-
-		err := operator.NewCluster(ctx.Database).
+		err := operator.NewCluster(ctx.Database()).
 			Delete(uuid)
 		if err != nil {
 			return nil, err
@@ -257,7 +232,8 @@ func (c *Control) DeleteCluster() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Lock(c.db.Engine()),
 	})
 }

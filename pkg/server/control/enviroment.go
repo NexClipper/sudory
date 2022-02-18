@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/macro"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	envv1 "github.com/NexClipper/sudory/pkg/server/model/environment/v1"
@@ -24,24 +23,15 @@ import (
 // @Success 200 {array} v1.HttpRspEnvironment
 func (c *Control) FindEnvironment() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]string)
-		for key := range ctx.QueryParams() {
-			req[key] = ctx.QueryParam(key)
-		}
-		return req, nil
+	binder := func(ctx Contexter) error {
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-
+	operator := func(ctx Contexter) (interface{}, error) {
 		//make condition
 		args := make([]interface{}, 0)
 		add, build := StringBuilder()
 
-		for key, val := range req {
+		for key, val := range ctx.Querys() {
 			switch key {
 			case "uuid":
 				args = append(args, fmt.Sprintf("%s%%", val)) //앞 부분 부터 일치 해야함
@@ -53,7 +43,7 @@ func (c *Control) FindEnvironment() func(ctx echo.Context) error {
 		where := build(" AND ")
 
 		//find Environment
-		rst, err := operator.NewEnvironment(ctx.Database).
+		rst, err := operator.NewEnvironment(ctx.Database()).
 			Find(where, args...)
 		if err != nil {
 			return nil, err
@@ -63,8 +53,9 @@ func (c *Control) FindEnvironment() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Nolock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -78,24 +69,20 @@ func (c *Control) FindEnvironment() func(ctx echo.Context) error {
 // @Success 200 {object} v1.HttpRspEnvironment
 func (c *Control) GetEnvironment() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
-		}
-		if _, ok := macro.MapString(req, __UUID__); !ok {
-			return nil, ErrorInvaliedRequestParameterName(__UUID__)
-		}
-		return req, nil
-	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
-		if !ok {
-			return nil, ErrorFailedCast()
+	binder := func(ctx Contexter) error {
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
 
-		uuid, _ := macro.MapString(req, __UUID__)
-		rst, err := operator.NewEnvironment(ctx.Database).
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
+		}
+		return nil
+	}
+	operator := func(ctx Contexter) (interface{}, error) {
+		uuid := ctx.Params()[__UUID__]
+
+		rst, err := operator.NewEnvironment(ctx.Database()).
 			Get(uuid)
 		if err != nil {
 			return nil, err
@@ -105,56 +92,43 @@ func (c *Control) GetEnvironment() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Nolock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
-// UpdateEnvironmentValue
+// UpdateEnvironment
 // @Description Update Environment Value
 // @Accept      x-www-form-urlencoded
 // @Produce     json
 // @Tags        server/environment
-// @Router      /server/environment/{uuid}/value [put]
-// @Param       uuid   path     string true "Environment 의 Uuid"
-// @Param       value  formData string true "Environment 의 Value"
+// @Router      /server/environment [put]
+// @Param       uuid   formData string true "Environment 의 Uuid"
+// @Param       value  formData string false "Environment 의 Value"
 // @Success 200 {object} v1.HttpRspEnvironment
 func (c *Control) UpdateEnvironmentValue() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
-		}
-		for key := range ctx.QueryParams() {
-			req[key] = ctx.QueryParam(key)
-		}
-		formdatas, err := ctx.FormParams()
-		if err != nil {
-			return nil, err
-		}
-		for key := range formdatas {
-			req[key] = ctx.FormValue(key)
-		}
-		if _, ok := macro.MapString(req, __UUID__); !ok {
-			return nil, ErrorInvaliedRequestParameterName(__UUID__)
-		}
-		if _, ok := macro.MapString(req, __VALUE__); !ok {
-			return nil, ErrorInvaliedRequestParameterName(__VALUE__)
-		}
-		return req, nil
-	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
-		if !ok {
-			return nil, ErrorFailedCast()
+	binder := func(ctx Contexter) error {
+		if len(ctx.Forms()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
 
-		uuid, _ := macro.MapString(req, __UUID__)
-		value, _ := macro.MapString(req, __VALUE__)
+		if len(ctx.Forms()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
+		}
+		// if len(ctx.Forms()[__VALUE__]) == 0 {
+		// 	return ErrorInvaliedRequestParameterName(__VALUE__)
+		// }
+
+		return nil
+	}
+	operator := func(ctx Contexter) (interface{}, error) {
+		uuid := ctx.Forms()[__UUID__]
+		value := ctx.Forms()[__VALUE__]
 
 		//get record
-		env, err := operator.NewEnvironment(ctx.Database).Get(uuid)
+		env, err := operator.NewEnvironment(ctx.Database()).Get(uuid)
 		if err != nil {
 			return nil, err
 		}
@@ -163,18 +137,19 @@ func (c *Control) UpdateEnvironmentValue() func(ctx echo.Context) error {
 		env.Value = newist.String(value)
 
 		//update record
-		err = operator.NewEnvironment(ctx.Database).
+		err = operator.NewEnvironment(ctx.Database()).
 			Update(*env)
 		if err != nil {
 			return nil, err
 		}
 
-		return env, nil
+		return envv1.HttpRspEnvironment{Environment: *env}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }

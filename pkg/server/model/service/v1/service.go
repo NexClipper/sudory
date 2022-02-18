@@ -67,14 +67,19 @@ type HttpReqService struct {
 	Service `json:",inline"`
 }
 
+//HTTP RESPONSE BODY: SERVICE
+type HttpRspService struct {
+	Service `json:",inline"`
+}
+
 //HTTP REQUEST BODY: SERVICE (with steps)
-type HttpReqServiceCreate struct {
+type HttpReqServiceWithSteps struct {
 	Service `json:",inline"`
 	Steps   []stepv1.ServiceStep `json:"steps"`
 }
 
 //HTTP RESPONSE BODY: SERVICE
-type HttpRspService struct {
+type HttpRspServiceWithSteps struct {
 	Service `json:",inline"`
 	Steps   []stepv1.ServiceStep `json:"steps"`
 }
@@ -110,14 +115,14 @@ func TransFormDbSchema(s []DbSchemaService) []Service {
 // }
 
 //Build Template -> HttpRsp
-func HttpRspBuilder(length int) (func(a Service, b []stepv1.ServiceStep), func() []HttpRspService) {
+func HttpRspBuilder(length int) (func(a Service, b []stepv1.ServiceStep), func() []HttpRspServiceWithSteps) {
 	var pos int = 0
-	queue := make([]HttpRspService, length)
+	queue := make([]HttpRspServiceWithSteps, length)
 	pusher := func(a Service, b []stepv1.ServiceStep) {
-		queue[pos] = HttpRspService{Service: a, Steps: b}
+		queue[pos] = HttpRspServiceWithSteps{Service: a, Steps: b}
 		pos++
 	}
-	poper := func() []HttpRspService {
+	poper := func() []HttpRspServiceWithSteps {
 		return queue
 	}
 	return pusher, poper

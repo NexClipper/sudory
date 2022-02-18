@@ -74,7 +74,7 @@ func (sink sink) String() string {
 		case 0:
 			s.WriteString(strconv.FormatUint(uint64(id), 10))
 		case 1:
-			s.WriteString("\"" + strings.Join(name, ",") + "\"")
+			s.WriteString("\"" + strings.Join(name, "<") + "\"")
 		case 2:
 			s.WriteString("err=" + err.Error())
 		case 3:

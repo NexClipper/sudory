@@ -5,6 +5,7 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
+	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
 	"github.com/labstack/echo/v4"
@@ -16,32 +17,49 @@ import (
 // @Produce json
 // @Tags server/template
 // @Router /server/template [post]
-// @Param template body v1.HttpReqTemplateCreate true "HttpReqTemplateCreate"
-// @Success 200
+// @Param template body v1.HttpReqTemplateWithCommands true "HttpReqTemplateWithCommands"
+// @Success 200 {object} v1.HttpReqTemplateWithCommands
 func (c *Control) CreateTemplate() func(ctx echo.Context) error {
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := new(templatev1.HttpReqTemplateCreate)
-		err := ctx.Bind(req)
-		if err != nil {
-			return nil, ErrorBindRequestObject(err)
+	binder := func(ctx Contexter) error {
+		body := new(templatev1.HttpReqTemplateWithCommands)
+		if err := ctx.Bind(body); err != nil {
+			return ErrorBindRequestObject(err)
 		}
-		return req, nil
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(*templatev1.HttpReqTemplateCreate)
+	operator := func(ctx Contexter) (interface{}, error) {
+		body, ok := ctx.Object().(*templatev1.HttpReqTemplateWithCommands)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
+		template := body.Template
+		commmands := body.Commands
+
+		//property
+		template.LabelMeta = NewLabelMeta(template.Name, template.Summary)
+
 		//create template
-		err := operator.NewTemplate(ctx.Database).
-			Create(req.Template)
+		err := operator.NewTemplate(ctx.Database()).
+			Create(template)
 		if err != nil {
 			return nil, err
 		}
 		//create command
-		err = foreach_command(req.Commands, func(command commandv1.TemplateCommand) error {
-			if err := operator.NewTemplateCommand(ctx.Database).
+		seq := int32(0)
+		commmands = map_command(commmands, func(tc commandv1.TemplateCommand) commandv1.TemplateCommand {
+			//LabelMeta
+			tc.LabelMeta = NewLabelMeta(tc.Name, tc.Summary)
+			//TemplateUuid
+			tc.TemplateUuid = template.Uuid
+			//Sequence
+			tc.Sequence = newist.Int32(seq)
+			seq++
+
+			return tc
+		})
+		err = foreach_command(commmands, func(command commandv1.TemplateCommand) error {
+			if err := operator.NewTemplateCommand(ctx.Database()).
 				Create(command); err != nil {
 				return err
 			}
@@ -51,13 +69,14 @@ func (c *Control) CreateTemplate() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		return OK(), nil
+		return templatev1.HttpReqTemplateWithCommands{Template: template, Commands: commmands}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Lock(c.db.Engine()),
 	})
 }
 
@@ -68,29 +87,23 @@ func (c *Control) CreateTemplate() func(ctx echo.Context) error {
 // @Tags server/template
 // @Router /server/template/{uuid} [get]
 // @Param uuid path string true "Template 의 Uuid"
-// @Success 200 {object} v1.HttpRspTemplate
+// @Success 200 {object} v1.HttpReqTemplateWithCommands
 func (c *Control) GetTemplate() func(ctx echo.Context) error {
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]string)
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
+	binder := func(ctx Contexter) error {
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
+		}
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
 		}
 
-		//check request params
-		if len(req[__UUID__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-
-		return req, nil
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+	operator := func(ctx Contexter) (interface{}, error) {
+		uuid := ctx.Params()[__UUID__]
+
 		//get template
-		uuid := req[__UUID__]
-		template, err := operator.NewTemplate(ctx.Database).
+		template, err := operator.NewTemplate(ctx.Database()).
 			Get(uuid)
 		if err != nil {
 			return nil, err
@@ -98,19 +111,20 @@ func (c *Control) GetTemplate() func(ctx echo.Context) error {
 		//find command
 		where := "template_uuid = ?"
 		template_uuid := uuid
-		commands, err := operator.NewTemplateCommand(ctx.Database).
+		commands, err := operator.NewTemplateCommand(ctx.Database()).
 			Find(where, template_uuid)
 		if err != nil {
 			return nil, err
 		}
 
-		return templatev1.HttpRspTemplate{Template: *template, Commands: commands}, nil
+		return templatev1.HttpRspTemplateWithCommands{Template: *template, Commands: commands}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Nolock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -123,25 +137,17 @@ func (c *Control) GetTemplate() func(ctx echo.Context) error {
 // @Param uuid   query string false "Template 의 Uuid"
 // @Param name   query string false "Template 의 Name"
 // @Param origin query string false "Template 의 Origin"
-// @Success 200 {array} v1.HttpRspTemplate
+// @Success 200 {array} v1.HttpReqTemplateWithCommands
 func (c *Control) FindTemplate() func(ctx echo.Context) error {
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]string)
-		for key := range ctx.QueryParams() {
-			req[key] = ctx.QueryParam(key)
-		}
-		return req, nil
+	binder := func(ctx Contexter) error {
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+	operator := func(ctx Contexter) (interface{}, error) {
 		//make condition
 		args := make([]interface{}, 0)
 		add, build := StringBuilder()
 
-		for key, val := range req {
+		for key, val := range ctx.Querys() {
 			switch key {
 			case "uuid":
 				args = append(args, fmt.Sprintf("%s%%", val)) //앞 부분 부터 일치 해야함
@@ -153,7 +159,7 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 		where := build(" AND ")
 
 		//find template
-		templates, err := operator.NewTemplate(ctx.Database).
+		templates, err := operator.NewTemplate(ctx.Database()).
 			Find(where, args...)
 		if err != nil {
 			return nil, err
@@ -164,7 +170,7 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 			template_uuid := template.Uuid
 			where := "template_uuid = ?"
 			//find commands
-			commands, err := operator.NewTemplateCommand(ctx.Database).
+			commands, err := operator.NewTemplateCommand(ctx.Database()).
 				Find(where, template_uuid)
 			if err != nil {
 				return err
@@ -180,8 +186,9 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Nolock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -193,56 +200,52 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 // @Router /server/template/{uuid} [put]
 // @Param uuid     path string false "Template 의 Uuid"
 // @Param template body v1.HttpReqTemplate true "HttpReqTemplate"
-// @Success 200
+// @Success 200 {object} v1.HttpRspTemplate
 func (c *Control) UpdateTemplate() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
-		}
-		if len(req[__UUID__].(string)) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
-		}
+	binder := func(ctx Contexter) error {
 		body := new(templatev1.HttpReqTemplate)
-		err := ctx.Bind(body)
-		if err != nil {
-			return nil, ErrorBindRequestObject(err)
+		if err := ctx.Bind(body); err != nil {
+			return ErrorBindRequestObject(err)
 		}
-		req[__BODY__] = body
-		return req, nil
+
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
+		}
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
+		}
+
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
+	operator := func(ctx Contexter) (interface{}, error) {
+		body, ok := ctx.Object().(*templatev1.HttpReqTemplate)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		uuid, ok := req[__UUID__].(string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		body, ok := req[__BODY__].(*templatev1.HttpReqTemplate)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+
+		tempalte := body.Template
+
+		uuid := ctx.Params()[__UUID__]
 
 		//set uuid from path
-		body.Template.Uuid = uuid
+		tempalte.Uuid = uuid
 
 		//upate template
-		err := operator.NewTemplate(ctx.Database).
-			Update(body.Template)
+		err := operator.NewTemplate(ctx.Database()).
+			Update(tempalte)
 		if err != nil {
 			return nil, err
 		}
 
-		return OK(), nil
+		return templatev1.HttpRspTemplate{Template: tempalte}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Lock(c.db.Engine()),
 	})
 }
 
@@ -256,27 +259,31 @@ func (c *Control) UpdateTemplate() func(ctx echo.Context) error {
 // @Success 200
 func (c *Control) DeleteTemplate() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]string)
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
+	binder := func(ctx Contexter) error {
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
-		if len(req[__UUID__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-		return req, nil
-	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]string)
-		if !ok {
-			return nil, ErrorFailedCast()
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
 		}
 
-		//delete template
-		uuid := req[__UUID__]
-		err := operator.NewTemplate(ctx.Database).
-			Delete(uuid)
+		return nil
+	}
+	operator := func(ctx Contexter) (interface{}, error) {
+		uuid := ctx.Params()[__UUID__]
+
+		//command 테이블에 데이터 있는 경우 삭제 방지
+		where := "template_uuid = ?"
+		command, err := operator.NewTemplateCommand(ctx.Database()).Find(where, uuid)
 		if err != nil {
+			return nil, err
+		}
+		if len(command) == 0 {
+			return nil, fmt.Errorf("commands not empty")
+		}
+
+		//template 삭제
+		if err := operator.NewTemplate(ctx.Database()).Delete(uuid); err != nil {
 			return nil, err
 		}
 
@@ -285,8 +292,9 @@ func (c *Control) DeleteTemplate() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Lock(c.db.Engine()),
 	})
 }
 
@@ -297,6 +305,14 @@ func foreach_command(elems []commandv1.TemplateCommand, fn func(commandv1.Templa
 		}
 	}
 	return nil
+}
+
+func map_command(elems []commandv1.TemplateCommand, mapper func(commandv1.TemplateCommand) commandv1.TemplateCommand) []commandv1.TemplateCommand {
+	rst := make([]commandv1.TemplateCommand, len(elems))
+	for n := range elems {
+		rst[n] = mapper(elems[n])
+	}
+	return rst
 }
 
 func foreach_template(elems []templatev1.Template, fn func(templatev1.Template) error) error {

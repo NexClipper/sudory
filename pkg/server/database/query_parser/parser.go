@@ -8,7 +8,7 @@ type QueryParser struct {
 	order      *Order
 }
 
-func NewQueryParser(m map[string]interface{}, filter ConditionFilter) *QueryParser {
+func NewQueryParser(m map[string]string, filter ConditionFilter) *QueryParser {
 
 	//pagination
 	pagination, m := NewPagination(m)

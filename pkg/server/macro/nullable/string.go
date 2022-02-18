@@ -1,36 +1,63 @@
 package nullable
 
-type String struct {
-	value string
-	valid bool
+import "strconv"
+
+type nullString struct {
+	string
+	bool
 }
 
-func NewString(v interface{}) *String {
-	return new(String).scan(v)
+func String(v interface{}) nullString {
+	return *(new(nullString).scan(v))
 }
 
-func (n String) String() string {
-	return n.value
+func (nullable nullString) V() string {
+	return nullable.string
 }
-func (n String) Valid() bool {
-	return n.valid
+func (nullable nullString) OK() bool {
+	return nullable.bool
 }
 
-func (n *String) scan(v interface{}) *String {
-	var s string = ""
-	var ok bool = true
+func (nullable *nullString) scan(v interface{}) *nullString {
 
-	switch value := v.(type) {
-	case string:
-		s = value
-	case *string:
-		s = *value
-	case []byte:
-		s = string(value)
-	default:
-		ok = false
+	nullable.string, nullable.bool = "", false
+
+	if v == nil {
+		return nullable
 	}
 
-	n.value, n.valid = s, ok
-	return n
+	switch value := v.(type) {
+	case []byte:
+		nullable.string, nullable.bool = string(value), true
+	case string:
+		nullable.string, nullable.bool = value, true
+	case *string:
+		nullable.string, nullable.bool = *value, true
+	case int:
+		nullable.string, nullable.bool = strconv.FormatInt(int64(value), 10), true
+	case *int:
+		nullable.string, nullable.bool = strconv.FormatInt(int64(*value), 10), true
+	case int32:
+		nullable.string, nullable.bool = strconv.FormatInt(int64(value), 10), true
+	case *int32:
+		nullable.string, nullable.bool = strconv.FormatInt(int64(*value), 10), true
+	case int64:
+		nullable.string, nullable.bool = strconv.FormatInt(value, 10), true
+	case *int64:
+		nullable.string, nullable.bool = strconv.FormatInt(*value, 10), true
+	case uint:
+		nullable.string, nullable.bool = strconv.FormatUint(uint64(value), 10), true
+	case *uint:
+		nullable.string, nullable.bool = strconv.FormatUint(uint64(*value), 10), true
+	case uint32:
+		nullable.string, nullable.bool = strconv.FormatUint(uint64(value), 10), true
+	case *uint32:
+		nullable.string, nullable.bool = strconv.FormatUint(uint64(*value), 10), true
+	case uint64:
+		nullable.string, nullable.bool = strconv.FormatUint(value, 10), true
+	case *uint64:
+		nullable.string, nullable.bool = strconv.FormatUint(*value, 10), true
+	}
+
+	return nullable
 }

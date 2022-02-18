@@ -197,7 +197,10 @@ var doc = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspClient"
+                        }
                     }
                 }
             }
@@ -263,7 +266,10 @@ var doc = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspClient"
+                        }
                     }
                 }
             },
@@ -508,6 +514,41 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "put": {
+                "description": "Update Environment Value",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/environment"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Environment 의 Uuid",
+                        "name": "uuid",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Environment 의 Value",
+                        "name": "value",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspEnvironment"
+                        }
+                    }
+                }
             }
         },
         "/server/environment/{uuid}": {
@@ -528,44 +569,6 @@ var doc = `{
                         "description": "Environment 의 Uuid",
                         "name": "uuid",
                         "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpRspEnvironment"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/environment/{uuid}/value": {
-            "put": {
-                "description": "Update Environment Value",
-                "consumes": [
-                    "application/x-www-form-urlencoded"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/environment"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Environment 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Environment 의 Value",
-                        "name": "value",
-                        "in": "formData",
                         "required": true
                     }
                 ],
@@ -617,7 +620,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.HttpRspService"
+                                "$ref": "#/definitions/v1.HttpRspServiceWithSteps"
                             }
                         }
                     }
@@ -636,18 +639,21 @@ var doc = `{
                 ],
                 "parameters": [
                     {
-                        "description": "HttpReqServiceCreate",
+                        "description": "HttpReqServiceWithSteps",
                         "name": "service",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqServiceCreate"
+                            "$ref": "#/definitions/v1.HttpReqServiceWithSteps"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspServiceWithSteps"
+                        }
                     }
                 }
             }
@@ -716,7 +722,10 @@ var doc = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspServiceStep"
+                        }
                     }
                 }
             }
@@ -796,7 +805,10 @@ var doc = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspServiceStep"
+                        }
                     }
                 }
             },
@@ -859,7 +871,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpRspService"
+                            "$ref": "#/definitions/v1.HttpRspServiceWithSteps"
                         }
                     }
                 }
@@ -895,7 +907,10 @@ var doc = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspService"
+                        }
                     }
                 }
             },
@@ -951,7 +966,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpRspService"
+                            "$ref": "#/definitions/v1.HttpRspServiceWithSteps"
                         }
                     }
                 }
@@ -1103,7 +1118,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.HttpRspTemplate"
+                                "$ref": "#/definitions/v1.HttpReqTemplateWithCommands"
                             }
                         }
                     }
@@ -1122,18 +1137,21 @@ var doc = `{
                 ],
                 "parameters": [
                     {
-                        "description": "HttpReqTemplateCreate",
+                        "description": "HttpReqTemplateWithCommands",
                         "name": "template",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqTemplateCreate"
+                            "$ref": "#/definitions/v1.HttpReqTemplateWithCommands"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpReqTemplateWithCommands"
+                        }
                     }
                 }
             }
@@ -1165,7 +1183,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.HttpRspTemplate"
+                                "$ref": "#/definitions/v1.HttpRspTemplateCommand"
                             }
                         }
                     }
@@ -1202,7 +1220,10 @@ var doc = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspTemplateCommand"
+                        }
                     }
                 }
             }
@@ -1239,7 +1260,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpRspTemplate"
+                            "$ref": "#/definitions/v1.HttpRspTemplateCommand"
                         }
                     }
                 }
@@ -1345,7 +1366,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpRspTemplate"
+                            "$ref": "#/definitions/v1.HttpReqTemplateWithCommands"
                         }
                     }
                 }
@@ -1380,7 +1401,10 @@ var doc = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspTemplate"
+                        }
                     }
                 }
             },
@@ -1694,6 +1718,10 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
+                "assigned_client_uuid": {
+                    "description": "할당된 클라이언트 UUID",
+                    "type": "string"
+                },
                 "cluster_uuid": {
                     "description": "클러스터 UUID",
                     "type": "string"
@@ -1708,6 +1736,14 @@ var doc = `{
                 },
                 "name": {
                     "description": "label name",
+                    "type": "string"
+                },
+                "origin_kind": {
+                    "description": "오리진 종류",
+                    "type": "string"
+                },
+                "origin_uuid": {
+                    "description": "오리진 UUID",
                     "type": "string"
                 },
                 "result": {
@@ -1734,6 +1770,10 @@ var doc = `{
                 },
                 "summary": {
                     "description": "label summary",
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "description": "텔플릿 UUID",
                     "type": "string"
                 },
                 "type": {
@@ -1774,6 +1814,10 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
+                "assigned_client_uuid": {
+                    "description": "할당된 클라이언트 UUID",
+                    "type": "string"
+                },
                 "cluster_uuid": {
                     "description": "클러스터 UUID",
                     "type": "string"
@@ -1788,6 +1832,14 @@ var doc = `{
                 },
                 "name": {
                     "description": "label name",
+                    "type": "string"
+                },
+                "origin_kind": {
+                    "description": "오리진 종류",
+                    "type": "string"
+                },
+                "origin_uuid": {
+                    "description": "오리진 UUID",
                     "type": "string"
                 },
                 "result": {
@@ -1810,63 +1862,8 @@ var doc = `{
                     "description": "label summary",
                     "type": "string"
                 },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
-                },
-                "uuid": {
-                    "description": "UUID",
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqServiceCreate": {
-            "type": "object",
-            "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
-                    "type": "string"
-                },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
-                },
-                "interval": {
-                    "description": "Interval",
-                    "type": "integer"
-                },
-                "name": {
-                    "description": "label name",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
-                },
-                "steps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1.ServiceStep"
-                    }
-                },
-                "summary": {
-                    "description": "label summary",
+                "template_uuid": {
+                    "description": "텔플릿 UUID",
                     "type": "string"
                 },
                 "type": {
@@ -1889,9 +1886,7 @@ var doc = `{
                 "args": {
                     "description": "arguments",
                     "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "additionalProperties": true
                 },
                 "ended": {
                     "description": "Started 스탭 완료 시간",
@@ -1935,6 +1930,81 @@ var doc = `{
                 }
             }
         },
+        "v1.HttpReqServiceWithSteps": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "assigned_client_uuid": {
+                    "description": "할당된 클라이언트 UUID",
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "description": "클러스터 UUID",
+                    "type": "string"
+                },
+                "epoch": {
+                    "description": "Epoch -1: infinite, 0 :",
+                    "type": "integer"
+                },
+                "interval": {
+                    "description": "Interval",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "origin_kind": {
+                    "description": "오리진 종류",
+                    "type": "string"
+                },
+                "origin_uuid": {
+                    "description": "오리진 UUID",
+                    "type": "string"
+                },
+                "result": {
+                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status",
+                    "type": "integer"
+                },
+                "step_count": {
+                    "description": "스탭 카운트",
+                    "type": "integer"
+                },
+                "step_position": {
+                    "description": "스탭 Position",
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.ServiceStep"
+                    }
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "description": "텔플릿 UUID",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
+                    "type": "integer"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
         "v1.HttpReqTemplate": {
             "type": "object",
             "properties": {
@@ -1970,9 +2040,7 @@ var doc = `{
                 "args": {
                     "description": "arguments",
                     "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "additionalProperties": true
                 },
                 "method": {
                     "description": "메소드\n@example: \"kubernetes.deployment.get.v1\", \"kubernetes.pod.list.v1\"",
@@ -2000,7 +2068,7 @@ var doc = `{
                 }
             }
         },
-        "v1.HttpReqTemplateCreate": {
+        "v1.HttpReqTemplateWithCommands": {
             "type": "object",
             "properties": {
                 "api_version": {
@@ -2099,6 +2167,10 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
+                "assigned_client_uuid": {
+                    "description": "할당된 클라이언트 UUID",
+                    "type": "string"
+                },
                 "cluster_uuid": {
                     "description": "클러스터 UUID",
                     "type": "string"
@@ -2113,6 +2185,14 @@ var doc = `{
                 },
                 "name": {
                     "description": "label name",
+                    "type": "string"
+                },
+                "origin_kind": {
+                    "description": "오리진 종류",
+                    "type": "string"
+                },
+                "origin_uuid": {
+                    "description": "오리진 UUID",
                     "type": "string"
                 },
                 "result": {
@@ -2139,6 +2219,10 @@ var doc = `{
                 },
                 "summary": {
                     "description": "label summary",
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "description": "텔플릿 UUID",
                     "type": "string"
                 },
                 "type": {
@@ -2203,6 +2287,10 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
+                "assigned_client_uuid": {
+                    "description": "할당된 클라이언트 UUID",
+                    "type": "string"
+                },
                 "cluster_uuid": {
                     "description": "클러스터 UUID",
                     "type": "string"
@@ -2217,6 +2305,14 @@ var doc = `{
                 },
                 "name": {
                     "description": "label name",
+                    "type": "string"
+                },
+                "origin_kind": {
+                    "description": "오리진 종류",
+                    "type": "string"
+                },
+                "origin_uuid": {
+                    "description": "오리진 UUID",
                     "type": "string"
                 },
                 "result": {
@@ -2235,14 +2331,12 @@ var doc = `{
                     "description": "스탭 Position",
                     "type": "integer"
                 },
-                "steps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1.ServiceStep"
-                    }
-                },
                 "summary": {
                     "description": "label summary",
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "description": "텔플릿 UUID",
                     "type": "string"
                 },
                 "type": {
@@ -2265,9 +2359,7 @@ var doc = `{
                 "args": {
                     "description": "arguments",
                     "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "additionalProperties": true
                 },
                 "ended": {
                     "description": "Started 스탭 완료 시간",
@@ -2304,6 +2396,81 @@ var doc = `{
                 "summary": {
                     "description": "label summary",
                     "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpRspServiceWithSteps": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "assigned_client_uuid": {
+                    "description": "할당된 클라이언트 UUID",
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "description": "클러스터 UUID",
+                    "type": "string"
+                },
+                "epoch": {
+                    "description": "Epoch -1: infinite, 0 :",
+                    "type": "integer"
+                },
+                "interval": {
+                    "description": "Interval",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "origin_kind": {
+                    "description": "오리진 종류",
+                    "type": "string"
+                },
+                "origin_uuid": {
+                    "description": "오리진 UUID",
+                    "type": "string"
+                },
+                "result": {
+                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status",
+                    "type": "integer"
+                },
+                "step_count": {
+                    "description": "스탭 카운트",
+                    "type": "integer"
+                },
+                "step_position": {
+                    "description": "스탭 Position",
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.ServiceStep"
+                    }
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "description": "텔플릿 UUID",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
+                    "type": "integer"
                 },
                 "uuid": {
                     "description": "UUID",
@@ -2354,12 +2521,6 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "commands": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1.TemplateCommand"
-                    }
-                },
                 "name": {
                     "description": "label name",
                     "type": "string"
@@ -2370,6 +2531,44 @@ var doc = `{
                 },
                 "summary": {
                     "description": "label summary",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpRspTemplateCommand": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "args": {
+                    "description": "arguments",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "method": {
+                    "description": "메소드\n@example: \"kubernetes.deployment.get.v1\", \"kubernetes.pod.list.v1\"",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "sequence": {
+                    "description": "순서",
+                    "type": "integer"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "description": "템플릿 UUID",
                     "type": "string"
                 },
                 "uuid": {
@@ -2445,9 +2644,7 @@ var doc = `{
                 "args": {
                     "description": "arguments",
                     "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "additionalProperties": true
                 },
                 "ended": {
                     "description": "Started 스탭 완료 시간",
@@ -2501,9 +2698,7 @@ var doc = `{
                 "args": {
                     "description": "arguments",
                     "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "additionalProperties": true
                 },
                 "method": {
                     "description": "메소드\n@example: \"kubernetes.deployment.get.v1\", \"kubernetes.pod.list.v1\"",

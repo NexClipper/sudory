@@ -46,36 +46,28 @@ type ClientPlayload struct {
 // @Header      200 {string} x-sudory-client-token "x-sudory-client-token"
 func (c *Control) PollService() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for key := range ctx.QueryParams() {
-			req[key] = ctx.QueryParam(key)
-		}
-		for _, key := range ctx.ParamNames() {
-			req[key] = ctx.Param(key)
+	binder := func(ctx Contexter) error {
+		body := new([]servicev1.HttpReqClientSideService)
+		if err := ctx.Bind(body); err != nil {
+			return ErrorBindRequestObject(err)
 		}
 
-		body := make([]servicev1.HttpReqClientSideService, 0) //bind body
-		err := ctx.Bind(&body)
-		if err != nil {
-			return nil, ErrorBindRequestObject(err)
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
-		req[__BODY__] = body //save body
 
-		payload := getClientTokenPayload(ctx) //read client token
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
+		}
+
+		payload := getClientTokenPayload(ctx.Echo()) //read client token
 		if payload == nil {
-			return nil, ErrorInvaliedRequestParameter()
+			return ErrorInvaliedRequestParameter()
 		}
-		req[__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__] = payload //save client token
-
-		return req, nil
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		body, ok := req[__BODY__].([]servicev1.HttpReqClientSideService)
+	operator := func(ctx Contexter) (interface{}, error) {
+		body, ok := ctx.Object().([]servicev1.HttpReqClientSideService)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -91,20 +83,20 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			steps = map_step(steps, func(step stepv1.ServiceStep) stepv1.ServiceStep {
 				//step.Status 상태가 service.Status 보다 크다면
 				//서비스의 상태 정보를 해당 값으로 덮어쓰기
-				if nullable.NewInt32(service.Status).Int32() < nullable.NewInt32(step.Status).Int32() {
-					service.Status = newist.Int32(nullable.NewInt32(step.Status).Int32())         //status
-					service.StepPosition = newist.Int32(nullable.NewInt32(step.Sequence).Int32()) //position
+				if nullable.Int32(service.Status).V() < nullable.Int32(step.Status).V() {
+					service.Status = newist.Int32(nullable.Int32(step.Status).V())         //status
+					service.StepPosition = newist.Int32(nullable.Int32(step.Sequence).V()) //position
 				}
 				return step
 			})
 
 			//save step
-			if err := foreach_step(steps, operator.NewServiceStep(ctx.Database).Update); err != nil {
+			if err := foreach_step(steps, operator.NewServiceStep(ctx.Database()).Update); err != nil {
 				return err
 			}
 
 			//save service
-			if err := operator.NewService(ctx.Database).Update(service); err != nil {
+			if err := operator.NewService(ctx.Database()).Update(service); err != nil {
 				return err
 			}
 
@@ -114,10 +106,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		payload, ok := req[__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__].(*ClientPlayload)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+		payload := getClientTokenPayload(ctx.Echo()) //read client token
 
 		//find service
 		where := "cluster_uuid = ? AND status BETWEEN ? AND ?"
@@ -127,7 +116,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			servicev1.StatusProcessing,
 		}
 
-		services, err := operator.NewService(ctx.Database).
+		services, err := operator.NewService(ctx.Database()).
 			Find(where, args...)
 		if err != nil {
 			return nil, err
@@ -138,7 +127,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			service_uuid := service.Uuid
 			where := "service_uuid = ?"
 			//find steps
-			steps, err := operator.NewServiceStep(ctx.Database).
+			steps, err := operator.NewServiceStep(ctx.Database()).
 				Find(where, service_uuid)
 			if err != nil {
 				return err
@@ -151,25 +140,25 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			//check poll response
 			steps = map_step(steps, func(step stepv1.ServiceStep) stepv1.ServiceStep {
 				//StatusSend 보다 작으면 응답 전 업데이트
-				if nullable.NewInt32(service.Status).Int32() < int32(servicev1.StatusSend) {
+				if nullable.Int32(service.Status).V() < int32(servicev1.StatusSend) {
 					service.Status = newist.Int32(int32(servicev1.StatusSend))
 				}
 
 				//step.Status 상태가 service.Status 보다 크다면
 				//서비스의 상태 정보를 해당 값으로 덮어쓰기
-				if nullable.NewInt32(service.Status).Int32() < nullable.NewInt32(step.Status).Int32() {
-					service.Status = newist.Int32(nullable.NewInt32(step.Status).Int32())         //status
-					service.StepPosition = newist.Int32(nullable.NewInt32(step.Sequence).Int32()) //position
+				if nullable.Int32(service.Status).V() < nullable.Int32(step.Status).V() {
+					service.Status = nullable.Int32(step.Status).Ptr()         //status
+					service.StepPosition = nullable.Int32(step.Sequence).Ptr() //position
 				}
 				return step
 			})
 
 			//save step
-			if err := foreach_step(steps, operator.NewServiceStep(ctx.Database).Update); err != nil {
+			if err := foreach_step(steps, operator.NewServiceStep(ctx.Database()).Update); err != nil {
 				return err
 			}
 			//save service
-			if err := operator.NewService(ctx.Database).Update(service); err != nil {
+			if err := operator.NewService(ctx.Database()).Update(service); err != nil {
 				return err
 			}
 
@@ -184,10 +173,11 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		TokenVerifier: verifyClientSessionToken(c.db.Engine()),
+		TokenVerifier: verifyClientSessionToken(c.db.Engine(), Nolock),
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Lock(c.db.Engine()),
 	})
 }
 
@@ -204,56 +194,45 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 // @Header      200 {string} x-sudory-client-token "x-sudory-client-token"
 func (c *Control) AuthClient() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
+	binder := func(ctx Contexter) error {
 
-		req := make(map[string]string)
-		formdatas, err := ctx.FormParams()
-		if err != nil {
-			return nil, err
+		if len(ctx.Forms()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
-		for key := range formdatas {
-			req[key] = ctx.FormValue(key)
+
+		if len(ctx.Forms()[__ASSERTION__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__ASSERTION__)
 		}
-		// if len(req[__GRANT_TYPE__]) == 0 {
-		// 	return nil, ErrorInvaliedRequestParameter()
-		// }
-		if len(req[__ASSERTION__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
+		if len(ctx.Forms()[__CLUSTER_UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__CLUSTER_UUID__)
 		}
-		if len(req[__CLUSTER_UUID__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
+		if len(ctx.Forms()[__CLIENT_UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__CLIENT_UUID__)
 		}
-		if len(req[__CLIENT_UUID__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-		return req, nil
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+	operator := func(ctx Contexter) (interface{}, error) {
 
-		assertion := req[__ASSERTION__]
-		cluster_uuid := req[__CLUSTER_UUID__]
-		client_uuid := req[__CLIENT_UUID__]
+		assertion := ctx.Forms()[__ASSERTION__]
+		cluster_uuid := ctx.Forms()[__CLUSTER_UUID__]
+		client_uuid := ctx.Forms()[__CLIENT_UUID__]
 
 		//valid cluster
-		_, err := operator.NewCluster(ctx.Database).
+		_, err := operator.NewCluster(ctx.Database()).
 			Get(cluster_uuid)
 		if err != nil {
 			return nil, err
 		}
 
 		//valid client
-		_, err = operator.NewClient(ctx.Database).
+		_, err = operator.NewClient(ctx.Database()).
 			Get(client_uuid)
 		if err != nil {
 			return nil, err
 		}
 
 		//valid token
-		m := map[string]interface{}{
+		m := map[string]string{
 			"user_kind": token_user_kind_cluster,
 			"user_uuid": cluster_uuid,
 			"token":     assertion,
@@ -263,7 +242,7 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 			return "=", "%s", true
 		})
 
-		tokens, err := operator.NewToken(ctx.Database).
+		tokens, err := operator.NewToken(ctx.Database()).
 			Find(cond.Where(), cond.Args()...)
 		if err != nil {
 			return nil, err
@@ -325,22 +304,23 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 		session := newClientSession(*payload, session_token_value)
 
 		//save session
-		err = operator.NewSession(ctx.Database).
+		err = operator.NewSession(ctx.Database()).
 			Create(session)
 		if err != nil {
 			return nil, err
 		}
 
 		//save token to header
-		ctx.Http.Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, session_token_value)
+		ctx.Echo().Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, session_token_value)
 
 		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Lock(c.db.Engine()),
 	})
 }
 
@@ -355,11 +335,11 @@ func newClientSession(payload ClientPlayload, token string) sessionv1.Session {
 	return session
 }
 
-func verifyClientSessionToken(engine *xorm.Engine) func(ctx echo.Context) error {
+func verifyClientSessionToken(engine *xorm.Engine, behave func(*xorm.Engine) func(Contexter, func(Contexter) (interface{}, error)) (interface{}, error)) func(ctx Contexter) error {
 
-	operator := func(ctx OperateContext) error {
+	operate := func(ctx Contexter) error {
 		var err error
-		token := ctx.Http.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
+		token := ctx.Echo().Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
 
 		if len(token) == 0 {
 			return ErrorInvaliedRequestParameter()
@@ -396,30 +376,31 @@ func verifyClientSessionToken(engine *xorm.Engine) func(ctx echo.Context) error 
 
 		session := newClientSession(*payload, new_token)
 		//udpate session
-		err = operator.NewSession(ctx.Database).
+		err = operator.NewSession(ctx.Database()).
 			Update(session)
 		if err != nil {
 			return WithCode(err, "update session-token", http.StatusInternalServerError)
 		}
 
 		//save client session-token to header
-		ctx.Http.Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, new_token)
+		ctx.Echo().Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, new_token)
 
 		return nil
 	}
 
-	return func(ctx echo.Context) error {
+	return func(ctx Contexter) error {
+
+		fackRight := func(fn func(ctx Contexter) error) func(ctx Contexter) (interface{}, error) {
+			return func(ctx Contexter) (interface{}, error) {
+				return nil, fn(ctx) //return fack and error
+			}
+		}
 
 		left := func(v interface{}, err error) error {
 			return err
 		}
 
-		block := Nolock
-
-		err := left(block(engine, func(ctx OperateContext) (interface{}, error) {
-			err := operator(ctx)
-			return nil, err
-		})(OperateContext{Http: ctx}))
+		err := left(behave(engine)(ctx, fackRight(operate)))
 		return err
 	}
 }

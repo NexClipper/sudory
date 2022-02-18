@@ -8,17 +8,17 @@ import (
 
 type Condition struct {
 	where string
-	args  []interface{}
+	args  []string
 }
 
 type ConditionFilter func(key string) (string, string, bool)
 
-func NewCondition(m map[string]interface{}, filter ConditionFilter) *Condition {
+func NewCondition(m map[string]string, filter ConditionFilter) *Condition {
 	if len(m) == 0 {
 		return &Condition{}
 	}
 
-	args := make([]interface{}, 0)
+	args := make([]string, 0)
 	add, build := StringBuilder()
 
 	for key, val := range m {
@@ -36,5 +36,10 @@ func (cond Condition) Where() string {
 	return cond.where
 }
 func (cond Condition) Args() []interface{} {
-	return cond.args
+	s := make([]interface{}, len(cond.args))
+
+	for n := range cond.args {
+		s[n] = cond.args[n]
+	}
+	return s
 }

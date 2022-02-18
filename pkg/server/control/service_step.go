@@ -4,6 +4,8 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
 	"github.com/NexClipper/sudory/pkg/server/database"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
+	"github.com/NexClipper/sudory/pkg/server/macro/newist"
+	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/labstack/echo/v4"
 )
@@ -16,59 +18,77 @@ import (
 // @Router /server/service/{service_uuid}/step [post]
 // @Param service_uuid path string true "ServiceStep 의 service_uuid"
 // @Param step         body stepv1.HttpReqServiceStep true "HttpReqServiceStep"
-// @Success 200
+// @Success 200 {object} v1.HttpRspServiceStep
 func (c *Control) CreateServiceStep() func(ctx echo.Context) error {
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
-		}
-		if len(req[__SERVICE_UUID__].(string)) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-
+	binder := func(ctx Contexter) error {
 		body := new(stepv1.HttpReqServiceStep)
-		err := ctx.Bind(body)
-		if err != nil {
-			return nil, ErrorBindRequestObject(err)
+		if err := ctx.Bind(body); err != nil {
+			return ErrorBindRequestObject(err)
 		}
-		req[__BODY__] = body
-		return req, nil
+		if len(body.Name) == 0 {
+			return ErrorInvaliedRequestParameterName("Name")
+		}
+		if body.Method == nil {
+			return ErrorInvaliedRequestParameterName("Method")
+		}
+
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
+		}
+		if len(ctx.Params()[__SERVICE_UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__SERVICE_UUID__)
+		}
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		service_uuid, ok := req[__SERVICE_UUID__].(string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		body, ok := req[__BODY__].(*stepv1.HttpReqServiceStep)
+	operator := func(ctx Contexter) (interface{}, error) {
+		body, ok := ctx.Object().(*stepv1.HttpReqServiceStep)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
-		body.ServiceStep.ServiceUuid = service_uuid
+		step := body.ServiceStep
+
+		service_uuid := ctx.Params()[__SERVICE_UUID__]
+
+		//property
+		step.LabelMeta = NewLabelMeta(step.Name, step.Summary)
+		step.ServiceUuid = service_uuid
+		if step.Sequence == nil {
+			//마직막 순서를 지정하기 위해서 스텝을 가져온다
+			where := "service_uuid = ?"
+			steps, err := operator.NewServiceStep(ctx.Database()).
+				Find(where, service_uuid)
+			if err != nil {
+				return nil, err
+			}
+			//스탭 순서 지정
+			step.Sequence = newist.Int32(int32(len(steps)))
+		}
+		//Status = Regist
+		step.Status = newist.Int32(int32(servicev1.StatusRegist))
 
 		//스탭 생성
-		err := operator.NewServiceStep(ctx.Database).
-			Create(body.ServiceStep)
-		if err != nil {
+		if err := operator.NewServiceStep(ctx.Database()).Create(step); err != nil {
 			return nil, err
 		}
 
 		//Service Chaining
-		operator.NewService(ctx.Database).
-			Chaining(service_uuid)
+		if err := operator.NewService(ctx.Database()).Chaining(service_uuid); err != nil {
+			return nil, err
+		}
+		//ServiceStep ChainingSequence
+		if err := operator.NewServiceStep(ctx.Database()).ChainingSequence(service_uuid, step.Uuid); err != nil {
+			return nil, err
+		}
 
-		return OK(), nil
+		return stepv1.HttpRspServiceStep{ServiceStep: step}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Lock(c.db.Engine()),
 	})
 }
 
@@ -81,26 +101,20 @@ func (c *Control) CreateServiceStep() func(ctx echo.Context) error {
 // @Param service_uuid path string true "ServiceStep 의 service_uuid"
 // @Success 200 {array} v1.HttpRspServiceStep
 func (c *Control) GetServiceSteps() func(ctx echo.Context) error {
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]string)
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
+	binder := func(ctx Contexter) error {
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
-		if len(req[__SERVICE_UUID__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
+		if len(ctx.Params()[__SERVICE_UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__SERVICE_UUID__)
 		}
-		return req, nil
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-
+	operator := func(ctx Contexter) (interface{}, error) {
 		where := "service_uuid = ?"
-		service_uuid := req[__SERVICE_UUID__]
+		service_uuid := ctx.Params()[__SERVICE_UUID__]
 
-		record, err := operator.NewServiceStep(ctx.Database).
+		record, err := operator.NewServiceStep(ctx.Database()).
 			Find(where, service_uuid)
 		if err != nil {
 			return nil, err
@@ -110,8 +124,9 @@ func (c *Control) GetServiceSteps() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Nolock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -125,29 +140,23 @@ func (c *Control) GetServiceSteps() func(ctx echo.Context) error {
 // @Param uuid         path string true "ServiceStep 의 Uuid"
 // @Success 200 {object} v1.HttpRspServiceStep
 func (c *Control) GetServiceStep() func(ctx echo.Context) error {
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]string)
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
+	binder := func(ctx Contexter) error {
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
-		if len(req[__SERVICE_UUID__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
+		if len(ctx.Params()[__SERVICE_UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__SERVICE_UUID__)
 		}
-		if len(req[__UUID__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
 		}
-		return req, nil
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+	operator := func(ctx Contexter) (interface{}, error) {
+		_ = ctx.Params()[__SERVICE_UUID__]
+		uuid := ctx.Params()[__UUID__]
 
-		_ = req[__SERVICE_UUID__]
-		uuid := req[__UUID__]
-
-		record, err := operator.NewServiceStep(ctx.Database).
+		record, err := operator.NewServiceStep(ctx.Database()).
 			Get(uuid)
 		if err != nil {
 			return nil, err
@@ -158,8 +167,9 @@ func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Nolock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -172,65 +182,60 @@ func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 // @Param service_uuid path string true "ServiceStep 의 service_uuid"
 // @Param uuid         path string true "ServiceStep 의 Uuid"
 // @Param step         body stepv1.HttpReqServiceStep true "HttpReqServiceStep"
-// @Success 200
+// @Success 200 {object} v1.HttpRspServiceStep
 func (c *Control) UpdateServiceStep() func(ctx echo.Context) error {
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
-		}
-		if len(req[__SERVICE_UUID__].(string)) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-		if len(req[__UUID__].(string)) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-
+	binder := func(ctx Contexter) error {
 		body := new(stepv1.HttpReqServiceStep)
-		err := ctx.Bind(body)
-		if err != nil {
-			return nil, ErrorBindRequestObject(err)
+		if err := ctx.Bind(body); err != nil {
+			return ErrorBindRequestObject(err)
 		}
-		req[__BODY__] = body
 
-		return req, nil
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
+		}
+		if len(ctx.Params()[__SERVICE_UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__SERVICE_UUID__)
+		}
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
+		}
+
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
+	operator := func(ctx Contexter) (interface{}, error) {
+		body, ok := ctx.Object().(*stepv1.HttpReqServiceStep)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		service_uuid, ok := req[__SERVICE_UUID__].(string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		uuid, ok := req[__UUID__].(string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		body, ok := req[__BODY__].(*stepv1.HttpReqServiceStep)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+
+		step := body.ServiceStep
+
+		service_uuid := ctx.Params()[__SERVICE_UUID__]
+
+		uuid := ctx.Params()[__UUID__]
 
 		//set service uuid from path
-		body.ServiceStep.ServiceUuid = service_uuid
+		step.ServiceUuid = service_uuid
 		//set uuid from path
-		body.ServiceStep.Uuid = uuid
+		step.Uuid = uuid
 
-		err := operator.NewServiceStep(ctx.Database).
-			Update(body.ServiceStep)
-		if err != nil {
+		if err := operator.NewServiceStep(ctx.Database()).Update(step); err != nil {
 			return nil, err
 		}
 
-		return OK(), nil
+		//ServiceStep ChainingSequence
+		if err := operator.NewServiceStep(ctx.Database()).ChainingSequence(service_uuid, step.Uuid); err != nil {
+			return nil, err
+		}
+
+		return stepv1.HttpRspServiceStep{ServiceStep: step}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Lock(c.db.Engine()),
 	})
 }
 
@@ -244,30 +249,21 @@ func (c *Control) UpdateServiceStep() func(ctx echo.Context) error {
 // @Param uuid         path string true "ServiceStep 의 Uuid"
 // @Success 200
 func (c *Control) DeleteServiceStep() func(ctx echo.Context) error {
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]string)
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
+	binder := func(ctx Contexter) error {
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
-		if len(req[__SERVICE_UUID__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
+		if len(ctx.Params()[__SERVICE_UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__SERVICE_UUID__)
 		}
-		if len(req[__UUID__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-		return req, nil
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-
-		_ = req[__SERVICE_UUID__]
-		uuid := req[__UUID__]
+	operator := func(ctx Contexter) (interface{}, error) {
+		_ = ctx.Params()[__SERVICE_UUID__]
+		uuid := ctx.Params()[__UUID__]
 
 		//조회 해서 레코드가 없으면 종료
-		step, err := operator.NewServiceStep(ctx.Database).
+		step, err := operator.NewServiceStep(ctx.Database()).
 			Get(uuid)
 		if Eqaul(err, database.ErrorRecordWasNotFound()) {
 			return OK(), nil //idempotent
@@ -276,22 +272,24 @@ func (c *Control) DeleteServiceStep() func(ctx echo.Context) error {
 		}
 
 		//삭제
-		err = operator.NewServiceStep(ctx.Database).
+		err = operator.NewServiceStep(ctx.Database()).
 			Delete(uuid)
 		if err != nil {
 			return nil, err
 		}
 
 		//Service Chaining
-		operator.NewService(ctx.Database).
-			Chaining(step.ServiceUuid)
+		if err := operator.NewService(ctx.Database()).Chaining(step.ServiceUuid); err != nil {
+			return nil, err
+		}
 
 		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Lock(c.db.Engine()),
 	})
 }

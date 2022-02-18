@@ -23,20 +23,12 @@ import (
 // @Success 200 {array} v1.HttpRspSession
 func (c *Control) FindSession() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]interface{})
-		for key := range ctx.QueryParams() {
-			req[key] = ctx.QueryParam(key)
-		}
-		return req, nil
+	binder := func(ctx Contexter) error {
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]interface{})
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+	operator := func(ctx Contexter) (interface{}, error) {
 
-		cond := query_parser.NewCondition(req, func(key string) (string, string, bool) {
+		cond := query_parser.NewCondition(ctx.Querys(), func(key string) (string, string, bool) {
 			switch key {
 			case "uuid", "user_uuid", "user_kind":
 				return "=", "%s", true
@@ -48,7 +40,7 @@ func (c *Control) FindSession() func(ctx echo.Context) error {
 		})
 
 		//find Session
-		records, err := operator.NewSession(ctx.Database).
+		records, err := operator.NewSession(ctx.Database()).
 			Find(cond.Where(), cond.Args()...)
 		if err != nil {
 			return nil, err
@@ -59,8 +51,9 @@ func (c *Control) FindSession() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Nolock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -74,24 +67,20 @@ func (c *Control) FindSession() func(ctx echo.Context) error {
 // @Success 200 {object} v1.HttpRspSession
 func (c *Control) GetSession() func(ctx echo.Context) error {
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]string)
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
+	binder := func(ctx Contexter) error {
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
 		}
-		if len(req[__UUID__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-		return req, nil
-	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]string)
-		if !ok {
-			return nil, ErrorFailedCast()
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
 		}
 
-		uuid := req[__UUID__]
-		rst, err := operator.NewSession(ctx.Database).
+		return nil
+	}
+	operator := func(ctx Contexter) (interface{}, error) {
+
+		uuid := ctx.Params()[__UUID__]
+		rst, err := operator.NewSession(ctx.Database()).
 			Get(uuid)
 		if err != nil {
 			return nil, err
@@ -101,8 +90,9 @@ func (c *Control) GetSession() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Nolock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Nolock(c.db.Engine()),
 	})
 }
 
@@ -115,25 +105,20 @@ func (c *Control) GetSession() func(ctx echo.Context) error {
 // @Param uuid path string true "Session 의 Uuid"
 // @Success 200
 func (c *Control) DeleteSession() func(ctx echo.Context) error {
+	binder := func(ctx Contexter) error {
+		if len(ctx.Params()) == 0 {
+			return ErrorInvaliedRequestParameter()
+		}
+		if len(ctx.Params()[__UUID__]) == 0 {
+			return ErrorInvaliedRequestParameterName(__UUID__)
+		}
 
-	binder := func(ctx echo.Context) (interface{}, error) {
-		req := make(map[string]string)
-		for _, it := range ctx.ParamNames() {
-			req[it] = ctx.Param(it)
-		}
-		if len(req[__UUID__]) == 0 {
-			return nil, ErrorInvaliedRequestParameter()
-		}
-		return req, nil
+		return nil
 	}
-	operator := func(ctx OperateContext) (interface{}, error) {
-		req, ok := ctx.Req.(map[string]string)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+	operator := func(ctx Contexter) (interface{}, error) {
+		uuid := ctx.Params()[__UUID__]
 
-		uuid := req[__UUID__]
-		err := operator.NewSession(ctx.Database).
+		err := operator.NewSession(ctx.Database()).
 			Delete(uuid)
 		if err != nil {
 			return nil, err
@@ -144,7 +129,8 @@ func (c *Control) DeleteSession() func(ctx echo.Context) error {
 
 	return MakeMiddlewareFunc(Option{
 		Binder:        binder,
-		Operator:      Lock(c.db.Engine(), operator),
+		Operator:      operator,
 		HttpResponser: HttpResponse,
+		Behavior:      Lock(c.db.Engine()),
 	})
 }
