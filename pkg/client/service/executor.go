@@ -22,7 +22,7 @@ func (se *ServiceExecutor) Execute() (err error) {
 		if err != nil {
 			log.Errorf(err.Error())
 			se.service.Status = ServiceStatusFailed
-			se.service.Result = result
+			se.service.Result.err = err
 			se.SendStatusUpdate()
 		} else {
 			se.service.Status = ServiceStatusSuccess
@@ -38,6 +38,8 @@ func (se *ServiceExecutor) Execute() (err error) {
 
 		te, err = NewStepExecutor(*step)
 		if err != nil {
+			se.service.Steps[i].Status = StepStatusFail
+			se.service.Steps[i].EndTime = time.Now()
 			return err
 		}
 		// update execute result to service scheduler through returnChannel.

@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/NexClipper/sudory/pkg/client/k8s"
-	"github.com/NexClipper/sudory/pkg/server/macro"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"github.com/NexClipper/sudory/pkg/client/k8s"
+	"github.com/NexClipper/sudory/pkg/client/p8s"
+	"github.com/NexClipper/sudory/pkg/server/macro"
 )
 
 type CommandType int
@@ -42,7 +44,7 @@ func NewCommander(command *StepCommand) (Commander, error) {
 	case "kubernetes":
 		return NewK8sCommander(command)
 	case "prometheus":
-		//
+		return NewP8sCommander(command)
 	case "helm":
 		//
 	}
@@ -117,11 +119,54 @@ func (c *K8sCommander) Run() (string, error) {
 }
 
 type P8sCommander struct {
-	// client *p8s.Client
+	client      *p8s.Client
+	apiVersion  string
+	api         string
+	queryParams map[string]interface{}
+}
+
+func NewP8sCommander(command *StepCommand) (Commander, error) {
+	cmdr := &P8sCommander{}
+
+	if err := cmdr.ParseCommand(command); err != nil {
+		return nil, err
+	}
+
+	return cmdr, nil
 }
 
 func (c *P8sCommander) GetCommandType() CommandType {
 	return CommandTypeP8s
+}
+
+func (c *P8sCommander) ParseCommand(command *StepCommand) error {
+	mlist := strings.SplitN(command.Method, ".", 3)
+
+	if len(mlist) != 3 {
+		return fmt.Errorf("there is not enough method(%s) for p8s. want(3) but got(%d)", command.Method, len(mlist))
+	}
+
+	c.api = mlist[1]
+	c.apiVersion = mlist[2]
+	c.queryParams = command.Args
+
+	url, ok := macro.MapString(command.Args, "url")
+	if !ok || len(url) == 0 {
+		return fmt.Errorf("prometheus url is empty")
+	}
+
+	client, err := p8s.NewClient(url)
+	if err != nil {
+		return err
+	}
+
+	c.client = client
+
+	return nil
+}
+
+func (c *P8sCommander) Run() (string, error) {
+	return c.client.ApiRequest(c.apiVersion, c.api, c.queryParams)
 }
 
 type HelmCommander struct {
