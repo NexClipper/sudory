@@ -16,7 +16,7 @@ func main() {
 	server := flag.String("server", "http://localhost:8099", "sudory server url")
 	clusterid := flag.String("clusterid", "", "sudory client's cluster id")
 	token := flag.String("token", "", "sudory client's token for server connection")
-	loglevel := flag.String("loglevel", "debug", "sudory client's log level. One of: debug(defualt)|info|warn|error. ")
+	loglevel := flag.String("loglevel", "debug", "sudory client's log level. One of: debug(defualt)|info|warn|error")
 
 	flag.Parse()
 
@@ -28,6 +28,10 @@ func main() {
 
 	if len(*clusterid) == 0 {
 		log.Fatalf("Client must have clusterid('%s').\n", *clusterid)
+	}
+
+	if len(*token) == 0 {
+		log.Fatalf("Client must have token('%s').\n", *token)
 	}
 
 	if err := httpclient.ValidateURL(*server); err != nil {
