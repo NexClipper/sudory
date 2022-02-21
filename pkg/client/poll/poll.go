@@ -3,6 +3,7 @@ package poll
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -36,6 +37,7 @@ func NewPoller(bearerToken, server, clusterId string, serviceScheduler *service.
 	if err != nil {
 		return nil, err
 	}
+	id = strings.ReplaceAll(id, "-", "")
 
 	return &Poller{bearerToken: bearerToken, server: server, machineID: id, clusterId: clusterId, client: httpclient.NewHttpClient(server, "", 0, 0), pollingInterval: defaultPollingInterval, pollingScheduler: gocron.NewScheduler(time.UTC), serviceScheduler: serviceScheduler}, nil
 }
