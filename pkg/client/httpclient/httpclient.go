@@ -1,7 +1,6 @@
 package httpclient
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	urlPkg "net/url"
@@ -57,6 +56,8 @@ func (hc *HttpClient) Request(method, path string, params map[string]string, bod
 		return time.Millisecond * time.Duration(hc.RetryInterval)
 	}
 
+	client.ErrorHandler = RetryableHttpErrorHandler
+
 	// client.HTTPClient.Timeout = time.Second
 
 	resp, err := client.Do(req)
@@ -65,8 +66,8 @@ func (hc *HttpClient) Request(method, path string, params map[string]string, bod
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
-		return nil, fmt.Errorf("received http status error code : %d", resp.StatusCode)
+	if err := CheckHttpResponseError(resp); err != nil {
+		return nil, err
 	}
 
 	if recvToken := resp.Header.Get(CustomHeaderClientToken); recvToken != "" {
