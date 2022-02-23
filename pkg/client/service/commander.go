@@ -6,6 +6,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/NexClipper/sudory/pkg/client/jq"
 	"github.com/NexClipper/sudory/pkg/client/k8s"
 	"github.com/NexClipper/sudory/pkg/client/p8s"
 	"github.com/NexClipper/sudory/pkg/server/macro"
@@ -17,6 +18,7 @@ const (
 	CommandTypeK8s = iota + 1
 	CommandTypeP8s
 	CommandTypeHelm
+	CommandTypeJq
 )
 
 func (ct CommandType) String() string {
@@ -47,6 +49,8 @@ func NewCommander(command *StepCommand) (Commander, error) {
 		return NewP8sCommander(command)
 	case "helm":
 		//
+	case "jq":
+		return NewJqCommander(command)
 	}
 
 	return nil, fmt.Errorf("unknown command method(%s)", command.Method)
@@ -175,4 +179,43 @@ type HelmCommander struct {
 
 func (c *HelmCommander) GetCommandType() CommandType {
 	return CommandTypeHelm
+}
+
+type JqCommander struct {
+	input  map[string]interface{}
+	filter string
+}
+
+func NewJqCommander(command *StepCommand) (Commander, error) {
+	cmdr := &JqCommander{}
+
+	if err := cmdr.ParseCommand(command); err != nil {
+		return nil, err
+	}
+
+	return cmdr, nil
+}
+
+func (c *JqCommander) GetCommandType() CommandType {
+	return CommandTypeJq
+}
+
+func (c *JqCommander) ParseCommand(command *StepCommand) error {
+	if m, ok := macro.MapMap(command.Args, "input"); ok {
+		c.input = m
+	} else {
+		return fmt.Errorf("input not found")
+	}
+
+	if f, ok := macro.MapString(command.Args, "filter"); ok {
+		c.filter = f
+	} else {
+		return fmt.Errorf("filter not found")
+	}
+
+	return nil
+}
+
+func (c *JqCommander) Run() (string, error) {
+	return jq.ProcessJson(c.input, c.filter)
 }
