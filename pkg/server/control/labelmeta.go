@@ -14,3 +14,13 @@ func NewLabelMeta(name string, summary *string) metav1.LabelMeta {
 		Summary:    summary,
 	}
 }
+
+func LabelMeta(uuid, name string, summary *string) metav1.LabelMeta {
+	const api_version = "v1"
+	return metav1.LabelMeta{
+		Uuid:       uuid,
+		ApiVersion: api_version,
+		Name:       name,
+		Summary:    summary,
+	}
+}

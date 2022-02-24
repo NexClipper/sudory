@@ -14,6 +14,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/jwt"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
+	clientv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
@@ -216,11 +217,25 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		//valid client
-		_, err = operator.NewClient(ctx.Database()).
-			Get(client_uuid)
+		//클라이언트를 조회 하여
+		//레코드에 없으면 추가
+		where := "cluster_uuid = ? AND uuid = ?"
+		clients, err := operator.NewClient(ctx.Database()).
+			Find(where, cluster_uuid, client_uuid)
 		if err != nil {
 			return nil, err
+		}
+		//없으면 추가
+		if len(clients) == 0 {
+			name := fmt.Sprintf("client:%s", client_uuid)
+			summary := fmt.Sprintf("client: %s, cluster: %s", client_uuid, cluster_uuid)
+			client := clientv1.Client{}
+			client.LabelMeta = LabelMeta(client_uuid, name, newist.String(summary))
+			client.ClusterUuid = cluster_uuid
+
+			if err = operator.NewClient(ctx.Database()).Create(client); err != nil {
+				return nil, err
+			}
 		}
 
 		//valid token
@@ -320,7 +335,7 @@ func newClientSession(payload ClientPlayload, token string) sessionv1.Session {
 	session := sessionv1.Session{}
 	session.Uuid = payload.Uuid
 	session.UserUuid = payload.ClientUuid
-	session.UserKind = token_user_kind_cluster
+	session.UserKind = "client"
 	session.Token = token
 	session.IssuedAtTime = payload.Iat
 	session.ExpirationTime = payload.Exp
