@@ -171,3 +171,20 @@ ALTER TABLE `service`
 --
 -- (FIN) OSS-67
 --
+
+--
+-- OSS-103
+--
+
+ALTER TABLE `cluster`
+	ADD UNIQUE INDEX IF NOT EXISTS `uuid` (`uuid`);
+
+ALTER TABLE `client`
+	ADD UNIQUE INDEX IF NOT EXISTS `uuid` (`uuid`);
+
+ALTER TABLE `client`
+	ADD INDEX IF NOT EXISTS `cluster_uuid` (`cluster_uuid`);
+
+--
+-- (FIN) OSS-103
+--
