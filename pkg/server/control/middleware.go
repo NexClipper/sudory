@@ -152,9 +152,14 @@ func (holder *RequestValue) Body() []byte {
 }
 
 func (holder *RequestValue) Bind(v interface{}) error {
-	if err := json.Unmarshal(holder.Body(), v); err != nil {
+
+	if err := holder.echo.Bind(v); err != nil {
 		return err
 	}
+
+	// if err := json.Unmarshal(holder.Body(), v); err != nil {
+	// 	return err
+	// }
 	holder.object = v
 	return nil
 }
@@ -441,7 +446,7 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 
 		err = exec_binder(opt.Binder, reqval)
 		if ErrorWithHandler(err,
-			func(err error) { logger.Error(errbindSink.String()) },
+			func(err error) { logger.Error(errbindSink.WithError(err).String()) },
 			func(err error) {
 				if erro := ctx.String(http.StatusBadRequest, err.Error()); erro != nil {
 					logger.Error(errRspSink.WithError(erro).WithValue("ebody", err).String())
@@ -454,7 +459,7 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		rsp, err = exec_operator(opt.Behavior, opt.Operator, reqval)
 
 		if ErrorWithHandler(err,
-			func(err error) { logger.Error(errOperateSink.String()) },
+			func(err error) { logger.Error(errOperateSink.WithError(err).String()) },
 			func(err error) {
 				//내부작업 오류
 				if erro := ctx.String(http.StatusInternalServerError, err.Error()); erro != nil {

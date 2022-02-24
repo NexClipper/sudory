@@ -52,14 +52,6 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			return ErrorBindRequestObject(err)
 		}
 
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-
-		if len(ctx.Params()[__UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__UUID__)
-		}
-
 		payload := getClientTokenPayload(ctx.Echo()) //read client token
 		if payload == nil {
 			return ErrorInvaliedRequestParameter()
@@ -67,13 +59,13 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		body, ok := ctx.Object().([]servicev1.HttpReqClientSideService)
+		body, ok := ctx.Object().(*[]servicev1.HttpReqClientSideService)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
 		//update service
-		err := foreach_client_service(body, func(service servicev1.Service, steps []stepv1.ServiceStep) error {
+		err := foreach_client_service(*body, func(service servicev1.Service, steps []stepv1.ServiceStep) error {
 
 			//service.Status 초기화
 			//service.Status; 상태가 가장큰 step의 Status
