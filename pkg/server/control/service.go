@@ -419,7 +419,7 @@ func foreach_service(elems []servicev1.Service, fn func(servicev1.Service) error
 	return nil
 }
 
-func foreach_client_service(elems []servicev1.HttpReqClientSideService, fn func(servicev1.Service, []stepv1.ServiceStep) error) error {
+func foreach_client_service_req(elems []servicev1.HttpReqClientSideService, fn func(servicev1.Service, []stepv1.ServiceStep) error) error {
 	for _, it := range elems {
 		if err := fn(it.Service, it.Steps); err != nil {
 			return err
@@ -428,6 +428,22 @@ func foreach_client_service(elems []servicev1.HttpReqClientSideService, fn func(
 	return nil
 }
 
+func foreach_client_service_rsp(elems []servicev1.HttpRspServiceWithSteps, fn func(servicev1.Service, []stepv1.ServiceStep) error) error {
+	for _, it := range elems {
+		if err := fn(it.Service, it.Steps); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func map_client_service_rsp(elems []servicev1.HttpRspServiceWithSteps, mapper func(servicev1.Service, []stepv1.ServiceStep) servicev1.HttpRspServiceWithSteps) []servicev1.HttpRspServiceWithSteps {
+	rst := make([]servicev1.HttpRspServiceWithSteps, len(elems))
+	for n := range elems {
+		rst[n] = mapper(elems[n].Service, elems[n].Steps)
+	}
+	return rst
+}
 func map_service(elems []servicev1.Service, mapper func(servicev1.Service) servicev1.Service) []servicev1.Service {
 	rst := make([]servicev1.Service, len(elems))
 	for n := range elems {

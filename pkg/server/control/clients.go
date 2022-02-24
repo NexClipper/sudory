@@ -66,7 +66,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		}
 
 		//update service
-		err := foreach_client_service(*body, func(service servicev1.Service, steps []stepv1.ServiceStep) error {
+		err := foreach_client_service_req(*body, func(service servicev1.Service, steps []stepv1.ServiceStep) error {
 
 			//service.Status 초기화
 			//service.Status; 상태가 가장큰 step의 Status
@@ -114,27 +114,36 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, err
 		}
+
 		//make response
 		push, pop := servicev1.HttpRspBuilder(len(services))
 		err = foreach_service(services, func(service servicev1.Service) error {
-			service_uuid := service.Uuid
-			where := "service_uuid = ?"
+
 			//find steps
+			where := "service_uuid = ?"
 			steps, err := operator.NewServiceStep(ctx.Database()).
-				Find(where, service_uuid)
+				Find(where, service.Uuid)
 			if err != nil {
 				return err
 			}
 
+			push(service, steps) //push
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		service_rsp := pop()
+
+		service_rsp = map_client_service_rsp(service_rsp, func(service servicev1.Service, steps []stepv1.ServiceStep) servicev1.HttpRspServiceWithSteps {
 			//service.Status 초기화
 			service.Status = newist.Int32(int32(servicev1.StatusRegist))
 			service.StepPosition = newist.Int32(0)
-
-			//check poll response
 			steps = map_step(steps, func(step stepv1.ServiceStep) stepv1.ServiceStep {
 				//StatusSend 보다 작으면 응답 전 업데이트
-				if nullable.Int32(service.Status).V() < int32(servicev1.StatusSend) {
-					service.Status = newist.Int32(int32(servicev1.StatusSend))
+				if nullable.Int32(step.Status).V() < int32(servicev1.StatusSend) {
+					step.Status = newist.Int32(int32(servicev1.StatusSend))
 				}
 
 				//step.Status 상태가 service.Status 보다 크다면
@@ -146,6 +155,13 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 				return step
 			})
 
+			//할당된 클라이언트 정보 추가
+			service.AssignedClientUuid = payload.ClientUuid
+
+			return servicev1.HttpRspServiceWithSteps{Service: service, Steps: steps}
+		})
+
+		err = foreach_client_service_rsp(service_rsp, func(service servicev1.Service, steps []stepv1.ServiceStep) error {
 			//save step
 			if err := foreach_step(steps, operator.NewServiceStep(ctx.Database()).Update); err != nil {
 				return err
@@ -155,14 +171,13 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 				return err
 			}
 
-			push(service, steps) //push
 			return nil
 		})
 		if err != nil {
 			return nil, err
 		}
 
-		return pop(), nil //pop
+		return service_rsp, nil //pop
 	}
 
 	return MakeMiddlewareFunc(Option{
