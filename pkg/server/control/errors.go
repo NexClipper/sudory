@@ -65,7 +65,7 @@ func WithCode(err error, msg string, code int) error {
 }
 
 func (e withCode) Error() string {
-	return fmt.Sprintf("code=%d: %s", e.code, e.Error())
+	return fmt.Sprintf("code=%d: %s", e.code, e.error.Error())
 }
 
 func (e withCode) Cause() error { return e.error }

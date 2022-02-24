@@ -61,28 +61,28 @@ func (sink sink) String() string {
 		a[3] = true
 	}
 
-	var s = bytes.Buffer{}
+	var buf = bytes.Buffer{}
 	for i := 0; i < len(a); i++ {
 
 		if !a[i] {
 			continue
 		}
-		if 0 < s.Len() {
-			s.WriteString(" ")
+		if 0 < buf.Len() {
+			buf.WriteString(" ")
 		}
 		switch i {
 		case 0:
-			s.WriteString(strconv.FormatUint(uint64(id), 10))
+			buf.WriteString(strconv.FormatUint(uint64(id), 10))
 		case 1:
-			s.WriteString("\"" + strings.Join(name, "<") + "\"")
+			buf.WriteString("\"" + strings.Join(name, "<") + "\"")
 		case 2:
-			s.WriteString("err=" + err.Error())
+			buf.WriteString("err=" + err.Error())
 		case 3:
-			s.WriteString(put(values...))
+			buf.WriteString(put(values...))
 		}
 
 	}
-	return s.String()
+	return buf.String()
 }
 
 func (s sink) Id() uint64 {
