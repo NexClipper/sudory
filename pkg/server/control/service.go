@@ -2,6 +2,7 @@ package control
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
@@ -9,6 +10,7 @@ import (
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
 
 // Create Service
@@ -17,27 +19,36 @@ import (
 // @Produce json
 // @Tags server/service
 // @Router /server/service [post]
-// @Param service body v1.HttpReqServiceWithSteps true "HttpReqServiceWithSteps"
+// @Param service body v1.HttpReqServiceCreate true "HttpReqServiceCreate"
 // @Success 200 {object} v1.HttpRspServiceWithSteps
 func (c *Control) CreateService() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
-		body := new(servicev1.HttpReqServiceWithSteps)
+		body := new(servicev1.HttpReqServiceCreate)
 		err := ctx.Bind(body)
 		if err != nil {
 			return ErrorBindRequestObject(err)
 		}
-		if len(body.Service.Name) == 0 {
+		if body.Name == nil {
 			return ErrorInvaliedRequestParameterName("Name")
 		}
+		if len(body.OriginKind) == 0 {
+			return ErrorInvaliedRequestParameterName("OriginKind")
+		}
+		if len(body.OriginUuid) == 0 {
+			return ErrorInvaliedRequestParameterName("OriginUuid")
+		}
+		if len(body.ClusterUuid) == 0 {
+			return ErrorInvaliedRequestParameterName("ClusterUuid")
+		}
 
-		err = foreach_step(body.Steps, func(ss stepv1.ServiceStep) error {
+		err = foreach_step_essential(body.Steps, func(ss stepv1.ServiceStepEssential) error {
 			//Name
-			if len(ss.Name) == 0 {
-				return ErrorInvaliedRequestParameterName("Step Name")
+			if ss.Name == nil {
+				return ErrorInvaliedRequestParameterName("Name")
 			}
 			//Method
-			if ss.Method == nil {
-				return ErrorInvaliedRequestParameterName("Method")
+			if ss.Args == nil {
+				return ErrorInvaliedRequestParameterName("Args")
 			}
 			return nil
 		})
@@ -47,38 +58,79 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		body, ok := ctx.Object().(*servicev1.HttpReqServiceWithSteps)
+		body, ok := ctx.Object().(*servicev1.HttpReqServiceCreate)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
-		service := body.Service
-		steps := body.Steps
+		service_essential := body.ServiceEssential
+		steps_essential := body.Steps
 
-		//property
+		//property service
+		service := servicev1.Service{}
+		service.Name = service_essential.Name
+		service.Summary = service_essential.Summary
+		service.OriginKind = &service_essential.OriginKind
+		service.OriginUuid = &service_essential.OriginUuid
+		service.ClusterUuid = &service_essential.ClusterUuid
+		//origin template uuid
+		trace, err := TraceServiceOrigin(ctx, service)
+		if err != nil {
+			return nil, err
+		}
+		if len(trace) == 0 {
+			return nil, fmt.Errorf("not found origin template")
+		}
+
+		template_uuid := strings.Split(trace[len(trace)-1], ":")[1] //last
+		service.TemplateUuid = newist.String(template_uuid)
+		//meta
+		service.UuidMeta = NewUuidMeta()
 		service.LabelMeta = NewLabelMeta(service.Name, service.Summary)
+		//Status
+		service.Status = newist.Int32(int32(servicev1.StatusRegist))
+
+		where := "template_uuid = ?"
+		commands, err := operator.NewTemplateCommand(ctx.Database()).Find(where, template_uuid)
+		if err != nil {
+			return nil, errors.WithMessage(err, "not found origin template commands")
+		}
+		if len(steps_essential) != len(commands) {
+			return nil, fmt.Errorf("diff length of steps and commands expect=%d actual=%d", len(commands), len(steps_essential))
+		}
+
+		//property step
+		seq := 0
+		steps := map_step_essential_to_step(steps_essential, func(ss stepv1.ServiceStepEssential) stepv1.ServiceStep {
+
+			command := commands[seq]
+
+			step := stepv1.ServiceStep{}
+			//LabelMeta
+			step.UuidMeta = NewUuidMeta()
+			step.LabelMeta = NewLabelMeta(ss.Name, ss.Summary)
+			//ServiceUuid
+			step.ServiceUuid = service.Uuid
+			//Sequence
+			step.Sequence = newist.Int32(int32(seq))
+			//Status = Regist
+			step.Status = newist.Int32(int32(servicev1.StatusRegist))
+			//Method Args
+			step.Method = command.Method
+			step.Args = ss.Args
+			// step.Result = newist.String("")
+
+			seq++
+			return step
+		})
 
 		//create service
-		err := operator.NewService(ctx.Database()).
+		err = operator.NewService(ctx.Database()).
 			Create(service)
 		if err != nil {
 			return nil, err
 		}
-
-		//create step
-		seq := int32(0)
-		steps = map_step(steps, func(ss stepv1.ServiceStep) stepv1.ServiceStep {
-			//LabelMeta
-			ss.LabelMeta = NewLabelMeta(ss.Name, ss.Summary)
-			//ServiceUuid
-			ss.ServiceUuid = service.Uuid
-			//Sequence
-			ss.Sequence = newist.Int32(seq)
-			seq++
-			//Status = Regist
-			ss.Status = newist.Int32(int32(servicev1.StatusRegist))
-			return ss
-		})
+		//create steps
 		err = foreach_step(steps, func(ss stepv1.ServiceStep) error {
 			if err := operator.NewServiceStep(ctx.Database()).
 				Create(ss); err != nil {
@@ -95,7 +147,7 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		return servicev1.HttpRspServiceWithSteps{Service: service, Steps: steps}, nil
+		return servicev1.HttpRspServiceWithSteps{ServiceAndSteps: servicev1.ServiceAndSteps{Service: service, Steps: steps}}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -220,7 +272,7 @@ func (c *Control) GetService() func(ctx echo.Context) error {
 		//서비스 조회에 결과 필드는 제거
 		*service = service_exclude_result(*service)
 
-		rsp := &servicev1.HttpRspServiceWithSteps{Service: *service, Steps: steps}
+		rsp := &servicev1.HttpRspServiceWithSteps{ServiceAndSteps: servicev1.ServiceAndSteps{Service: *service, Steps: steps}}
 
 		return rsp, nil
 	}
@@ -270,7 +322,7 @@ func (c *Control) GetServiceResult() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		rsp := &servicev1.HttpRspServiceWithSteps{Service: *service, Steps: steps}
+		rsp := &servicev1.HttpRspServiceWithSteps{ServiceAndSteps: servicev1.ServiceAndSteps{Service: *service, Steps: steps}}
 
 		return rsp, nil
 	}
@@ -418,36 +470,74 @@ func foreach_service(elems []servicev1.Service, fn func(servicev1.Service) error
 	}
 	return nil
 }
-
-func foreach_client_service_req(elems []servicev1.HttpReqClientSideService, fn func(servicev1.Service, []stepv1.ServiceStep) error) error {
-	for _, it := range elems {
-		if err := fn(it.Service, it.Steps); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func foreach_client_service_rsp(elems []servicev1.HttpRspServiceWithSteps, fn func(servicev1.Service, []stepv1.ServiceStep) error) error {
-	for _, it := range elems {
-		if err := fn(it.Service, it.Steps); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func map_client_service_rsp(elems []servicev1.HttpRspServiceWithSteps, mapper func(servicev1.Service, []stepv1.ServiceStep) servicev1.HttpRspServiceWithSteps) []servicev1.HttpRspServiceWithSteps {
-	rst := make([]servicev1.HttpRspServiceWithSteps, len(elems))
-	for n := range elems {
-		rst[n] = mapper(elems[n].Service, elems[n].Steps)
-	}
-	return rst
-}
 func map_service(elems []servicev1.Service, mapper func(servicev1.Service) servicev1.Service) []servicev1.Service {
 	rst := make([]servicev1.Service, len(elems))
 	for n := range elems {
 		rst[n] = mapper(elems[n])
 	}
 	return rst
+}
+
+func foreach_client_service_and_steps(elems []servicev1.ServiceAndSteps, fn func(servicev1.Service, []stepv1.ServiceStep) error) error {
+	for _, it := range elems {
+		if err := fn(it.Service, it.Steps); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func map_client_service_and_steps(elems []servicev1.ServiceAndSteps, mapper func(servicev1.Service, []stepv1.ServiceStep) servicev1.ServiceAndSteps) []servicev1.ServiceAndSteps {
+	rst := make([]servicev1.ServiceAndSteps, len(elems))
+	for n := range elems {
+		rst[n] = mapper(elems[n].Service, elems[n].Steps)
+	}
+	return rst
+}
+
+func foreach_step_essential(elems []stepv1.ServiceStepEssential, fn func(stepv1.ServiceStepEssential) error) error {
+	for _, it := range elems {
+		if err := fn(it); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func map_step_essential_to_step(elems []stepv1.ServiceStepEssential, mapper func(stepv1.ServiceStepEssential) stepv1.ServiceStep) []stepv1.ServiceStep {
+	rst := make([]stepv1.ServiceStep, len(elems))
+	for n := range elems {
+		rst[n] = mapper(elems[n])
+	}
+	return rst
+}
+
+func TraceServiceOrigin(ctx Contexter, service servicev1.Service) ([]string, error) {
+	trace := make([]string, 0)
+
+	apnd := func(kind, uuid string) {
+		trace = append(trace, fmt.Sprintf("%s:%s", kind, uuid))
+	}
+
+LOOP:
+	for {
+		switch *service.OriginKind {
+		case "template":
+			template, err := operator.NewTemplate(ctx.Database()).Get(*service.OriginUuid)
+			if err != nil {
+				return nil, err
+			}
+			apnd("template", template.Uuid)
+			break LOOP
+		case "service":
+			service_, err := operator.NewService(ctx.Database()).Get(*service.OriginUuid)
+			if err != nil {
+				return nil, err
+			}
+			apnd("template", service_.Uuid)
+			service = *service_
+		}
+	}
+
+	return trace, nil
 }

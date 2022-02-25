@@ -57,9 +57,9 @@ func TestClusterCRUD(t *testing.T) {
 		out := clusterv1.DbSchemaCluster{}
 
 		out.Uuid = "00001111222233334444555566667777"
-		out.Name = "(NEW) test-cluster-name"
+		out.Name = newist.String("(NEW) test-cluster-name")
 		out.Summary = newist.String("(NEW) test cluster")
-		out.ApiVersion = "v1"
+		out.ApiVersion = newist.String("v1")
 
 		return &out
 	}
@@ -67,9 +67,9 @@ func TestClusterCRUD(t *testing.T) {
 		out := clusterv1.DbSchemaCluster{}
 
 		out.Uuid = "00001111222233334444555566667777"
-		out.Name = "(UPDATED) test-cluster-name"
+		out.Name = newist.String("(UPDATED) test-cluster-name")
 		out.Summary = newist.String("(UPDATED) test cluster")
-		out.ApiVersion = "v1"
+		out.ApiVersion = newist.String("v1")
 
 		return &out
 	}

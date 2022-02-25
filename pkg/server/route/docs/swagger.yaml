@@ -138,6 +138,31 @@ definitions:
         description: UUID
         type: string
     type: object
+  v1.HttpReqServiceCreate:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      cluster_uuid:
+        description: 클러스터 UUID
+        type: string
+      name:
+        description: label name
+        type: string
+      origin_kind:
+        description: 오리진 종류
+        type: string
+      origin_uuid:
+        description: 오리진 UUID
+        type: string
+      steps:
+        items:
+          $ref: '#/definitions/v1.ServiceStepEssential'
+        type: array
+      summary:
+        description: label summary
+        type: string
+    type: object
   v1.HttpReqServiceStep:
     properties:
       api_version:
@@ -174,61 +199,6 @@ definitions:
       summary:
         description: label summary
         type: string
-      uuid:
-        description: UUID
-        type: string
-    type: object
-  v1.HttpReqServiceWithSteps:
-    properties:
-      api_version:
-        description: api version
-        type: string
-      assigned_client_uuid:
-        description: 할당된 클라이언트 UUID
-        type: string
-      cluster_uuid:
-        description: 클러스터 UUID
-        type: string
-      epoch:
-        description: 'Epoch -1: infinite, 0 :'
-        type: integer
-      interval:
-        description: Interval
-        type: integer
-      name:
-        description: label name
-        type: string
-      origin_kind:
-        description: 오리진 종류
-        type: string
-      origin_uuid:
-        description: 오리진 UUID
-        type: string
-      result:
-        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
-        type: string
-      status:
-        description: Status
-        type: integer
-      step_count:
-        description: 스탭 카운트
-        type: integer
-      step_position:
-        description: 스탭 Position
-        type: integer
-      steps:
-        items:
-          $ref: '#/definitions/v1.ServiceStep'
-        type: array
-      summary:
-        description: label summary
-        type: string
-      template_uuid:
-        description: 텔플릿 UUID
-        type: string
-      type:
-        description: 'Type; 0: Once, 1: repeat(epoch, interval)'
-        type: integer
       uuid:
         description: UUID
         type: string
@@ -694,9 +664,6 @@ definitions:
       summary:
         description: label summary
         type: string
-      uuid:
-        description: UUID
-        type: string
     type: object
   v1.ServiceStep:
     properties:
@@ -736,6 +703,22 @@ definitions:
         type: string
       uuid:
         description: UUID
+        type: string
+    type: object
+  v1.ServiceStepEssential:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      args:
+        additionalProperties: true
+        description: arguments
+        type: object
+      name:
+        description: label name
+        type: string
+      summary:
+        description: label summary
         type: string
     type: object
   v1.TemplateCommand:
@@ -1172,12 +1155,12 @@ paths:
       - application/json
       description: Create a Service
       parameters:
-      - description: HttpReqServiceWithSteps
+      - description: HttpReqServiceCreate
         in: body
         name: service
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqServiceWithSteps'
+          $ref: '#/definitions/v1.HttpReqServiceCreate'
       produces:
       - application/json
       responses:

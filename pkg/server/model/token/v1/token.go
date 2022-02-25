@@ -18,6 +18,7 @@ type TokenProperty struct {
 
 //Token
 type Token struct {
+	metav1.UuidMeta  `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta `json:",inline" xorm:"extends"` //inline labelmeta
 	TokenProperty    `json:",inline" xorm:"extends"` //inline property
 }

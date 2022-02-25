@@ -23,7 +23,7 @@ func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
 		if err := ctx.Bind(body); err != nil {
 			return ErrorBindRequestObject(err)
 		}
-		if len(body.Name) == 0 {
+		if body.Name == nil {
 			return ErrorInvaliedRequestParameterName("Name")
 		}
 		if body.Method == nil {
@@ -49,6 +49,7 @@ func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
 		template_uuid := ctx.Params()[__TEMPLATE_UUID__]
 
 		//property
+		command.UuidMeta = NewUuidMeta()
 		command.LabelMeta = NewLabelMeta(command.Name, command.Summary)
 		command.TemplateUuid = template_uuid
 		if command.Sequence == nil {

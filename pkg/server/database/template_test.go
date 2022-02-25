@@ -57,9 +57,9 @@ func TestTemplateCRUD(t *testing.T) {
 		out := templatev1.DbSchemaTemplate{}
 
 		out.Uuid = "00001111222233334444555566667777"
-		out.Name = "(NEW) test-template"
+		out.Name = newist.String("(NEW) test-template")
 		out.Summary = newist.String("(NEW) test template")
-		out.ApiVersion = "v1"
+		out.ApiVersion = newist.String("v1")
 		out.Origin = newist.String("origin")
 
 		return &out
@@ -68,9 +68,9 @@ func TestTemplateCRUD(t *testing.T) {
 		out := templatev1.DbSchemaTemplate{}
 
 		out.Uuid = "00001111222233334444555566667777"
-		out.Name = "(UPDATED) test-template"
+		out.Name = newist.String("(UPDATED) test-template")
 		out.Summary = newist.String("(UPDATED) test template")
-		out.ApiVersion = "v1"
+		out.ApiVersion = newist.String("v1")
 		out.Origin = newist.String("changed-origin")
 
 		return &out

@@ -11,6 +11,7 @@ type ClusterProperty struct {
 
 //Cluster
 type Cluster struct {
+	metav1.UuidMeta  `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta `json:",inline" xorm:"extends"` //inline labelmeta
 	ClusterProperty  `json:",inline" xorm:"extends"` //inline property
 }

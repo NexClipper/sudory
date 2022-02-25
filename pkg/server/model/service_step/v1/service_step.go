@@ -27,6 +27,7 @@ type ServiceStepProperty struct {
 }
 
 type ServiceStep struct {
+	metav1.UuidMeta     `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta    `json:",inline" xorm:"extends"` //inline labelmeta
 	ServiceStepProperty `json:",inline" xorm:"extends"` //inline property
 }
@@ -41,6 +42,16 @@ var _ orm.TableName = (*DbSchemaServiceStep)(nil)
 
 func (DbSchemaServiceStep) TableName() string {
 	return "service_step"
+}
+
+type ServiceStepPropertyEssential struct {
+	//arguments
+	Args map[string]interface{} `json:"args,omitempty"`
+}
+
+type ServiceStepEssential struct {
+	metav1.LabelMeta             `json:",inline"` //inline labelmeta
+	ServiceStepPropertyEssential `json:",inline"` //inline property
 }
 
 //HTTP REQUEST BODY: SERVICE_STEP

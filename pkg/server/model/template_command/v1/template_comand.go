@@ -20,6 +20,7 @@ type TemplateCommandProperty struct {
 
 //MODEL: TEMPLATE_COMMAND
 type TemplateCommand struct {
+	metav1.UuidMeta         `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta        `json:",inline" xorm:"extends"` //inline labelmeta
 	TemplateCommandProperty `json:",inline" xorm:"extends"` //inline property
 }

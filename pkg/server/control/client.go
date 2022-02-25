@@ -24,7 +24,9 @@ func (c *Control) CreateClient() func(ctx echo.Context) error {
 		if err := ctx.Bind(body); err != nil {
 			return ErrorBindRequestObject(err)
 		}
-
+		if body.Name == nil {
+			return ErrorInvaliedRequestParameterName("Name")
+		}
 		if len(body.ClusterUuid) == 0 {
 			return ErrorInvaliedRequestParameterName("ClusterUuid")
 		}
@@ -40,6 +42,7 @@ func (c *Control) CreateClient() func(ctx echo.Context) error {
 		client := body.Client
 
 		//property
+		client.UuidMeta = NewUuidMeta()
 		client.LabelMeta = NewLabelMeta(client.Name, client.Summary)
 
 		err := operator.NewClient(ctx.Database()).

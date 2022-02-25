@@ -33,7 +33,7 @@ func (chron *EnvironmentChron) Update() error {
 	}
 
 	foreach_environment(envv1.TransFormDbSchema(records), func(elem envv1.Environment) bool {
-		os.Setenv(elem.Name, *elem.Value)
+		os.Setenv(*elem.Name, *elem.Value)
 		return true
 	})
 
@@ -58,7 +58,7 @@ func (chron *EnvironmentChron) WhiteListCheck() error {
 		var found bool = false
 		foreach_environment(envv1.TransFormDbSchema(records), func(elem envv1.Environment) bool {
 
-			if key == elem.Name {
+			if key == *elem.Name {
 				found = true
 				return false
 			}
@@ -88,7 +88,7 @@ func (chron *EnvironmentChron) Merge() error {
 		var found bool = false
 		foreach_environment(envv1.TransFormDbSchema(records), func(elem envv1.Environment) bool {
 
-			if key == elem.Name {
+			if key == *elem.Name {
 				found = true
 				return false
 			}

@@ -57,13 +57,13 @@ func TestTemplateCommandCRUD(t *testing.T) {
 		out := commandv1.DbSchemaTemplateCommand{}
 
 		out.Uuid = "00001111222233334444555566667777"
-		out.Name = "(NEW) test-template-command"
+		out.Name = newist.String("(NEW) test-template-command")
 		out.Summary = newist.String("(NEW) test template command")
-		out.ApiVersion = "v1"
+		out.ApiVersion = newist.String("v1")
 		out.TemplateUuid = "00001111222233334444555566667777"
 		out.Sequence = newist.Int32(0)
 		out.Method = newist.String("test.method.get.v1")
-		out.Args = map[string]string{
+		out.Args = map[string]interface{}{
 			"name":  "test-name",
 			"arg-1": "test-arg-1",
 		}
@@ -74,13 +74,13 @@ func TestTemplateCommandCRUD(t *testing.T) {
 		out := commandv1.DbSchemaTemplateCommand{}
 
 		out.Uuid = "00001111222233334444555566667777"
-		out.Name = "(UPDATED) test-template-command"
+		out.Name = newist.String("(UPDATED) test-template-command")
 		out.Summary = newist.String("(UPDATED) test template command")
-		out.ApiVersion = "v1"
+		out.ApiVersion = newist.String("v1")
 		out.TemplateUuid = "00001111222233334444555566667777"
 		out.Sequence = newist.Int32(0)
 		out.Method = newist.String("test.method.get.v1")
-		out.Args = map[string]string{
+		out.Args = map[string]interface{}{
 			"name":  "test-name",
 			"arg-1": "test-arg-1",
 		}

@@ -64,7 +64,7 @@ func TestHttpReqServiceJson(t *testing.T) {
 
 func TestHttpReqClientSideServiceJson(t *testing.T) {
 
-	m := HttpReqClientSideService{Service: NewService().Service}
+	m := HttpReqClientSideService{ServiceAndSteps: ServiceAndSteps{Service: NewService().Service}}
 
 	data, err := json.MarshalIndent(m, "", " ")
 	if err != nil {
@@ -92,10 +92,10 @@ func NewService() DbSchemaService {
 	out.Updated = newist.Time(time.Now())
 	out.Deleted = nil
 	out.Uuid = "00001111222233334444555566667777"
-	out.Name = "test-name"
+	out.Name = newist.String("test-name")
 	out.Summary = newist.String("test: ...")
-	out.ApiVersion = "v1"
-	out.ClusterUuid = ClusterUuid
+	out.ApiVersion = newist.String("v1")
+	out.ClusterUuid = newist.String(ClusterUuid)
 	out.StepCount = newist.Int32(0)
 	out.StepPosition = newist.Int32(0)
 	out.Type = newist.Int32(0)

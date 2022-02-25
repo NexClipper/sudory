@@ -18,6 +18,7 @@ type SessionProperty struct {
 
 //Session
 type Session struct {
+	metav1.UuidMeta  `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta `json:",inline" xorm:"extends"` //inline labelmeta
 	SessionProperty  `json:",inline" xorm:"extends"` //inline property
 }

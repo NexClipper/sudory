@@ -13,6 +13,7 @@ type ClientProperty struct {
 
 //Client
 type Client struct {
+	metav1.UuidMeta  `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta `json:",inline" xorm:"extends"` //inline labelmeta
 	ClientProperty   `json:",inline" xorm:"extends"` //inline property
 }

@@ -39,14 +39,14 @@ func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 			return ErrorBindRequestObject(err)
 		}
 
-		if len(body.Token.Name) == 0 {
-			return ErrorInvaliedRequestParameterName("Token.Name")
+		if body.Name == nil {
+			return ErrorInvaliedRequestParameterName("Name")
 		}
-		if len(body.Token.UserUuid) == 0 {
-			return ErrorInvaliedRequestParameterName("Token.UserUuid")
+		if len(body.UserUuid) == 0 {
+			return ErrorInvaliedRequestParameterName("UserUuid")
 		}
-		// if len(body.Token.Token) == 0 {
-		// 	return nil, ErrorInvaliedRequestParameterName("Token.Token")
+		// if len(body.Token) == 0 {
+		// 	return nil, ErrorInvaliedRequestParameterName("Token")
 		// }
 		return nil
 	}
@@ -65,6 +65,7 @@ func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 		}
 
 		//property
+		token.UuidMeta = NewUuidMeta()
 		token.LabelMeta = NewLabelMeta(token.Name, token.Summary)
 		token.UserKind = user_kind
 		token.IssuedAtTime, token.ExpirationTime = bearerTokenTimeIssueNow()
@@ -207,9 +208,9 @@ func (c *Control) UpdateTokenLabel() func(ctx echo.Context) error {
 			return ErrorBindRequestObject(err)
 		}
 
-		if len(body.Name) == 0 {
-			return ErrorInvaliedRequestParameterName("LabelMeta.Name")
-		}
+		// if body.Name == nil {
+		// 	return ErrorInvaliedRequestParameterName("Name")
+		// }
 
 		return nil
 	}

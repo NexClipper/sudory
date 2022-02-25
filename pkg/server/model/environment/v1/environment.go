@@ -12,6 +12,7 @@ type EnvironmentProperty struct {
 
 //Environment
 type Environment struct {
+	metav1.UuidMeta     `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta    `json:",inline" xorm:"extends"` //inline labelmeta
 	EnvironmentProperty `json:",inline" xorm:"extends"` //inline property
 }

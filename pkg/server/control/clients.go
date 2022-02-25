@@ -47,6 +47,22 @@ type ClientPlayload struct {
 // @Header      200 {string} x-sudory-client-token "x-sudory-client-token"
 func (c *Control) PollService() func(ctx echo.Context) error {
 
+	unwarp := func(elems []servicev1.HttpReqClientSideService) []servicev1.ServiceAndSteps {
+		out := make([]servicev1.ServiceAndSteps, len(elems))
+		for n := range elems {
+			out[n] = elems[n].ServiceAndSteps
+		}
+		return out
+	}
+
+	warp := func(elems []servicev1.ServiceAndSteps) []servicev1.HttpRspClientSideService {
+		out := make([]servicev1.HttpRspClientSideService, len(elems))
+		for n := range elems {
+			out[n] = servicev1.HttpRspClientSideService{ServiceAndSteps: elems[n]}
+		}
+		return out
+	}
+
 	binder := func(ctx Contexter) error {
 		body := new([]servicev1.HttpReqClientSideService)
 		if err := ctx.Bind(body); err != nil {
@@ -66,7 +82,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		}
 
 		//update service
-		err := foreach_client_service_req(*body, func(service servicev1.Service, steps []stepv1.ServiceStep) error {
+		err := foreach_client_service_and_steps(unwarp(*body), func(service servicev1.Service, steps []stepv1.ServiceStep) error {
 
 			//service.Status 초기화
 			//service.Status; 상태가 가장큰 step의 Status
@@ -136,7 +152,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 
 		service_rsp := pop()
 
-		service_rsp = map_client_service_rsp(service_rsp, func(service servicev1.Service, steps []stepv1.ServiceStep) servicev1.HttpRspServiceWithSteps {
+		service_rsp = map_client_service_and_steps(service_rsp, func(service servicev1.Service, steps []stepv1.ServiceStep) servicev1.ServiceAndSteps {
 			//service.Status 초기화
 			service.Status = newist.Int32(int32(servicev1.StatusRegist))
 			service.StepPosition = newist.Int32(0)
@@ -156,12 +172,12 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			})
 
 			//할당된 클라이언트 정보 추가
-			service.AssignedClientUuid = payload.ClientUuid
+			service.AssignedClientUuid = newist.String(payload.ClientUuid)
 
-			return servicev1.HttpRspServiceWithSteps{Service: service, Steps: steps}
+			return servicev1.ServiceAndSteps{Service: service, Steps: steps}
 		})
 
-		err = foreach_client_service_rsp(service_rsp, func(service servicev1.Service, steps []stepv1.ServiceStep) error {
+		err = foreach_client_service_and_steps(service_rsp, func(service servicev1.Service, steps []stepv1.ServiceStep) error {
 			//save step
 			if err := foreach_step(steps, operator.NewServiceStep(ctx.Database()).Update); err != nil {
 				return err
@@ -177,7 +193,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		return service_rsp, nil //pop
+		return warp(service_rsp), nil //pop
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -245,7 +261,8 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 			name := fmt.Sprintf("client:%s", client_uuid)
 			summary := fmt.Sprintf("client: %s, cluster: %s", client_uuid, cluster_uuid)
 			client := clientv1.Client{}
-			client.LabelMeta = LabelMeta(client_uuid, name, newist.String(summary))
+			client.Uuid = client_uuid
+			client.LabelMeta = NewLabelMeta(newist.String(name), newist.String(summary))
 			client.ClusterUuid = cluster_uuid
 
 			if err = operator.NewClient(ctx.Database()).Create(client); err != nil {

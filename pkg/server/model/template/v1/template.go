@@ -15,6 +15,7 @@ type TemplateProperty struct {
 
 //Template
 type Template struct {
+	metav1.UuidMeta  `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta `json:",inline" xorm:"extends"` //inline labelmeta
 	TemplateProperty `json:",inline" xorm:"extends"` //inline property
 }

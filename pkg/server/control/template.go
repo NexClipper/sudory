@@ -37,6 +37,7 @@ func (c *Control) CreateTemplate() func(ctx echo.Context) error {
 		commmands := body.Commands
 
 		//property
+		template.UuidMeta = NewUuidMeta()
 		template.LabelMeta = NewLabelMeta(template.Name, template.Summary)
 
 		//create template
@@ -49,6 +50,7 @@ func (c *Control) CreateTemplate() func(ctx echo.Context) error {
 		seq := int32(0)
 		commmands = map_command(commmands, func(tc commandv1.TemplateCommand) commandv1.TemplateCommand {
 			//LabelMeta
+			tc.UuidMeta = NewUuidMeta()
 			tc.LabelMeta = NewLabelMeta(tc.Name, tc.Summary)
 			//TemplateUuid
 			tc.TemplateUuid = template.Uuid

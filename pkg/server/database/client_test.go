@@ -57,9 +57,9 @@ func TestClientCRUD(t *testing.T) {
 		out := clientv1.DbSchemaClient{}
 
 		out.Uuid = "00001111222233334444555566667777"
-		out.Name = "(NEW) test-client-name"
+		out.Name = newist.String("(NEW) test-client-name")
 		out.Summary = newist.String("(NEW) test client")
-		out.ApiVersion = "v1"
+		out.ApiVersion = newist.String("v1")
 		out.ClusterUuid = "cluster_uuid:1234"
 
 		return &out
@@ -68,9 +68,9 @@ func TestClientCRUD(t *testing.T) {
 		out := clientv1.DbSchemaClient{}
 
 		out.Uuid = "00001111222233334444555566667777"
-		out.Name = "(UPDATED) test-client-name"
+		out.Name = newist.String("(UPDATED) test-client-name")
 		out.Summary = newist.String("(UPDATED) test client")
-		out.ApiVersion = "v1"
+		out.ApiVersion = newist.String("v1")
 		out.ClusterUuid = "cluster_uuid:4321"
 
 		return &out

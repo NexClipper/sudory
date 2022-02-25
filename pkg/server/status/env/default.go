@@ -33,8 +33,8 @@ func Convert(key Env, value Default) envv1.Environment {
 	out := envv1.Environment{}
 
 	out.Uuid = value.Uuid
-	out.ApiVersion = ApiVersion
-	out.Name = key.String()
+	out.ApiVersion = newist.String(ApiVersion)
+	out.Name = newist.String(key.String())
 	out.Summary = newist.String(fmt.Sprintf("%s default='%s'", value.Summary, value.Value))
 	out.Value = newist.String(value.Value)
 

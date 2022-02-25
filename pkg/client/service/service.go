@@ -72,8 +72,8 @@ func ServiceListServerToClient(server []servicev1.HttpRspClientSideService) map[
 	for _, v := range server {
 		serv := &Service{
 			Id:         v.Uuid,
-			Name:       v.Name,
-			ClusterId:  v.ClusterUuid,
+			Name:       *v.Name,
+			ClusterId:  *v.ClusterUuid,
 			serverData: v,
 		}
 		for i, s := range v.Steps {
@@ -96,7 +96,7 @@ func ServiceListClientToServer(client map[string]ServiceChecked) []servicev1.Htt
 	}
 
 	for _, v := range client {
-		serv := servicev1.HttpReqClientSideService{Service: v.service.serverData.Service, Steps: v.service.serverData.Steps}
+		serv := servicev1.HttpReqClientSideService{ServiceAndSteps: servicev1.ServiceAndSteps{Service: v.service.serverData.Service, Steps: v.service.serverData.Steps}}
 		switch v.service.Status {
 		case ServiceStatusPreparing, ServiceStatusStart, ServiceStatusProcessing:
 			serv.Service.Status = newist.Int32(int32(servicev1.StatusProcessing))

@@ -25,7 +25,7 @@ func (c *Control) CreateServiceStep() func(ctx echo.Context) error {
 		if err := ctx.Bind(body); err != nil {
 			return ErrorBindRequestObject(err)
 		}
-		if len(body.Name) == 0 {
+		if body.Name == nil {
 			return ErrorInvaliedRequestParameterName("Name")
 		}
 		if body.Method == nil {
@@ -51,6 +51,7 @@ func (c *Control) CreateServiceStep() func(ctx echo.Context) error {
 		service_uuid := ctx.Params()[__SERVICE_UUID__]
 
 		//property
+		step.UuidMeta = NewUuidMeta()
 		step.LabelMeta = NewLabelMeta(step.Name, step.Summary)
 		step.ServiceUuid = service_uuid
 		if step.Sequence == nil {

@@ -25,9 +25,9 @@ type ServiceProperty struct {
 	//오리진 UUID
 	OriginUuid *string `json:"origin_uuid,omitempty" xorm:"char(32) notnull index 'origin_uuid' comment('service origin uuid')"`
 	//클러스터 UUID
-	ClusterUuid string `json:"cluster_uuid" xorm:"char(32) notnull index 'cluster_uuid' comment('cluster's uuid')"`
+	ClusterUuid *string `json:"cluster_uuid" xorm:"char(32) notnull index 'cluster_uuid' comment('cluster's uuid')"`
 	//할당된 클라이언트 UUID
-	AssignedClientUuid string `json:"assigned_client_uuid" xorm:"char(32) notnull index 'assigned_client_uuid' comment('client's uuid when service assigned')"`
+	AssignedClientUuid *string `json:"assigned_client_uuid" xorm:"char(32) notnull index 'assigned_client_uuid' comment('client's uuid when service assigned')"`
 	//스탭 카운트
 	StepCount *int32 `json:"step_count,omitempty" xorm:"int null default(0) 'step_count' comment('step_count')"`
 	//스탭 Position
@@ -46,6 +46,7 @@ type ServiceProperty struct {
 
 //MODEL: SERVICE
 type Service struct {
+	metav1.UuidMeta  `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta `json:",inline" xorm:"extends"` //inline labelmeta
 	ServiceProperty  `json:",inline" xorm:"extends"` //inline property
 }
@@ -62,6 +63,33 @@ func (DbSchemaService) TableName() string {
 	return "service"
 }
 
+type ServiceAndSteps struct {
+	Service `json:",inline"`
+	Steps   []stepv1.ServiceStep `json:"steps"`
+}
+
+// Essential
+type ServicePropertyEssential struct {
+	//오리진 종류
+	OriginKind string `json:"origin_kind"`
+	//오리진 UUID
+	OriginUuid string `json:"origin_uuid"`
+	//클러스터 UUID
+	ClusterUuid string `json:"cluster_uuid"`
+}
+
+// Essential
+type ServiceEssential struct {
+	metav1.LabelMeta         `json:",inline"` //inline labelmeta
+	ServicePropertyEssential `json:",inline"` //inline property
+}
+
+// Essential
+type ServiceAndStepsEssential struct {
+	ServiceEssential `json:",inline"`
+	Steps            []stepv1.ServiceStepEssential `json:"steps"`
+}
+
 //HTTP REQUEST BODY: SERVICE
 type HttpReqService struct {
 	Service `json:",inline"`
@@ -73,27 +101,23 @@ type HttpRspService struct {
 }
 
 //HTTP REQUEST BODY: SERVICE (with steps)
-type HttpReqServiceWithSteps struct {
-	Service `json:",inline"`
-	Steps   []stepv1.ServiceStep `json:"steps"`
+type HttpReqServiceCreate struct {
+	ServiceAndStepsEssential `json:",inline"`
 }
 
 //HTTP RESPONSE BODY: SERVICE
 type HttpRspServiceWithSteps struct {
-	Service `json:",inline"`
-	Steps   []stepv1.ServiceStep `json:"steps"`
+	ServiceAndSteps `json:",inline"`
 }
 
 //HTTP REQUEST BODY: SERVICE (client)
 type HttpReqClientSideService struct {
-	Service `json:",inline"`
-	Steps   []stepv1.ServiceStep `json:"steps"`
+	ServiceAndSteps `json:",inline"`
 }
 
 //HTTP RESPONSE BODY: SERVICE (client)
 type HttpRspClientSideService struct {
-	Service `json:",inline"`
-	Steps   []stepv1.ServiceStep `json:"steps"`
+	ServiceAndSteps `json:",inline"`
 }
 
 //변환 DbSchema -> Service
@@ -115,14 +139,14 @@ func TransFormDbSchema(s []DbSchemaService) []Service {
 // }
 
 //Build Template -> HttpRsp
-func HttpRspBuilder(length int) (func(a Service, b []stepv1.ServiceStep), func() []HttpRspServiceWithSteps) {
+func HttpRspBuilder(length int) (func(a Service, b []stepv1.ServiceStep), func() []ServiceAndSteps) {
 	var pos int = 0
-	queue := make([]HttpRspServiceWithSteps, length)
+	queue := make([]ServiceAndSteps, length)
 	pusher := func(a Service, b []stepv1.ServiceStep) {
-		queue[pos] = HttpRspServiceWithSteps{Service: a, Steps: b}
+		queue[pos] = ServiceAndSteps{Service: a, Steps: b}
 		pos++
 	}
-	poper := func() []HttpRspServiceWithSteps {
+	poper := func() []ServiceAndSteps {
 		return queue
 	}
 	return pusher, poper

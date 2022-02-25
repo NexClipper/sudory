@@ -57,10 +57,10 @@ func TestServiceCRUD(t *testing.T) {
 		out := servicev1.DbSchemaService{}
 
 		out.Uuid = "00001111222233334444555566667777"
-		out.Name = "(NEW) test-Service"
+		out.Name = newist.String("(NEW) test-Service")
 		out.Summary = newist.String("(NEW) test Service")
-		out.ApiVersion = "v1"
-		out.ClusterUuid = "00001111222233334444555566667777"
+		out.ApiVersion = newist.String("v1")
+		out.ClusterUuid = newist.String("00001111222233334444555566667777")
 		out.StepCount = newist.Int32(0)
 		out.StepPosition = newist.Int32(0)
 		out.Type = newist.Int32(0)
@@ -75,10 +75,10 @@ func TestServiceCRUD(t *testing.T) {
 		out := servicev1.DbSchemaService{}
 
 		out.Uuid = "00001111222233334444555566667777"
-		out.Name = "(UPDATED) test-Service"
+		out.Name = newist.String("(UPDATED) test-Service")
 		out.Summary = newist.String("(UPDATED) test Service")
-		out.ApiVersion = "v1"
-		out.ClusterUuid = "00001111222233334444555566667777"
+		out.ApiVersion = newist.String("v1")
+		out.ClusterUuid = newist.String("00001111222233334444555566667777")
 		out.StepCount = newist.Int32(0)
 		out.StepPosition = newist.Int32(1)
 		out.Type = newist.Int32(2)

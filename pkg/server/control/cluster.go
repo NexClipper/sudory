@@ -24,7 +24,9 @@ func (c *Control) CreateCluster() func(ctx echo.Context) error {
 		if err := ctx.Bind(body); err != nil {
 			return ErrorBindRequestObject(err)
 		}
-
+		if body.Name == nil {
+			return ErrorInvaliedRequestParameterName("Name")
+		}
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
@@ -37,6 +39,7 @@ func (c *Control) CreateCluster() func(ctx echo.Context) error {
 		cluster := body.Cluster
 
 		//property
+		cluster.UuidMeta = NewUuidMeta()
 		cluster.LabelMeta = NewLabelMeta(body.Name, body.Summary)
 
 		//create
