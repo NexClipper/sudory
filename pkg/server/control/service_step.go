@@ -93,15 +93,15 @@ func (c *Control) CreateServiceStep() func(ctx echo.Context) error {
 	})
 }
 
-// Get ServiceStep
-// @Description Get a Service Step
+// FindServiceStep
+// @Description Find Service Steps
 // @Accept      json
 // @Produce     json
 // @Tags        server/service_step
 // @Router      /server/service/{service_uuid}/step [get]
 // @Param       service_uuid path string true "ServiceStep 의 service_uuid"
 // @Success     200 {array} v1.HttpRspServiceStep
-func (c *Control) GetServiceSteps() func(ctx echo.Context) error {
+func (c *Control) FindServiceStep() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()

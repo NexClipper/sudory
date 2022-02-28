@@ -1,6 +1,7 @@
 package database
 
 import (
+	"github.com/NexClipper/sudory/pkg/server/database/prepared"
 	clientv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	envv1 "github.com/NexClipper/sudory/pkg/server/model/environment/v1"
@@ -65,16 +66,21 @@ type Context interface {
 	CreateSession(m sessionv1.DbSchemaSession) error
 	GetSession(uuid string) (*sessionv1.DbSchemaSession, error)
 	FindSession(where string, args ...interface{}) ([]sessionv1.DbSchemaSession, error)
-	// QuerySession(query *query_parser.QueryParser) ([]sessionv1.DbSchemaSession, error)
 	UpdateSession(m sessionv1.DbSchemaSession) error
 	DeleteSession(uuid string) error
 	//token
 	CreateToken(m tokenv1.DbSchemaToken) error
 	GetToken(uuid string) (*tokenv1.DbSchemaToken, error)
 	FindToken(where string, args ...interface{}) ([]tokenv1.DbSchemaToken, error)
-	// QueryToken(query *query_parser.QueryParser) ([]tokenv1.DbSchemaToken, error)
 	UpdateToken(m tokenv1.DbSchemaToken) error
 	DeleteToken(uuid string) error
+
+	//prepared
+	Prepared(preparer prepared.Preparer) Context
+	//where
+	Where(where string, args ...interface{})
+	//find
+	Find(records interface{}) error
 }
 
 // Session
@@ -88,15 +94,34 @@ func NewContext(engine *xorm.Engine) Context {
 
 // Tx
 //  get a session
-func (me Session) Tx() *xorm.Session {
-	return me.tx
+func (session Session) Tx() *xorm.Session {
+	return session.tx
 }
 
 // Close
 //  close session
-func (me Session) Close() error {
-	return me.tx.Close()
+func (session Session) Close() error {
+	return session.tx.Close()
 }
 
 // implementation
 var _ Context = (*Session)(nil)
+
+func (session *Session) Prepared(preparer prepared.Preparer) Context {
+	session.tx = preparer.Prepared(session.tx)
+	return session
+}
+
+// Where
+func (session *Session) Where(where string, args ...interface{}) {
+	session.tx = session.tx.Where(where, args...)
+}
+
+// Find
+func (session *Session) Find(records interface{}) error {
+	err := session.tx.Find(records)
+	if err != nil {
+		return err
+	}
+	return nil
+}

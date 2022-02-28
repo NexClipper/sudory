@@ -1,26 +1,25 @@
 package control
 
 import (
-	"fmt"
-
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	. "github.com/NexClipper/sudory/pkg/server/macro"
-	clinetv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
+	"github.com/NexClipper/sudory/pkg/server/database/prepared"
+	clientv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
 
 // Create Client
 // @Description Create a client
-// @Accept json
-// @Produce json
-// @Tags server/client
-// @Router /server/client [post]
-// @Param client body v1.HttpReqClient true "HttpReqClient"
+// @Accept      json
+// @Produce     json
+// @Tags        server/client
+// @Router      /server/client [post]
+// @Param       client body v1.HttpReqClient true "HttpReqClient"
 // @Success 200 {object} v1.HttpRspClient
 func (c *Control) CreateClient() func(ctx echo.Context) error {
 
 	binder := func(ctx Contexter) error {
-		body := new(clinetv1.HttpReqClient)
+		body := new(clientv1.HttpReqClient)
 		if err := ctx.Bind(body); err != nil {
 			return ErrorBindRequestObject(err)
 		}
@@ -34,7 +33,7 @@ func (c *Control) CreateClient() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		body, ok := ctx.Object().(*clinetv1.HttpReqClient)
+		body, ok := ctx.Object().(*clientv1.HttpReqClient)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -51,7 +50,7 @@ func (c *Control) CreateClient() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		return clinetv1.HttpRspClient{Client: client}, nil
+		return clientv1.HttpRspClient{Client: client}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -64,13 +63,13 @@ func (c *Control) CreateClient() func(ctx echo.Context) error {
 
 // Find Client
 // @Description Find client
-// @Accept json
-// @Produce json
-// @Tags server/client
-// @Router /server/client [get]
-// @Param uuid         query string false "Client 의 Uuid"
-// @Param name         query string false "Client 의 Name"
-// @Param cluster_uuid query string false "Client 의 ClusterUuid"
+// @Accept      json
+// @Produce     json
+// @Tags        server/client
+// @Router      /server/client [get]
+// @Param       q query string false "query  pkg/server/database/prepared/README.md"
+// @Param       o query string false "order  pkg/server/database/prepared/README.md"
+// @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success 200 {array} v1.HttpRspClient
 func (c *Control) FindClient() func(ctx echo.Context) error {
 
@@ -78,33 +77,33 @@ func (c *Control) FindClient() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		//make condition
-		args := make([]interface{}, 0)
-		add, build := StringBuilder()
-
-		for key, val := range ctx.Querys() {
-			switch key {
-			case "uuid":
-				args = append(args, fmt.Sprintf("%s%%", val)) //앞 부분 부터 일치 해야함
-			default:
-				args = append(args, fmt.Sprintf("%%%s%%", val))
-			}
-			add(fmt.Sprintf("%s LIKE ?", key)) //조건문 만들기
-		}
-		where := build(" AND ")
-
-		//find client
-		rst, err := operator.NewClient(ctx.Database()).
-			Find(where, args...)
+		preparer, err := prepared.NewParser(ctx.Queries())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewParser queries=%+v", ctx.Queries())
 		}
-		return clinetv1.TransToHttpRsp(rst), nil
+
+		records := make([]clientv1.DbSchemaClient, 0)
+		if err := ctx.Database().Prepared(preparer).Find(&records); err != nil {
+			return nil, errors.Wrapf(err, "Database Find")
+		}
+		return clientv1.TransToHttpRsp(clientv1.TransFormDbSchema(records)), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "FindClient binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "FindClient operator")
+			}
+			return v, nil
+		},
 		HttpResponser: HttpResponse,
 		Behavior:      Nolock(c.db.Engine()),
 	})
@@ -112,11 +111,11 @@ func (c *Control) FindClient() func(ctx echo.Context) error {
 
 // Get Client
 // @Description Get a client
-// @Accept json
-// @Produce json
-// @Tags server/client
-// @Router /server/client/{uuid} [get]
-// @Param uuid          path string true "Client 의 Uuid"
+// @Accept      json
+// @Produce     json
+// @Tags        server/client
+// @Router      /server/client/{uuid} [get]
+// @Param       uuid          path string true "Client 의 Uuid"
 // @Success 200 {object} v1.HttpRspClient
 func (c *Control) GetClient() func(ctx echo.Context) error {
 
@@ -138,7 +137,7 @@ func (c *Control) GetClient() func(ctx echo.Context) error {
 		if err != nil {
 			return nil, err
 		}
-		return clinetv1.HttpRspClient{Client: *rst}, nil
+		return clientv1.HttpRspClient{Client: *rst}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -151,17 +150,17 @@ func (c *Control) GetClient() func(ctx echo.Context) error {
 
 // Update Client
 // @Description Update a client
-// @Accept json
-// @Produce json
-// @Tags server/client
-// @Router /server/client/{uuid} [put]
-// @Param uuid   path string true "Client 의 Uuid"
-// @Param client body v1.HttpReqClient true "HttpReqClient"
+// @Accept      json
+// @Produce     json
+// @Tags        server/client
+// @Router      /server/client/{uuid} [put]
+// @Param       uuid   path string true "Client 의 Uuid"
+// @Param       client body v1.HttpReqClient true "HttpReqClient"
 // @Success 200 {object} v1.HttpRspClient
 func (c *Control) UpdateClient() func(ctx echo.Context) error {
 
 	binder := func(ctx Contexter) error {
-		body := new(clinetv1.HttpReqClient)
+		body := new(clientv1.HttpReqClient)
 		if err := ctx.Bind(body); err != nil {
 			return ErrorBindRequestObject(err)
 		}
@@ -176,7 +175,7 @@ func (c *Control) UpdateClient() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		body, ok := ctx.Object().(*clinetv1.HttpReqClient)
+		body, ok := ctx.Object().(*clientv1.HttpReqClient)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
@@ -194,7 +193,7 @@ func (c *Control) UpdateClient() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		return clinetv1.HttpRspClient{Client: client}, nil
+		return clientv1.HttpRspClient{Client: client}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -207,11 +206,11 @@ func (c *Control) UpdateClient() func(ctx echo.Context) error {
 
 // Delete Client
 // @Description Delete a client
-// @Accept json
-// @Produce json
-// @Tags server/client
-// @Router /server/client/{uuid} [delete]
-// @Param uuid path string true "Client 의 Uuid"
+// @Accept      json
+// @Produce     json
+// @Tags        server/client
+// @Router      /server/client/{uuid} [delete]
+// @Param       uuid path string true "Client 의 Uuid"
 // @Success 200
 func (c *Control) DeleteClient() func(ctx echo.Context) error {
 

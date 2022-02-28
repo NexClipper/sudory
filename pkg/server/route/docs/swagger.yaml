@@ -815,17 +815,17 @@ paths:
       - application/json
       description: Find client
       parameters:
-      - description: Client 의 Uuid
+      - description: query  pkg/server/database/prepared/README.md
         in: query
-        name: uuid
+        name: q
         type: string
-      - description: Client 의 Name
+      - description: order  pkg/server/database/prepared/README.md
         in: query
-        name: name
+        name: o
         type: string
-      - description: Client 의 ClusterUuid
+      - description: paging pkg/server/database/prepared/README.md
         in: query
-        name: cluster_uuid
+        name: p
         type: string
       produces:
       - application/json
@@ -926,13 +926,17 @@ paths:
       - application/json
       description: Find cluster
       parameters:
-      - description: Cluster 의 Uuid
+      - description: query  pkg/server/database/prepared/README.md
         in: query
-        name: uuid
+        name: q
         type: string
-      - description: Cluster 의 Name
+      - description: order  pkg/server/database/prepared/README.md
         in: query
-        name: name
+        name: o
+        type: string
+      - description: paging pkg/server/database/prepared/README.md
+        in: query
+        name: p
         type: string
       produces:
       - application/json
@@ -1033,21 +1037,17 @@ paths:
       - application/json
       description: Find Environment
       parameters:
-      - description: Environment 의 Uuid
+      - description: query  pkg/server/database/prepared/README.md
         in: query
-        name: uuid
+        name: q
         type: string
-      - description: Environment 의 Summary
+      - description: order  pkg/server/database/prepared/README.md
         in: query
-        name: summary
+        name: o
         type: string
-      - description: Environment 의 Name
+      - description: paging pkg/server/database/prepared/README.md
         in: query
-        name: name
-        type: string
-      - description: Environment 의 Value
-        in: query
-        name: value
+        name: p
         type: string
       produces:
       - application/json
@@ -1109,17 +1109,17 @@ paths:
       - application/json
       description: Find []Service
       parameters:
-      - description: Service 의 ClusterUuid
+      - description: query  pkg/server/database/prepared/README.md
         in: query
-        name: cluster_uuid
+        name: q
         type: string
-      - description: Service 의 Uuid
+      - description: order  pkg/server/database/prepared/README.md
         in: query
-        name: uuid
+        name: o
         type: string
-      - description: Service 의 Status
+      - description: paging pkg/server/database/prepared/README.md
         in: query
-        name: status
+        name: p
         type: string
       produces:
       - application/json
@@ -1156,7 +1156,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get a Service Step
+      description: Find Service Steps
       parameters:
       - description: ServiceStep 의 service_uuid
         in: path
@@ -1364,21 +1364,17 @@ paths:
       - application/json
       description: Find Session
       parameters:
-      - description: Session 의 Uuid
+      - description: query  pkg/server/database/prepared/README.md
         in: query
-        name: uuid
+        name: q
         type: string
-      - description: Session 의 Name
+      - description: order  pkg/server/database/prepared/README.md
         in: query
-        name: name
+        name: o
         type: string
-      - description: Session 의 user_kind
+      - description: paging pkg/server/database/prepared/README.md
         in: query
-        name: user_kind
-        type: string
-      - description: Session 의 user_uuid
-        in: query
-        name: user_uuid
+        name: p
         type: string
       produces:
       - application/json
@@ -1434,17 +1430,17 @@ paths:
       - application/json
       description: Find []template
       parameters:
-      - description: Template 의 Uuid
+      - description: query  pkg/server/database/prepared/README.md
         in: query
-        name: uuid
+        name: q
         type: string
-      - description: Template 의 Name
+      - description: order  pkg/server/database/prepared/README.md
         in: query
-        name: name
+        name: o
         type: string
-      - description: Template 의 Origin
+      - description: paging pkg/server/database/prepared/README.md
         in: query
-        name: origin
+        name: p
         type: string
       produces:
       - application/json
@@ -1481,7 +1477,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get template commands
+      description: Find template command
       parameters:
       - description: HttpReqTemplate 의 Uuid
         in: path
@@ -1668,25 +1664,17 @@ paths:
       - application/json
       description: Find Token
       parameters:
-      - description: Token 의 Uuid
+      - description: query  pkg/server/database/prepared/README.md
         in: query
-        name: uuid
+        name: q
         type: string
-      - description: Token 의 Name
+      - description: order  pkg/server/database/prepared/README.md
         in: query
-        name: name
+        name: o
         type: string
-      - description: Token 의 user_kind
+      - description: paging pkg/server/database/prepared/README.md
         in: query
-        name: user_kind
-        type: string
-      - description: Token 의 user_uuid
-        in: query
-        name: user_uuid
-        type: string
-      - description: Token 의 token
-        in: query
-        name: token
+        name: p
         type: string
       produces:
       - application/json

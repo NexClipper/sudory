@@ -6,12 +6,13 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
 	"github.com/NexClipper/sudory/pkg/server/database"
-	"github.com/NexClipper/sudory/pkg/server/database/query_parser"
+	"github.com/NexClipper/sudory/pkg/server/database/prepared"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	labelv1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
 	"github.com/NexClipper/sudory/pkg/server/status/env"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
 
 // token user kind
@@ -95,49 +96,44 @@ func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/token
 // @Router      /server/token [get]
-// @Param       uuid         query string false "Token 의 Uuid"
-// @Param       name         query string false "Token 의 Name"
-// @Param       user_kind    query string false "Token 의 user_kind"
-// @Param       user_uuid    query string false "Token 의 user_uuid"
-// @Param       token        query string false "Token 의 token"
-// #Param       limit        query int    false "Pagination 의 limit"
-// #Param       page         query int    false "Pagination 의 page"
-// #Param       order        query string false "Pagination 의 order"
+// @Param       q query string false "query  pkg/server/database/prepared/README.md"
+// @Param       o query string false "order  pkg/server/database/prepared/README.md"
+// @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.HttpRspToken
 func (c *Control) FindToken() func(ctx echo.Context) error {
 
 	binder := func(ctx Contexter) error {
-		// if len(ctx.Query()) == 0 {
-		// 	return ErrorInvaliedRequestParameter()
-		// }
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-
-		//make condition
-		cond := query_parser.NewCondition(ctx.Querys(), func(key string) (string, string, bool) {
-			switch key {
-			case "uuid", "user_uuid", "user_kind", "token":
-				return "=", "%s", true
-			case "name":
-				return "LIKE", "%%%s%%", true
-			default:
-				return "", "", false
-			}
-		})
-
-		//find Token
-		rst, err := operator.NewToken(ctx.Database()).
-			Find(cond.Where(), cond.Args()...)
+		preparer, err := prepared.NewParser(ctx.Queries())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewParser queries=%+v", ctx.Queries())
 		}
-		return tokenv1.TransToHttpRsp(rst), nil
+
+		records := make([]tokenv1.DbSchemaToken, 0)
+		if err := ctx.Database().Prepared(preparer).Find(&records); err != nil {
+			return nil, errors.Wrapf(err, "Database Find")
+		}
+
+		return tokenv1.TransToHttpRsp(tokenv1.TransFormDbSchema(records)), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "FindToken binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "FindToken operator")
+			}
+			return v, nil
+		},
 		HttpResponser: HttpResponse,
 		Behavior:      Nolock(c.db.Engine()),
 	})

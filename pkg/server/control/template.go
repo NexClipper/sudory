@@ -4,11 +4,12 @@ import (
 	"fmt"
 
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	. "github.com/NexClipper/sudory/pkg/server/macro"
+	"github.com/NexClipper/sudory/pkg/server/database/prepared"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
 
 // Create Template
@@ -136,36 +137,26 @@ func (c *Control) GetTemplate() func(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/template
 // @Router      /server/template [get]
-// @Param       uuid   query string false "Template 의 Uuid"
-// @Param       name   query string false "Template 의 Name"
-// @Param       origin query string false "Template 의 Origin"
+// @Param       q query string false "query  pkg/server/database/prepared/README.md"
+// @Param       o query string false "order  pkg/server/database/prepared/README.md"
+// @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success 200 {array} v1.HttpReqTemplateWithCommands
 func (c *Control) FindTemplate() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		//make condition
-		args := make([]interface{}, 0)
-		add, build := StringBuilder()
-
-		for key, val := range ctx.Querys() {
-			switch key {
-			case "uuid":
-				args = append(args, fmt.Sprintf("%s%%", val)) //앞 부분 부터 일치 해야함
-			default:
-				args = append(args, fmt.Sprintf("%%%s%%", val))
-			}
-			add(fmt.Sprintf("%s LIKE ?", key)) //조건문 만들기
-		}
-		where := build(" AND ")
-
-		//find template
-		templates, err := operator.NewTemplate(ctx.Database()).
-			Find(where, args...)
+		preparer, err := prepared.NewParser(ctx.Queries())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewParser queries=%+v", ctx.Queries())
 		}
+
+		records := make([]templatev1.DbSchemaTemplate, 0)
+		if err := ctx.Database().Prepared(preparer).Find(&records); err != nil {
+			return nil, errors.Wrapf(err, "Database Find")
+		}
+		templates := templatev1.TransFormDbSchema(records)
+
 		//make response
 		rspadd, rspbuild := templatev1.HttpRspBuilder(len(templates))
 		err = foreach_template(templates, func(template templatev1.Template) error {
@@ -175,20 +166,32 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 			commands, err := operator.NewTemplateCommand(ctx.Database()).
 				Find(where, template_uuid)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "NewTemplateCommand Find where=%s template_uuid=%s", where, template_uuid)
 			}
 			rspadd(template, commands) //넣
 			return nil
 		})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "foreach_template")
 		}
 		return rspbuild(), nil //pop
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "FindTemplate binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "FindTemplate operator")
+			}
+			return v, nil
+		},
 		HttpResponser: HttpResponse,
 		Behavior:      Nolock(c.db.Engine()),
 	})

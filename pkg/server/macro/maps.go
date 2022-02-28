@@ -36,3 +36,13 @@ func MapInt(m map[string]interface{}, key string) (int, bool) {
 	}
 	return 0, false
 }
+
+// WrapArray
+func WrapArray(emun ...interface{}) []interface{} {
+	return emun
+}
+
+// WrapMap
+func WrapMap(a string, b interface{}) map[string]interface{} {
+	return map[string]interface{}{a: b}
+}

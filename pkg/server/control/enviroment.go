@@ -1,13 +1,12 @@
 package control
 
 import (
-	"fmt"
-
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	. "github.com/NexClipper/sudory/pkg/server/macro"
+	"github.com/NexClipper/sudory/pkg/server/database/prepared"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	envv1 "github.com/NexClipper/sudory/pkg/server/model/environment/v1"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
 
 // Find Environment
@@ -16,10 +15,9 @@ import (
 // @Produce     json
 // @Tags        server/environment
 // @Router      /server/environment [get]
-// @Param       uuid    query string false "Environment 의 Uuid"
-// @Param       summary query string false "Environment 의 Summary"
-// @Param       name    query string false "Environment 의 Name"
-// @Param       value   query string false "Environment 의 Value"
+// @Param       q query string false "query  pkg/server/database/prepared/README.md"
+// @Param       o query string false "order  pkg/server/database/prepared/README.md"
+// @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success 200 {array} v1.HttpRspEnvironment
 func (c *Control) FindEnvironment() func(ctx echo.Context) error {
 
@@ -27,33 +25,33 @@ func (c *Control) FindEnvironment() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		//make condition
-		args := make([]interface{}, 0)
-		add, build := StringBuilder()
-
-		for key, val := range ctx.Querys() {
-			switch key {
-			case "uuid":
-				args = append(args, fmt.Sprintf("%s%%", val)) //앞 부분 부터 일치 해야함
-			default:
-				args = append(args, fmt.Sprintf("%%%s%%", val))
-			}
-			add(fmt.Sprintf("%s LIKE ?", key)) //조건문 만들기
-		}
-		where := build(" AND ")
-
-		//find Environment
-		rst, err := operator.NewEnvironment(ctx.Database()).
-			Find(where, args...)
+		preparer, err := prepared.NewParser(ctx.Queries())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewParser queries=%+v", ctx.Queries())
 		}
-		return envv1.TransToHttpRsp(rst), nil
+
+		records := make([]envv1.DbSchemaEnvironment, 0)
+		if err := ctx.Database().Prepared(preparer).Find(&records); err != nil {
+			return nil, errors.Wrapf(err, "Database Find")
+		}
+		return envv1.TransToHttpRsp(envv1.TransFormDbSchema(records)), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "FindEnvironment binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "FindEnvironment operator")
+			}
+			return v, nil
+		},
 		HttpResponser: HttpResponse,
 		Behavior:      Nolock(c.db.Engine()),
 	})

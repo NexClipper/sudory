@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	. "github.com/NexClipper/sudory/pkg/server/macro"
+	"github.com/NexClipper/sudory/pkg/server/database/prepared"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
@@ -152,9 +152,9 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/service
 // @Router      /server/service [get]
-// @Param       cluster_uuid query string false "Service 의 ClusterUuid"
-// @Param       uuid         query string false "Service 의 Uuid"
-// @Param       status       query string false "Service 의 Status"
+// @Param       q query string false "query  pkg/server/database/prepared/README.md"
+// @Param       o query string false "order  pkg/server/database/prepared/README.md"
+// @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.HttpRspServiceWithSteps
 func (c *Control) FindService() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
@@ -164,28 +164,16 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-
-		//make condition
-		args := make([]interface{}, 0)
-		add, build := StringBuilder()
-
-		for key, val := range ctx.Querys() {
-			switch key {
-			case "status":
-				args = append(args, val)
-				add(fmt.Sprintf("%s in (?)", key))
-			default:
-				args = append(args, val)
-				add(fmt.Sprintf("%s = ?", key))
-			}
-		}
-		//find service
-		where := build(" AND ")
-		services, err := operator.NewService(ctx.Database()).
-			Find(where, args...)
+		preparer, err := prepared.NewParser(ctx.Queries())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewParser queries=%+v", ctx.Queries())
 		}
+
+		records := make([]servicev1.DbSchemaService, 0)
+		if err := ctx.Database().Prepared(preparer).Find(&records); err != nil {
+			return nil, errors.Wrapf(err, "Database Find")
+		}
+		services := servicev1.TransFormDbSchema(records)
 
 		//서비스 조회에 결과 필드는 제거
 		services = map_service(services, service_exclude_result)
@@ -199,21 +187,33 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 			steps, err := operator.NewServiceStep(ctx.Database()).
 				Find(where, service_uuid)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "NewServiceStep Find where=%s service_uuid=%s", where, service_uuid)
 			}
 			rspadd(service, steps) //push
 			return nil
 		})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "foreach_service")
 		}
 
 		return rspbuild(), nil //pop
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "FindService binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "FindService operator")
+			}
+			return v, nil
+		},
 		HttpResponser: HttpResponse,
 		Behavior:      Nolock(c.db.Engine()),
 	})

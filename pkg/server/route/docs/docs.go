@@ -144,20 +144,20 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Client 의 Uuid",
-                        "name": "uuid",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Client 의 Name",
-                        "name": "name",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Client 의 ClusterUuid",
-                        "name": "cluster_uuid",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
                         "in": "query"
                     }
                 ],
@@ -315,14 +315,20 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Cluster 의 Uuid",
-                        "name": "uuid",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Cluster 의 Name",
-                        "name": "name",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
                         "in": "query"
                     }
                 ],
@@ -480,26 +486,20 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Environment 의 Uuid",
-                        "name": "uuid",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Environment 의 Summary",
-                        "name": "summary",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Environment 의 Name",
-                        "name": "name",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Environment 의 Value",
-                        "name": "value",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
                         "in": "query"
                     }
                 ],
@@ -597,20 +597,20 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Service 의 ClusterUuid",
-                        "name": "cluster_uuid",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Service 의 Uuid",
-                        "name": "uuid",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Service 의 Status",
-                        "name": "status",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
                         "in": "query"
                     }
                 ],
@@ -660,7 +660,7 @@ var doc = `{
         },
         "/server/service/{service_uuid}/step": {
             "get": {
-                "description": "Get a Service Step",
+                "description": "Find Service Steps",
                 "consumes": [
                     "application/json"
                 ],
@@ -987,26 +987,20 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session 의 Uuid",
-                        "name": "uuid",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Session 의 Name",
-                        "name": "name",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Session 의 user_kind",
-                        "name": "user_kind",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Session 의 user_uuid",
-                        "name": "user_uuid",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
                         "in": "query"
                     }
                 ],
@@ -1095,20 +1089,20 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Template 의 Uuid",
-                        "name": "uuid",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Template 의 Name",
-                        "name": "name",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Template 의 Origin",
-                        "name": "origin",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
                         "in": "query"
                     }
                 ],
@@ -1158,7 +1152,7 @@ var doc = `{
         },
         "/server/template/{template_uuid}/command": {
             "get": {
-                "description": "Get template commands",
+                "description": "Find template command",
                 "consumes": [
                     "application/json"
                 ],
@@ -1453,32 +1447,20 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Token 의 Uuid",
-                        "name": "uuid",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Token 의 Name",
-                        "name": "name",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Token 의 user_kind",
-                        "name": "user_kind",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token 의 user_uuid",
-                        "name": "user_uuid",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token 의 token",
-                        "name": "token",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
                         "in": "query"
                     }
                 ],

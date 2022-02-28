@@ -21,16 +21,20 @@ func HasError(err error) bool {
 	return err != nil
 }
 
-func Eqaul(a, b error) bool {
-	if a == nil && b == nil {
-		return true
+func Eqaul(a error, b ...error) bool {
+	eqaul := func(a, b error) bool {
+		if a == nil && b == nil {
+			return true
+		}
+		if a == nil || b == nil {
+			return false
+		}
+		return a.Error() == b.Error()
 	}
-	if a == nil || b == nil {
-		return false
-	}
-	return a.Error() == b.Error()
-}
 
-func NotEqaul(a, b error) bool {
-	return !Eqaul(a, b)
+	var ok bool = true
+	for _, e := range b {
+		ok = ok && eqaul(a, e)
+	}
+	return ok
 }

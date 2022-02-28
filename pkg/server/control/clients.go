@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/database/query_parser"
+	"github.com/NexClipper/sudory/pkg/server/database/prepared"
+	"github.com/pkg/errors"
 
 	//lint:ignore ST1001 auto-generated
 	. "github.com/NexClipper/sudory/pkg/server/macro"
@@ -271,23 +272,24 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 		}
 
 		//valid token
-		m := map[string]string{
-			"user_kind": token_user_kind_cluster,
-			"user_uuid": cluster_uuid,
-			"token":     assertion,
+		//user_kind = ? AND user_uuid = ? AND token = ?
+		m := WrapMap("and", WrapArray(
+			WrapMap("eq", WrapMap("user_kind", token_user_kind_cluster)),
+			WrapMap("eq", WrapMap("user_uuid", cluster_uuid)),
+			WrapMap("eq", WrapMap("token", assertion)),
+		))
+		cond, err := prepared.NewConditionMap(m)
+		if err != nil {
+			return nil, errors.Wrapf(err, "prepared.NewConditionMap m=%+v", m)
 		}
 
-		cond := query_parser.NewCondition(m, func(key string) (string, string, bool) {
-			return "=", "%s", true
-		})
-
-		tokens, err := operator.NewToken(ctx.Database()).
-			Find(cond.Where(), cond.Args()...)
-		if err != nil {
+		tokens := make([]tokenv1.DbSchemaToken, 0)
+		if err := ctx.Database().Prepared(cond).Find(&tokens); err != nil {
 			return nil, err
 		}
+
 		first := func() *tokenv1.Token {
-			for _, it := range tokens {
+			for _, it := range tokenv1.TransFormDbSchema(tokens) {
 				return &it
 			}
 			return nil

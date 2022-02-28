@@ -35,7 +35,7 @@ type (
 		Object() interface{}
 
 		Params() map[string]string
-		Querys() map[string]string
+		Queries() map[string]string
 		Forms() map[string]string
 		// Body() []byte
 	}
@@ -43,8 +43,8 @@ type (
 	ParamsHolder interface {
 		Params() map[string]string
 	}
-	QuerysHolder interface {
-		Querys() map[string]string
+	QueriesHolder interface {
+		Queries() map[string]string
 	}
 	FormsHolder interface {
 		Forms() map[string]string
@@ -106,7 +106,7 @@ func (holder *RequestValue) ParamString() string {
 	return strings.Join(s, ",")
 }
 
-func (holder *RequestValue) Querys() map[string]string {
+func (holder *RequestValue) Queries() map[string]string {
 	holder.onceQuery.Do(func() {
 		holder.query = make(map[string]string)
 		for key := range holder.echo.QueryParams() {

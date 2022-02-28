@@ -1,12 +1,11 @@
 package control
 
 import (
-	"fmt"
-
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	. "github.com/NexClipper/sudory/pkg/server/macro"
+	"github.com/NexClipper/sudory/pkg/server/database/prepared"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
 
 // Create Cluster
@@ -66,8 +65,9 @@ func (c *Control) CreateCluster() func(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/cluster
 // @Router      /server/cluster [get]
-// @Param       uuid query string false "Cluster 의 Uuid"
-// @Param       name query string false "Cluster 의 Name"
+// @Param       q query string false "query  pkg/server/database/prepared/README.md"
+// @Param       o query string false "order  pkg/server/database/prepared/README.md"
+// @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.HttpRspCluster
 func (c *Control) FindCluster() func(ctx echo.Context) error {
 
@@ -75,33 +75,33 @@ func (c *Control) FindCluster() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		//make condition
-		args := make([]interface{}, 0)
-		add, build := StringBuilder()
-
-		for key, val := range ctx.Querys() {
-			switch key {
-			case "uuid":
-				args = append(args, fmt.Sprintf("%s%%", val)) //앞 부분 부터 일치 해야함
-			default:
-				args = append(args, fmt.Sprintf("%%%s%%", val))
-			}
-			add(fmt.Sprintf("%s LIKE ?", key)) //조건문 만들기
-		}
-		where := build(" AND ")
-
-		//find client
-		clusters, err := operator.NewCluster(ctx.Database()).
-			Find(where, args...)
+		preparer, err := prepared.NewParser(ctx.Queries())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewParser queries=%+v", ctx.Queries())
 		}
-		return clusterv1.TransToHttpRsp(clusters), nil
+
+		records := make([]clusterv1.DbSchemaCluster, 0)
+		if err := ctx.Database().Prepared(preparer).Find(&records); err != nil {
+			return nil, errors.Wrapf(err, "Database Find")
+		}
+		return clusterv1.TransToHttpRsp(clusterv1.TransFormDbSchema(records)), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "FindCluster binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "FindCluster operator")
+			}
+			return v, nil
+		},
 		HttpResponser: HttpResponse,
 		Behavior:      Nolock(c.db.Engine()),
 	})

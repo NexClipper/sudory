@@ -54,7 +54,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router.e.PUT("/server/template/:uuid", controller.UpdateTemplate())
 	router.e.DELETE("/server/template/:uuid", controller.DeleteTemplate())
 	//route /server/template/:template_uuid/command*
-	router.e.GET("/server/template/:template_uuid/command", controller.GetTemplateCommands())
+	router.e.GET("/server/template/:template_uuid/command", controller.FindTemplateCommand())
 	router.e.GET("/server/template/:template_uuid/command/:uuid", controller.GetTemplateCommand())
 	router.e.POST("/server/template/:template_uuid/command", controller.CreateTemplateCommand())
 	router.e.PUT("/server/template/:template_uuid/command/:uuid", controller.UpdateTemplateCommand())
@@ -67,7 +67,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router.e.PUT("/server/service/:uuid", controller.UpdateService())
 	router.e.DELETE("/server/service/:uuid", controller.DeleteService())
 	//route /server/service_step*
-	router.e.GET("/server/service/:service_uuid/step", controller.GetServiceSteps())
+	router.e.GET("/server/service/:service_uuid/step", controller.FindServiceStep())
 	router.e.GET("/server/service/:service_uuid/step/:uuid", controller.GetServiceStep())
 	router.e.POST("/server/service/:service_uuid/step", controller.CreateServiceStep())
 	router.e.PUT("/server/service/:service_uuid/step/:uuid", controller.UpdateServiceStep())

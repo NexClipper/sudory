@@ -2,9 +2,10 @@ package control
 
 import (
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/database/query_parser"
+	"github.com/NexClipper/sudory/pkg/server/database/prepared"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
 
 // Find Session
@@ -13,13 +14,9 @@ import (
 // @Produce     json
 // @Tags        server/session
 // @Router      /server/session [get]
-// @Param       uuid         query string false "Session 의 Uuid"
-// @Param       name         query string false "Session 의 Name"
-// @Param       user_kind    query string false "Session 의 user_kind"
-// @Param       user_uuid    query string false "Session 의 user_uuid"
-// #Param       limit        query int    false "Pagination 의 limit"
-// #Param       page         query int    false "Pagination 의 page"
-// #Param       order        query string false "Pagination 의 order"
+// @Param       q query string false "query  pkg/server/database/prepared/README.md"
+// @Param       o query string false "order  pkg/server/database/prepared/README.md"
+// @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.HttpRspSession
 func (c *Control) FindSession() func(ctx echo.Context) error {
 
@@ -27,31 +24,33 @@ func (c *Control) FindSession() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-
-		cond := query_parser.NewCondition(ctx.Querys(), func(key string) (string, string, bool) {
-			switch key {
-			case "uuid", "user_uuid", "user_kind":
-				return "=", "%s", true
-			case "name":
-				return "LIKE", "%%%s%%", true
-			default:
-				return "", "", false
-			}
-		})
-
-		//find Session
-		records, err := operator.NewSession(ctx.Database()).
-			Find(cond.Where(), cond.Args()...)
+		preparer, err := prepared.NewParser(ctx.Queries())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewParser queries=%+v", ctx.Queries())
 		}
 
-		return sessionv1.TransToHttpRsp(records), nil
+		records := make([]sessionv1.DbSchemaSession, 0)
+		if err := ctx.Database().Prepared(preparer).Find(&records); err != nil {
+			return nil, errors.Wrapf(err, "Database Find")
+		}
+		return sessionv1.TransToHttpRsp(sessionv1.TransFormDbSchema(records)), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "FindSession binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "FindSession operator")
+			}
+			return v, nil
+		},
 		HttpResponser: HttpResponse,
 		Behavior:      Nolock(c.db.Engine()),
 	})

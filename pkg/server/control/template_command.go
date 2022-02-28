@@ -84,15 +84,15 @@ func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
 	})
 }
 
-// Get Template Commands
-// @Description Get template commands
+// FindTemplateCommand
+// @Description Find template command
 // @Accept      json
 // @Produce     json
 // @Tags        server/template_command
 // @Router      /server/template/{template_uuid}/command [get]
 // @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
 // @Success 200 {array} v1.HttpRspTemplateCommand
-func (c *Control) GetTemplateCommands() func(ctx echo.Context) error {
+func (c *Control) FindTemplateCommand() func(ctx echo.Context) error {
 
 	binder := func(ctx Contexter) error {
 		if len(ctx.Params()) == 0 {
