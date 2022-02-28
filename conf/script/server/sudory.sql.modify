@@ -199,3 +199,17 @@ ALTER TABLE `service_step`
 --
 -- (FIN) OSS-136
 --
+
+--
+-- OSS-143
+--
+
+ALTER TABLE `session`
+	DROP COLUMN IF EXISTS `name`,
+	DROP COLUMN IF EXISTS `summary`,
+	DROP COLUMN IF EXISTS `api_version`;
+
+--
+-- (FIN) OSS-143
+--
+

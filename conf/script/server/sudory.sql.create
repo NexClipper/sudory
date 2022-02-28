@@ -42,7 +42,9 @@ CREATE TABLE `client` (
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `UQE_client_uuid` (`uuid`),
-  KEY `IDX_client_cluster_uuid` (`cluster_uuid`)
+  UNIQUE KEY `uuid` (`uuid`),
+  KEY `IDX_client_cluster_uuid` (`cluster_uuid`),
+  KEY `cluster_uuid` (`cluster_uuid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='client 관리 테이블';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -102,10 +104,10 @@ CREATE TABLE `service` (
   `name` varchar(255) COLLATE utf8mb4_bin NOT NULL,
   `summary` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
   `api_version` varchar(255) COLLATE utf8mb4_bin NOT NULL,
+  `cluster_uuid` char(32) COLLATE utf8mb4_bin NOT NULL COMMENT 'clusters uuid',
   `template_uuid` char(32) COLLATE utf8mb4_bin NOT NULL,
   `origin_kind` varchar(255) COLLATE utf8mb4_bin NOT NULL DEFAULT '',
   `origin_uuid` char(32) COLLATE utf8mb4_bin NOT NULL,
-  `cluster_uuid` char(32) COLLATE utf8mb4_bin NOT NULL COMMENT 'clusters uuid',
   `assigned_client_uuid` char(32) COLLATE utf8mb4_bin DEFAULT NULL,
   `step_count` int(11) DEFAULT 0,
   `step_position` int(11) DEFAULT 0,
@@ -165,9 +167,6 @@ DROP TABLE IF EXISTS `session`;
 CREATE TABLE `session` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `uuid` char(32) COLLATE utf8mb4_bin NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_bin NOT NULL,
-  `summary` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
-  `api_version` varchar(255) COLLATE utf8mb4_bin NOT NULL,
   `user_kind` varchar(255) COLLATE utf8mb4_bin NOT NULL COMMENT 'user_type',
   `user_uuid` char(32) COLLATE utf8mb4_bin NOT NULL COMMENT 'user_uuid',
   `token` text COLLATE utf8mb4_bin NOT NULL COMMENT 'token',
@@ -268,4 +267,4 @@ CREATE TABLE `token` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-02-25  5:27:19
+-- Dump completed on 2022-02-28  7:10:05

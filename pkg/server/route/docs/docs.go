@@ -2441,22 +2441,10 @@ var doc = `{
         "v1.HttpRspSession": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "expiration_time": {
                     "type": "string"
                 },
                 "issued_at_time": {
-                    "type": "string"
-                },
-                "name": {
-                    "description": "label name",
-                    "type": "string"
-                },
-                "summary": {
-                    "description": "label summary",
                     "type": "string"
                 },
                 "token": {
