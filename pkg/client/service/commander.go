@@ -6,6 +6,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/NexClipper/sudory/pkg/client/helm"
 	"github.com/NexClipper/sudory/pkg/client/jq"
 	"github.com/NexClipper/sudory/pkg/client/k8s"
 	"github.com/NexClipper/sudory/pkg/client/p8s"
@@ -48,7 +49,7 @@ func NewCommander(command *StepCommand) (Commander, error) {
 	case "prometheus":
 		return NewP8sCommander(command)
 	case "helm":
-		//
+		return NewHelmCommander(command)
 	case "jq":
 		return NewJqCommander(command)
 	}
@@ -174,11 +175,47 @@ func (c *P8sCommander) Run() (string, error) {
 }
 
 type HelmCommander struct {
-	// client *helm.Client
+	client *helm.Client
+	cmd    string
+	args   map[string]interface{}
+}
+
+func NewHelmCommander(command *StepCommand) (Commander, error) {
+	cmdr := &HelmCommander{}
+
+	if err := cmdr.ParseCommand(command); err != nil {
+		return nil, err
+	}
+
+	return cmdr, nil
 }
 
 func (c *HelmCommander) GetCommandType() CommandType {
 	return CommandTypeHelm
+}
+
+func (c *HelmCommander) ParseCommand(command *StepCommand) error {
+	mlist := strings.SplitN(command.Method, ".", 2)
+
+	if len(mlist) != 2 {
+		return fmt.Errorf("there is not enough method(%s) for helm. want(3) but got(%d)", command.Method, len(mlist))
+	}
+
+	c.cmd = mlist[1]
+	c.args = command.Args
+
+	client, err := helm.NewClient()
+	if err != nil {
+		return err
+	}
+
+	c.client = client
+
+	return nil
+}
+
+func (c *HelmCommander) Run() (string, error) {
+	return c.client.Request(c.cmd, c.args)
 }
 
 type JqCommander struct {
