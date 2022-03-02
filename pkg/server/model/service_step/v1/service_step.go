@@ -9,7 +9,7 @@ import (
 
 type ServiceStepProperty struct {
 	//서비스 Uuid
-	ServiceUuid string `json:"service_uuid" xorm:"char(32) notnull index 'service_uuid' comment('services uuid')"`
+	ServiceUuid *string `json:"service_uuid,omitempty" xorm:"char(32) notnull index 'service_uuid' comment('services uuid')"`
 	//순서
 	Sequence *int32 `json:"sequence,omitempty" xorm:"int null default(0) 'sequence' comment('sequence')"`
 	//메소드
@@ -50,7 +50,6 @@ type ServiceStepPropertyEssential struct {
 }
 
 type ServiceStepEssential struct {
-	metav1.LabelMeta             `json:",inline"` //inline labelmeta
 	ServiceStepPropertyEssential `json:",inline"` //inline property
 }
 

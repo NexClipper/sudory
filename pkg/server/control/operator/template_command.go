@@ -86,7 +86,7 @@ func (o *TemplateCommand) ChainingSequence(template_uuid, uuid string) error {
 
 	//sort -> Sequence
 	sort.Slice(commands, func(i, j int) bool {
-		return nullable.Int32(commands[i].Sequence).V() < nullable.Int32(commands[j].Sequence).V()
+		return nullable.Int32(commands[i].Sequence).Value() < nullable.Int32(commands[j].Sequence).Value()
 	})
 
 	seq := int32(0)

@@ -11,10 +11,13 @@ func String(v interface{}) nullString {
 	return *(new(nullString).scan(v))
 }
 
-func (nullable nullString) V() string {
+func (nullable nullString) Value() string {
 	return nullable.string
 }
-func (nullable nullString) OK() bool {
+func (nullable nullString) Ptr() *string {
+	return &nullable.string
+}
+func (nullable nullString) Has() bool {
 	return nullable.bool
 }
 

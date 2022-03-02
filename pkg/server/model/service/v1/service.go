@@ -25,9 +25,9 @@ type ServiceProperty struct {
 	//오리진 UUID
 	OriginUuid *string `json:"origin_uuid,omitempty" xorm:"char(32) notnull index 'origin_uuid' comment('service origin uuid')"`
 	//클러스터 UUID
-	ClusterUuid *string `json:"cluster_uuid" xorm:"char(32) notnull index 'cluster_uuid' comment('cluster's uuid')"`
+	ClusterUuid *string `json:"cluster_uuid,omitempty" xorm:"char(32) notnull index 'cluster_uuid' comment('cluster's uuid')"`
 	//할당된 클라이언트 UUID
-	AssignedClientUuid *string `json:"assigned_client_uuid" xorm:"char(32) notnull index 'assigned_client_uuid' comment('client's uuid when service assigned')"`
+	AssignedClientUuid *string `json:"assigned_client_uuid,omitempty" xorm:"char(32) notnull index 'assigned_client_uuid' comment('client's uuid when service assigned')"`
 	//스탭 카운트
 	StepCount *int32 `json:"step_count,omitempty" xorm:"int null default(0) 'step_count' comment('step_count')"`
 	//스탭 Position

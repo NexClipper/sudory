@@ -78,7 +78,7 @@ func (o *ServiceStep) ChainingSequence(service_uuid, uuid string) error {
 
 	//sort -> Sequence
 	sort.Slice(steps, func(i, j int) bool {
-		return nullable.Int32(steps[i].Sequence).V() < nullable.Int32(steps[j].Sequence).V()
+		return nullable.Int32(steps[i].Sequence).Value() < nullable.Int32(steps[j].Sequence).Value()
 	})
 
 	seq := int32(0)

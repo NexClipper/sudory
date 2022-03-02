@@ -7,6 +7,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
+	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/labstack/echo/v4"
@@ -42,10 +43,6 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 		}
 
 		err = foreach_step_essential(body.Steps, func(ss stepv1.ServiceStepEssential) error {
-			//Name
-			if ss.Name == nil {
-				return ErrorInvaliedRequestParameterName("Name")
-			}
 			//Method
 			if ss.Args == nil {
 				return ErrorInvaliedRequestParameterName("Args")
@@ -66,30 +63,29 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 		service_essential := body.ServiceEssential
 		steps_essential := body.Steps
 
-		//property service
-		service := servicev1.Service{}
-		service.Name = service_essential.Name
-		service.Summary = service_essential.Summary
-		service.OriginKind = &service_essential.OriginKind
-		service.OriginUuid = &service_essential.OriginUuid
-		service.ClusterUuid = &service_essential.ClusterUuid
 		//origin template uuid
-		trace, err := TraceServiceOrigin(ctx, service)
+		trace, err := TraceServiceOrigin(ctx, service_essential.OriginKind, service_essential.OriginUuid)
 		if err != nil {
 			return nil, err
 		}
 		if len(trace) == 0 {
 			return nil, fmt.Errorf("not found origin template")
 		}
-
 		template_uuid := strings.Split(trace[len(trace)-1], ":")[1] //last
-		service.TemplateUuid = newist.String(template_uuid)
-		//meta
-		service.UuidMeta = NewUuidMeta()
-		service.LabelMeta = NewLabelMeta(service.Name, service.Summary)
-		//Status
-		service.Status = newist.Int32(int32(servicev1.StatusRegist))
 
+		//property service
+		service := servicev1.Service{}
+		service.Name = nullable.String(service_essential.Name).Ptr()
+		service.Summary = nullable.String(service_essential.Summary).Ptr()
+		service.OriginKind = newist.String(service_essential.OriginKind)
+		service.OriginUuid = newist.String(service_essential.OriginUuid)
+		service.ClusterUuid = newist.String(service_essential.ClusterUuid)
+		service.TemplateUuid = newist.String(template_uuid)
+		service.UuidMeta = NewUuidMeta()                                //meta uuid
+		service.LabelMeta = NewLabelMeta(service.Name, service.Summary) //meta label
+		service.Status = newist.Int32(int32(servicev1.StatusRegist))    //Status
+
+		//get commands
 		where := "template_uuid = ?"
 		commands, err := operator.NewTemplateCommand(ctx.Database()).Find(where, template_uuid)
 		if err != nil {
@@ -100,27 +96,19 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 		}
 
 		//property step
-		seq := 0
-		steps := map_step_essential_to_step(steps_essential, func(ss stepv1.ServiceStepEssential) stepv1.ServiceStep {
+		steps := map_step_essential_to_step(steps_essential, func(sse stepv1.ServiceStepEssential, i int) stepv1.ServiceStep {
 
-			command := commands[seq]
+			command := commands[i]
 
 			step := stepv1.ServiceStep{}
-			//LabelMeta
-			step.UuidMeta = NewUuidMeta()
-			step.LabelMeta = NewLabelMeta(ss.Name, ss.Summary)
-			//ServiceUuid
-			step.ServiceUuid = service.Uuid
-			//Sequence
-			step.Sequence = newist.Int32(int32(seq))
-			//Status = Regist
-			step.Status = newist.Int32(int32(servicev1.StatusRegist))
-			//Method Args
-			step.Method = command.Method
-			step.Args = ss.Args
+			step.UuidMeta = NewUuidMeta()                                //meta uuid
+			step.LabelMeta = NewLabelMeta(command.Name, command.Summary) //meta label
+			step.ServiceUuid = newist.String(service.Uuid)               //ServiceUuid
+			step.Sequence = newist.Int32(int32(i))                       //Sequence
+			step.Status = newist.Int32(int32(servicev1.StatusRegist))    //Status(Regist)
+			step.Method = command.Method                                 //Method
+			step.Args = sse.Args                                         //Args
 			// step.Result = newist.String("")
-
-			seq++
 			return step
 		})
 
@@ -504,15 +492,15 @@ func foreach_step_essential(elems []stepv1.ServiceStepEssential, fn func(stepv1.
 	return nil
 }
 
-func map_step_essential_to_step(elems []stepv1.ServiceStepEssential, mapper func(stepv1.ServiceStepEssential) stepv1.ServiceStep) []stepv1.ServiceStep {
+func map_step_essential_to_step(elems []stepv1.ServiceStepEssential, mapper func(stepv1.ServiceStepEssential, int) stepv1.ServiceStep) []stepv1.ServiceStep {
 	rst := make([]stepv1.ServiceStep, len(elems))
 	for n := range elems {
-		rst[n] = mapper(elems[n])
+		rst[n] = mapper(elems[n], n)
 	}
 	return rst
 }
 
-func TraceServiceOrigin(ctx Contexter, service servicev1.Service) ([]string, error) {
+func TraceServiceOrigin(ctx Contexter, originkind, originuuid string) ([]string, error) {
 	trace := make([]string, 0)
 
 	apnd := func(kind, uuid string) {
@@ -521,21 +509,21 @@ func TraceServiceOrigin(ctx Contexter, service servicev1.Service) ([]string, err
 
 LOOP:
 	for {
-		switch *service.OriginKind {
+		switch originkind {
 		case "template":
-			template, err := operator.NewTemplate(ctx.Database()).Get(*service.OriginUuid)
+			template, err := operator.NewTemplate(ctx.Database()).Get(originuuid)
 			if err != nil {
 				return nil, err
 			}
 			apnd("template", template.Uuid)
 			break LOOP
 		case "service":
-			service_, err := operator.NewService(ctx.Database()).Get(*service.OriginUuid)
+			service, err := operator.NewService(ctx.Database()).Get(originuuid)
 			if err != nil {
 				return nil, err
 			}
-			apnd("template", service_.Uuid)
-			service = *service_
+			apnd("template", service.Uuid)
+			originkind, originuuid = *service.OriginKind, *service.OriginUuid
 		}
 	}
 

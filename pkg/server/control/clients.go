@@ -92,9 +92,9 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			steps = map_step(steps, func(step stepv1.ServiceStep) stepv1.ServiceStep {
 				//step.Status 상태가 service.Status 보다 크다면
 				//서비스의 상태 정보를 해당 값으로 덮어쓰기
-				if nullable.Int32(service.Status).V() < nullable.Int32(step.Status).V() {
-					service.Status = newist.Int32(nullable.Int32(step.Status).V())         //status
-					service.StepPosition = newist.Int32(nullable.Int32(step.Sequence).V()) //position
+				if nullable.Int32(service.Status).Value() < nullable.Int32(step.Status).Value() {
+					service.Status = newist.Int32(nullable.Int32(step.Status).Value())         //status
+					service.StepPosition = newist.Int32(nullable.Int32(step.Sequence).Value()) //position
 				}
 				return step
 			})
@@ -158,13 +158,13 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			service.StepPosition = newist.Int32(0)
 			steps = map_step(steps, func(step stepv1.ServiceStep) stepv1.ServiceStep {
 				//StatusSend 보다 작으면 응답 전 업데이트
-				if nullable.Int32(step.Status).V() < int32(servicev1.StatusSend) {
+				if nullable.Int32(step.Status).Value() < int32(servicev1.StatusSend) {
 					step.Status = newist.Int32(int32(servicev1.StatusSend))
 				}
 
 				//step.Status 상태가 service.Status 보다 크다면
 				//서비스의 상태 정보를 해당 값으로 덮어쓰기
-				if nullable.Int32(service.Status).V() < nullable.Int32(step.Status).V() {
+				if nullable.Int32(service.Status).Value() < nullable.Int32(step.Status).Value() {
 					service.Status = nullable.Int32(step.Status).Ptr()         //status
 					service.StepPosition = nullable.Int32(step.Sequence).Ptr() //position
 				}

@@ -60,19 +60,22 @@ func (config Config) MakeEventListener() ([]EventContexter, error) {
 	var w io.Writer = os.Stdout
 	tabwrite := tabwriter.NewWriter(w, 0, 0, 3, ' ', 0)
 	defer tabwrite.Flush()
-	fmt.Fprintf(tabwrite, "*** list event-listeners ***\n")
-	fmt.Fprintf(tabwrite, "event_no\tlistener_no\tname\tpattern\ttype\tsummary\t\n")
-	fmt.Fprintf(tabwrite, "-\t-\t-\t-\t-\t-\t\n")
+	fmt.Fprintln(w, "*** list event-listeners ***")
+	fmt.Fprint(tabwrite, tabwriterArgs("event_no", "listener_no", "name", "pattern", "type", "summary"))
 	for event_idx, event := range result {
 		for listener_idx, listener := range event.ListenerContexts() {
-			fmt.Fprintf(tabwrite, "%d\t%d\t%s\t%s\t%s\t%s\t\n", event_idx, listener_idx,
-				event.Name(), event.Pattern(),
-				listener.Type(), listener.Summary(),
-			)
+			fmt.Fprint(tabwrite, tabwriterArgs(event_idx, listener_idx, event.Name(), event.Pattern(), listener.Type(), listener.Summary()))
 		}
 	}
-
 	return result, nil
+}
+
+func tabwriterArgs(v ...interface{}) string {
+	s := make([]string, len(v))
+	for n := range v {
+		s[n] = fmt.Sprintf("%+v", v[n])
+	}
+	return strings.Join(s, "\t") + "\n"
 }
 
 func (config Config) Vaild() error {

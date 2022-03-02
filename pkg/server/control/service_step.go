@@ -53,9 +53,9 @@ func (c *Control) CreateServiceStep() func(ctx echo.Context) error {
 		//property
 		step.UuidMeta = NewUuidMeta()
 		step.LabelMeta = NewLabelMeta(step.Name, step.Summary)
-		step.ServiceUuid = service_uuid
+		step.ServiceUuid = newist.String(service_uuid)
 		if step.Sequence == nil {
-			//마직막 순서를 지정하기 위해서 스텝을 가져온다
+			//마지막 순서를 지정하기 위해서 스텝을 가져온다
 			where := "service_uuid = ?"
 			steps, err := operator.NewServiceStep(ctx.Database()).
 				Find(where, service_uuid)
@@ -216,7 +216,7 @@ func (c *Control) UpdateServiceStep() func(ctx echo.Context) error {
 		uuid := ctx.Params()[__UUID__]
 
 		//set service uuid from path
-		step.ServiceUuid = service_uuid
+		step.ServiceUuid = newist.String(service_uuid)
 		//set uuid from path
 		step.Uuid = uuid
 
@@ -280,7 +280,7 @@ func (c *Control) DeleteServiceStep() func(ctx echo.Context) error {
 		}
 
 		//Service Chaining
-		if err := operator.NewService(ctx.Database()).Chaining(step.ServiceUuid); err != nil {
+		if err := operator.NewService(ctx.Database()).Chaining(*step.ServiceUuid); err != nil {
 			return nil, err
 		}
 

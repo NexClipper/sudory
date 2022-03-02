@@ -207,10 +207,12 @@ func (c *Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 		template_uuid := ctx.Params()[__TEMPLATE_UUID__]
 		uuid := ctx.Params()[__UUID__]
 
+		command := body.TemplateCommand
+
 		//set template uuid from path
-		body.TemplateCommand.TemplateUuid = template_uuid
+		command.TemplateUuid = template_uuid
 		//set uuid from path
-		body.TemplateCommand.Uuid = uuid
+		command.Uuid = uuid
 
 		err := operator.NewTemplateCommand(ctx.Database()).
 			Update(body.TemplateCommand)
@@ -218,7 +220,12 @@ func (c *Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		return OK(), nil
+		//ChainingSequence
+		if err := operator.NewTemplateCommand(ctx.Database()).ChainingSequence(template_uuid, command.Uuid); err != nil {
+			return nil, err
+		}
+
+		return commandv1.HttpRspTemplateCommand{TemplateCommand: command}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{

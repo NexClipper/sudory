@@ -11,13 +11,13 @@ func Int32(v interface{}) nullInt32 {
 	return *(new(nullInt32).scan(v))
 }
 
-func (nullable nullInt32) V() int32 {
+func (nullable nullInt32) Value() int32 {
 	return nullable.int32
 }
 func (nullable nullInt32) Ptr() *int32 {
 	return &nullable.int32
 }
-func (nullable nullInt32) OK() bool {
+func (nullable nullInt32) Has() bool {
 	return nullable.bool
 }
 
