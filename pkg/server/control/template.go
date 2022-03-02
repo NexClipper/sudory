@@ -13,11 +13,11 @@ import (
 
 // Create Template
 // @Description Create a template
-// @Accept json
-// @Produce json
-// @Tags server/template
-// @Router /server/template [post]
-// @Param template body v1.HttpReqTemplateWithCommands true "HttpReqTemplateWithCommands"
+// @Accept      json
+// @Produce     json
+// @Tags        server/template
+// @Router      /server/template [post]
+// @Param       template body v1.HttpReqTemplateWithCommands true "HttpReqTemplateWithCommands"
 // @Success 200 {object} v1.HttpReqTemplateWithCommands
 func (c *Control) CreateTemplate() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
@@ -84,11 +84,11 @@ func (c *Control) CreateTemplate() func(ctx echo.Context) error {
 
 // Get Template
 // @Description Get a template
-// @Accept json
-// @Produce json
-// @Tags server/template
-// @Router /server/template/{uuid} [get]
-// @Param uuid path string true "Template 의 Uuid"
+// @Accept      json
+// @Produce     json
+// @Tags        server/template
+// @Router      /server/template/{uuid} [get]
+// @Param       uuid path string true "Template 의 Uuid"
 // @Success 200 {object} v1.HttpReqTemplateWithCommands
 func (c *Control) GetTemplate() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
@@ -132,13 +132,13 @@ func (c *Control) GetTemplate() func(ctx echo.Context) error {
 
 // Find []Template
 // @Description Find []template
-// @Accept json
-// @Produce json
-// @Tags server/template
-// @Router /server/template [get]
-// @Param uuid   query string false "Template 의 Uuid"
-// @Param name   query string false "Template 의 Name"
-// @Param origin query string false "Template 의 Origin"
+// @Accept      json
+// @Produce     json
+// @Tags        server/template
+// @Router      /server/template [get]
+// @Param       uuid   query string false "Template 의 Uuid"
+// @Param       name   query string false "Template 의 Name"
+// @Param       origin query string false "Template 의 Origin"
 // @Success 200 {array} v1.HttpReqTemplateWithCommands
 func (c *Control) FindTemplate() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
@@ -196,12 +196,12 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 
 // Update Template
 // @Description Update a template
-// @Accept json
-// @Produce json
-// @Tags server/template
-// @Router /server/template/{uuid} [put]
-// @Param uuid     path string false "Template 의 Uuid"
-// @Param template body v1.HttpReqTemplate true "HttpReqTemplate"
+// @Accept      json
+// @Produce     json
+// @Tags        server/template
+// @Router      /server/template/{uuid} [put]
+// @Param       uuid     path string false "Template 의 Uuid"
+// @Param       template body v1.HttpReqTemplate true "HttpReqTemplate"
 // @Success 200 {object} v1.HttpRspTemplate
 func (c *Control) UpdateTemplate() func(ctx echo.Context) error {
 
@@ -253,11 +253,11 @@ func (c *Control) UpdateTemplate() func(ctx echo.Context) error {
 
 // Delete Template
 // @Description Delete a template
-// @Accept json
-// @Produce json
-// @Tags server/template
-// @Router /server/template/{uuid} [delete]
-// @Param uuid path string true "Template 의 Uuid"
+// @Accept      json
+// @Produce     json
+// @Tags        server/template
+// @Router      /server/template/{uuid} [delete]
+// @Param       uuid path string true "Template 의 Uuid"
 // @Success 200
 func (c *Control) DeleteTemplate() func(ctx echo.Context) error {
 

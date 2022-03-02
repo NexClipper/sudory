@@ -9,18 +9,18 @@ import (
 
 // Find Session
 // @Description Find Session
-// @Accept json
-// @Produce json
-// @Tags server/session
-// @Router /server/session [get]
-// @Param uuid         query string false "Session 의 Uuid"
-// @Param name         query string false "Session 의 Name"
-// @Param user_kind    query string false "Session 의 user_kind"
-// @Param user_uuid    query string false "Session 의 user_uuid"
-// #Param limit        query int    false "Pagination 의 limit"
-// #Param page         query int    false "Pagination 의 page"
-// #Param order        query string false "Pagination 의 order"
-// @Success 200 {array} v1.HttpRspSession
+// @Accept      json
+// @Produce     json
+// @Tags        server/session
+// @Router      /server/session [get]
+// @Param       uuid         query string false "Session 의 Uuid"
+// @Param       name         query string false "Session 의 Name"
+// @Param       user_kind    query string false "Session 의 user_kind"
+// @Param       user_uuid    query string false "Session 의 user_uuid"
+// #Param       limit        query int    false "Pagination 의 limit"
+// #Param       page         query int    false "Pagination 의 page"
+// #Param       order        query string false "Pagination 의 order"
+// @Success     200 {array} v1.HttpRspSession
 func (c *Control) FindSession() func(ctx echo.Context) error {
 
 	binder := func(ctx Contexter) error {
@@ -59,12 +59,12 @@ func (c *Control) FindSession() func(ctx echo.Context) error {
 
 // Get Session
 // @Description Get a Session
-// @Accept json
-// @Produce json
-// @Tags server/session
-// @Router /server/session/{uuid} [get]
-// @Param uuid          path string true "Session 의 Uuid"
-// @Success 200 {object} v1.HttpRspSession
+// @Accept      json
+// @Produce     json
+// @Tags        server/session
+// @Router      /server/session/{uuid} [get]
+// @Param       uuid          path string true "Session 의 Uuid"
+// @Success     200 {object} v1.HttpRspSession
 func (c *Control) GetSession() func(ctx echo.Context) error {
 
 	binder := func(ctx Contexter) error {
@@ -98,12 +98,12 @@ func (c *Control) GetSession() func(ctx echo.Context) error {
 
 // Delete Session
 // @Description Delete a Session
-// @Accept json
-// @Produce json
-// @Tags server/session
-// @Router /server/session/{uuid} [delete]
-// @Param uuid path string true "Session 의 Uuid"
-// @Success 200
+// @Accept      json
+// @Produce     json
+// @Tags        server/session
+// @Router      /server/session/{uuid} [delete]
+// @Param       uuid path string true "Session 의 Uuid"
+// @Success     200
 func (c *Control) DeleteSession() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
 		if len(ctx.Params()) == 0 {

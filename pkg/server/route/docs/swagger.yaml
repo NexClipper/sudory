@@ -698,19 +698,10 @@ definitions:
     type: object
   v1.ServiceStepEssential:
     properties:
-      api_version:
-        description: api version
-        type: string
       args:
         additionalProperties: true
         description: arguments
         type: object
-      name:
-        description: label name
-        type: string
-      summary:
-        description: label summary
-        type: string
     type: object
   v1.TemplateCommand:
     properties:
@@ -1605,7 +1596,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspTemplateCommand'
       tags:
       - server/template_command
   /server/template/{uuid}:

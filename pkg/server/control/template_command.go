@@ -9,12 +9,12 @@ import (
 
 // Create Template Command
 // @Description Create a template command
-// @Accept json
-// @Produce json
-// @Tags server/template_command
-// @Router /server/template/{template_uuid}/command [post]
-// @Param template_uuid path string true "HttpReqTemplate 의 Uuid"
-// @Param command       body v1.HttpReqTemplateCommand true "HttpReqTemplateCommand"
+// @Accept      json
+// @Produce     json
+// @Tags        server/template_command
+// @Router      /server/template/{template_uuid}/command [post]
+// @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
+// @Param       command       body v1.HttpReqTemplateCommand true "HttpReqTemplateCommand"
 // @Success 200 {object} v1.HttpRspTemplateCommand
 func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
 
@@ -68,7 +68,7 @@ func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		//TemplateCommand ChainingSequence
+		//ChainingSequence
 		if err := operator.NewTemplateCommand(ctx.Database()).ChainingSequence(template_uuid, command.Uuid); err != nil {
 			return nil, err
 		}
@@ -86,11 +86,11 @@ func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
 
 // Get Template Commands
 // @Description Get template commands
-// @Accept json
-// @Produce json
-// @Tags server/template_command
-// @Router /server/template/{template_uuid}/command [get]
-// @Param template_uuid path string true "HttpReqTemplate 의 Uuid"
+// @Accept      json
+// @Produce     json
+// @Tags        server/template_command
+// @Router      /server/template/{template_uuid}/command [get]
+// @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
 // @Success 200 {array} v1.HttpRspTemplateCommand
 func (c *Control) GetTemplateCommands() func(ctx echo.Context) error {
 
@@ -126,12 +126,12 @@ func (c *Control) GetTemplateCommands() func(ctx echo.Context) error {
 
 // Get Template Command
 // @Description Get a template command
-// @Accept json
-// @Produce json
-// @Tags server/template_command
-// @Router /server/template/{template_uuid}/command/{uuid} [get]
-// @Param template_uuid path string true "HttpReqTemplate 의 Uuid"
-// @Param uuid          path string true "HttpReqTemplateCommand 의 Uuid"
+// @Accept      json
+// @Produce     json
+// @Tags        server/template_command
+// @Router      /server/template/{template_uuid}/command/{uuid} [get]
+// @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
+// @Param       uuid          path string true "HttpReqTemplateCommand 의 Uuid"
 // @Success 200 {object} v1.HttpRspTemplateCommand
 func (c *Control) GetTemplateCommand() func(ctx echo.Context) error {
 
@@ -170,14 +170,14 @@ func (c *Control) GetTemplateCommand() func(ctx echo.Context) error {
 
 // Update Template Command
 // @Description Update a template command
-// @Accept json
-// @Produce json
-// @Tags server/template_command
-// @Router /server/template/{template_uuid}/command/{uuid} [put]
-// @Param template_uuid path string true "HttpReqTemplateCommand 의 TemplateUuid"
-// @Param uuid          path string true "HttpReqTemplateCommand 의 Uuid"
-// @Param command       body v1.HttpReqTemplateCommand true "HttpReqTemplateCommand"
-// @Success 200
+// @Accept      json
+// @Produce     json
+// @Tags        server/template_command
+// @Router      /server/template/{template_uuid}/command/{uuid} [put]
+// @Param       template_uuid path string true "HttpReqTemplateCommand 의 TemplateUuid"
+// @Param       uuid          path string true "HttpReqTemplateCommand 의 Uuid"
+// @Param       command       body v1.HttpReqTemplateCommand true "HttpReqTemplateCommand"
+// @Success 200 {object} v1.HttpRspTemplateCommand
 func (c *Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 
 	binder := func(ctx Contexter) error {
@@ -231,12 +231,12 @@ func (c *Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 
 // Delete Template Command
 // @Description Delete a template command
-// @Accept json
-// @Produce json
-// @Tags server/template_command
-// @Router /server/template/{template_uuid}/command/{uuid} [delete]
-// @Param template_uuid path string true "HttpReqTemplate 의 Uuid"
-// @Param uuid          path string true "HttpReqTemplateCommand 의 Uuid"
+// @Accept      json
+// @Produce     json
+// @Tags        server/template_command
+// @Router      /server/template/{template_uuid}/command/{uuid} [delete]
+// @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
+// @Param       uuid          path string true "HttpReqTemplateCommand 의 Uuid"
 // @Success 200
 func (c *Control) DeleteTemplateCommand() func(ctx echo.Context) error {
 

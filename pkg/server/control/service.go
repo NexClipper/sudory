@@ -15,12 +15,12 @@ import (
 
 // Create Service
 // @Description Create a Service
-// @Accept json
-// @Produce json
-// @Tags server/service
-// @Router /server/service [post]
-// @Param service body v1.HttpReqServiceCreate true "HttpReqServiceCreate"
-// @Success 200 {object} v1.HttpRspServiceWithSteps
+// @Accept      json
+// @Produce     json
+// @Tags        server/service
+// @Router      /server/service [post]
+// @Param       service body v1.HttpReqServiceCreate true "HttpReqServiceCreate"
+// @Success     200 {object} v1.HttpRspServiceWithSteps
 func (c *Control) CreateService() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
 		body := new(servicev1.HttpReqServiceCreate)
@@ -160,14 +160,14 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 
 // Find []Service
 // @Description Find []Service
-// @Accept json
-// @Produce json
-// @Tags server/service
-// @Router /server/service [get]
-// @Param cluster_uuid query string false "Service 의 ClusterUuid"
-// @Param uuid         query string false "Service 의 Uuid"
-// @Param status       query string false "Service 의 Status"
-// @Success 200 {array} v1.HttpRspServiceWithSteps
+// @Accept      json
+// @Produce     json
+// @Tags        server/service
+// @Router      /server/service [get]
+// @Param       cluster_uuid query string false "Service 의 ClusterUuid"
+// @Param       uuid         query string false "Service 의 Uuid"
+// @Param       status       query string false "Service 의 Status"
+// @Success     200 {array} v1.HttpRspServiceWithSteps
 func (c *Control) FindService() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
 		// if len(ctx.Query()) == 0 {
@@ -233,12 +233,12 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 
 // Get Service
 // @Description Get a Service
-// @Accept json
-// @Produce json
-// @Tags server/service
-// @Router /server/service/{uuid} [get]
-// @Param uuid path string true "Service 의 Uuid"
-// @Success 200 {object} v1.HttpRspServiceWithSteps
+// @Accept      json
+// @Produce     json
+// @Tags        server/service
+// @Router      /server/service/{uuid} [get]
+// @Param       uuid path string true "Service 의 Uuid"
+// @Success     200 {object} v1.HttpRspServiceWithSteps
 func (c *Control) GetService() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
 		if len(ctx.Params()) == 0 {
@@ -287,12 +287,12 @@ func (c *Control) GetService() func(ctx echo.Context) error {
 
 // Get Service Result
 // @Description Get a Service with Result
-// @Accept json
-// @Produce json
-// @Tags server/service
-// @Router /server/service/{uuid}/result [get]
-// @Param uuid path string true "Service 의 Uuid"
-// @Success 200 {object} v1.HttpRspServiceWithSteps
+// @Accept      json
+// @Produce     json
+// @Tags        server/service
+// @Router      /server/service/{uuid}/result [get]
+// @Param       uuid path string true "Service 의 Uuid"
+// @Success     200 {object} v1.HttpRspServiceWithSteps
 func (c *Control) GetServiceResult() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
 		if len(ctx.Params()) == 0 {
@@ -337,13 +337,13 @@ func (c *Control) GetServiceResult() func(ctx echo.Context) error {
 
 // Update Service
 // @Description Update a Service
-// @Accept json
-// @Produce json
-// @Tags server/service
-// @Router /server/service/{uuid} [put]
-// @Param uuid    path string true "Service 의 Uuid"
-// @Param service body v1.HttpReqService true "HttpReqService"
-// @Success 200 {object} v1.HttpRspService
+// @Accept      json
+// @Produce     json
+// @Tags        server/service
+// @Router      /server/service/{uuid} [put]
+// @Param       uuid    path string true "Service 의 Uuid"
+// @Param       service body v1.HttpReqService true "HttpReqService"
+// @Success     200 {object} v1.HttpRspService
 func (c *Control) UpdateService() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
 		body := new(servicev1.HttpReqService)
@@ -393,12 +393,12 @@ func (c *Control) UpdateService() func(ctx echo.Context) error {
 
 // Delete Service
 // @Description Delete a Service
-// @Accept json
-// @Produce json
-// @Tags server/service
-// @Router /server/service/{uuid} [delete]
-// @Param uuid path string true "Service 의 Uuid"
-// @Success 200
+// @Accept      json
+// @Produce     json
+// @Tags        server/service
+// @Router      /server/service/{uuid} [delete]
+// @Param       uuid path string true "Service 의 Uuid"
+// @Success     200
 func (c *Control) DeleteService() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
 		if len(ctx.Params()) == 0 {

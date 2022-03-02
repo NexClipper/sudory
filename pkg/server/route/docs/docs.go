@@ -1303,7 +1303,10 @@ var doc = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspTemplateCommand"
+                        }
                     }
                 }
             },
@@ -2635,22 +2638,10 @@ var doc = `{
         "v1.ServiceStepEssential": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "args": {
                     "description": "arguments",
                     "type": "object",
                     "additionalProperties": true
-                },
-                "name": {
-                    "description": "label name",
-                    "type": "string"
-                },
-                "summary": {
-                    "description": "label summary",
-                    "type": "string"
                 }
             }
         },
