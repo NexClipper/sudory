@@ -46,10 +46,10 @@ func init() {
 	cfg := LoggerConfig{}
 
 	flag.StringVar(&cfg.Severity, "log-severity", "debug", "severity of log severity=debug,[info|information],[warn|warning],error,fatal")
-	flag.BoolVar(&cfg.SystemEvent, "log-system-event", true, "enabled system event")
+	flag.BoolVar(&cfg.SystemEvent, "log-system-event", false, "enabled system event")
 	flag.StringVar(&cfg.SystemEventName, "log-system-eventname", "nexclipper.io/sudory", "system event name")
 	flag.BoolVar(&cfg.Verbose, "log-verbose", false, "enabled verbose")
-	flag.IntVar(&cfg.VerboseLevel, "log-verbose-level", 0, "verbose level higher more detail max=5")
+	flag.IntVar(&cfg.VerboseLevel, "log-verbose-level", 9, "verbose level higher more detail max=9")
 
 	//file rotator (for lumberjack)
 	flag.StringVar(&cfg.Filename, "log-filename", "sudory.log", "log file name")
