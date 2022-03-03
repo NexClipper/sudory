@@ -8,5 +8,6 @@ COPY ./conf/script/client/entrypoint.sh /
 
 ENV S_SERVER_URL ""
 ENV S_CLUSTER_ID ""
+ENV S_TOKEN ""
 
 ENTRYPOINT ["sh", "/entrypoint.sh"]
