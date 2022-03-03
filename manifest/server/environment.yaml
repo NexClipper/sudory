@@ -16,6 +16,7 @@ data:
   db_root_username: "root"
   db_server_username: "sudory"
   log_severity: "info"
+  log_system_event: "false"
   log_verbose: "true"
   log_verboselevel: "9"
   log_filename: "./sudory.log"

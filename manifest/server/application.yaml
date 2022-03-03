@@ -77,6 +77,11 @@ spec:
                 configMapKeyRef:
                   name: sudory-configmap
                   key: log_severity
+            - name: SUDORY_LOG_SYSTEM_EVENT
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap            
+                  key: log_system_event
             - name: SUDORY_LOG_VERBOSE
               valueFrom:
                 configMapKeyRef:
