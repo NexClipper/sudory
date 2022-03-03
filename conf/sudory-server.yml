@@ -17,6 +17,18 @@ database:
   showsql: false
   loglevel: warn
 
+logger:
+  severity: 'debug'
+  system-event: false
+  system-event-name: 'nexclipper.io/sudory'
+  verbose: false
+  verbose-level: 9
+  filename: 'sudory.log'
+  max-size: 10
+  max-age: 30
+  max-backups: 20
+  compress: false
+
 events:
   - event:
     name: 'client poll'

@@ -14,27 +14,29 @@ import (
 )
 
 type LoggerConfig struct {
-	Severity        string `env:"SUDORY_LOG_SEVERIY"`
-	SystemEvent     bool   `env:"SUDORY_LOG_SYSTEM_EVENT"`
-	SystemEventName string `env:"SUDORY_LOG_SYSTEM_EVENT_NAME"`
-	Verbose         bool   `env:"SUDORY_LOG_VERBOSE"`
-	VerboseLevel    int    `env:"SUDORY_LOG_VERBOSELEVEL"`
-	Filename        string `env:"SUDORY_LOG_FILENAME"`
-	MaxSize         int    `env:"SUDORY_LOG_MAXSIZE"`
-	MaxAge          int    `env:"SUDORY_LOG_MAXAGE"`
-	MaxBackups      int    `env:"SUDORY_LOG_MAXBACKUPS"`
-	Compress        bool   `env:"SUDORY_LOG_COMPRESS"`
+	Logger struct {
+		Severity        string `env:"SUDORY_LOG_SEVERIY"           yaml:"severity,omitempty"`
+		SystemEvent     bool   `env:"SUDORY_LOG_SYSTEM_EVENT"      yaml:"system-event,omitempty"`
+		SystemEventName string `env:"SUDORY_LOG_SYSTEM_EVENT_NAME" yaml:"system-event-name,omitempty"`
+		Verbose         bool   `env:"SUDORY_LOG_VERBOSE"           yaml:"verbose,omitempty"`
+		VerboseLevel    int    `env:"SUDORY_LOG_VERBOSELEVEL"      yaml:"verbose-level,omitempty"`
+		Filename        string `env:"SUDORY_LOG_FILENAME"          yaml:"filename,omitempty"`
+		MaxSize         int    `env:"SUDORY_LOG_MAXSIZE"           yaml:"max-size,omitempty"`
+		MaxAge          int    `env:"SUDORY_LOG_MAXAGE"            yaml:"max-age,omitempty"`
+		MaxBackups      int    `env:"SUDORY_LOG_MAXBACKUPS"        yaml:"max-backups,omitempty"`
+		Compress        bool   `env:"SUDORY_LOG_COMPRESS"          yaml:"compress,omitempty"`
+	}
 }
 
-var lazyinitlogger func() = func() {
+var lazyinitlogger func(string) = func(string) {
 	panic(fmt.Errorf("call me after func init()"))
 }
 
 var onceinitlogger sync.Once
 
-var LazyInitLogger func() = func() {
+var LazyInitLogger func(string) = func(configfile string) {
 	onceinitlogger.Do(func() {
-		lazyinitlogger()
+		lazyinitlogger(configfile)
 	})
 }
 
@@ -45,45 +47,45 @@ func init() {
 	//logger config
 	cfg := LoggerConfig{}
 
-	flag.StringVar(&cfg.Severity, "log-severity", "debug", "severity of log severity=debug,[info|information],[warn|warning],error,fatal")
-	flag.BoolVar(&cfg.SystemEvent, "log-system-event", false, "enabled system event")
-	flag.StringVar(&cfg.SystemEventName, "log-system-eventname", "nexclipper.io/sudory", "system event name")
-	flag.BoolVar(&cfg.Verbose, "log-verbose", false, "enabled verbose")
-	flag.IntVar(&cfg.VerboseLevel, "log-verbose-level", 9, "verbose level higher more detail max=9")
+	flag.StringVar(&cfg.Logger.Severity, "log-severity", "debug", "severity of log severity=debug,[info|information],[warn|warning],error,fatal")
+	flag.BoolVar(&cfg.Logger.SystemEvent, "log-system-event", false, "enabled system event")
+	flag.StringVar(&cfg.Logger.SystemEventName, "log-system-eventname", "nexclipper.io/sudory", "system event name")
+	flag.BoolVar(&cfg.Logger.Verbose, "log-verbose", false, "enabled verbose")
+	flag.IntVar(&cfg.Logger.VerboseLevel, "log-verbose-level", 9, "verbose level higher more detail max=9")
 
 	//file rotator (for lumberjack)
-	flag.StringVar(&cfg.Filename, "log-filename", "sudory.log", "log file name")
-	flag.IntVar(&cfg.MaxSize, "log-max-size", 20, "maximum size in megabytes of the log file (MB)")
-	flag.IntVar(&cfg.MaxAge, "log-max-age", 30, "maximum number of days to retain old log files (DAY)")
-	flag.IntVar(&cfg.MaxBackups, "log-max-backups", 20, "maximum number of old log files to retain (COUNT)")
-	flag.BoolVar(&cfg.Compress, "log-compress", false, "log compress option")
+	flag.StringVar(&cfg.Logger.Filename, "log-filename", "sudory.log", "log file name")
+	flag.IntVar(&cfg.Logger.MaxSize, "log-max-size", 20, "maximum size in megabytes of the log file (MB)")
+	flag.IntVar(&cfg.Logger.MaxAge, "log-max-age", 30, "maximum number of days to retain old log files (DAY)")
+	flag.IntVar(&cfg.Logger.MaxBackups, "log-max-backups", 20, "maximum number of old log files to retain (COUNT)")
+	flag.BoolVar(&cfg.Logger.Compress, "log-compress", false, "log compress option")
 
 	//swap lazyinitlogger
-	lazyinitlogger = func() {
+	lazyinitlogger = func(configfile string) {
 
 		//환경변수에서 읽는다 syscall.Getenv
-		if err := configor.Load(&cfg); err != nil {
+		if err := configor.Load(&cfg, configfile); err != nil {
 			fmt.Fprintln(os.Stderr, "ENV Unmarshal", err.Error())
 		}
 
 		rotate := lumberjack.Logger{
-			Filename:   cfg.Filename,
-			MaxSize:    cfg.MaxSize,
-			MaxAge:     cfg.MaxAge,
-			MaxBackups: cfg.MaxBackups,
-			Compress:   cfg.Compress,
+			Filename:   cfg.Logger.Filename,
+			MaxSize:    cfg.Logger.MaxSize,
+			MaxAge:     cfg.Logger.MaxAge,
+			MaxBackups: cfg.Logger.MaxBackups,
+			Compress:   cfg.Logger.Compress,
 		}
 
-		logger.Init(cfg.SystemEventName, cfg.Verbose, cfg.SystemEvent, &rotate)
+		logger.Init(cfg.Logger.SystemEventName, cfg.Logger.Verbose, cfg.Logger.SystemEvent, &rotate)
 
-		logger.SetLevel(logger.Level(severity(cfg.Severity)))
+		logger.SetLevel(logger.Level(severity(cfg.Logger.Severity)))
 
-		logs.SetVerbose(cfg.VerboseLevel)
+		logs.SetVerbose(cfg.Logger.VerboseLevel)
 
 		//first log
 		logger.Debugln(logs.WithName("init logger").WithValue(
-			"log-severity", cfg.Severity, "log-system-event", cfg.SystemEvent, "log-system-eventname", cfg.SystemEventName, "log-verbose", cfg.Verbose,
-			"log-filename", cfg.Filename, "log-max-size", cfg.MaxSize, "log-max-age", cfg.MaxAge, "log-max-backups", cfg.MaxBackups, "log-compress", cfg.Compress).String())
+			"log-severity", cfg.Logger.Severity, "log-system-event", cfg.Logger.SystemEvent, "log-system-eventname", cfg.Logger.SystemEventName, "log-verbose", cfg.Logger.Verbose,
+			"log-filename", cfg.Logger.Filename, "log-max-size", cfg.Logger.MaxSize, "log-max-age", cfg.Logger.MaxAge, "log-max-backups", cfg.Logger.MaxBackups, "log-compress", cfg.Logger.Compress).String())
 	}
 }
 
