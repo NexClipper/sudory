@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
         - name: sudory-server
-          image: p8s.me/nexclipper/sudory-server:0.1.7
+          image: p8s.me/nexclipper/sudory-server:0.2.0
           ports:
             - containerPort: 8099
           env:
@@ -72,3 +72,43 @@ spec:
                 secretKeyRef:
                   name: sudory-secret
                   key: db_server_password
+            - name: SUDORY_LOG_SEVERITY
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: log_severity
+            - name: SUDORY_LOG_VERBOSE
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap 
+                  key: log_verbose
+            - name: SUDORY_LOG_VERBOSELEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: log_verboselevel
+            - name: SUDORY_LOG_FILENAME
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: log_filename
+            - name: SUDORY_LOG_MAXSIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: log_maxsize
+            - name: SUDORY_LOG_MAXAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: log_maxage
+            - name: SUDORY_LOG_MAXBACKUPS
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: log_maxbackups
+            - name: SUDORY_LOG_COMPRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: log_compress

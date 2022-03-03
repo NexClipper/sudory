@@ -15,6 +15,14 @@ data:
   db_export_path: "."
   db_root_username: "root"
   db_server_username: "sudory"
+  log_severity: "info"
+  log_verbose: "true"
+  log_verboselevel: "9"
+  log_filename: "./sudory.log"
+  log_maxsize: "10"
+  log_maxage: "5"
+  log_maxbackups: "10"
+  log_compress: "false"
 ---
 apiVersion: v1
 kind: Secret
