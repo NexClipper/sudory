@@ -15,6 +15,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/jwt"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
+	authv1 "github.com/NexClipper/sudory/pkg/server/model/auth/v1"
 	clientv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
@@ -208,43 +209,33 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 
 // Auth Client
 // @Description Auth a client
-// @Accept      x-www-form-urlencoded
+// @Accept      json
 // @Produce     json
 // @Tags        client/auth
 // @Router      /client/auth [post]
-// @Param       assertion    formData string true "assertion=<bearer-token>"
-// @Param       cluster_uuid formData string true "Cluster 의 Uuid"
-// @Param       client_uuid  formData string true "Client 의 Uuid"
+// @Param       auth body v1.HttpReqAuth true "HttpReqAuth"
 // @Success     200 {string} ok
 // @Header      200 {string} x-sudory-client-token "x-sudory-client-token"
 func (c *Control) AuthClient() func(ctx echo.Context) error {
 
 	binder := func(ctx Contexter) error {
-
-		if len(ctx.Forms()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-
-		if len(ctx.Forms()[__ASSERTION__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__ASSERTION__)
-		}
-		if len(ctx.Forms()[__CLUSTER_UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__CLUSTER_UUID__)
-		}
-		if len(ctx.Forms()[__CLIENT_UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__CLIENT_UUID__)
+		body := new(authv1.HttpReqAuth)
+		if err := ctx.Bind(body); err != nil {
+			return ErrorBindRequestObject(err)
 		}
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
+		body, ok := ctx.Object().(*authv1.HttpReqAuth)
+		if !ok {
+			return nil, ErrorFailedCast()
+		}
 
-		assertion := ctx.Forms()[__ASSERTION__]
-		cluster_uuid := ctx.Forms()[__CLUSTER_UUID__]
-		client_uuid := ctx.Forms()[__CLIENT_UUID__]
+		auth := body.Auth
 
 		//valid cluster
 		_, err := operator.NewCluster(ctx.Database()).
-			Get(cluster_uuid)
+			Get(auth.ClusterUuid)
 		if err != nil {
 			return nil, err
 		}
@@ -253,18 +244,18 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 		//레코드에 없으면 추가
 		where := "cluster_uuid = ? AND uuid = ?"
 		clients, err := operator.NewClient(ctx.Database()).
-			Find(where, cluster_uuid, client_uuid)
+			Find(where, auth.ClusterUuid, auth.ClientUuid)
 		if err != nil {
 			return nil, err
 		}
 		//없으면 추가
 		if len(clients) == 0 {
-			name := fmt.Sprintf("client:%s", client_uuid)
-			summary := fmt.Sprintf("client: %s, cluster: %s", client_uuid, cluster_uuid)
+			name := fmt.Sprintf("client:%s", auth.ClientUuid)
+			summary := fmt.Sprintf("client: %s, cluster: %s", auth.ClientUuid, auth.ClusterUuid)
 			client := clientv1.Client{}
-			client.Uuid = client_uuid
+			client.Uuid = auth.ClientUuid
 			client.LabelMeta = NewLabelMeta(newist.String(name), newist.String(summary))
-			client.ClusterUuid = cluster_uuid
+			client.ClusterUuid = auth.ClusterUuid
 
 			if err = operator.NewClient(ctx.Database()).Create(client); err != nil {
 				return nil, err
@@ -275,8 +266,8 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 		//user_kind = ? AND user_uuid = ? AND token = ?
 		m := WrapMap("and", WrapArray(
 			WrapMap("eq", WrapMap("user_kind", token_user_kind_cluster)),
-			WrapMap("eq", WrapMap("user_uuid", cluster_uuid)),
-			WrapMap("eq", WrapMap("token", assertion)),
+			WrapMap("eq", WrapMap("user_uuid", auth.ClusterUuid)),
+			WrapMap("eq", WrapMap("token", auth.Assertion)),
 		))
 		cond, err := prepared.NewConditionMap(m)
 		if err != nil {
@@ -315,8 +306,8 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 			Exp:          exp,
 			Iat:          iat,
 			Uuid:         token_uuid,
-			ClusterUuid:  cluster_uuid,
-			ClientUuid:   client_uuid,
+			ClusterUuid:  auth.ClusterUuid,
+			ClientUuid:   auth.ClientUuid,
 			PollInterval: env.ClientConfigPollInterval(),
 			Loglevel:     env.ClientConfigLoglevel(),
 		}

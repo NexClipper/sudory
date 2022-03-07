@@ -3,7 +3,7 @@ package control
 import (
 	"github.com/NexClipper/sudory/pkg/server/control/operator"
 	"github.com/NexClipper/sudory/pkg/server/database/prepared"
-	"github.com/NexClipper/sudory/pkg/server/macro/newist"
+	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	envv1 "github.com/NexClipper/sudory/pkg/server/model/environment/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -98,32 +98,39 @@ func (c *Control) GetEnvironment() func(ctx echo.Context) error {
 
 // UpdateEnvironment
 // @Description Update Environment Value
-// @Accept      x-www-form-urlencoded
+// @Accept      json
 // @Produce     json
 // @Tags        server/environment
-// @Router      /server/environment [put]
-// @Param       uuid   formData string true "Environment 의 Uuid"
-// @Param       value  formData string false "Environment 의 Value"
+// @Router      /server/environment/{uuid} [put]
+// @Param       uuid       path string                      true  "Environment 의 Uuid"
+// @Param       enviroment body v1.HttpReqUpdateEnvironment false "HttpReqUpdateEnvironment"
 // @Success 200 {object} v1.HttpRspEnvironment
 func (c *Control) UpdateEnvironmentValue() func(ctx echo.Context) error {
 
 	binder := func(ctx Contexter) error {
-		if len(ctx.Forms()) == 0 {
+		body := new(envv1.HttpReqUpdateEnvironment)
+		if err := ctx.Bind(body); err != nil {
+			return ErrorBindRequestObject(err)
+		}
+
+		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
 
-		if len(ctx.Forms()[__UUID__]) == 0 {
+		if len(ctx.Params()[__UUID__]) == 0 {
 			return ErrorInvaliedRequestParameterName(__UUID__)
 		}
-		// if len(ctx.Forms()[__VALUE__]) == 0 {
-		// 	return ErrorInvaliedRequestParameterName(__VALUE__)
-		// }
 
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		uuid := ctx.Forms()[__UUID__]
-		value := ctx.Forms()[__VALUE__]
+		body, ok := ctx.Object().(*envv1.HttpReqUpdateEnvironment)
+		if !ok {
+			return nil, ErrorFailedCast()
+		}
+		update_env := body.UpdateEnvironment
+
+		uuid := ctx.Params()[__UUID__]
 
 		//get record
 		env, err := operator.NewEnvironment(ctx.Database()).Get(uuid)
@@ -131,8 +138,9 @@ func (c *Control) UpdateEnvironmentValue() func(ctx echo.Context) error {
 			return nil, err
 		}
 
-		//udate value
-		env.Value = newist.String(value)
+		//update property
+		//value
+		env.Value = nullable.String(*update_env.Value).Ptr()
 
 		//update record
 		err = operator.NewEnvironment(ctx.Database()).

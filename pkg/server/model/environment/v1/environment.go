@@ -29,11 +29,6 @@ func (DbSchemaEnvironment) TableName() string {
 	return "environment"
 }
 
-//HTTP REQUEST BODY: Environment
-type HttpReqEnvironment struct {
-	Environment `json:",inline"`
-}
-
 //HTTP RESPONSE BODY: Environment
 type HttpRspEnvironment struct {
 	Environment `json:",inline"`
@@ -55,4 +50,13 @@ func TransToHttpRsp(s []Environment) []HttpRspEnvironment {
 		out[n].Environment = s[n]
 	}
 	return out
+}
+
+type UpdateEnvironment struct {
+	EnvironmentProperty `json:",inline" xorm:"extends"` //inline property
+}
+
+//HTTP REQUEST BODY: Environment
+type HttpReqUpdateEnvironment struct {
+	UpdateEnvironment `json:",inline"`
 }

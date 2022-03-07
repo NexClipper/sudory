@@ -30,7 +30,7 @@ var doc = `{
             "post": {
                 "description": "Auth a client",
                 "consumes": [
-                    "application/x-www-form-urlencoded"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -40,25 +40,13 @@ var doc = `{
                 ],
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "assertion=\u003cbearer-token\u003e",
-                        "name": "assertion",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Cluster 의 Uuid",
-                        "name": "cluster_uuid",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Client 의 Uuid",
-                        "name": "client_uuid",
-                        "in": "formData",
-                        "required": true
+                        "description": "HttpReqAuth",
+                        "name": "auth",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpReqAuth"
+                        }
                     }
                 ],
                 "responses": {
@@ -445,41 +433,6 @@ var doc = `{
                         }
                     }
                 }
-            },
-            "put": {
-                "description": "Update Environment Value",
-                "consumes": [
-                    "application/x-www-form-urlencoded"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/environment"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Environment 의 Uuid",
-                        "name": "uuid",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Environment 의 Value",
-                        "name": "value",
-                        "in": "formData"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpRspEnvironment"
-                        }
-                    }
-                }
             }
         },
         "/server/environment/{uuid}": {
@@ -501,6 +454,43 @@ var doc = `{
                         "name": "uuid",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspEnvironment"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update Environment Value",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/environment"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Environment 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "HttpReqUpdateEnvironment",
+                        "name": "enviroment",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpReqUpdateEnvironment"
+                        }
                     }
                 ],
                 "responses": {
@@ -1602,6 +1592,23 @@ var doc = `{
         }
     },
     "definitions": {
+        "v1.HttpReqAuth": {
+            "type": "object",
+            "properties": {
+                "assertion": {
+                    "description": "\u003cbearer-token\u003e",
+                    "type": "string"
+                },
+                "client_uuid": {
+                    "description": "client uuid",
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "description": "cluster uuid",
+                    "type": "string"
+                }
+            }
+        },
         "v1.HttpReqClientSideService": {
             "type": "object",
             "properties": {
@@ -1982,6 +1989,14 @@ var doc = `{
                 },
                 "uuid": {
                     "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpReqUpdateEnvironment": {
+            "type": "object",
+            "properties": {
+                "value": {
                     "type": "string"
                 }
             }

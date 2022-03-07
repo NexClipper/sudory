@@ -1,4 +1,16 @@
 definitions:
+  v1.HttpReqAuth:
+    properties:
+      assertion:
+        description: <bearer-token>
+        type: string
+      client_uuid:
+        description: client uuid
+        type: string
+      cluster_uuid:
+        description: cluster uuid
+        type: string
+    type: object
   v1.HttpReqClientSideService:
     properties:
       api_version:
@@ -282,6 +294,11 @@ definitions:
         type: string
       uuid:
         description: UUID
+        type: string
+    type: object
+  v1.HttpReqUpdateEnvironment:
+    properties:
+      value:
         type: string
     type: object
   v1.HttpRspClient:
@@ -726,24 +743,15 @@ paths:
   /client/auth:
     post:
       consumes:
-      - application/x-www-form-urlencoded
+      - application/json
       description: Auth a client
       parameters:
-      - description: assertion=<bearer-token>
-        in: formData
-        name: assertion
+      - description: HttpReqAuth
+        in: body
+        name: auth
         required: true
-        type: string
-      - description: Cluster 의 Uuid
-        in: formData
-        name: cluster_uuid
-        required: true
-        type: string
-      - description: Client 의 Uuid
-        in: formData
-        name: client_uuid
-        required: true
-        type: string
+        schema:
+          $ref: '#/definitions/v1.HttpReqAuth'
       produces:
       - application/json
       responses:
@@ -997,29 +1005,6 @@ paths:
             type: array
       tags:
       - server/environment
-    put:
-      consumes:
-      - application/x-www-form-urlencoded
-      description: Update Environment Value
-      parameters:
-      - description: Environment 의 Uuid
-        in: formData
-        name: uuid
-        required: true
-        type: string
-      - description: Environment 의 Value
-        in: formData
-        name: value
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.HttpRspEnvironment'
-      tags:
-      - server/environment
   /server/environment/{uuid}:
     get:
       consumes:
@@ -1031,6 +1016,30 @@ paths:
         name: uuid
         required: true
         type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspEnvironment'
+      tags:
+      - server/environment
+    put:
+      consumes:
+      - application/json
+      description: Update Environment Value
+      parameters:
+      - description: Environment 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: HttpReqUpdateEnvironment
+        in: body
+        name: enviroment
+        schema:
+          $ref: '#/definitions/v1.HttpReqUpdateEnvironment'
       produces:
       - application/json
       responses:
