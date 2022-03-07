@@ -38,8 +38,6 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	//route /server/client*
 	router.e.GET("/server/client", controller.FindClient())
 	router.e.GET("/server/client/:uuid", controller.GetClient())
-	// router.e.POST("/server/client", controller.CreateClient())
-	// router.e.PUT("/server/client/:uuid", controller.UpdateClient())
 	router.e.DELETE("/server/client/:uuid", controller.DeleteClient())
 	//route /server/cluster*
 	router.e.GET("/server/cluster", controller.FindCluster())
@@ -69,9 +67,6 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	//route /server/service_step*
 	router.e.GET("/server/service/:service_uuid/step", controller.FindServiceStep())
 	router.e.GET("/server/service/:service_uuid/step/:uuid", controller.GetServiceStep())
-	router.e.POST("/server/service/:service_uuid/step", controller.CreateServiceStep())
-	router.e.PUT("/server/service/:service_uuid/step/:uuid", controller.UpdateServiceStep())
-	router.e.DELETE("/server/service/:service_uuid/step/:uuid", controller.DeleteServiceStep())
 	//route /server/environment*
 	router.e.GET("/server/environment", controller.FindEnvironment())
 	router.e.GET("/server/environment/:uuid", controller.GetEnvironment())

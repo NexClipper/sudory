@@ -2,7 +2,6 @@ package operator
 
 import (
 	"github.com/NexClipper/sudory/pkg/server/database"
-	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 )
 
@@ -78,33 +77,33 @@ func (o *Service) Delete(uuid string) error {
 	return nil
 }
 
-// Chaining
-//  서비스 정보 업데이트
-//  - 스탭 카운트
-func (o *Service) Chaining(uuid string) error {
-	//서비스 조회
-	service, err := o.ctx.GetService(uuid)
-	if err != nil {
-		return err
-	}
+// // Chaining
+// //  서비스 정보 업데이트
+// //  - 스탭 카운트
+// func (o *Service) Chaining(uuid string) error {
+// 	//서비스 조회
+// 	service, err := o.ctx.GetService(uuid)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	//서비스 스탭 조회
-	where := "service_uuid = ?"
-	steps, err := o.ctx.FindServiceStep(where, uuid)
-	if err != nil {
-		return err
-	}
+// 	//서비스 스탭 조회
+// 	where := "service_uuid = ?"
+// 	steps, err := o.ctx.FindServiceStep(where, uuid)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	// 스탭 카운트 업데이트
-	service.StepCount = newist.Int32(int32(len(steps)))
+// 	// 스탭 카운트 업데이트
+// 	service.StepCount = newist.Int32(int32(len(steps)))
 
-	//저장
-	err = o.ctx.UpdateService(*service)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// 	//저장
+// 	err = o.ctx.UpdateService(*service)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 
 // type Service struct {
 // 	db *database.DBManipulator

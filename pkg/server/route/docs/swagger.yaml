@@ -157,46 +157,6 @@ definitions:
         description: label summary
         type: string
     type: object
-  v1.HttpReqServiceStep:
-    properties:
-      api_version:
-        description: api version
-        type: string
-      args:
-        additionalProperties: true
-        description: arguments
-        type: object
-      ended:
-        description: Started 스탭 완료 시간
-        type: string
-      method:
-        description: 메소드
-        type: string
-      name:
-        description: label name
-        type: string
-      result:
-        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
-        type: string
-      sequence:
-        description: 순서
-        type: integer
-      service_uuid:
-        description: 서비스 Uuid
-        type: string
-      srated:
-        description: Started 스탭 시작 시간
-        type: string
-      status:
-        description: Status 상태
-        type: integer
-      summary:
-        description: label summary
-        type: string
-      uuid:
-        description: UUID
-        type: string
-    type: object
   v1.HttpReqTemplate:
     properties:
       api_version:
@@ -1120,54 +1080,7 @@ paths:
             type: array
       tags:
       - server/service_step
-    post:
-      consumes:
-      - application/json
-      description: Create a Service Step
-      parameters:
-      - description: ServiceStep 의 service_uuid
-        in: path
-        name: service_uuid
-        required: true
-        type: string
-      - description: HttpReqServiceStep
-        in: body
-        name: step
-        required: true
-        schema:
-          $ref: '#/definitions/v1.HttpReqServiceStep'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.HttpRspServiceStep'
-      tags:
-      - server/service_step
   /server/service/{service_uuid}/step/{uuid}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a Service
-      parameters:
-      - description: ServiceStep 의 service_uuid
-        in: path
-        name: service_uuid
-        required: true
-        type: string
-      - description: ServiceStep 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      tags:
-      - server/service_step
     get:
       consumes:
       - application/json
@@ -1183,36 +1096,6 @@ paths:
         name: uuid
         required: true
         type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.HttpRspServiceStep'
-      tags:
-      - server/service_step
-    put:
-      consumes:
-      - application/json
-      description: Update a Service Step
-      parameters:
-      - description: ServiceStep 의 service_uuid
-        in: path
-        name: service_uuid
-        required: true
-        type: string
-      - description: ServiceStep 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      - description: HttpReqServiceStep
-        in: body
-        name: step
-        required: true
-        schema:
-          $ref: '#/definitions/v1.HttpReqServiceStep'
       produces:
       - application/json
       responses:

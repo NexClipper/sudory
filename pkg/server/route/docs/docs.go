@@ -611,44 +611,6 @@ var doc = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Create a Service Step",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/service_step"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ServiceStep 의 service_uuid",
-                        "name": "service_uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "HttpReqServiceStep",
-                        "name": "step",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpReqServiceStep"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpRspServiceStep"
-                        }
-                    }
-                }
             }
         },
         "/server/service/{service_uuid}/step/{uuid}": {
@@ -685,84 +647,6 @@ var doc = `{
                         "schema": {
                             "$ref": "#/definitions/v1.HttpRspServiceStep"
                         }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a Service Step",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/service_step"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ServiceStep 의 service_uuid",
-                        "name": "service_uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "ServiceStep 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "HttpReqServiceStep",
-                        "name": "step",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpReqServiceStep"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpRspServiceStep"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a Service",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/service_step"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ServiceStep 의 service_uuid",
-                        "name": "service_uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "ServiceStep 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
                     }
                 }
             }
@@ -1805,60 +1689,6 @@ var doc = `{
                 },
                 "summary": {
                     "description": "label summary",
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqServiceStep": {
-            "type": "object",
-            "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
-                "args": {
-                    "description": "arguments",
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "ended": {
-                    "description": "Started 스탭 완료 시간",
-                    "type": "string"
-                },
-                "method": {
-                    "description": "메소드",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "label name",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "sequence": {
-                    "description": "순서",
-                    "type": "integer"
-                },
-                "service_uuid": {
-                    "description": "서비스 Uuid",
-                    "type": "string"
-                },
-                "srated": {
-                    "description": "Started 스탭 시작 시간",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status 상태",
-                    "type": "integer"
-                },
-                "summary": {
-                    "description": "label summary",
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "UUID",
                     "type": "string"
                 }
             }

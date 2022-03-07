@@ -84,6 +84,7 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 		service.UuidMeta = NewUuidMeta()                                //meta uuid
 		service.LabelMeta = NewLabelMeta(service.Name, service.Summary) //meta label
 		service.Status = newist.Int32(int32(servicev1.StatusRegist))    //Status
+		service.StepCount = newist.Int32(int32(len(steps_essential)))   //step count
 
 		//get commands
 		where := "template_uuid = ?"
@@ -113,25 +114,11 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 		})
 
 		//create service
-		err = operator.NewService(ctx.Database()).
-			Create(service)
-		if err != nil {
+		if err := operator.NewService(ctx.Database()).Create(service); err != nil {
 			return nil, err
 		}
 		//create steps
-		err = foreach_step(steps, func(ss stepv1.ServiceStep) error {
-			if err := operator.NewServiceStep(ctx.Database()).
-				Create(ss); err != nil {
-				return err
-			}
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		//Service Chaining
-		if err := operator.NewService(ctx.Database()).Chaining(service.Uuid); err != nil {
+		if err := foreach_step(steps, operator.NewServiceStep(ctx.Database()).Create); err != nil {
 			return nil, err
 		}
 

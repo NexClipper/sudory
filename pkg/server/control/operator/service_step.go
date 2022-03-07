@@ -1,11 +1,7 @@
 package operator
 
 import (
-	"sort"
-
 	"github.com/NexClipper/sudory/pkg/server/database"
-	"github.com/NexClipper/sudory/pkg/server/macro/newist"
-	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 )
 
@@ -66,41 +62,41 @@ func (o *ServiceStep) Delete(uuid string) error {
 	return nil
 }
 
-// ChainingSequence
-//  uuid: 해당 객체는 대상에서 제외
-//  대상 객체 외는 순서에 맞추어 Sequence 지정
-func (o *ServiceStep) ChainingSequence(service_uuid, uuid string) error {
-	where := "service_uuid = ?"
-	steps, err := o.ctx.FindServiceStep(where, service_uuid)
-	if err != nil {
-		return err
-	}
+// // ChainingSequence
+// //  uuid: 해당 객체는 대상에서 제외
+// //  대상 객체 외는 순서에 맞추어 Sequence 지정
+// func (o *ServiceStep) ChainingSequence(service_uuid, uuid string) error {
+// 	where := "service_uuid = ?"
+// 	steps, err := o.ctx.FindServiceStep(where, service_uuid)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	//sort -> Sequence
-	sort.Slice(steps, func(i, j int) bool {
-		return nullable.Int32(steps[i].Sequence).Value() < nullable.Int32(steps[j].Sequence).Value()
-	})
+// 	//sort -> Sequence
+// 	sort.Slice(steps, func(i, j int) bool {
+// 		return nullable.Int32(steps[i].Sequence).Value() < nullable.Int32(steps[j].Sequence).Value()
+// 	})
 
-	seq := int32(0)
-	steps = map_step(steps, func(ss stepv1.DbSchemaServiceStep) stepv1.DbSchemaServiceStep {
-		if ss.Uuid == uuid {
-			seq++
-			return ss
-		}
-		//Sequence
-		ss.Sequence = newist.Int32(int32(seq))
-		seq++
-		return ss
-	})
+// 	seq := int32(0)
+// 	steps = map_step(steps, func(ss stepv1.DbSchemaServiceStep) stepv1.DbSchemaServiceStep {
+// 		if ss.Uuid == uuid {
+// 			seq++
+// 			return ss
+// 		}
+// 		//Sequence
+// 		ss.Sequence = newist.Int32(int32(seq))
+// 		seq++
+// 		return ss
+// 	})
 
-	for n := range steps {
-		if err := o.ctx.UpdateServiceStep(steps[n]); err != nil {
-			return err
-		}
-	}
+// 	for n := range steps {
+// 		if err := o.ctx.UpdateServiceStep(steps[n]); err != nil {
+// 			return err
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func map_step(elems []stepv1.DbSchemaServiceStep, mapper func(stepv1.DbSchemaServiceStep) stepv1.DbSchemaServiceStep) []stepv1.DbSchemaServiceStep {
 	rst := make([]stepv1.DbSchemaServiceStep, len(elems))
