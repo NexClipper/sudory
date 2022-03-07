@@ -38,8 +38,8 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	//route /server/client*
 	router.e.GET("/server/client", controller.FindClient())
 	router.e.GET("/server/client/:uuid", controller.GetClient())
-	router.e.POST("/server/client", controller.CreateClient())
-	router.e.PUT("/server/client/:uuid", controller.UpdateClient())
+	// router.e.POST("/server/client", controller.CreateClient())
+	// router.e.PUT("/server/client/:uuid", controller.UpdateClient())
 	router.e.DELETE("/server/client/:uuid", controller.DeleteClient())
 	//route /server/cluster*
 	router.e.GET("/server/cluster", controller.FindCluster())

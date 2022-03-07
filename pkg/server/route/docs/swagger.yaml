@@ -1,22 +1,4 @@
 definitions:
-  v1.HttpReqClient:
-    properties:
-      api_version:
-        description: api version
-        type: string
-      cluster_uuid:
-        description: ClusterUuid
-        type: string
-      name:
-        description: label name
-        type: string
-      summary:
-        description: label summary
-        type: string
-      uuid:
-        description: UUID
-        type: string
-    type: object
   v1.HttpReqClientSideService:
     properties:
       api_version:
@@ -838,26 +820,6 @@ paths:
             type: array
       tags:
       - server/client
-    post:
-      consumes:
-      - application/json
-      description: Create a client
-      parameters:
-      - description: HttpReqClient
-        in: body
-        name: client
-        required: true
-        schema:
-          $ref: '#/definitions/v1.HttpReqClient'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.HttpRspClient'
-      tags:
-      - server/client
   /server/client/{uuid}:
     delete:
       consumes:
@@ -886,31 +848,6 @@ paths:
         name: uuid
         required: true
         type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.HttpRspClient'
-      tags:
-      - server/client
-    put:
-      consumes:
-      - application/json
-      description: Update a client
-      parameters:
-      - description: Client 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      - description: HttpReqClient
-        in: body
-        name: client
-        required: true
-        schema:
-          $ref: '#/definitions/v1.HttpReqClient'
       produces:
       - application/json
       responses:

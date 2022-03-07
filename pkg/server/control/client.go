@@ -8,58 +8,58 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Create Client
-// @Description Create a client
-// @Accept      json
-// @Produce     json
-// @Tags        server/client
-// @Router      /server/client [post]
-// @Param       client body v1.HttpReqClient true "HttpReqClient"
-// @Success 200 {object} v1.HttpRspClient
-func (c *Control) CreateClient() func(ctx echo.Context) error {
+// // Create Client
+// // @Description Create a client
+// // @Accept      json
+// // @Produce     json
+// // @Tags        server/client
+// // @Router      /server/client [post]
+// // @Param       client body v1.HttpReqClient true "HttpReqClient"
+// // @Success 200 {object} v1.HttpRspClient
+// func (c *Control) CreateClient() func(ctx echo.Context) error {
 
-	binder := func(ctx Contexter) error {
-		body := new(clientv1.HttpReqClient)
-		if err := ctx.Bind(body); err != nil {
-			return ErrorBindRequestObject(err)
-		}
-		if body.Name == nil {
-			return ErrorInvaliedRequestParameterName("Name")
-		}
-		if len(body.ClusterUuid) == 0 {
-			return ErrorInvaliedRequestParameterName("ClusterUuid")
-		}
+// 	binder := func(ctx Contexter) error {
+// 		body := new(clientv1.HttpReqClient)
+// 		if err := ctx.Bind(body); err != nil {
+// 			return ErrorBindRequestObject(err)
+// 		}
+// 		if body.Name == nil {
+// 			return ErrorInvaliedRequestParameterName("Name")
+// 		}
+// 		if len(body.ClusterUuid) == 0 {
+// 			return ErrorInvaliedRequestParameterName("ClusterUuid")
+// 		}
 
-		return nil
-	}
-	operator := func(ctx Contexter) (interface{}, error) {
-		body, ok := ctx.Object().(*clientv1.HttpReqClient)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+// 		return nil
+// 	}
+// 	operator := func(ctx Contexter) (interface{}, error) {
+// 		body, ok := ctx.Object().(*clientv1.HttpReqClient)
+// 		if !ok {
+// 			return nil, ErrorFailedCast()
+// 		}
 
-		client := body.Client
+// 		client := body.Client
 
-		//property
-		client.UuidMeta = NewUuidMeta()
-		client.LabelMeta = NewLabelMeta(client.Name, client.Summary)
+// 		//property
+// 		client.UuidMeta = NewUuidMeta()
+// 		client.LabelMeta = NewLabelMeta(client.Name, client.Summary)
 
-		err := operator.NewClient(ctx.Database()).
-			Create(client)
-		if err != nil {
-			return nil, err
-		}
+// 		err := operator.NewClient(ctx.Database()).
+// 			Create(client)
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-		return clientv1.HttpRspClient{Client: client}, nil
-	}
+// 		return clientv1.HttpRspClient{Client: client}, nil
+// 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
-		Behavior:      Lock(c.db.Engine()),
-	})
-}
+// 	return MakeMiddlewareFunc(Option{
+// 		Binder:        binder,
+// 		Operator:      operator,
+// 		HttpResponser: HttpResponse,
+// 		Behavior:      Lock(c.db.Engine()),
+// 	})
+// }
 
 // Find Client
 // @Description Find client
@@ -148,61 +148,61 @@ func (c *Control) GetClient() func(ctx echo.Context) error {
 	})
 }
 
-// Update Client
-// @Description Update a client
-// @Accept      json
-// @Produce     json
-// @Tags        server/client
-// @Router      /server/client/{uuid} [put]
-// @Param       uuid   path string true "Client 의 Uuid"
-// @Param       client body v1.HttpReqClient true "HttpReqClient"
-// @Success 200 {object} v1.HttpRspClient
-func (c *Control) UpdateClient() func(ctx echo.Context) error {
+// // Update Client
+// // @Description Update a client
+// // @Accept      json
+// // @Produce     json
+// // @Tags        server/client
+// // @Router      /server/client/{uuid} [put]
+// // @Param       uuid   path string true "Client 의 Uuid"
+// // @Param       client body v1.HttpReqClient true "HttpReqClient"
+// // @Success 200 {object} v1.HttpRspClient
+// func (c *Control) UpdateClient() func(ctx echo.Context) error {
 
-	binder := func(ctx Contexter) error {
-		body := new(clientv1.HttpReqClient)
-		if err := ctx.Bind(body); err != nil {
-			return ErrorBindRequestObject(err)
-		}
+// 	binder := func(ctx Contexter) error {
+// 		body := new(clientv1.HttpReqClient)
+// 		if err := ctx.Bind(body); err != nil {
+// 			return ErrorBindRequestObject(err)
+// 		}
 
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-		if len(ctx.Params()[__UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__UUID__)
-		}
+// 		if len(ctx.Params()) == 0 {
+// 			return ErrorInvaliedRequestParameter()
+// 		}
+// 		if len(ctx.Params()[__UUID__]) == 0 {
+// 			return ErrorInvaliedRequestParameterName(__UUID__)
+// 		}
 
-		return nil
-	}
-	operator := func(ctx Contexter) (interface{}, error) {
-		body, ok := ctx.Object().(*clientv1.HttpReqClient)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+// 		return nil
+// 	}
+// 	operator := func(ctx Contexter) (interface{}, error) {
+// 		body, ok := ctx.Object().(*clientv1.HttpReqClient)
+// 		if !ok {
+// 			return nil, ErrorFailedCast()
+// 		}
 
-		uuid := ctx.Params()[__UUID__]
+// 		uuid := ctx.Params()[__UUID__]
 
-		client := body.Client
+// 		client := body.Client
 
-		//set uuid from path
-		client.Uuid = uuid
+// 		//set uuid from path
+// 		client.Uuid = uuid
 
-		err := operator.NewClient(ctx.Database()).
-			Update(client)
-		if err != nil {
-			return nil, err
-		}
+// 		err := operator.NewClient(ctx.Database()).
+// 			Update(client)
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-		return clientv1.HttpRspClient{Client: client}, nil
-	}
+// 		return clientv1.HttpRspClient{Client: client}, nil
+// 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
-		Behavior:      Lock(c.db.Engine()),
-	})
-}
+// 	return MakeMiddlewareFunc(Option{
+// 		Binder:        binder,
+// 		Operator:      operator,
+// 		HttpResponser: HttpResponse,
+// 		Behavior:      Lock(c.db.Engine()),
+// 	})
+// }
 
 // Delete Client
 // @Description Delete a client

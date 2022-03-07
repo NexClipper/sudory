@@ -172,37 +172,6 @@ var doc = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Create a client",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/client"
-                ],
-                "parameters": [
-                    {
-                        "description": "HttpReqClient",
-                        "name": "client",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpReqClient"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpRspClient"
-                        }
-                    }
-                }
             }
         },
         "/server/client/{uuid}": {
@@ -224,44 +193,6 @@ var doc = `{
                         "name": "uuid",
                         "in": "path",
                         "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpRspClient"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a client",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/client"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Client 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "HttpReqClient",
-                        "name": "client",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpReqClient"
-                        }
                     }
                 ],
                 "responses": {
@@ -1671,31 +1602,6 @@ var doc = `{
         }
     },
     "definitions": {
-        "v1.HttpReqClient": {
-            "type": "object",
-            "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "ClusterUuid",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "label name",
-                    "type": "string"
-                },
-                "summary": {
-                    "description": "label summary",
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "UUID",
-                    "type": "string"
-                }
-            }
-        },
         "v1.HttpReqClientSideService": {
             "type": "object",
             "properties": {
