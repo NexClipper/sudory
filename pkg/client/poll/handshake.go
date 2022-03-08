@@ -1,15 +1,25 @@
 package poll
 
 import (
-	"fmt"
+	"encoding/json"
 
 	"github.com/NexClipper/sudory/pkg/client/log"
+	authv1 "github.com/NexClipper/sudory/pkg/server/model/auth/v1"
 )
 
 func (p *Poller) HandShake() error {
-	b := []byte(fmt.Sprintf("assertion=%s&cluster_uuid=%s&client_uuid=%s", p.bearerToken, p.clusterId, p.machineID))
+	body := &authv1.HttpReqAuth{Auth: authv1.Auth{AuthProperty: authv1.AuthProperty{
+		ClusterUuid: p.clusterId,
+		ClientUuid:  p.machineID,
+		Assertion:   p.bearerToken,
+	}}}
 
-	_, err := p.client.PostForm("/client/auth", nil, b)
+	b, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	_, err = p.client.PostJson("/client/auth", nil, b)
 	if err != nil {
 		return err
 	}
