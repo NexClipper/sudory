@@ -1,6 +1,9 @@
 package nullable
 
-import "strconv"
+import (
+	"reflect"
+	"strconv"
+)
 
 type nullString struct {
 	string
@@ -25,7 +28,7 @@ func (nullable *nullString) scan(v interface{}) *nullString {
 
 	nullable.string, nullable.bool = "", false
 
-	if v == nil {
+	if reflect.ValueOf(v).IsNil() {
 		return nullable
 	}
 
