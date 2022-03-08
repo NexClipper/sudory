@@ -59,9 +59,9 @@ func NewClient() (*Client, error) {
 	}
 
 	// If the getClientsetInCluster() fails to get clientset, use getClientsetOutOfCluster() function.
-	clientset, err = getClientsetOutOfCluster()
-	if err != nil {
-		return nil, err
+	clientset, err2 := getClientsetOutOfCluster()
+	if err2 != nil {
+		return nil, fmt.Errorf("in cluster error: %s, out of cluster error: %s", err.Error(), err2.Error())
 	}
 
 	k8sClient = &Client{client: clientset}
