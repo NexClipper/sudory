@@ -2,7 +2,10 @@ package helm
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/NexClipper/sudory/pkg/client/log"
+	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
 )
 
@@ -21,11 +24,22 @@ func (c *Client) Request(cmd string, args map[string]interface{}) (string, error
 	var err error
 
 	switch cmd {
-	case "repo_add":
-		result, err = c.RepoAdd(args)
+	case "install":
+		result, err = c.Install(args)
+	case "uninstall":
+		result, err = c.Uninstall(args)
 	default:
 		return "", fmt.Errorf("unknown command(%s)", cmd)
 	}
 
 	return result, err
+}
+
+func (c *Client) getActionConfig() (*action.Configuration, error) {
+	actionConfig := new(action.Configuration)
+	if err := actionConfig.Init(c.settings.RESTClientGetter(), c.settings.Namespace(), os.Getenv("HELM_DRIVER"), log.Debugf); err != nil {
+		return nil, err
+	}
+
+	return actionConfig, nil
 }
