@@ -21,6 +21,11 @@ func (c *Client) ResourceGet(gv schema.GroupVersion, resource, namespace, name s
 			if err != nil {
 				break
 			}
+		case "endpoints":
+			result, err = c.client.CoreV1().Endpoints(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
 		case "events":
 			result, err = c.client.CoreV1().Events(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 			if err != nil {
@@ -41,6 +46,11 @@ func (c *Client) ResourceGet(gv schema.GroupVersion, resource, namespace, name s
 			if err != nil {
 				break
 			}
+		case "persistentvolumeclaims":
+			result, err = c.client.CoreV1().PersistentVolumeClaims(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
 		case "pods":
 			result, err = c.client.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 			if err != nil {
@@ -51,13 +61,28 @@ func (c *Client) ResourceGet(gv schema.GroupVersion, resource, namespace, name s
 			if err != nil {
 				break
 			}
+		case "services":
+			result, err = c.client.CoreV1().Services(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
 		default:
-			err = fmt.Errorf("unknown resource(%s)", resource)
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
 		}
 	case "apps/v1":
 		switch resource {
+		case "daemonsets":
+			result, err = c.client.AppsV1().DaemonSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
 		case "deployments":
 			result, err = c.client.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "replicasets":
+			result, err = c.client.AppsV1().ReplicaSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 			if err != nil {
 				break
 			}
@@ -66,9 +91,21 @@ func (c *Client) ResourceGet(gv schema.GroupVersion, resource, namespace, name s
 			if err != nil {
 				break
 			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "networking.k8s.io/v1":
+		switch resource {
+		case "ingresses":
+			result, err = c.client.NetworkingV1().Ingresses(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
 		}
 	default:
-		err = fmt.Errorf("unknown group version(%s)", gv.Identifier())
+		err = fmt.Errorf("unsupported group version(%s)", gv.Identifier())
 	}
 
 	if err != nil {
