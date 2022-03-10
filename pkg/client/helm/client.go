@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/NexClipper/sudory/pkg/client/log"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
+
+	"github.com/NexClipper/sudory/pkg/client/log"
 )
 
 type Client struct {
@@ -28,6 +29,8 @@ func (c *Client) Request(cmd string, args map[string]interface{}) (string, error
 		result, err = c.Install(args)
 	case "uninstall":
 		result, err = c.Uninstall(args)
+	case "upgrade":
+		result, err = c.Upgrade(args)
 	default:
 		return "", fmt.Errorf("unknown command(%s)", cmd)
 	}
