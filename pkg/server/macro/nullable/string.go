@@ -1,7 +1,6 @@
 package nullable
 
 import (
-	"reflect"
 	"strconv"
 )
 
@@ -25,12 +24,7 @@ func (nullable nullString) Has() bool {
 }
 
 func (nullable *nullString) scan(v interface{}) *nullString {
-
 	nullable.string, nullable.bool = "", false
-
-	if reflect.ValueOf(v).IsNil() {
-		return nullable
-	}
 
 	switch value := v.(type) {
 	case []byte:
@@ -38,31 +32,45 @@ func (nullable *nullString) scan(v interface{}) *nullString {
 	case string:
 		nullable.string, nullable.bool = value, true
 	case *string:
-		nullable.string, nullable.bool = *value, true
+		if value != nil {
+			nullable.string, nullable.bool = *value, true
+		}
 	case int:
 		nullable.string, nullable.bool = strconv.FormatInt(int64(value), 10), true
 	case *int:
-		nullable.string, nullable.bool = strconv.FormatInt(int64(*value), 10), true
+		if value != nil {
+			nullable.string, nullable.bool = strconv.FormatInt(int64(*value), 10), true
+		}
 	case int32:
 		nullable.string, nullable.bool = strconv.FormatInt(int64(value), 10), true
 	case *int32:
-		nullable.string, nullable.bool = strconv.FormatInt(int64(*value), 10), true
+		if value != nil {
+			nullable.string, nullable.bool = strconv.FormatInt(int64(*value), 10), true
+		}
 	case int64:
 		nullable.string, nullable.bool = strconv.FormatInt(value, 10), true
 	case *int64:
-		nullable.string, nullable.bool = strconv.FormatInt(*value, 10), true
+		if value != nil {
+			nullable.string, nullable.bool = strconv.FormatInt(*value, 10), true
+		}
 	case uint:
 		nullable.string, nullable.bool = strconv.FormatUint(uint64(value), 10), true
 	case *uint:
-		nullable.string, nullable.bool = strconv.FormatUint(uint64(*value), 10), true
+		if value != nil {
+			nullable.string, nullable.bool = strconv.FormatUint(uint64(*value), 10), true
+		}
 	case uint32:
 		nullable.string, nullable.bool = strconv.FormatUint(uint64(value), 10), true
 	case *uint32:
-		nullable.string, nullable.bool = strconv.FormatUint(uint64(*value), 10), true
+		if value != nil {
+			nullable.string, nullable.bool = strconv.FormatUint(uint64(*value), 10), true
+		}
 	case uint64:
 		nullable.string, nullable.bool = strconv.FormatUint(value, 10), true
 	case *uint64:
-		nullable.string, nullable.bool = strconv.FormatUint(*value, 10), true
+		if value != nil {
+			nullable.string, nullable.bool = strconv.FormatUint(*value, 10), true
+		}
 	}
 
 	return nullable

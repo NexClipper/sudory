@@ -19,25 +19,29 @@ import (
 	//lint:ignore ST1001 auto-generated
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/labstack/echo/v4"
-	"github.com/pkg/errors"
 	"xorm.io/xorm"
 )
 
 type (
 	Contexter interface {
-		TicketId() uint64
-
+		//echo
 		Echo() echo.Context
+		SetEcho(e echo.Context) Contexter
+		Forms() map[string]string
+		FormString() string
+		Params() map[string]string
+		ParamString() string
+		Queries() map[string]string
+		QueryString() string
+		Body() []byte
+		Bind(interface{}) error
+		Object() interface{}
+		//database
 		Database() database.Context
 		SetDatabase(database.Context) Contexter
 
-		Bind(interface{}) error
-		Object() interface{}
-
-		Params() map[string]string
-		Queries() map[string]string
-		Forms() map[string]string
-		// Body() []byte
+		//ticket
+		// TicketId() uint64
 	}
 
 	ParamsHolder interface {
@@ -54,39 +58,33 @@ type (
 	}
 
 	RequestValue struct {
-		ticketId uint64
-
-		echo echo.Context
-		db   database.Context
-
+		//echo
+		echo                                          echo.Context
 		onceParam, onceQuery, onceBody, onceFormParam sync.Once //once
 		param, query, formParam                       map[string]string
 		body                                          []byte
 		object                                        interface{}
+		//database
+		db database.Context
+		//ticket
+		// ticketId uint64
 	}
 )
 
-func (holder RequestValue) TicketId() uint64 {
-	return holder.ticketId
-}
-func (holder *RequestValue) SetTicketId(t uint64) Contexter {
-	holder.ticketId = t
-	return holder
-}
+// func (holder RequestValue) TicketId() uint64 {
+// 	return holder.ticketId
+// }
+// func (holder RequestValue) SetTicketId(t uint64) Contexter {
+// 	holder.ticketId = t
+// 	return &holder
+// }
 
 func (holder RequestValue) Echo() echo.Context {
 	return holder.echo
 }
-func (holder *RequestValue) SetEcho(e echo.Context) Contexter {
+func (holder RequestValue) SetEcho(e echo.Context) Contexter {
 	holder.echo = e
-	return holder
-}
-func (holder RequestValue) Database() database.Context {
-	return holder.db
-}
-func (holder *RequestValue) SetDatabase(d database.Context) Contexter {
-	holder.db = d
-	return holder
+	return &holder
 }
 
 func (holder *RequestValue) Params() map[string]string {
@@ -168,12 +166,13 @@ func (holder *RequestValue) Object() interface{} {
 	return holder.object
 }
 
-// type OperateContext struct {
-// 	Http     echo.Context
-// 	Database database.Context
-// 	Req      interface{} //request value
-// 	TaskId   uint64
-// }
+func (holder RequestValue) Database() database.Context {
+	return holder.db
+}
+func (holder RequestValue) SetDatabase(d database.Context) Contexter {
+	holder.db = d
+	return &holder
+}
 
 type (
 	// TokenVerifier
@@ -191,10 +190,17 @@ type (
 	//  에러: InternalServerError
 	Operator func(Contexter) (interface{}, error)
 
+	Operate struct {
+		status int
+		Name   string
+		Behavior
+		Operator
+	}
+
 	// HttpResponser
 	//  응답
 	//  에러: InternalServerError
-	HttpResponser func(echo.Context, int, interface{}) error
+	HttpResponsor func(echo.Context, int, interface{}) error
 
 	Behavior func(Contexter, func(Contexter) (interface{}, error)) (interface{}, error)
 )
@@ -202,7 +208,8 @@ type Option struct {
 	TokenVerifier
 	Binder
 	Operator
-	HttpResponser
+	Operates []Operate
+	HttpResponsor
 	Behavior
 }
 
@@ -229,7 +236,7 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		exceptions.Block{
 			Try: func() {
 				if verifier == nil {
-					return //not error
+					return //do noting
 				}
 
 				err = verifier(ctx) //exec settion-token verify
@@ -245,7 +252,7 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		exceptions.Block{
 			Try: func() {
 				if bind == nil {
-					exceptions.Throw("without binder")
+					exceptions.Throw("binder is nil")
 				}
 				err = bind(ctx) //exec bind
 			},
@@ -260,7 +267,7 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		exceptions.Block{
 			Try: func() {
 				if operate == nil {
-					exceptions.Throw("without operator")
+					exceptions.Throw("operator is nil")
 				}
 				out, err = behave(ctx, operate) //exec operate
 			},
@@ -271,11 +278,11 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		return
 	}
 
-	exec_responser := func(response HttpResponser, ctx echo.Context, status int, v interface{}) (err error) {
+	exec_responser := func(response HttpResponsor, ctx echo.Context, status int, v interface{}) (err error) {
 		exceptions.Block{
 			Try: func() {
 				if response == nil {
-					exceptions.Throw("without responser")
+					exceptions.Throw("responser is nil")
 				}
 				err = response(ctx, status, v) //exec response
 			},
@@ -286,70 +293,46 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		return
 	}
 
-	return func(ctx echo.Context) error {
+	return func(ctxEcho echo.Context) error {
 
-		reqval := &RequestValue{}
-		reqval.SetEcho(ctx)
+		var context Contexter = &RequestValue{}
+		context = context.SetEcho(ctxEcho)
 
 		var (
 			err error
 			rsp interface{}
-
-			onceTicketId sync.Once
-			ticketId     uint64
-			tid          = func() uint64 {
-				onceTicketId.Do(func() {
-					ticketId = ticker.Add(1)
-				})
-				return ticketId
-			}
-			reqPath   = func() string { return ctx.Request().URL.Path }
-			reqMethod = func() string { return ctx.Request().Method }
-			reqStatus = func() int { return ctx.Response().Status }
-			// reqParam  = func() string {
-			// 	var s string
-			// 	pnames := ctx.ParamNames()
-			// 	for n := range pnames {
-			// 		if 0 < len(s) {
-			// 			s += ":"
-			// 		}
-			// 		s += pnames[n] + ","
-			// 		s += ctx.Param(pnames[n])
-			// 	}
-			// 	return s
-			// }
-			reqForm  = func() string { return reqval.FormString() }
-			reqParam = func() string { return reqval.ParamString() }
-			reqQuery = func() string { return reqval.QueryString() }
-			// onceReqBody sync.Once
-			// reqBody     []byte
-			// getReqbody  = func() []byte {
-			// 	onceReqBody.Do(func() {
-			// 		//body read all
-			// 		//ranout buffer
-			// 		//restore buffer again
-			// 		b, err := ioutil.ReadAll(ctx.Request().Body)
-			// 		if err != nil {
-			// 			reqBody = []byte{}
-			// 			return
-			// 		}
-			// 		//restore
-			// 		ctx.Request().Body = ioutil.NopCloser(bytes.NewBuffer(b))
-
-			// 		reqBody = b
-			// 	})
-			// 	return reqBody
-			// }
-			reqBody     = func() []byte { return reqval.Body() }
-			onceRspbody sync.Once
-			rspbody     []byte
-			rspBody     = func() []byte {
-				onceRspbody.Do(func() {
-					right := func(b []byte, err error) []byte { return b }
-					rspbody = right(json.Marshal(rsp))
-				})
-				return rspbody
-			}
+			tid = func() func() uint64 {
+				var (
+					onceTicketId sync.Once
+					ticketId     uint64
+				)
+				return func() uint64 {
+					onceTicketId.Do(func() {
+						ticketId = ticker.Add(1)
+					})
+					return ticketId
+				}
+			}()
+			reqPath   = func() string { return ctxEcho.Request().URL.Path }
+			reqMethod = func() string { return ctxEcho.Request().Method }
+			reqStatus = func() int { return ctxEcho.Response().Status }
+			reqForm   = func() string { return context.FormString() }
+			reqParam  = func() string { return context.ParamString() }
+			reqQuery  = func() string { return context.QueryString() }
+			reqBody   = func() []byte { return context.Body() }
+			rspBody   = func() func() []byte {
+				var (
+					onceRspbody sync.Once
+					rspbody     []byte
+				)
+				return func() []byte {
+					onceRspbody.Do(func() {
+						right := func(b []byte, err error) []byte { return b }
+						rspbody = right(json.Marshal(rsp))
+					})
+					return rspbody
+				}
+			}()
 		)
 
 		var (
@@ -419,8 +402,7 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 			}
 			logger.V(0).Info(responseSink.String())
 		}()
-
-		err = exec_token_verifier(opt.TokenVerifier, reqval)
+		err = exec_token_verifier(opt.TokenVerifier, context)
 		if ErrorWithHandler(err,
 			func(err error) { logger.Error(errVerifyTkSink.WithError(err).String()) },
 			func(err error) {
@@ -436,41 +418,37 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 				}
 
 				//세션-토큰 검증 오류
-				if erro := ctx.String(status, err.Error()); erro != nil {
-					logger.Error(errRspSink.WithError(erro).WithValue("ebody", err).String())
+				if err := context.Echo().String(status, err.Error()); err != nil {
+					logger.Error(errRspSink.WithError(err).WithValue("ebody", err).String())
 				}
 			}, //실패 응답
 		) {
 			return err //return HandlerFunc
 		}
-
-		err = exec_binder(opt.Binder, reqval)
+		err = exec_binder(opt.Binder, context)
 		if ErrorWithHandler(err,
 			func(err error) { logger.Error(errbindSink.WithError(err).String()) },
 			func(err error) {
-				if erro := ctx.String(http.StatusBadRequest, err.Error()); erro != nil {
+				if erro := context.Echo().String(http.StatusBadRequest, err.Error()); erro != nil {
 					logger.Error(errRspSink.WithError(erro).WithValue("ebody", err).String())
 				}
 			}, //실패 응답
 		) {
 			return err //return HandlerFunc
 		}
-
-		rsp, err = exec_operator(opt.Behavior, opt.Operator, reqval)
-
+		rsp, err = exec_operator(opt.Behavior, opt.Operator, context)
 		if ErrorWithHandler(err,
 			func(err error) { logger.Error(errOperateSink.WithError(err).String()) },
 			func(err error) {
 				//내부작업 오류
-				if erro := ctx.String(http.StatusInternalServerError, err.Error()); erro != nil {
-					logger.Error(errRspSink.WithError(erro).WithValue("ebody", err).String())
+				if err_ := context.Echo().String(http.StatusInternalServerError, err.Error()); err_ != nil {
+					logger.Error(errRspSink.WithError(err_).WithValue("ebody", err).String())
 				}
 			}, //실패 응답
 		) {
 			return err //return HandlerFunc
 		}
-
-		err = exec_responser(opt.HttpResponser, reqval.Echo(), http.StatusOK, rsp)
+		err = exec_responser(opt.HttpResponsor, context.Echo(), http.StatusOK, rsp)
 		if ErrorWithHandler(err,
 			func(err error) {
 				logger.Error(errRspSink.WithError(err).WithValue("body", rsp).String())
@@ -491,7 +469,7 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 // 	return out
 // }
 
-func HttpResponse(ctx echo.Context, status int, v interface{}) error {
+func HttpJsonResponsor(ctx echo.Context, status int, v interface{}) error {
 	return ctx.JSON(status, v)
 }
 
@@ -500,51 +478,20 @@ func OK() interface{} {
 }
 
 func Lock(engine *xorm.Engine) func(Contexter, func(Contexter) (interface{}, error)) (interface{}, error) {
+	return func(ctx Contexter, operate func(Contexter) (interface{}, error)) (interface{}, error) {
+		return engine.Transaction(func(s *xorm.Session) (interface{}, error) {
+			ctx = ctx.SetDatabase(database.NewXormContext(s)) //new database context
 
-	return func(ctx Contexter, operate func(Contexter) (interface{}, error)) (out interface{}, err error) {
-		ctx.SetDatabase(database.NewContext(engine)) //new database context
-
-		exceptions.Block{
-			Try: func() {
-
-				exceptions.Throw(ctx.Database().Tx().Begin()) //begin transaction
-
-				defer func() {
-					if err != nil {
-						ctx.Database().Tx().Rollback() //rollback
-					} else {
-						ctx.Database().Tx().Commit() //commit
-					}
-				}()
-
-				out, err = operate(ctx) //call operate
-			},
-			Catch: func(ex error) {
-				err = errors.Wrap(ex, "catch: exec operate with block")
-			},
-			Finally: func() {
-				ctx.Database().Tx().Close()
-			}}.Do()
-		return
+			return operate(ctx)
+		})
 	}
 }
 
 func Nolock(engine *xorm.Engine) func(Contexter, func(Contexter) (interface{}, error)) (interface{}, error) {
-
-	return func(ctx Contexter, operate func(Contexter) (interface{}, error)) (out interface{}, err error) {
-		ctx.SetDatabase(database.NewContext(engine)) //new database context
-
-		exceptions.Block{
-			Try: func() {
-
-				out, err = operate(ctx) //call operate
-			},
-			Catch: func(ex error) {
-				err = errors.Wrap(ex, "catch: exec operate")
-			},
-			Finally: func() {
-				ctx.Database().Tx().Close()
-			}}.Do()
-		return
+	return func(ctx Contexter, operate func(Contexter) (interface{}, error)) (interface{}, error) {
+		ctx = ctx.SetDatabase(database.NewXormContext(engine.NewSession())) //new database context
+		defer ctx.Database().Close()
+		//close
+		return operate(ctx) //call operate
 	}
 }

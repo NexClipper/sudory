@@ -17,7 +17,7 @@ func TestTemplateCommandJson(t *testing.T) {
 		t.Error(err)
 	}
 	t.Log(string(data))
-	kubcmd_ := new(DbSchemaTemplateCommand)
+	kubcmd_ := new(DbSchema)
 
 	err = json.Unmarshal(data, kubcmd_)
 	if err != nil {
@@ -35,7 +35,7 @@ func TestDbSchemaTemplateCommandJson(t *testing.T) {
 	}
 	t.Log(string(data))
 
-	kubcmd_ := new(DbSchemaTemplateCommand)
+	kubcmd_ := new(DbSchema)
 
 	err = json.Unmarshal(data, kubcmd_)
 	if err != nil {
@@ -43,9 +43,9 @@ func TestDbSchemaTemplateCommandJson(t *testing.T) {
 	}
 }
 
-func NewServiceCommand() DbSchemaTemplateCommand {
+func NewServiceCommand() DbSchema {
 
-	out := DbSchemaTemplateCommand{}
+	out := DbSchema{}
 
 	out.Id = 11112222333344445555
 	out.Created = newist.Time(time.Now())

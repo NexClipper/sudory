@@ -36,7 +36,7 @@ type sink struct {
 	id            uint64
 	names         []string
 	keysAndValues []interface{}
-	err           error
+	errors        []error
 }
 
 func (sink sink) String() string {
@@ -95,28 +95,40 @@ func (s sink) Values() []interface{} {
 	return s.keysAndValues
 }
 func (s sink) Error() error {
-	return s.err
+
+	var err error
+	if 0 < len(s.errors) {
+		err = s.errors[0]
+		s.errors = s.errors[1:]
+	}
+
+	for n := range s.errors {
+		err = errors.Wrapf(err, s.errors[n].Error())
+	}
+
+	return err
 }
 func (s sink) WithId(id uint64) sinker {
 
-	return &sink{id: id, names: s.names, keysAndValues: s.keysAndValues, err: s.err}
+	return &sink{id: id, names: s.names, keysAndValues: s.keysAndValues, errors: s.errors}
 }
 func (s sink) WithName(name string) sinker {
 
 	names := []string{name}
 	if s.names != nil {
-		names = append(s.names, name)
+		names = append(s.names, names...)
 	}
 
-	return &sink{id: s.id, names: names, keysAndValues: s.keysAndValues, err: s.err}
+	return &sink{id: s.id, names: names, keysAndValues: s.keysAndValues, errors: s.errors}
 }
 func (s sink) WithError(err error) sinker {
 
-	if s.err != nil {
-		err = errors.WithMessage(err, s.err.Error())
+	errors := []error{err}
+	if s.errors != nil {
+		errors = append(s.errors, errors...)
 	}
 
-	return &sink{id: s.id, names: s.names, keysAndValues: s.keysAndValues, err: err}
+	return &sink{id: s.id, names: s.names, keysAndValues: s.keysAndValues, errors: errors}
 }
 func (s sink) WithValue(keysAndValues ...interface{}) sinker {
 
@@ -124,7 +136,7 @@ func (s sink) WithValue(keysAndValues ...interface{}) sinker {
 		keysAndValues = append(s.keysAndValues, keysAndValues...)
 	}
 
-	return &sink{id: s.id, names: s.names, keysAndValues: keysAndValues, err: s.err}
+	return &sink{id: s.id, names: s.names, keysAndValues: keysAndValues, errors: s.errors}
 }
 
 func WithId(id uint64) sinker {
@@ -139,5 +151,5 @@ func WithValue(keysAndValues ...interface{}) sinker {
 	return &sink{keysAndValues: keysAndValues}
 }
 func WithError(err error) sinker {
-	return &sink{err: err}
+	return &sink{errors: []error{err}}
 }

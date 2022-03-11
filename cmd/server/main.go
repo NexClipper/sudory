@@ -6,13 +6,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/NexClipper/logger"
 	"github.com/NexClipper/sudory/pkg/server/config"
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/events"
 	"github.com/NexClipper/sudory/pkg/server/macro/channels"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/route"
 	"github.com/NexClipper/sudory/pkg/server/status"
 	"github.com/NexClipper/sudory/pkg/server/status/env"
+	"github.com/pkg/errors"
 	"xorm.io/xorm"
 )
 
@@ -93,20 +96,21 @@ func chron(engine *xorm.Engine) func() {
 	chronStop := status.NewChron(os.Stdout, ChronInterval*time.Second,
 		//chron environment
 		func() status.ChronUpdater {
-			inst := env.NewEnvironmentChron(database.NewContext(engine))
+			sink := logs.WithName("Chron Environment")
+			updator := env.NewEnvironmentChron(database.NewXormContext(engine.NewSession()))
 			//환경변수 리스트 검사
-			if err := inst.(*env.EnvironmentChron).WhiteListCheck(); err != nil {
-				log.Println(err)
-				log.Println("merge environment setting") //환경변수 병합
-				if err := inst.(*env.EnvironmentChron).Merge(); err != nil {
-					panic(err)
+			if err := updator.WhiteListCheck(); err != nil {
+				logger.Info(sink.WithError(errors.Wrapf(err, "WhiteListCheck")).String())
+				logger.Debugln("merge environment setting") //환경변수 병합
+				if err := updator.Merge(); err != nil {
+					logger.Error(sink.WithError(errors.Wrapf(err, "Merge")).String())
 				}
 			}
 			//환경변수 업데이트
-			if err := inst.Update(); err != nil {
-				panic(err)
+			if err := updator.Update(); err != nil {
+				logger.Fatal(err) //first work error //(exit)
 			}
-			return inst
+			return updator
 		},
 	)
 

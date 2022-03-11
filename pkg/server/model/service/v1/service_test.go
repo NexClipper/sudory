@@ -83,9 +83,9 @@ func TestHttpReqClientSideServiceJson(t *testing.T) {
 const ServiceUuid = "cda6498a235d4f7eae19661d41bc154c"
 const ClusterUuid = "cda6498a235d4f7eae19661d41bc154c"
 
-func NewService() DbSchemaService {
+func NewService() DbSchema {
 
-	out := DbSchemaService{}
+	out := DbSchema{}
 
 	out.Id = 11112222333344445555
 	out.Created = newist.Time(time.Now())

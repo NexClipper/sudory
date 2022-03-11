@@ -18,45 +18,45 @@ type Environment struct {
 }
 
 //DATABASE SCHEMA: Environment
-type DbSchemaEnvironment struct {
+type DbSchema struct {
 	metav1.DbMeta `xorm:"extends"`
 	Environment   `xorm:"extends"`
 }
 
-var _ orm.TableName = (*DbSchemaEnvironment)(nil)
+var _ orm.TableName = (*DbSchema)(nil)
 
-func (DbSchemaEnvironment) TableName() string {
+func (DbSchema) TableName() string {
 	return "environment"
 }
 
 //HTTP RESPONSE BODY: Environment
 type HttpRspEnvironment struct {
-	Environment `json:",inline"`
+	DbSchema `json:",inline"`
 }
 
-//변환 DbSchema -> Environment
-func TransFormDbSchema(s []DbSchemaEnvironment) []Environment {
-	var out = make([]Environment, len(s))
-	for n := range s {
-		out[n] = s[n].Environment
-	}
-	return out
-}
+// //변환 DbSchema -> Environment
+// func TransFromDbSchema(s []DbSchema) []Environment {
+// 	var out = make([]Environment, len(s))
+// 	for n := range s {
+// 		out[n] = s[n].Environment
+// 	}
+// 	return out
+// }
 
 //변환 Environment -> HttpRsp
-func TransToHttpRsp(s []Environment) []HttpRspEnvironment {
+func TransToHttpRsp(s []DbSchema) []HttpRspEnvironment {
 	var out = make([]HttpRspEnvironment, len(s))
 	for n := range s {
-		out[n].Environment = s[n]
+		out[n].DbSchema = s[n]
 	}
 	return out
 }
 
-type UpdateEnvironment struct {
+type EnvironmentUpdate struct {
 	EnvironmentProperty `json:",inline" xorm:"extends"` //inline property
 }
 
 //HTTP REQUEST BODY: Environment
-type HttpReqUpdateEnvironment struct {
-	UpdateEnvironment `json:",inline"`
+type HttpReqEnvironmentUpdate struct {
+	EnvironmentUpdate `json:",inline"`
 }

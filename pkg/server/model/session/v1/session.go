@@ -23,14 +23,14 @@ type Session struct {
 }
 
 //DATABASE SCHEMA: Session
-type DbSchemaSession struct {
+type DbSchema struct {
 	metav1.DbMeta `xorm:"extends"`
 	Session       `xorm:"extends"`
 }
 
-var _ orm.TableName = (*DbSchemaSession)(nil)
+var _ orm.TableName = (*DbSchema)(nil)
 
-func (DbSchemaSession) TableName() string {
+func (DbSchema) TableName() string {
 	return "session"
 }
 
@@ -41,23 +41,14 @@ type HttpReqSession struct {
 
 //HTTP RESPONSE BODY: Session
 type HttpRspSession struct {
-	Session `json:",inline"`
-}
-
-//변환 DbSchema -> Session
-func TransFormDbSchema(s []DbSchemaSession) []Session {
-	var out = make([]Session, len(s))
-	for n, it := range s {
-		out[n] = it.Session
-	}
-	return out
+	DbSchema `json:",inline"`
 }
 
 //변환 Session -> HttpRsp
-func TransToHttpRsp(s []Session) []HttpRspSession {
+func TransToHttpRsp(s []DbSchema) []HttpRspSession {
 	var out = make([]HttpRspSession, len(s))
 	for n, it := range s {
-		out[n].Session = it
+		out[n].DbSchema = it
 	}
 	return out
 }

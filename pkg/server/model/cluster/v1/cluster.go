@@ -17,14 +17,14 @@ type Cluster struct {
 }
 
 //DATABASE SCHEMA: Cluster
-type DbSchemaCluster struct {
+type DbSchema struct {
 	metav1.DbMeta `xorm:"extends"`
 	Cluster       `xorm:"extends"`
 }
 
-var _ orm.TableName = (*DbSchemaCluster)(nil)
+var _ orm.TableName = (*DbSchema)(nil)
 
-func (DbSchemaCluster) TableName() string {
+func (DbSchema) TableName() string {
 	return "cluster"
 }
 
@@ -35,23 +35,23 @@ type HttpReqCluster struct {
 
 //HTTP RESPONSE BODY: Cluster
 type HttpRspCluster struct {
-	Cluster `json:",inline"`
+	DbSchema `json:",inline"`
 }
 
-//변환 DbSchema -> Cluster
-func TransFormDbSchema(s []DbSchemaCluster) []Cluster {
-	var out = make([]Cluster, len(s))
-	for n, it := range s {
-		out[n] = it.Cluster
-	}
-	return out
-}
+// //변환 DbSchema -> Cluster
+// func TransFormDbSchema(s []DbSchema) []Cluster {
+// 	var out = make([]Cluster, len(s))
+// 	for n, it := range s {
+// 		out[n] = it.Cluster
+// 	}
+// 	return out
+// }
 
 //변환 Cluster -> HttpRsp
-func TransToHttpRsp(s []Cluster) []HttpRspCluster {
+func TransToHttpRsp(s []DbSchema) []HttpRspCluster {
 	var out = make([]HttpRspCluster, len(s))
 	for n, it := range s {
-		out[n].Cluster = it
+		out[n].DbSchema = it
 	}
 	return out
 }

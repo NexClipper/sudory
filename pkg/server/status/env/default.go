@@ -26,7 +26,7 @@ var DefaultEnvironmanets = map[Env]Default{
 	EnvClientConfigLoglevel:     {Uuid: "4e55651f63814b648f7284ab9113cf67", Value: "debug", Summary: "클라이언트 log level ['debug', 'info', 'warn', 'error', 'fatal']"},
 }
 
-func Convert(key Env, value Default) envv1.Environment {
+func Convert(env Env, value Default) envv1.Environment {
 
 	const ApiVersion = "v1"
 
@@ -34,7 +34,7 @@ func Convert(key Env, value Default) envv1.Environment {
 
 	out.Uuid = value.Uuid
 	out.ApiVersion = newist.String(ApiVersion)
-	out.Name = newist.String(key.String())
+	out.Name = newist.String(env.String())
 	out.Summary = newist.String(fmt.Sprintf("%s default='%s'", value.Summary, value.Value))
 	out.Value = newist.String(value.Value)
 

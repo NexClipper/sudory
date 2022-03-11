@@ -1,8 +1,7 @@
 package control
 
 import (
-	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/database/prepared"
+	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -42,19 +41,30 @@ func (c *Control) CreateCluster() func(ctx echo.Context) error {
 		cluster.LabelMeta = NewLabelMeta(body.Name, body.Summary)
 
 		//create
-		err := operator.NewCluster(ctx.Database()).
-			Create(cluster)
+		cluster_, err := vault.NewCluster(ctx.Database()).Create(cluster)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewCluster Create")
 		}
 
-		return clusterv1.HttpRspCluster{Cluster: cluster}, nil
+		return clusterv1.HttpRspCluster{DbSchema: *cluster_}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "CreateCluster binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "CreateCluster operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Lock(c.db.Engine()),
 	})
 }
@@ -75,16 +85,12 @@ func (c *Control) FindCluster() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		preparer, err := prepared.NewParser(ctx.Queries())
+		records, err := vault.NewCluster(ctx.Database()).Query(ctx.Queries())
 		if err != nil {
-			return nil, errors.Wrapf(err, "NewParser queries=%+v", ctx.Queries())
+			return nil, errors.Wrapf(err, "NewCluster Query")
 		}
 
-		records := make([]clusterv1.DbSchemaCluster, 0)
-		if err := ctx.Database().Prepared(preparer).Find(&records); err != nil {
-			return nil, errors.Wrapf(err, "Database Find")
-		}
-		return clusterv1.TransToHttpRsp(clusterv1.TransFormDbSchema(records)), nil
+		return clusterv1.TransToHttpRsp(records), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -102,7 +108,7 @@ func (c *Control) FindCluster() func(ctx echo.Context) error {
 			}
 			return v, nil
 		},
-		HttpResponser: HttpResponse,
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Nolock(c.db.Engine()),
 	})
 }
@@ -128,20 +134,31 @@ func (c *Control) GetCluster() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		uuid, _ := ctx.Params()[__UUID__]
+		uuid := ctx.Params()[__UUID__]
 
-		cluster, err := operator.NewCluster(ctx.Database()).
-			Get(uuid)
+		cluster, err := vault.NewCluster(ctx.Database()).Get(uuid)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewCluster Get")
 		}
-		return clusterv1.HttpRspCluster{Cluster: *cluster}, nil
+		return clusterv1.HttpRspCluster{DbSchema: *cluster}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "GetCluster binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "GetCluster operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Nolock(c.db.Engine()),
 	})
 }
@@ -177,26 +194,36 @@ func (c *Control) UpdateCluster() func(ctx echo.Context) error {
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		uuid, _ := ctx.Params()[__UUID__]
+		uuid := ctx.Params()[__UUID__]
 
 		cluster := body.Cluster
 
 		//set uuid from path
 		cluster.Uuid = uuid
-
-		err := operator.NewCluster(ctx.Database()).
-			Update(cluster)
+		cluster_, err := vault.NewCluster(ctx.Database()).Update(cluster)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewCluster Update")
 		}
 
-		return clusterv1.HttpRspCluster{Cluster: cluster}, nil
+		return clusterv1.HttpRspCluster{DbSchema: *cluster_}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "UpdateCluster binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "UpdateCluster operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Lock(c.db.Engine()),
 	})
 }
@@ -222,21 +249,31 @@ func (c *Control) DeleteCluster() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		uuid, _ := ctx.Params()[__UUID__]
+		uuid := ctx.Params()[__UUID__]
 
-		err := operator.NewCluster(ctx.Database()).
-			Delete(uuid)
-		if err != nil {
-			return nil, err
+		if err := vault.NewCluster(ctx.Database()).Delete(uuid); err != nil {
+			return nil, errors.Wrapf(err, "NewCluster Delete")
 		}
 
 		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "GetCluster binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "GetCluster operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Lock(c.db.Engine()),
 	})
 }

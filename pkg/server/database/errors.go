@@ -5,6 +5,6 @@ import "fmt"
 func ErrorRecordWasNotFound() error {
 	return fmt.Errorf("record was not found")
 }
-func ErrorNoAffecte() error {
-	return fmt.Errorf("no affecte")
+func ErrorNoAffected() error {
+	return fmt.Errorf("no affected")
 }

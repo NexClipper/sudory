@@ -1,8 +1,7 @@
 package control
 
 import (
-	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/database/prepared"
+	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	envv1 "github.com/NexClipper/sudory/pkg/server/model/environment/v1"
 	"github.com/labstack/echo/v4"
@@ -20,21 +19,16 @@ import (
 // @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success 200 {array} v1.HttpRspEnvironment
 func (c *Control) FindEnvironment() func(ctx echo.Context) error {
-
 	binder := func(ctx Contexter) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		preparer, err := prepared.NewParser(ctx.Queries())
+		records, err := vault.NewEnvironment(ctx.Database()).Query(ctx.Queries())
 		if err != nil {
-			return nil, errors.Wrapf(err, "NewParser queries=%+v", ctx.Queries())
+			return nil, errors.Wrapf(err, "NewEnvironment Query")
 		}
 
-		records := make([]envv1.DbSchemaEnvironment, 0)
-		if err := ctx.Database().Prepared(preparer).Find(&records); err != nil {
-			return nil, errors.Wrapf(err, "Database Find")
-		}
-		return envv1.TransToHttpRsp(envv1.TransFormDbSchema(records)), nil
+		return envv1.TransToHttpRsp(records), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -52,7 +46,7 @@ func (c *Control) FindEnvironment() func(ctx echo.Context) error {
 			}
 			return v, nil
 		},
-		HttpResponser: HttpResponse,
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Nolock(c.db.Engine()),
 	})
 }
@@ -80,18 +74,29 @@ func (c *Control) GetEnvironment() func(ctx echo.Context) error {
 	operator := func(ctx Contexter) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
-		rst, err := operator.NewEnvironment(ctx.Database()).
-			Get(uuid)
+		rst, err := vault.NewEnvironment(ctx.Database()).Get(uuid)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewEnvironment Get")
 		}
-		return envv1.HttpRspEnvironment{Environment: *rst}, nil
+		return envv1.HttpRspEnvironment{DbSchema: *rst}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "GetEnvironment binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "GetEnvironment operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Nolock(c.db.Engine()),
 	})
 }
@@ -103,12 +108,11 @@ func (c *Control) GetEnvironment() func(ctx echo.Context) error {
 // @Tags        server/environment
 // @Router      /server/environment/{uuid} [put]
 // @Param       uuid       path string                      true  "Environment 의 Uuid"
-// @Param       enviroment body v1.HttpReqUpdateEnvironment false "HttpReqUpdateEnvironment"
+// @Param       enviroment body v1.HttpReqEnvironmentUpdate false "HttpReqEnvironmentUpdate"
 // @Success 200 {object} v1.HttpRspEnvironment
 func (c *Control) UpdateEnvironmentValue() func(ctx echo.Context) error {
-
 	binder := func(ctx Contexter) error {
-		body := new(envv1.HttpReqUpdateEnvironment)
+		body := new(envv1.HttpReqEnvironmentUpdate)
 		if err := ctx.Bind(body); err != nil {
 			return ErrorBindRequestObject(err)
 		}
@@ -124,38 +128,49 @@ func (c *Control) UpdateEnvironmentValue() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		body, ok := ctx.Object().(*envv1.HttpReqUpdateEnvironment)
+		body, ok := ctx.Object().(*envv1.HttpReqEnvironmentUpdate)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
-		update_env := body.UpdateEnvironment
+		update_env := body.EnvironmentUpdate
 
 		uuid := ctx.Params()[__UUID__]
 
 		//get record
-		env, err := operator.NewEnvironment(ctx.Database()).Get(uuid)
+		env, err := vault.NewEnvironment(ctx.Database()).Get(uuid)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewEnvironment Get")
 		}
 
 		//update property
 		//value
-		env.Value = nullable.String(*update_env.Value).Ptr()
+		env.Value = nullable.String(update_env.Value).Ptr()
 
 		//update record
-		err = operator.NewEnvironment(ctx.Database()).
-			Update(*env)
+		env_, err := vault.NewEnvironment(ctx.Database()).Update(env.Environment)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewEnvironment Update")
 		}
 
-		return envv1.HttpRspEnvironment{Environment: *env}, nil
+		return envv1.HttpRspEnvironment{DbSchema: *env_}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "UpdateEnvironmentValue binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "UpdateEnvironmentValue operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Nolock(c.db.Engine()),
 	})
 }

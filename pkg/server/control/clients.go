@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
-	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/database/prepared"
+	"github.com/NexClipper/sudory/pkg/server/control/vault"
+	"github.com/NexClipper/sudory/pkg/server/macro"
+	"github.com/NexClipper/sudory/pkg/server/status/env"
 	"github.com/pkg/errors"
 
-	//lint:ignore ST1001 auto-generated
-	. "github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/jwt"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
@@ -21,21 +21,10 @@ import (
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
-	"github.com/NexClipper/sudory/pkg/server/status/env"
 	"xorm.io/xorm"
 
 	"github.com/labstack/echo/v4"
 )
-
-type ClientPlayload struct {
-	Exp          time.Time `json:"exp,omitempty"`           //expiration_time
-	Iat          time.Time `json:"iat,omitempty"`           //issued_at_time
-	Uuid         string    `json:"uuid,omitempty"`          //token_uuid
-	ClusterUuid  string    `json:"cluster-uuid,omitempty"`  //cluster_uuid
-	ClientUuid   string    `json:"client-uuid,omitempty"`   //client_uuid
-	PollInterval int       `json:"poll-interval,omitempty"` //config_poll_interval
-	Loglevel     string    `json:"Loglevel,omitempty"`      //config_loglevel
-}
 
 // Poll []Service (client)
 // @Description Poll a Service
@@ -48,22 +37,19 @@ type ClientPlayload struct {
 // @Success     200 {array}  v1.HttpRspClientSideService
 // @Header      200 {string} x-sudory-client-token "x-sudory-client-token"
 func (c *Control) PollService() func(ctx echo.Context) error {
-
-	unwarp := func(elems []servicev1.HttpReqClientSideService) []servicev1.ServiceAndSteps {
-		out := make([]servicev1.ServiceAndSteps, len(elems))
-		for n := range elems {
-			out[n] = elems[n].ServiceAndSteps
+	clientTokenPayload := func() func(ctx echo.Context) (*sessionv1.ClientSessionPlayload, error) {
+		var (
+			err  error
+			inst *sessionv1.ClientSessionPlayload
+			once sync.Once
+		)
+		return func(ctx echo.Context) (*sessionv1.ClientSessionPlayload, error) {
+			once.Do(func() {
+				inst, err = getClientTokenPayload(ctx) //read client token
+			})
+			return inst, err
 		}
-		return out
-	}
-
-	warp := func(elems []servicev1.ServiceAndSteps) []servicev1.HttpRspClientSideService {
-		out := make([]servicev1.HttpRspClientSideService, len(elems))
-		for n := range elems {
-			out[n] = servicev1.HttpRspClientSideService{ServiceAndSteps: elems[n]}
-		}
-		return out
-	}
+	}()
 
 	binder := func(ctx Contexter) error {
 		body := new([]servicev1.HttpReqClientSideService)
@@ -71,20 +57,39 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			return ErrorBindRequestObject(err)
 		}
 
-		payload := getClientTokenPayload(ctx.Echo()) //read client token
-		if payload == nil {
-			return ErrorInvaliedRequestParameter()
+		//read client token
+		if _, err := clientTokenPayload(ctx.Echo()); err != nil {
+			return errors.Wrapf(err, "clientTokenPayload")
 		}
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		body, ok := ctx.Object().(*[]servicev1.HttpReqClientSideService)
-		if !ok {
-			return nil, ErrorFailedCast()
+		unwarp := func(elems []servicev1.HttpReqClientSideService) []servicev1.ServiceAndSteps {
+			out := make([]servicev1.ServiceAndSteps, len(elems))
+			for n := range elems {
+				out[n] = elems[n].ServiceAndSteps
+			}
+			return out
+		}
+		warp := func(elems []servicev1.DbSchemaServiceAndSteps) []servicev1.HttpRspClientSideService {
+			out := make([]servicev1.HttpRspClientSideService, len(elems))
+			for n := range elems {
+				out[n] = servicev1.HttpRspClientSideService{DbSchemaServiceAndSteps: elems[n]}
+			}
+			return out
 		}
 
-		//update service
-		err := foreach_client_service_and_steps(unwarp(*body), func(service servicev1.Service, steps []stepv1.ServiceStep) error {
+		make_request := func(serviceAndSteps servicev1.ServiceAndSteps) servicev1.ServiceAndSteps {
+			map_step := func(elems []stepv1.ServiceStep, mapper func(stepv1.ServiceStep) stepv1.ServiceStep) []stepv1.ServiceStep {
+				rst := make([]stepv1.ServiceStep, len(elems))
+				for n := range elems {
+					rst[n] = mapper(elems[n])
+				}
+				return rst
+			}
+
+			service := serviceAndSteps.Service
+			steps := serviceAndSteps.Steps
 
 			//service.Status 초기화
 			//service.Status; 상태가 가장큰 step의 Status
@@ -100,65 +105,64 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 				}
 				return step
 			})
-
-			//save step
-			if err := foreach_step(steps, operator.NewServiceStep(ctx.Database()).Update); err != nil {
-				return err
-			}
-
+			return servicev1.ServiceAndSteps{Service: service, Steps: steps}
+		}
+		update_service := func(serviceAndSteps servicev1.ServiceAndSteps) (*servicev1.DbSchemaServiceAndSteps, error) {
 			//save service
-			if err := operator.NewService(ctx.Database()).Update(service); err != nil {
-				return err
-			}
-
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		payload := getClientTokenPayload(ctx.Echo()) //read client token
-
-		//find service
-		where := "cluster_uuid = ? AND status BETWEEN ? AND ?"
-		args := []interface{}{
-			payload.ClusterUuid,
-			servicev1.StatusRegist,
-			servicev1.StatusProcessing,
-		}
-
-		services, err := operator.NewService(ctx.Database()).
-			Find(where, args...)
-		if err != nil {
-			return nil, err
-		}
-
-		//make response
-		push, pop := servicev1.HttpRspBuilder(len(services))
-		err = foreach_service(services, func(service servicev1.Service) error {
-
-			//find steps
-			where := "service_uuid = ?"
-			steps, err := operator.NewServiceStep(ctx.Database()).
-				Find(where, service.Uuid)
+			service, err := vault.NewService(ctx.Database()).Update(serviceAndSteps.Service)
 			if err != nil {
-				return err
+				return nil, errors.Wrapf(err, "NewService Update")
+			}
+			//save steps
+			steps := make([]stepv1.DbSchema, len(serviceAndSteps.Steps))
+			for i := range serviceAndSteps.Steps {
+				step, err := vault.NewServiceStep(ctx.Database()).Update(serviceAndSteps.Steps[i])
+				if err != nil {
+					return nil, errors.Wrapf(err, "NewServiceStep Update")
+				}
+				steps[i] = *step
+			}
+			return &servicev1.DbSchemaServiceAndSteps{DbSchema: *service, Steps: steps}, nil
+		}
+		map_service_req := func(elems []servicev1.ServiceAndSteps, mapper func(servicev1.ServiceAndSteps) servicev1.ServiceAndSteps) []servicev1.ServiceAndSteps {
+			rst := make([]servicev1.ServiceAndSteps, len(elems))
+			for n := range elems {
+				rst[n] = mapper(elems[n])
+			}
+			return rst
+		}
+		map_service_rsp := func(elems []servicev1.DbSchemaServiceAndSteps, mapper func(servicev1.DbSchemaServiceAndSteps) servicev1.DbSchemaServiceAndSteps) []servicev1.DbSchemaServiceAndSteps {
+			rst := make([]servicev1.DbSchemaServiceAndSteps, len(elems))
+			for n := range elems {
+				rst[n] = mapper(elems[n])
+			}
+			return rst
+		}
+		// foreach_client_service_and_steps := func(elems []servicev1.ServiceAndSteps, fn func(servicev1.ServiceAndSteps) error) error {
+		// 	for _, it := range elems {
+		// 		if err := fn(it); err != nil {
+		// 			return err
+		// 		}
+		// 	}
+		// 	return nil
+		// }
+
+		make_response := func(serviceAndSteps servicev1.DbSchemaServiceAndSteps) servicev1.DbSchemaServiceAndSteps {
+			map_step := func(elems []stepv1.DbSchema, mapper func(stepv1.DbSchema) stepv1.DbSchema) []stepv1.DbSchema {
+				rst := make([]stepv1.DbSchema, len(elems))
+				for n := range elems {
+					rst[n] = mapper(elems[n])
+				}
+				return rst
 			}
 
-			push(service, steps) //push
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
+			service := serviceAndSteps.DbSchema
+			steps := serviceAndSteps.Steps
 
-		service_rsp := pop()
-
-		service_rsp = map_client_service_and_steps(service_rsp, func(service servicev1.Service, steps []stepv1.ServiceStep) servicev1.ServiceAndSteps {
 			//service.Status 초기화
 			service.Status = newist.Int32(int32(servicev1.StatusRegist))
 			service.StepPosition = newist.Int32(0)
-			steps = map_step(steps, func(step stepv1.ServiceStep) stepv1.ServiceStep {
+			steps = map_step(steps, func(step stepv1.DbSchema) stepv1.DbSchema {
 				//StatusSend 보다 작으면 응답 전 업데이트
 				if nullable.Int32(step.Status).Value() < int32(servicev1.StatusSend) {
 					step.Status = newist.Int32(int32(servicev1.StatusSend))
@@ -174,35 +178,71 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			})
 
 			//할당된 클라이언트 정보 추가
+			payload, _ := clientTokenPayload(ctx.Echo())
 			service.AssignedClientUuid = newist.String(payload.ClientUuid)
 
-			return servicev1.ServiceAndSteps{Service: service, Steps: steps}
-		})
-
-		err = foreach_client_service_and_steps(service_rsp, func(service servicev1.Service, steps []stepv1.ServiceStep) error {
-			//save step
-			if err := foreach_step(steps, operator.NewServiceStep(ctx.Database()).Update); err != nil {
-				return err
-			}
-			//save service
-			if err := operator.NewService(ctx.Database()).Update(service); err != nil {
-				return err
-			}
-
-			return nil
-		})
-		if err != nil {
-			return nil, err
+			return servicev1.DbSchemaServiceAndSteps{DbSchema: service, Steps: steps}
 		}
 
-		return warp(service_rsp), nil //pop
+		body, ok := ctx.Object().(*[]servicev1.HttpReqClientSideService)
+		if !ok {
+			return nil, ErrorFailedCast()
+		}
+
+		//update request
+		request := map_service_req(unwarp(*body), make_request)
+		for i := range request {
+			_, err := update_service(request[i])
+			if err != nil {
+				return nil, errors.Wrapf(err, "update request")
+			}
+		}
+
+		//make response
+		payload, _ := clientTokenPayload(ctx.Echo())
+		//find service
+		response, err := vault.NewService(ctx.Database()).
+			Find("cluster_uuid = ? AND status BETWEEN ? AND ?", payload.ClusterUuid, servicev1.StatusRegist, servicev1.StatusProcessing)
+		if err != nil {
+			return nil, errors.Wrapf(err, "NewService Find")
+		}
+		//update response
+		response = map_service_rsp(response, make_response)
+
+		for i := range response {
+			service := response[i].Service
+			steps := response[i].Steps
+			record, err := update_service(servicev1.ServiceAndSteps{Service: service, Steps: stepv1.TransFormDbSchema(steps)})
+			if err != nil {
+				return nil, errors.Wrapf(err, "update response")
+			}
+			response[i] = *record
+		}
+
+		return warp(response), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		TokenVerifier: verifyClientSessionToken(c.db.Engine(), Nolock),
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		TokenVerifier: func(ctx Contexter) error {
+			if err := verifyClientSessionToken(c.db.Engine(), Nolock)(ctx); err != nil {
+				return errors.Wrapf(err, "PollService TokenVerifier")
+			}
+			return nil
+		},
+		Binder: func(ctx Contexter) error {
+			if err := binder(ctx); err != nil {
+				return errors.Wrapf(err, "PollService binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "PollService operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Lock(c.db.Engine()),
 	})
 }
@@ -217,7 +257,6 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 // @Success     200 {string} ok
 // @Header      200 {string} x-sudory-client-token "x-sudory-client-token"
 func (c *Control) AuthClient() func(ctx echo.Context) error {
-
 	binder := func(ctx Contexter) error {
 		body := new(authv1.HttpReqAuth)
 		if err := ctx.Bind(body); err != nil {
@@ -234,19 +273,16 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 		auth := body.Auth
 
 		//valid cluster
-		_, err := operator.NewCluster(ctx.Database()).
-			Get(auth.ClusterUuid)
-		if err != nil {
-			return nil, err
+		if _, err := vault.NewCluster(ctx.Database()).Get(auth.ClusterUuid); err != nil {
+			return nil, errors.Wrapf(err, "NewCluster Get")
 		}
 
 		//클라이언트를 조회 하여
 		//레코드에 없으면 추가
-		where := "cluster_uuid = ? AND uuid = ?"
-		clients, err := operator.NewClient(ctx.Database()).
-			Find(where, auth.ClusterUuid, auth.ClientUuid)
+		clients, err := vault.NewClient(ctx.Database()).
+			Find("cluster_uuid = ? AND uuid = ?", auth.ClusterUuid, auth.ClientUuid)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewClient Find")
 		}
 		//없으면 추가
 		if len(clients) == 0 {
@@ -257,30 +293,20 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 			client.LabelMeta = NewLabelMeta(newist.String(name), newist.String(summary))
 			client.ClusterUuid = auth.ClusterUuid
 
-			if err = operator.NewClient(ctx.Database()).Create(client); err != nil {
-				return nil, err
+			if _, err := vault.NewClient(ctx.Database()).Create(client); err != nil {
+				return nil, errors.Wrapf(err, "NewClient Create")
 			}
 		}
 
 		//valid token
-		//user_kind = ? AND user_uuid = ? AND token = ?
-		m := WrapMap("and", WrapArray(
-			WrapMap("eq", WrapMap("user_kind", token_user_kind_cluster)),
-			WrapMap("eq", WrapMap("user_uuid", auth.ClusterUuid)),
-			WrapMap("eq", WrapMap("token", auth.Assertion)),
-		))
-		cond, err := prepared.NewConditionMap(m)
+		tokens, err := vault.NewToken(ctx.Database()).
+			Find("user_kind = ? AND user_uuid = ? AND token = ?", token_user_kind_cluster, auth.ClientUuid, auth.Assertion)
 		if err != nil {
-			return nil, errors.Wrapf(err, "prepared.NewConditionMap m=%+v", m)
+			return nil, errors.Wrapf(err, "NewToken Find")
 		}
 
-		tokens := make([]tokenv1.DbSchemaToken, 0)
-		if err := ctx.Database().Prepared(cond).Find(&tokens); err != nil {
-			return nil, err
-		}
-
-		first := func() *tokenv1.Token {
-			for _, it := range tokenv1.TransFormDbSchema(tokens) {
+		first := func() *tokenv1.DbSchema {
+			for _, it := range tokens {
 				return &it
 			}
 			return nil
@@ -298,11 +324,11 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 
 		//new session
 		//make session payload
-		token_uuid := NewUuidString()
+		token_uuid := macro.NewUuidString()
 		iat := time.Now()
 		exp := env.ClientSessionExpirationTime(iat)
 
-		payload := &ClientPlayload{
+		payload := &sessionv1.ClientSessionPlayload{
 			Exp:          exp,
 			Iat:          iat,
 			Uuid:         token_uuid,
@@ -328,35 +354,43 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 		}
 
 		//new jwt
-		session_token_value, err := jwt.New(payload, []byte(env.ClientSessionSignatureSecret()))
+		new_token, err := jwt.New(payload, []byte(env.ClientSessionSignatureSecret()))
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "jwt New payload=%+v", payload)
 		}
-
-		session := newClientSession(*payload, session_token_value)
 
 		//save session
-		err = operator.NewSession(ctx.Database()).
-			Create(session)
-		if err != nil {
-			return nil, err
+		session := newClientSession(*payload, new_token)
+		if _, err := vault.NewSession(ctx.Database()).Create(session); err != nil {
+			return nil, errors.Wrapf(err, "NewSession Create")
 		}
-
 		//save token to header
-		ctx.Echo().Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, session_token_value)
+		ctx.Echo().Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, new_token)
 
 		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "AuthClient binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "AuthClient operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Lock(c.db.Engine()),
 	})
 }
 
-func newClientSession(payload ClientPlayload, token string) sessionv1.Session {
+func newClientSession(payload sessionv1.ClientSessionPlayload, token string) sessionv1.Session {
 	session := sessionv1.Session{}
 	session.Uuid = payload.Uuid
 	session.UserUuid = payload.ClientUuid
@@ -368,31 +402,26 @@ func newClientSession(payload ClientPlayload, token string) sessionv1.Session {
 }
 
 func verifyClientSessionToken(engine *xorm.Engine, behave func(*xorm.Engine) func(Contexter, func(Contexter) (interface{}, error)) (interface{}, error)) func(ctx Contexter) error {
-
 	operate := func(ctx Contexter) error {
-		var err error
 		token := ctx.Echo().Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
-
 		if len(token) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
 
 		//verify
 		//jwt verify
-		err = jwt.Verify(token, []byte(env.ClientSessionSignatureSecret()))
-		if err != nil {
-			return WithCode(err, "jwt verify", http.StatusForbidden)
+		if err := jwt.Verify(token, []byte(env.ClientSessionSignatureSecret())); err != nil {
+			return errors.Wrapf(err, "jwt verify")
 		}
 
-		payload := new(ClientPlayload)
-		err = jwt.BindPayload(token, payload)
-		if err != nil {
-			return WithCode(err, "jwt bind payload", http.StatusForbidden)
+		payload := new(sessionv1.ClientSessionPlayload)
+		if err := jwt.BindPayload(token, payload); err != nil {
+			return errors.Wrapf(err, "jwt bind payload")
 		}
 
 		//만료시간 비교
 		if time.Until(payload.Exp) < 0 {
-			return WithCode(err, "token expierd", http.StatusForbidden)
+			return fmt.Errorf("token expierd")
 		}
 
 		//reflesh payload
@@ -403,15 +432,13 @@ func verifyClientSessionToken(engine *xorm.Engine, behave func(*xorm.Engine) fun
 		//new jwt-new_token
 		new_token, err := jwt.New(payload, []byte(env.ClientSessionSignatureSecret()))
 		if err != nil {
-			return WithCode(err, "new jwt", http.StatusInternalServerError)
+			return errors.Wrapf(err, "new jwt")
 		}
 
-		session := newClientSession(*payload, new_token)
 		//udpate session
-		err = operator.NewSession(ctx.Database()).
-			Update(session)
-		if err != nil {
-			return WithCode(err, "update session-token", http.StatusInternalServerError)
+		session := newClientSession(*payload, new_token)
+		if _, err := vault.NewSession(ctx.Database()).Update(session); err != nil {
+			return errors.Wrapf(err, "update session-token")
 		}
 
 		//save client session-token to header
@@ -421,36 +448,31 @@ func verifyClientSessionToken(engine *xorm.Engine, behave func(*xorm.Engine) fun
 	}
 
 	return func(ctx Contexter) error {
-
 		fackRight := func(fn func(ctx Contexter) error) func(ctx Contexter) (interface{}, error) {
 			return func(ctx Contexter) (interface{}, error) {
 				return nil, fn(ctx) //return fack and error
 			}
 		}
-
 		left := func(v interface{}, err error) error {
 			return err
 		}
 
-		err := left(behave(engine)(ctx, fackRight(operate)))
-		return err
+		return left(behave(engine)(ctx, fackRight(operate)))
 	}
 }
 
-func getClientTokenPayload(ctx echo.Context) *ClientPlayload {
+func getClientTokenPayload(ctx echo.Context) (*sessionv1.ClientSessionPlayload, error) {
 	//get token
 	token := ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
 	if len(token) == 0 {
-		return nil
+		return nil, fmt.Errorf("Echo Request Header Get key=%s", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
 	}
 
-	payload := new(ClientPlayload)
-
-	err := jwt.BindPayload(token, payload)
-	if err != nil {
-		return nil
+	payload := new(sessionv1.ClientSessionPlayload)
+	if err := jwt.BindPayload(token, payload); err != nil {
+		return nil, errors.Wrapf(err, "jwt BindPayload token=%s", token)
 	}
-	return payload
+	return payload, nil
 }
 
 // setCookie

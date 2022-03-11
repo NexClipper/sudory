@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/database/prepared"
+	"github.com/NexClipper/sudory/pkg/server/control/vault"
+	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
@@ -24,6 +24,22 @@ import (
 // @Success     200 {object} v1.HttpRspServiceWithSteps
 func (c *Control) CreateService() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
+		foreach_step := func(elems []stepv1.StepCreate, fn func(stepv1.StepCreate) error) error {
+			for _, it := range elems {
+				if err := fn(it); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+		valid_step := func(step stepv1.StepCreate) error {
+			//Method
+			if step.Args == nil {
+				return ErrorInvaliedRequestParameterName("Args")
+			}
+			return nil
+		}
+
 		body := new(servicev1.HttpReqServiceCreate)
 		err := ctx.Bind(body)
 		if err != nil {
@@ -41,64 +57,62 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 		if len(body.ClusterUuid) == 0 {
 			return ErrorInvaliedRequestParameterName("ClusterUuid")
 		}
-
-		err = foreach_step_essential(body.Steps, func(ss stepv1.ServiceStepEssential) error {
-			//Method
-			if ss.Args == nil {
-				return ErrorInvaliedRequestParameterName("Args")
-			}
-			return nil
-		})
-		if err != nil {
+		//valid steps
+		if err := foreach_step(body.Steps, valid_step); err != nil {
 			return err
 		}
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
+		map_step_create := func(elems []stepv1.StepCreate, mapper func(stepv1.StepCreate, int) stepv1.ServiceStep) []stepv1.ServiceStep {
+			rst := make([]stepv1.ServiceStep, len(elems))
+			for n := range elems {
+				rst[n] = mapper(elems[n], n)
+			}
+			return rst
+		}
+
 		body, ok := ctx.Object().(*servicev1.HttpReqServiceCreate)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
-		service_essential := body.ServiceEssential
-		steps_essential := body.Steps
+		service_create := body.ServiceCreate
+		steps_create := body.Steps
 
 		//origin template uuid
-		trace, err := TraceServiceOrigin(ctx, service_essential.OriginKind, service_essential.OriginUuid)
+		trace, err := TraceServiceOrigin(ctx.Database(), service_create.OriginKind, service_create.OriginUuid)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "TraceServiceOrigin originkind=%s originuuid=%s", service_create.OriginKind, service_create.OriginUuid)
 		}
-		if len(trace) == 0 {
-			return nil, fmt.Errorf("not found origin template")
-		}
+
 		template_uuid := strings.Split(trace[len(trace)-1], ":")[1] //last
 
 		//property service
 		service := servicev1.Service{}
-		service.Name = nullable.String(service_essential.Name).Ptr()
-		service.Summary = nullable.String(service_essential.Summary).Ptr()
-		service.OriginKind = newist.String(service_essential.OriginKind)
-		service.OriginUuid = newist.String(service_essential.OriginUuid)
-		service.ClusterUuid = newist.String(service_essential.ClusterUuid)
+		service.Name = nullable.String(service_create.Name).Ptr()
+		service.Summary = nullable.String(service_create.Summary).Ptr()
+		service.OriginKind = newist.String(service_create.OriginKind)
+		service.OriginUuid = newist.String(service_create.OriginUuid)
+		service.ClusterUuid = newist.String(service_create.ClusterUuid)
 		service.TemplateUuid = newist.String(template_uuid)
 		service.UuidMeta = NewUuidMeta()                                //meta uuid
 		service.LabelMeta = NewLabelMeta(service.Name, service.Summary) //meta label
 		service.Status = newist.Int32(int32(servicev1.StatusRegist))    //Status
-		service.StepCount = newist.Int32(int32(len(steps_essential)))   //step count
+		service.StepCount = newist.Int32(int32(len(steps_create)))      //step count
 
 		//get commands
 		where := "template_uuid = ?"
-		commands, err := operator.NewTemplateCommand(ctx.Database()).Find(where, template_uuid)
+		commands, err := vault.NewTemplateCommand(ctx.Database()).Find(where, template_uuid)
 		if err != nil {
-			return nil, errors.WithMessage(err, "not found origin template commands")
+			return nil, errors.Wrapf(err, "NewTemplateCommand Find")
 		}
-		if len(steps_essential) != len(commands) {
-			return nil, fmt.Errorf("diff length of steps and commands expect=%d actual=%d", len(commands), len(steps_essential))
+		if len(steps_create) != len(commands) {
+			return nil, fmt.Errorf("diff length of steps and commands expect=%d actual=%d", len(commands), len(steps_create))
 		}
 
 		//property step
-		steps := map_step_essential_to_step(steps_essential, func(sse stepv1.ServiceStepEssential, i int) stepv1.ServiceStep {
-
+		steps := map_step_create(steps_create, func(sse stepv1.StepCreate, i int) stepv1.ServiceStep {
 			command := commands[i]
 
 			step := stepv1.ServiceStep{}
@@ -113,22 +127,41 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 			return step
 		})
 
+		serviceAndSteps := servicev1.ServiceAndSteps{Service: service, Steps: steps}
 		//create service
-		if err := operator.NewService(ctx.Database()).Create(service); err != nil {
-			return nil, err
-		}
-		//create steps
-		if err := foreach_step(steps, operator.NewServiceStep(ctx.Database()).Create); err != nil {
-			return nil, err
+		serviceAndSteps_, err := vault.NewService(ctx.Database()).Create(serviceAndSteps)
+		if err != nil {
+			return nil, errors.Wrapf(err, "database create")
 		}
 
-		return servicev1.HttpRspServiceWithSteps{ServiceAndSteps: servicev1.ServiceAndSteps{Service: service, Steps: steps}}, nil
+		return &servicev1.HttpRspServiceWithSteps{DbSchemaServiceAndSteps: *serviceAndSteps_}, nil
 	}
 
+	// pick := func(fn func(ctx Contexter) error) func(ctx Contexter) (interface{}, error) {
+	// 	return func(ctx Contexter) (interface{}, error) {
+	// 		return nil, fn(ctx)
+	// 	}
+	// }
+
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			if err := binder(ctx); err != nil {
+				return errors.Wrapf(err, "CreateService binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "CreateService operator")
+			}
+			return v, nil
+		},
+		// Operates: []Operate{
+		// 	{echo.BadRequest, "CreateService binder", Lock(c.db.Engine()), pick(binder)},
+		// 	{echo.InternalServerError, "CreateService operator", Lock(c.db.Engine()), operator},
+		// },
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Lock(c.db.Engine()),
 	})
 }
@@ -151,39 +184,30 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		preparer, err := prepared.NewParser(ctx.Queries())
+		map_service := func(elems []servicev1.DbSchemaServiceAndSteps, mapper func(servicev1.DbSchemaServiceAndSteps) servicev1.DbSchemaServiceAndSteps) []servicev1.DbSchemaServiceAndSteps {
+			rst := make([]servicev1.DbSchemaServiceAndSteps, len(elems))
+			for n := range elems {
+				rst[n] = mapper(elems[n])
+			}
+			return rst
+		}
+
+		//find service
+		services, err := vault.NewService(ctx.Database()).Query(ctx.Queries())
 		if err != nil {
-			return nil, errors.Wrapf(err, "NewParser queries=%+v", ctx.Queries())
+			return nil, errors.Wrapf(err, "NewService Query")
 		}
 
-		records := make([]servicev1.DbSchemaService, 0)
-		if err := ctx.Database().Prepared(preparer).Find(&records); err != nil {
-			return nil, errors.Wrapf(err, "Database Find")
-		}
-		services := servicev1.TransFormDbSchema(records)
-
-		//서비스 조회에 결과 필드는 제거
+		//필터링 적용
+		// 서비스 Result 필드 값 제거
 		services = map_service(services, service_exclude_result)
 
-		//make respose
-		rspadd, rspbuild := servicev1.HttpRspBuilder(len(services))
-		err = foreach_service(services, func(service servicev1.Service) error {
-			service_uuid := service.Uuid
-			where := "service_uuid = ?"
-			//find steps
-			steps, err := operator.NewServiceStep(ctx.Database()).
-				Find(where, service_uuid)
-			if err != nil {
-				return errors.Wrapf(err, "NewServiceStep Find where=%s service_uuid=%s", where, service_uuid)
-			}
-			rspadd(service, steps) //push
-			return nil
-		})
-		if err != nil {
-			return nil, errors.Wrapf(err, "foreach_service")
+		//make response
+		services_ := make([]servicev1.HttpRspServiceWithSteps, len(services))
+		for n := range services {
+			services_[n].DbSchemaServiceAndSteps = services[n]
 		}
-
-		return rspbuild(), nil //pop
+		return services_, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -201,7 +225,7 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 			}
 			return v, nil
 		},
-		HttpResponser: HttpResponse,
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Nolock(c.db.Engine()),
 	})
 }
@@ -229,33 +253,33 @@ func (c *Control) GetService() func(ctx echo.Context) error {
 		uuid := ctx.Params()[__UUID__]
 
 		//get service
-		service, err := operator.NewService(ctx.Database()).
-			Get(uuid)
+		service, err := vault.NewService(ctx.Database()).Get(uuid)
 		if err != nil {
-			return nil, err
-		}
-
-		//find step
-		where := "service_uuid = ?"
-		service_uuid := ctx.Params()[__UUID__]
-		steps, err := operator.NewServiceStep(ctx.Database()).
-			Find(where, service_uuid)
-		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewService Get")
 		}
 
 		//서비스 조회에 결과 필드는 제거
 		*service = service_exclude_result(*service)
 
-		rsp := &servicev1.HttpRspServiceWithSteps{ServiceAndSteps: servicev1.ServiceAndSteps{Service: *service, Steps: steps}}
-
-		return rsp, nil
+		return &servicev1.HttpRspServiceWithSteps{DbSchemaServiceAndSteps: *service}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "GetService binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "GetService operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Nolock(c.db.Engine()),
 	})
 }
@@ -282,30 +306,32 @@ func (c *Control) GetServiceResult() func(ctx echo.Context) error {
 	operator := func(ctx Contexter) (interface{}, error) {
 		//get service
 		uuid := ctx.Params()[__UUID__]
-		service, err := operator.NewService(ctx.Database()).
-			Get(uuid)
+
+		//get service
+		service, err := vault.NewService(ctx.Database()).Get(uuid)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewService Get")
 		}
 
-		//find step
-		where := "service_uuid = ?"
-		service_uuid := ctx.Params()[__UUID__]
-		steps, err := operator.NewServiceStep(ctx.Database()).
-			Find(where, service_uuid)
-		if err != nil {
-			return nil, err
-		}
-
-		rsp := &servicev1.HttpRspServiceWithSteps{ServiceAndSteps: servicev1.ServiceAndSteps{Service: *service, Steps: steps}}
-
-		return rsp, nil
+		return &servicev1.HttpRspServiceWithSteps{DbSchemaServiceAndSteps: *service}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "GetServiceResult binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "GetServiceResult operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Nolock(c.db.Engine()),
 	})
 }
@@ -343,25 +369,34 @@ func (c *Control) UpdateService() func(ctx echo.Context) error {
 
 		service := body.Service
 
-		uuid := ctx.Params()[__UUID__]
-
 		//set uuid from path
-		service.Uuid = uuid
+		service.Uuid = ctx.Params()[__UUID__]
 
 		//update service
-		err := operator.NewService(ctx.Database()).
-			Update(service)
+		service_, err := vault.NewService(ctx.Database()).Update(service)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewService Update")
 		}
 
-		return servicev1.HttpRspService{Service: service}, nil
+		return servicev1.HttpRspService{DbSchema: *service_}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "UpdateService binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "UpdateService operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Lock(c.db.Engine()),
 	})
 }
@@ -387,110 +422,36 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 	operator := func(ctx Contexter) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
-		//steps 테이블에 데이터 있는 경우 삭제 방지
-		where := "service_uuid = ?"
-		steps, err := operator.NewServiceStep(ctx.Database()).Find(where, uuid)
-		if err != nil {
-			return nil, err
-		}
-		if len(steps) == 0 {
-			return nil, fmt.Errorf("steps not empty")
-		}
-
-		//service 삭제
-		if err := operator.NewService(ctx.Database()).Delete(uuid); err != nil {
-			return nil, err
+		if err := vault.NewService(ctx.Database()).Delete(uuid); err != nil {
+			return nil, errors.Wrapf(err, "NewService Delete")
 		}
 
 		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "DeleteService binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "DeleteService operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Lock(c.db.Engine()),
 	})
 }
 
-// service_exclude_result
-//  서비스 조회에 결과 필드는 제거
-func service_exclude_result(service servicev1.Service) servicev1.Service {
-	service.Result = nil //서비스 조회에 결과 필드는 제거
-	return service
-}
-
-func foreach_step(elems []stepv1.ServiceStep, fn func(stepv1.ServiceStep) error) error {
-	for _, it := range elems {
-		if err := fn(it); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func map_step(elems []stepv1.ServiceStep, mapper func(stepv1.ServiceStep) stepv1.ServiceStep) []stepv1.ServiceStep {
-	rst := make([]stepv1.ServiceStep, len(elems))
-	for n := range elems {
-		rst[n] = mapper(elems[n])
-	}
-	return rst
-}
-
-func foreach_service(elems []servicev1.Service, fn func(servicev1.Service) error) error {
-	for _, it := range elems {
-		if err := fn(it); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-func map_service(elems []servicev1.Service, mapper func(servicev1.Service) servicev1.Service) []servicev1.Service {
-	rst := make([]servicev1.Service, len(elems))
-	for n := range elems {
-		rst[n] = mapper(elems[n])
-	}
-	return rst
-}
-
-func foreach_client_service_and_steps(elems []servicev1.ServiceAndSteps, fn func(servicev1.Service, []stepv1.ServiceStep) error) error {
-	for _, it := range elems {
-		if err := fn(it.Service, it.Steps); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func map_client_service_and_steps(elems []servicev1.ServiceAndSteps, mapper func(servicev1.Service, []stepv1.ServiceStep) servicev1.ServiceAndSteps) []servicev1.ServiceAndSteps {
-	rst := make([]servicev1.ServiceAndSteps, len(elems))
-	for n := range elems {
-		rst[n] = mapper(elems[n].Service, elems[n].Steps)
-	}
-	return rst
-}
-
-func foreach_step_essential(elems []stepv1.ServiceStepEssential, fn func(stepv1.ServiceStepEssential) error) error {
-	for _, it := range elems {
-		if err := fn(it); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func map_step_essential_to_step(elems []stepv1.ServiceStepEssential, mapper func(stepv1.ServiceStepEssential, int) stepv1.ServiceStep) []stepv1.ServiceStep {
-	rst := make([]stepv1.ServiceStep, len(elems))
-	for n := range elems {
-		rst[n] = mapper(elems[n], n)
-	}
-	return rst
-}
-
-func TraceServiceOrigin(ctx Contexter, originkind, originuuid string) ([]string, error) {
+func TraceServiceOrigin(ctx database.Context, originkind, originuuid string) ([]string, error) {
 	trace := make([]string, 0)
-
-	apnd := func(kind, uuid string) {
+	trace_append := func(kind, uuid string) {
 		trace = append(trace, fmt.Sprintf("%s:%s", kind, uuid))
 	}
 
@@ -498,21 +459,35 @@ LOOP:
 	for {
 		switch originkind {
 		case "template":
-			template, err := operator.NewTemplate(ctx.Database()).Get(originuuid)
+			template, err := vault.NewTemplate(ctx).Get(originuuid)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "NewTemplate Get")
 			}
-			apnd("template", template.Uuid)
+			trace_append("template", template.Uuid)
 			break LOOP
 		case "service":
-			service, err := operator.NewService(ctx.Database()).Get(originuuid)
+			service, err := vault.NewService(ctx).Get(originuuid)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "NewService Get")
 			}
-			apnd("template", service.Uuid)
+			trace_append("service", service.Uuid)
 			originkind, originuuid = *service.OriginKind, *service.OriginUuid
+		default:
+			return nil, fmt.Errorf("unknown origin_kind=%s", originkind)
 		}
 	}
 
+	if len(trace) == 0 {
+		return nil, fmt.Errorf("not found service origin")
+	}
+
 	return trace, nil
+}
+
+// service_exclude_result
+
+//  서비스 조회에 결과 필드는 제거
+func service_exclude_result(service servicev1.DbSchemaServiceAndSteps) servicev1.DbSchemaServiceAndSteps {
+	service.Result = nil //서비스 조회에 결과 필드는 제거
+	return service
 }

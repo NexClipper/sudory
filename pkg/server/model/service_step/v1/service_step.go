@@ -33,24 +33,24 @@ type ServiceStep struct {
 }
 
 //DATABASE SCHEMA: SERVICE
-type DbSchemaServiceStep struct {
+type DbSchema struct {
 	metav1.DbMeta `xorm:"extends"`
 	ServiceStep   `xorm:"extends"`
 }
 
-var _ orm.TableName = (*DbSchemaServiceStep)(nil)
+var _ orm.TableName = (*DbSchema)(nil)
 
-func (DbSchemaServiceStep) TableName() string {
+func (DbSchema) TableName() string {
 	return "service_step"
 }
 
-type ServiceStepPropertyEssential struct {
+type StepCreateProperty struct {
 	//arguments
 	Args map[string]interface{} `json:"args,omitempty"`
 }
 
-type ServiceStepEssential struct {
-	ServiceStepPropertyEssential `json:",inline"` //inline property
+type StepCreate struct {
+	StepCreateProperty `json:",inline"` //inline property
 }
 
 //HTTP REQUEST BODY: SERVICE_STEP
@@ -60,11 +60,11 @@ type HttpReqServiceStep struct {
 
 //HTTP RESPONSE BODY: SERVICE_STEP
 type HttpRspServiceStep struct {
-	ServiceStep `json:",inline"`
+	DbSchema `json:",inline"`
 }
 
 //변환 DbSchema -> Step
-func TransFormDbSchema(s []DbSchemaServiceStep) []ServiceStep {
+func TransFormDbSchema(s []DbSchema) []ServiceStep {
 	var out = make([]ServiceStep, len(s))
 	for n, it := range s {
 		out[n] = it.ServiceStep
@@ -73,10 +73,10 @@ func TransFormDbSchema(s []DbSchemaServiceStep) []ServiceStep {
 }
 
 //변환 Step -> HttpRsp
-func TransToHttpRsp(s []ServiceStep) []HttpRspServiceStep {
+func TransToHttpRsp(s []DbSchema) []HttpRspServiceStep {
 	var out = make([]HttpRspServiceStep, len(s))
 	for n, it := range s {
-		out[n].ServiceStep = it
+		out[n].DbSchema = it
 	}
 	return out
 }

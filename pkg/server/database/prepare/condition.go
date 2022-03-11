@@ -1,11 +1,11 @@
-package prepared
+package prepare
 
 import (
 	"encoding/json"
 	"fmt"
 	"strings"
 
-	"github.com/NexClipper/sudory/pkg/server/database/prepared/sexp"
+	"github.com/NexClipper/sudory/pkg/server/database/prepare/sexp"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
 )

@@ -485,11 +485,11 @@ var doc = `{
                         "required": true
                     },
                     {
-                        "description": "HttpReqUpdateEnvironment",
+                        "description": "HttpReqEnvironmentUpdate",
                         "name": "enviroment",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqUpdateEnvironment"
+                            "$ref": "#/definitions/v1.HttpReqEnvironmentUpdate"
                         }
                     }
                 ],
@@ -1476,6 +1476,76 @@ var doc = `{
         }
     },
     "definitions": {
+        "v1.DbSchema": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "args": {
+                    "description": "arguments",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "created": {
+                    "description": "생성시간",
+                    "type": "string"
+                },
+                "deleted": {
+                    "description": "삭제시간, 삭제 플래그",
+                    "type": "string"
+                },
+                "ended": {
+                    "description": "Started 스탭 완료 시간",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "아이디 PK",
+                    "type": "integer"
+                },
+                "method": {
+                    "description": "메소드",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "result": {
+                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
+                    "type": "string"
+                },
+                "sequence": {
+                    "description": "순서",
+                    "type": "integer"
+                },
+                "service_uuid": {
+                    "description": "서비스 Uuid",
+                    "type": "string"
+                },
+                "srated": {
+                    "description": "Started 스탭 시작 시간",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status 상태",
+                    "type": "integer"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "updated": {
+                    "description": "수정시간",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
         "v1.HttpReqAuth": {
             "type": "object",
             "properties": {
@@ -1589,6 +1659,14 @@ var doc = `{
                 }
             }
         },
+        "v1.HttpReqEnvironmentUpdate": {
+            "type": "object",
+            "properties": {
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "v1.HttpReqService": {
             "type": "object",
             "properties": {
@@ -1684,7 +1762,7 @@ var doc = `{
                 "steps": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1.ServiceStepEssential"
+                        "$ref": "#/definitions/v1.StepCreate"
                     }
                 },
                 "summary": {
@@ -1759,31 +1837,14 @@ var doc = `{
         "v1.HttpReqTemplateWithCommands": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "commands": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/v1.TemplateCommand"
                     }
                 },
-                "name": {
-                    "description": "label name",
-                    "type": "string"
-                },
-                "origin": {
-                    "description": "origin\n@example: predefined, userdefined",
-                    "type": "string"
-                },
-                "summary": {
-                    "description": "label summary",
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "UUID",
-                    "type": "string"
+                "template": {
+                    "$ref": "#/definitions/v1.Template"
                 }
             }
         },
@@ -1823,14 +1884,6 @@ var doc = `{
                 }
             }
         },
-        "v1.HttpReqUpdateEnvironment": {
-            "type": "object",
-            "properties": {
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
         "v1.HttpRspClient": {
             "type": "object",
             "properties": {
@@ -1838,9 +1891,17 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "cluster_uuid": {
-                    "description": "ClusterUuid",
+                "created": {
+                    "description": "생성시간",
                     "type": "string"
+                },
+                "deleted": {
+                    "description": "삭제시간, 삭제 플래그",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "아이디 PK",
+                    "type": "integer"
                 },
                 "name": {
                     "description": "label name",
@@ -1848,6 +1909,10 @@ var doc = `{
                 },
                 "summary": {
                     "description": "label summary",
+                    "type": "string"
+                },
+                "updated": {
+                    "description": "수정시간",
                     "type": "string"
                 },
                 "uuid": {
@@ -1863,67 +1928,35 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "assigned_client_uuid": {
-                    "description": "할당된 클라이언트 UUID",
+                "created": {
+                    "description": "생성시간",
                     "type": "string"
                 },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
+                "deleted": {
+                    "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
-                },
-                "interval": {
-                    "description": "Interval",
+                "id": {
+                    "description": "아이디 PK",
                     "type": "integer"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
-                "origin_kind": {
-                    "description": "오리진 종류",
-                    "type": "string"
-                },
-                "origin_uuid": {
-                    "description": "오리진 UUID",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
-                },
                 "steps": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1.ServiceStep"
+                        "$ref": "#/definitions/v1.DbSchema"
                     }
                 },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
                 },
-                "template_uuid": {
-                    "description": "텔플릿 UUID",
+                "updated": {
+                    "description": "수정시간",
                     "type": "string"
-                },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "uuid": {
                     "description": "UUID",
@@ -1938,12 +1971,28 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
+                "created": {
+                    "description": "생성시간",
+                    "type": "string"
+                },
+                "deleted": {
+                    "description": "삭제시간, 삭제 플래그",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "아이디 PK",
+                    "type": "integer"
+                },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
                 "summary": {
                     "description": "label summary",
+                    "type": "string"
+                },
+                "updated": {
+                    "description": "수정시간",
                     "type": "string"
                 },
                 "uuid": {
@@ -1959,6 +2008,18 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
+                "created": {
+                    "description": "생성시간",
+                    "type": "string"
+                },
+                "deleted": {
+                    "description": "삭제시간, 삭제 플래그",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "아이디 PK",
+                    "type": "integer"
+                },
                 "name": {
                     "description": "label name",
                     "type": "string"
@@ -1967,11 +2028,12 @@ var doc = `{
                     "description": "label summary",
                     "type": "string"
                 },
-                "uuid": {
-                    "description": "UUID",
+                "updated": {
+                    "description": "수정시간",
                     "type": "string"
                 },
-                "value": {
+                "uuid": {
+                    "description": "UUID",
                     "type": "string"
                 }
             }
@@ -1983,61 +2045,29 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "assigned_client_uuid": {
-                    "description": "할당된 클라이언트 UUID",
+                "created": {
+                    "description": "생성시간",
                     "type": "string"
                 },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
+                "deleted": {
+                    "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
-                },
-                "interval": {
-                    "description": "Interval",
+                "id": {
+                    "description": "아이디 PK",
                     "type": "integer"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
-                "origin_kind": {
-                    "description": "오리진 종류",
-                    "type": "string"
-                },
-                "origin_uuid": {
-                    "description": "오리진 UUID",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
-                },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
                 },
-                "template_uuid": {
-                    "description": "텔플릿 UUID",
+                "updated": {
+                    "description": "수정시간",
                     "type": "string"
-                },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "uuid": {
                     "description": "UUID",
@@ -2052,45 +2082,28 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "args": {
-                    "description": "arguments",
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "ended": {
-                    "description": "Started 스탭 완료 시간",
+                "created": {
+                    "description": "생성시간",
                     "type": "string"
                 },
-                "method": {
-                    "description": "메소드",
+                "deleted": {
+                    "description": "삭제시간, 삭제 플래그",
                     "type": "string"
+                },
+                "id": {
+                    "description": "아이디 PK",
+                    "type": "integer"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "sequence": {
-                    "description": "순서",
-                    "type": "integer"
-                },
-                "service_uuid": {
-                    "description": "서비스 Uuid",
-                    "type": "string"
-                },
-                "srated": {
-                    "description": "Started 스탭 시작 시간",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status 상태",
-                    "type": "integer"
-                },
                 "summary": {
                     "description": "label summary",
+                    "type": "string"
+                },
+                "updated": {
+                    "description": "수정시간",
                     "type": "string"
                 },
                 "uuid": {
@@ -2106,67 +2119,35 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "assigned_client_uuid": {
-                    "description": "할당된 클라이언트 UUID",
+                "created": {
+                    "description": "생성시간",
                     "type": "string"
                 },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
+                "deleted": {
+                    "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
-                },
-                "interval": {
-                    "description": "Interval",
+                "id": {
+                    "description": "아이디 PK",
                     "type": "integer"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
-                "origin_kind": {
-                    "description": "오리진 종류",
-                    "type": "string"
-                },
-                "origin_uuid": {
-                    "description": "오리진 UUID",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
-                },
                 "steps": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1.ServiceStep"
+                        "$ref": "#/definitions/v1.DbSchema"
                     }
                 },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
                 },
-                "template_uuid": {
-                    "description": "텔플릿 UUID",
+                "updated": {
+                    "description": "수정시간",
                     "type": "string"
-                },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "uuid": {
                     "description": "UUID",
@@ -2177,19 +2158,32 @@ var doc = `{
         "v1.HttpRspSession": {
             "type": "object",
             "properties": {
-                "expiration_time": {
+                "api_version": {
+                    "description": "api version",
                     "type": "string"
                 },
-                "issued_at_time": {
+                "created": {
+                    "description": "생성시간",
                     "type": "string"
                 },
-                "token": {
+                "deleted": {
+                    "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "user_kind": {
+                "id": {
+                    "description": "아이디 PK",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "label name",
                     "type": "string"
                 },
-                "user_uuid": {
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "updated": {
+                    "description": "수정시간",
                     "type": "string"
                 },
                 "uuid": {
@@ -2205,16 +2199,28 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
+                "created": {
+                    "description": "생성시간",
+                    "type": "string"
+                },
+                "deleted": {
+                    "description": "삭제시간, 삭제 플래그",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "아이디 PK",
+                    "type": "integer"
+                },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
-                "origin": {
-                    "description": "origin\n@example: predefined, userdefined",
-                    "type": "string"
-                },
                 "summary": {
                     "description": "label summary",
+                    "type": "string"
+                },
+                "updated": {
+                    "description": "수정시간",
                     "type": "string"
                 },
                 "uuid": {
@@ -2230,29 +2236,28 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "args": {
-                    "description": "arguments",
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "method": {
-                    "description": "메소드\n@example: \"kubernetes.deployment.get.v1\", \"kubernetes.pod.list.v1\"",
+                "created": {
+                    "description": "생성시간",
                     "type": "string"
+                },
+                "deleted": {
+                    "description": "삭제시간, 삭제 플래그",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "아이디 PK",
+                    "type": "integer"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
-                "sequence": {
-                    "description": "순서",
-                    "type": "integer"
-                },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
                 },
-                "template_uuid": {
-                    "description": "템플릿 UUID",
+                "updated": {
+                    "description": "수정시간",
                     "type": "string"
                 },
                 "uuid": {
@@ -2268,11 +2273,17 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "expiration_time": {
+                "created": {
+                    "description": "생성시간",
                     "type": "string"
                 },
-                "issued_at_time": {
+                "deleted": {
+                    "description": "삭제시간, 삭제 플래그",
                     "type": "string"
+                },
+                "id": {
+                    "description": "아이디 PK",
+                    "type": "integer"
                 },
                 "name": {
                     "description": "label name",
@@ -2282,13 +2293,8 @@ var doc = `{
                     "description": "label summary",
                     "type": "string"
                 },
-                "token": {
-                    "type": "string"
-                },
-                "user_kind": {
-                    "type": "string"
-                },
-                "user_uuid": {
+                "updated": {
+                    "description": "수정시간",
                     "type": "string"
                 },
                 "uuid": {
@@ -2368,13 +2374,38 @@ var doc = `{
                 }
             }
         },
-        "v1.ServiceStepEssential": {
+        "v1.StepCreate": {
             "type": "object",
             "properties": {
                 "args": {
                     "description": "arguments",
                     "type": "object",
                     "additionalProperties": true
+                }
+            }
+        },
+        "v1.Template": {
+            "type": "object",
+            "properties": {
+                "api_version": {
+                    "description": "api version",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "origin": {
+                    "description": "origin\n@example: predefined, userdefined",
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
                 }
             }
         },

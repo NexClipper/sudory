@@ -13,6 +13,6 @@ package control
 // // @Router /server/catalogue [get]
 // // @Success 200 {object} model.Catalogues
 // func (c *Control) GetCatalogue(ctx echo.Context) error {
-// 	v := view.NewGetCatalogue(operator.NewCatalogue())
+// 	v := view.NewGetCatalogue(vault.NewCatalogue())
 // 	return v.Request(ctx)
 // }

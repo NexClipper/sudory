@@ -64,9 +64,9 @@ func TestHttpReqTemplateJson(t *testing.T) {
 
 // const templateUuid = "cda6498a235d4f7eae19661d41bc154c"
 
-func NewTemplate() DbSchemaTemplate {
+func NewTemplate() DbSchema {
 
-	out := DbSchemaTemplate{}
+	out := DbSchema{}
 	out.Id = 11112222333344445555
 	out.Created = newist.Time(time.Now())
 	out.Updated = newist.Time(time.Now())

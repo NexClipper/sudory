@@ -1,4 +1,4 @@
-package prepared
+package prepare
 
 import (
 	"reflect"

@@ -24,14 +24,14 @@ type Token struct {
 }
 
 //DATABASE SCHEMA: Token
-type DbSchemaToken struct {
+type DbSchema struct {
 	metav1.DbMeta `xorm:"extends"`
 	Token         `xorm:"extends"`
 }
 
-var _ orm.TableName = (*DbSchemaToken)(nil)
+var _ orm.TableName = (*DbSchema)(nil)
 
-func (DbSchemaToken) TableName() string {
+func (DbSchema) TableName() string {
 	return "token"
 }
 
@@ -42,23 +42,14 @@ type HttpReqToken struct {
 
 //HTTP RESPONSE BODY: Token
 type HttpRspToken struct {
-	Token `json:",inline"`
-}
-
-//변환 DbSchema -> Token
-func TransFormDbSchema(s []DbSchemaToken) []Token {
-	var out = make([]Token, len(s))
-	for n, it := range s {
-		out[n] = it.Token
-	}
-	return out
+	DbSchema `json:",inline"`
 }
 
 //변환 Token -> HttpRsp
-func TransToHttpRsp(s []Token) []HttpRspToken {
+func TransToHttpRsp(s []DbSchema) []HttpRspToken {
 	var out = make([]HttpRspToken, len(s))
 	for n, it := range s {
-		out[n].Token = it
+		out[n].DbSchema = it
 	}
 	return out
 }

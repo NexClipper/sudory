@@ -1,4 +1,56 @@
 definitions:
+  v1.DbSchema:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      args:
+        additionalProperties: true
+        description: arguments
+        type: object
+      created:
+        description: 생성시간
+        type: string
+      deleted:
+        description: 삭제시간, 삭제 플래그
+        type: string
+      ended:
+        description: Started 스탭 완료 시간
+        type: string
+      id:
+        description: 아이디 PK
+        type: integer
+      method:
+        description: 메소드
+        type: string
+      name:
+        description: label name
+        type: string
+      result:
+        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
+        type: string
+      sequence:
+        description: 순서
+        type: integer
+      service_uuid:
+        description: 서비스 Uuid
+        type: string
+      srated:
+        description: Started 스탭 시작 시간
+        type: string
+      status:
+        description: Status 상태
+        type: integer
+      summary:
+        description: label summary
+        type: string
+      updated:
+        description: 수정시간
+        type: string
+      uuid:
+        description: UUID
+        type: string
+    type: object
   v1.HttpReqAuth:
     properties:
       assertion:
@@ -81,6 +133,11 @@ definitions:
         description: UUID
         type: string
     type: object
+  v1.HttpReqEnvironmentUpdate:
+    properties:
+      value:
+        type: string
+    type: object
   v1.HttpReqService:
     properties:
       api_version:
@@ -151,7 +208,7 @@ definitions:
         type: string
       steps:
         items:
-          $ref: '#/definitions/v1.ServiceStepEssential'
+          $ref: '#/definitions/v1.StepCreate'
         type: array
       summary:
         description: label summary
@@ -209,27 +266,12 @@ definitions:
     type: object
   v1.HttpReqTemplateWithCommands:
     properties:
-      api_version:
-        description: api version
-        type: string
       commands:
         items:
           $ref: '#/definitions/v1.TemplateCommand'
         type: array
-      name:
-        description: label name
-        type: string
-      origin:
-        description: |-
-          origin
-          @example: predefined, userdefined
-        type: string
-      summary:
-        description: label summary
-        type: string
-      uuid:
-        description: UUID
-        type: string
+      template:
+        $ref: '#/definitions/v1.Template'
     type: object
   v1.HttpReqToken:
     properties:
@@ -256,24 +298,28 @@ definitions:
         description: UUID
         type: string
     type: object
-  v1.HttpReqUpdateEnvironment:
-    properties:
-      value:
-        type: string
-    type: object
   v1.HttpRspClient:
     properties:
       api_version:
         description: api version
         type: string
-      cluster_uuid:
-        description: ClusterUuid
+      created:
+        description: 생성시간
         type: string
+      deleted:
+        description: 삭제시간, 삭제 플래그
+        type: string
+      id:
+        description: 아이디 PK
+        type: integer
       name:
         description: label name
         type: string
       summary:
         description: label summary
+        type: string
+      updated:
+        description: 수정시간
         type: string
       uuid:
         description: UUID
@@ -284,52 +330,28 @@ definitions:
       api_version:
         description: api version
         type: string
-      assigned_client_uuid:
-        description: 할당된 클라이언트 UUID
+      created:
+        description: 생성시간
         type: string
-      cluster_uuid:
-        description: 클러스터 UUID
+      deleted:
+        description: 삭제시간, 삭제 플래그
         type: string
-      epoch:
-        description: 'Epoch -1: infinite, 0 :'
-        type: integer
-      interval:
-        description: Interval
+      id:
+        description: 아이디 PK
         type: integer
       name:
         description: label name
         type: string
-      origin_kind:
-        description: 오리진 종류
-        type: string
-      origin_uuid:
-        description: 오리진 UUID
-        type: string
-      result:
-        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
-        type: string
-      status:
-        description: Status
-        type: integer
-      step_count:
-        description: 스탭 카운트
-        type: integer
-      step_position:
-        description: 스탭 Position
-        type: integer
       steps:
         items:
-          $ref: '#/definitions/v1.ServiceStep'
+          $ref: '#/definitions/v1.DbSchema'
         type: array
       summary:
         description: label summary
         type: string
-      template_uuid:
-        description: 텔플릿 UUID
+      updated:
+        description: 수정시간
         type: string
-      type:
-        description: 'Type; 0: Once, 1: repeat(epoch, interval)'
-        type: integer
       uuid:
         description: UUID
         type: string
@@ -339,11 +361,23 @@ definitions:
       api_version:
         description: api version
         type: string
+      created:
+        description: 생성시간
+        type: string
+      deleted:
+        description: 삭제시간, 삭제 플래그
+        type: string
+      id:
+        description: 아이디 PK
+        type: integer
       name:
         description: label name
         type: string
       summary:
         description: label summary
+        type: string
+      updated:
+        description: 수정시간
         type: string
       uuid:
         description: UUID
@@ -354,16 +388,26 @@ definitions:
       api_version:
         description: api version
         type: string
+      created:
+        description: 생성시간
+        type: string
+      deleted:
+        description: 삭제시간, 삭제 플래그
+        type: string
+      id:
+        description: 아이디 PK
+        type: integer
       name:
         description: label name
         type: string
       summary:
         description: label summary
         type: string
+      updated:
+        description: 수정시간
+        type: string
       uuid:
         description: UUID
-        type: string
-      value:
         type: string
     type: object
   v1.HttpRspService:
@@ -371,48 +415,24 @@ definitions:
       api_version:
         description: api version
         type: string
-      assigned_client_uuid:
-        description: 할당된 클라이언트 UUID
+      created:
+        description: 생성시간
         type: string
-      cluster_uuid:
-        description: 클러스터 UUID
+      deleted:
+        description: 삭제시간, 삭제 플래그
         type: string
-      epoch:
-        description: 'Epoch -1: infinite, 0 :'
-        type: integer
-      interval:
-        description: Interval
+      id:
+        description: 아이디 PK
         type: integer
       name:
         description: label name
         type: string
-      origin_kind:
-        description: 오리진 종류
-        type: string
-      origin_uuid:
-        description: 오리진 UUID
-        type: string
-      result:
-        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
-        type: string
-      status:
-        description: Status
-        type: integer
-      step_count:
-        description: 스탭 카운트
-        type: integer
-      step_position:
-        description: 스탭 Position
-        type: integer
       summary:
         description: label summary
         type: string
-      template_uuid:
-        description: 텔플릿 UUID
+      updated:
+        description: 수정시간
         type: string
-      type:
-        description: 'Type; 0: Once, 1: repeat(epoch, interval)'
-        type: integer
       uuid:
         description: UUID
         type: string
@@ -422,36 +442,23 @@ definitions:
       api_version:
         description: api version
         type: string
-      args:
-        additionalProperties: true
-        description: arguments
-        type: object
-      ended:
-        description: Started 스탭 완료 시간
+      created:
+        description: 생성시간
         type: string
-      method:
-        description: 메소드
+      deleted:
+        description: 삭제시간, 삭제 플래그
         type: string
+      id:
+        description: 아이디 PK
+        type: integer
       name:
         description: label name
         type: string
-      result:
-        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
-        type: string
-      sequence:
-        description: 순서
-        type: integer
-      service_uuid:
-        description: 서비스 Uuid
-        type: string
-      srated:
-        description: Started 스탭 시작 시간
-        type: string
-      status:
-        description: Status 상태
-        type: integer
       summary:
         description: label summary
+        type: string
+      updated:
+        description: 수정시간
         type: string
       uuid:
         description: UUID
@@ -462,67 +469,54 @@ definitions:
       api_version:
         description: api version
         type: string
-      assigned_client_uuid:
-        description: 할당된 클라이언트 UUID
+      created:
+        description: 생성시간
         type: string
-      cluster_uuid:
-        description: 클러스터 UUID
+      deleted:
+        description: 삭제시간, 삭제 플래그
         type: string
-      epoch:
-        description: 'Epoch -1: infinite, 0 :'
-        type: integer
-      interval:
-        description: Interval
+      id:
+        description: 아이디 PK
         type: integer
       name:
         description: label name
         type: string
-      origin_kind:
-        description: 오리진 종류
-        type: string
-      origin_uuid:
-        description: 오리진 UUID
-        type: string
-      result:
-        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
-        type: string
-      status:
-        description: Status
-        type: integer
-      step_count:
-        description: 스탭 카운트
-        type: integer
-      step_position:
-        description: 스탭 Position
-        type: integer
       steps:
         items:
-          $ref: '#/definitions/v1.ServiceStep'
+          $ref: '#/definitions/v1.DbSchema'
         type: array
       summary:
         description: label summary
         type: string
-      template_uuid:
-        description: 텔플릿 UUID
+      updated:
+        description: 수정시간
         type: string
-      type:
-        description: 'Type; 0: Once, 1: repeat(epoch, interval)'
-        type: integer
       uuid:
         description: UUID
         type: string
     type: object
   v1.HttpRspSession:
     properties:
-      expiration_time:
+      api_version:
+        description: api version
         type: string
-      issued_at_time:
+      created:
+        description: 생성시간
         type: string
-      token:
+      deleted:
+        description: 삭제시간, 삭제 플래그
         type: string
-      user_kind:
+      id:
+        description: 아이디 PK
+        type: integer
+      name:
+        description: label name
         type: string
-      user_uuid:
+      summary:
+        description: label summary
+        type: string
+      updated:
+        description: 수정시간
         type: string
       uuid:
         description: UUID
@@ -533,16 +527,23 @@ definitions:
       api_version:
         description: api version
         type: string
+      created:
+        description: 생성시간
+        type: string
+      deleted:
+        description: 삭제시간, 삭제 플래그
+        type: string
+      id:
+        description: 아이디 PK
+        type: integer
       name:
         description: label name
         type: string
-      origin:
-        description: |-
-          origin
-          @example: predefined, userdefined
-        type: string
       summary:
         description: label summary
+        type: string
+      updated:
+        description: 수정시간
         type: string
       uuid:
         description: UUID
@@ -553,26 +554,23 @@ definitions:
       api_version:
         description: api version
         type: string
-      args:
-        additionalProperties: true
-        description: arguments
-        type: object
-      method:
-        description: |-
-          메소드
-          @example: "kubernetes.deployment.get.v1", "kubernetes.pod.list.v1"
+      created:
+        description: 생성시간
         type: string
+      deleted:
+        description: 삭제시간, 삭제 플래그
+        type: string
+      id:
+        description: 아이디 PK
+        type: integer
       name:
         description: label name
         type: string
-      sequence:
-        description: 순서
-        type: integer
       summary:
         description: label summary
         type: string
-      template_uuid:
-        description: 템플릿 UUID
+      updated:
+        description: 수정시간
         type: string
       uuid:
         description: UUID
@@ -583,21 +581,23 @@ definitions:
       api_version:
         description: api version
         type: string
-      expiration_time:
+      created:
+        description: 생성시간
         type: string
-      issued_at_time:
+      deleted:
+        description: 삭제시간, 삭제 플래그
         type: string
+      id:
+        description: 아이디 PK
+        type: integer
       name:
         description: label name
         type: string
       summary:
         description: label summary
         type: string
-      token:
-        type: string
-      user_kind:
-        type: string
-      user_uuid:
+      updated:
+        description: 수정시간
         type: string
       uuid:
         description: UUID
@@ -655,12 +655,32 @@ definitions:
         description: UUID
         type: string
     type: object
-  v1.ServiceStepEssential:
+  v1.StepCreate:
     properties:
       args:
         additionalProperties: true
         description: arguments
         type: object
+    type: object
+  v1.Template:
+    properties:
+      api_version:
+        description: api version
+        type: string
+      name:
+        description: label name
+        type: string
+      origin:
+        description: |-
+          origin
+          @example: predefined, userdefined
+        type: string
+      summary:
+        description: label summary
+        type: string
+      uuid:
+        description: UUID
+        type: string
     type: object
   v1.TemplateCommand:
     properties:
@@ -995,11 +1015,11 @@ paths:
         name: uuid
         required: true
         type: string
-      - description: HttpReqUpdateEnvironment
+      - description: HttpReqEnvironmentUpdate
         in: body
         name: enviroment
         schema:
-          $ref: '#/definitions/v1.HttpReqUpdateEnvironment'
+          $ref: '#/definitions/v1.HttpReqEnvironmentUpdate'
       produces:
       - application/json
       responses:

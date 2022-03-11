@@ -26,14 +26,14 @@ type TemplateCommand struct {
 }
 
 //DATABASE SCHEMA: TEMPLATE_COMMAND
-type DbSchemaTemplateCommand struct {
+type DbSchema struct {
 	metav1.DbMeta   `xorm:"extends"`
 	TemplateCommand `xorm:"extends"`
 }
 
-var _ orm.TableName = (*DbSchemaTemplateCommand)(nil)
+var _ orm.TableName = (*DbSchema)(nil)
 
-func (DbSchemaTemplateCommand) TableName() string {
+func (DbSchema) TableName() string {
 	return "template_command"
 }
 
@@ -44,22 +44,20 @@ type HttpReqTemplateCommand struct {
 
 //HTTP RESPONSE BODY: TEMPLATE
 type HttpRspTemplateCommand struct {
-	TemplateCommand `json:",inline"`
+	DbSchema `json:",inline"`
 }
 
-type HttpRspTemplateCommands []HttpRspTemplateCommand
-
-//변환 TemplateCommand -> DbSchema
-func TransToDbSchema(s []TemplateCommand) []DbSchemaTemplateCommand {
-	var out = make([]DbSchemaTemplateCommand, len(s))
-	for n, it := range s {
-		out[n] = DbSchemaTemplateCommand{TemplateCommand: it}
-	}
-	return out
-}
+// //변환 TemplateCommand -> DbSchema
+// func TransToDbSchema(s []TemplateCommand) []DbSchema {
+// 	var out = make([]DbSchema, len(s))
+// 	for n, it := range s {
+// 		out[n] = DbSchema{TemplateCommand: it}
+// 	}
+// 	return out
+// }
 
 //변환 DbSchema -> TemplateCommand
-func TransFromDbSchema(s []DbSchemaTemplateCommand) []TemplateCommand {
+func TransFromDbSchema(s []DbSchema) []TemplateCommand {
 	var out = make([]TemplateCommand, len(s))
 	for n, it := range s {
 		out[n] = it.TemplateCommand
@@ -67,20 +65,20 @@ func TransFromDbSchema(s []DbSchemaTemplateCommand) []TemplateCommand {
 	return out
 }
 
-//변환 HttpReq -> TemplateCommand
-func TransFormHttpReq(s []HttpReqTemplateCommand) []TemplateCommand {
-	var out = make([]TemplateCommand, len(s))
-	for n, it := range s {
-		out[n] = it.TemplateCommand
-	}
-	return out
-}
+// //변환 HttpReq -> TemplateCommand
+// func TransFormHttpReq(s []HttpReqTemplateCommand) []TemplateCommand {
+// 	var out = make([]TemplateCommand, len(s))
+// 	for n, it := range s {
+// 		out[n] = it.TemplateCommand
+// 	}
+// 	return out
+// }
 
 //변환 TemplateCommand -> HttpRsp
-func TransToHttpRsp(s []TemplateCommand) []HttpRspTemplateCommand {
+func TransToHttpRsp(s []DbSchema) []HttpRspTemplateCommand {
 	var out = make([]HttpRspTemplateCommand, len(s))
 	for n, it := range s {
-		out[n].TemplateCommand = it
+		out[n].DbSchema = it
 	}
 	return out
 }

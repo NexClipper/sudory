@@ -1,9 +1,10 @@
 package control
 
 import (
-	"github.com/NexClipper/sudory/pkg/server/control/operator"
+	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/labstack/echo/v4"
+	"github.com/pkg/errors"
 )
 
 // // Create ServiceStep
@@ -53,7 +54,7 @@ import (
 // 		if step.Sequence == nil {
 // 			//마지막 순서를 지정하기 위해서 스텝을 가져온다
 // 			where := "service_uuid = ?"
-// 			steps, err := operator.NewServiceStep(ctx.Database()).
+// 			steps, err := vault.NewServiceStep(ctx.Database()).
 // 				Find(where, service_uuid)
 // 			if err != nil {
 // 				return nil, err
@@ -65,16 +66,16 @@ import (
 // 		step.Status = newist.Int32(int32(servicev1.StatusRegist))
 
 // 		//스탭 생성
-// 		if err := operator.NewServiceStep(ctx.Database()).Create(step); err != nil {
+// 		if err := vault.NewServiceStep(ctx.Database()).Create(step); err != nil {
 // 			return nil, err
 // 		}
 
 // 		//Service Chaining
-// 		if err := operator.NewService(ctx.Database()).Chaining(service_uuid); err != nil {
+// 		if err := vault.NewService(ctx.Database()).Chaining(service_uuid); err != nil {
 // 			return nil, err
 // 		}
 // 		//ServiceStep ChainingSequence
-// 		if err := operator.NewServiceStep(ctx.Database()).ChainingSequence(service_uuid, step.Uuid); err != nil {
+// 		if err := vault.NewServiceStep(ctx.Database()).ChainingSequence(service_uuid, step.Uuid); err != nil {
 // 			return nil, err
 // 		}
 
@@ -111,18 +112,30 @@ func (c *Control) FindServiceStep() func(ctx echo.Context) error {
 		where := "service_uuid = ?"
 		service_uuid := ctx.Params()[__SERVICE_UUID__]
 
-		record, err := operator.NewServiceStep(ctx.Database()).
+		record, err := vault.NewServiceStep(ctx.Database()).
 			Find(where, service_uuid)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewServiceStep Find")
 		}
 		return stepv1.TransToHttpRsp(record), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "FindServiceStep binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "FindServiceStep operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Nolock(c.db.Engine()),
 	})
 }
@@ -153,19 +166,30 @@ func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 		_ = ctx.Params()[__SERVICE_UUID__]
 		uuid := ctx.Params()[__UUID__]
 
-		record, err := operator.NewServiceStep(ctx.Database()).
-			Get(uuid)
+		record, err := vault.NewServiceStep(ctx.Database()).Get(uuid)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewServiceStep Get")
 		}
 
-		return &stepv1.HttpRspServiceStep{ServiceStep: *record}, nil
+		return &stepv1.HttpRspServiceStep{DbSchema: *record}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "GetServiceStep binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "GetServiceStep operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Nolock(c.db.Engine()),
 	})
 }
@@ -216,12 +240,12 @@ func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 // 		//set uuid from path
 // 		step.Uuid = uuid
 
-// 		if err := operator.NewServiceStep(ctx.Database()).Update(step); err != nil {
+// 		if err := vault.NewServiceStep(ctx.Database()).Update(step); err != nil {
 // 			return nil, err
 // 		}
 
 // 		//ServiceStep ChainingSequence
-// 		if err := operator.NewServiceStep(ctx.Database()).ChainingSequence(service_uuid, step.Uuid); err != nil {
+// 		if err := vault.NewServiceStep(ctx.Database()).ChainingSequence(service_uuid, step.Uuid); err != nil {
 // 			return nil, err
 // 		}
 
@@ -260,7 +284,7 @@ func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 // 		uuid := ctx.Params()[__UUID__]
 
 // 		//조회 해서 레코드가 없으면 종료
-// 		step, err := operator.NewServiceStep(ctx.Database()).
+// 		step, err := vault.NewServiceStep(ctx.Database()).
 // 			Get(uuid)
 // 		if Eqaul(err, database.ErrorRecordWasNotFound()) {
 // 			return OK(), nil //idempotent
@@ -269,14 +293,14 @@ func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 // 		}
 
 // 		//삭제
-// 		err = operator.NewServiceStep(ctx.Database()).
+// 		err = vault.NewServiceStep(ctx.Database()).
 // 			Delete(uuid)
 // 		if err != nil {
 // 			return nil, err
 // 		}
 
 // 		//Service Chaining
-// 		if err := operator.NewService(ctx.Database()).Chaining(*step.ServiceUuid); err != nil {
+// 		if err := vault.NewService(ctx.Database()).Chaining(*step.ServiceUuid); err != nil {
 // 			return nil, err
 // 		}
 

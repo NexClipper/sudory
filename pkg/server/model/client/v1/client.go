@@ -19,14 +19,14 @@ type Client struct {
 }
 
 //DATABASE SCHEMA: Client
-type DbSchemaClient struct {
+type DbSchema struct {
 	metav1.DbMeta `xorm:"extends"`
 	Client        `xorm:"extends"`
 }
 
-var _ orm.TableName = (*DbSchemaClient)(nil)
+var _ orm.TableName = (*DbSchema)(nil)
 
-func (DbSchemaClient) TableName() string {
+func (DbSchema) TableName() string {
 	return "client"
 }
 
@@ -37,11 +37,11 @@ type HttpReqClient struct {
 
 //HTTP RESPONSE BODY: Client
 type HttpRspClient struct {
-	Client `json:",inline"`
+	DbSchema `json:",inline"`
 }
 
 //변환 DbSchema -> Client
-func TransFormDbSchema(s []DbSchemaClient) []Client {
+func TransFormDbSchema(s []DbSchema) []Client {
 	var out = make([]Client, len(s))
 	for n, it := range s {
 		out[n] = it.Client
@@ -50,10 +50,10 @@ func TransFormDbSchema(s []DbSchemaClient) []Client {
 }
 
 //변환 Client -> HttpRsp
-func TransToHttpRsp(s []Client) []HttpRspClient {
+func TransToHttpRsp(s []DbSchema) []HttpRspClient {
 	var out = make([]HttpRspClient, len(s))
 	for n, it := range s {
-		out[n].Client = it
+		out[n].DbSchema = it
 	}
 	return out
 }

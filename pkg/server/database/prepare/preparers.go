@@ -1,4 +1,4 @@
-package prepared
+package prepare
 
 import (
 	"github.com/NexClipper/sudory/pkg/server/macro"

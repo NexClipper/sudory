@@ -1,10 +1,7 @@
 package control
 
 import (
-	"fmt"
-
-	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/database/prepared"
+	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
@@ -29,6 +26,14 @@ func (c *Control) CreateTemplate() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
+		map_command := func(elems []commandv1.TemplateCommand, mapper func(commandv1.TemplateCommand) commandv1.TemplateCommand) []commandv1.TemplateCommand {
+			rst := make([]commandv1.TemplateCommand, len(elems))
+			for n := range elems {
+				rst[n] = mapper(elems[n])
+			}
+			return rst
+		}
+
 		body, ok := ctx.Object().(*templatev1.HttpReqTemplateWithCommands)
 		if !ok {
 			return nil, ErrorFailedCast()
@@ -41,12 +46,6 @@ func (c *Control) CreateTemplate() func(ctx echo.Context) error {
 		template.UuidMeta = NewUuidMeta()
 		template.LabelMeta = NewLabelMeta(template.Name, template.Summary)
 
-		//create template
-		err := operator.NewTemplate(ctx.Database()).
-			Create(template)
-		if err != nil {
-			return nil, err
-		}
 		//create command
 		seq := int32(0)
 		commmands = map_command(commmands, func(tc commandv1.TemplateCommand) commandv1.TemplateCommand {
@@ -61,24 +60,33 @@ func (c *Control) CreateTemplate() func(ctx echo.Context) error {
 
 			return tc
 		})
-		err = foreach_command(commmands, func(command commandv1.TemplateCommand) error {
-			if err := operator.NewTemplateCommand(ctx.Database()).
-				Create(command); err != nil {
-				return err
-			}
-			return nil
-		})
+
+		//create template
+		template_, err := vault.NewTemplate(ctx.Database()).
+			Create(templatev1.TemplateWithCommands{Template: template, Commands: commmands})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewTemplate Create")
 		}
 
-		return templatev1.HttpReqTemplateWithCommands{Template: template, Commands: commmands}, nil
+		return templatev1.HttpRspTemplateWithCommands{DbSchemaTemplateWithCommands: *template_}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "CreateTemplate binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "CreateTemplate operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Lock(c.db.Engine()),
 	})
 }
@@ -105,28 +113,30 @@ func (c *Control) GetTemplate() func(ctx echo.Context) error {
 	operator := func(ctx Contexter) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
-		//get template
-		template, err := operator.NewTemplate(ctx.Database()).
-			Get(uuid)
+		template, err := vault.NewTemplate(ctx.Database()).Get(uuid)
 		if err != nil {
-			return nil, err
-		}
-		//find command
-		where := "template_uuid = ?"
-		template_uuid := uuid
-		commands, err := operator.NewTemplateCommand(ctx.Database()).
-			Find(where, template_uuid)
-		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewTemplate Get")
 		}
 
-		return templatev1.HttpRspTemplateWithCommands{Template: *template, Commands: commands}, nil
+		return templatev1.HttpRspTemplateWithCommands{DbSchemaTemplateWithCommands: *template}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "GetTemplate binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "GetTemplate operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Nolock(c.db.Engine()),
 	})
 }
@@ -146,35 +156,16 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		preparer, err := prepared.NewParser(ctx.Queries())
+		templates, err := vault.NewTemplate(ctx.Database()).Query(ctx.Queries())
 		if err != nil {
-			return nil, errors.Wrapf(err, "NewParser queries=%+v", ctx.Queries())
+			return nil, errors.Wrapf(err, "NewTemplate Query")
 		}
 
-		records := make([]templatev1.DbSchemaTemplate, 0)
-		if err := ctx.Database().Prepared(preparer).Find(&records); err != nil {
-			return nil, errors.Wrapf(err, "Database Find")
+		templates_ := make([]templatev1.HttpRspTemplateWithCommands, len(templates))
+		for n := range templates {
+			templates_[n].DbSchemaTemplateWithCommands = templates[n]
 		}
-		templates := templatev1.TransFormDbSchema(records)
-
-		//make response
-		rspadd, rspbuild := templatev1.HttpRspBuilder(len(templates))
-		err = foreach_template(templates, func(template templatev1.Template) error {
-			template_uuid := template.Uuid
-			where := "template_uuid = ?"
-			//find commands
-			commands, err := operator.NewTemplateCommand(ctx.Database()).
-				Find(where, template_uuid)
-			if err != nil {
-				return errors.Wrapf(err, "NewTemplateCommand Find where=%s template_uuid=%s", where, template_uuid)
-			}
-			rspadd(template, commands) //넣
-			return nil
-		})
-		if err != nil {
-			return nil, errors.Wrapf(err, "foreach_template")
-		}
-		return rspbuild(), nil //pop
+		return templates_, nil //pop
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -192,7 +183,7 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 			}
 			return v, nil
 		},
-		HttpResponser: HttpResponse,
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Nolock(c.db.Engine()),
 	})
 }
@@ -237,19 +228,30 @@ func (c *Control) UpdateTemplate() func(ctx echo.Context) error {
 		tempalte.Uuid = uuid
 
 		//upate template
-		err := operator.NewTemplate(ctx.Database()).
-			Update(tempalte)
+		tempalte_, err := vault.NewTemplate(ctx.Database()).Update(tempalte)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewTemplate Update")
 		}
 
-		return templatev1.HttpRspTemplate{Template: tempalte}, nil
+		return templatev1.HttpRspTemplate{DbSchema: *tempalte_}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "UpdateTemplate binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "UpdateTemplate operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Lock(c.db.Engine()),
 	})
 }
@@ -277,54 +279,30 @@ func (c *Control) DeleteTemplate() func(ctx echo.Context) error {
 	operator := func(ctx Contexter) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
-		//command 테이블에 데이터 있는 경우 삭제 방지
-		where := "template_uuid = ?"
-		command, err := operator.NewTemplateCommand(ctx.Database()).Find(where, uuid)
-		if err != nil {
-			return nil, err
-		}
-		if len(command) == 0 {
-			return nil, fmt.Errorf("commands not empty")
-		}
-
 		//template 삭제
-		if err := operator.NewTemplate(ctx.Database()).Delete(uuid); err != nil {
-			return nil, err
+		if err := vault.NewTemplate(ctx.Database()).Delete(uuid); err != nil {
+			return nil, errors.Wrapf(err, "NewTemplate Delete")
 		}
 
 		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "DeleteTemplate binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "DeleteTemplate operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Lock(c.db.Engine()),
 	})
-}
-
-func foreach_command(elems []commandv1.TemplateCommand, fn func(commandv1.TemplateCommand) error) error {
-	for _, it := range elems {
-		if err := fn(it); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func map_command(elems []commandv1.TemplateCommand, mapper func(commandv1.TemplateCommand) commandv1.TemplateCommand) []commandv1.TemplateCommand {
-	rst := make([]commandv1.TemplateCommand, len(elems))
-	for n := range elems {
-		rst[n] = mapper(elems[n])
-	}
-	return rst
-}
-
-func foreach_template(elems []templatev1.Template, fn func(templatev1.Template) error) error {
-	for _, it := range elems {
-		if err := fn(it); err != nil {
-			return err
-		}
-	}
-	return nil
 }

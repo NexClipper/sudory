@@ -7,6 +7,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/status"
+	"github.com/pkg/errors"
 
 	envv1 "github.com/NexClipper/sudory/pkg/server/model/environment/v1"
 )
@@ -15,7 +16,7 @@ type EnvironmentChron struct {
 	ctx database.Context
 }
 
-func NewEnvironmentChron(ctx database.Context) status.ChronUpdater {
+func NewEnvironmentChron(ctx database.Context) *EnvironmentChron {
 	return &EnvironmentChron{ctx: ctx}
 }
 
@@ -24,18 +25,14 @@ var _ status.ChronUpdater = (*EnvironmentChron)(nil)
 // Update
 //  Update = read -> os.Setenv
 func (chron *EnvironmentChron) Update() error {
-
-	const where = ""
-
-	records, err := chron.ctx.FindEnvironment(where)
-	if err != nil {
-		return fmt.Errorf("enviroment chron error: %w", err)
+	records := make([]envv1.DbSchema, 0)
+	if err := chron.ctx.Find(&records); err != nil {
+		return errors.Wrapf(err, "Database Find")
 	}
 
-	foreach_environment(envv1.TransFormDbSchema(records), func(elem envv1.Environment) bool {
-		os.Setenv(*elem.Name, *elem.Value)
-		return true
-	})
+	for i := range records {
+		os.Setenv(*records[i].Name, *records[i].Value)
+	}
 
 	return nil
 }
@@ -44,70 +41,63 @@ func (chron *EnvironmentChron) Update() error {
 //  리스트 체크
 func (chron *EnvironmentChron) WhiteListCheck() error {
 
-	const where = ""
-
-	records, err := chron.ctx.FindEnvironment(where)
-	if err != nil {
-		return fmt.Errorf("enviroment chron error: %w", err)
+	records := make([]envv1.DbSchema, 0)
+	if err := chron.ctx.Find(&records); err != nil {
+		return errors.Wrapf(err, "Database Find")
 	}
 
 	count := 0
-	appnd, build := macro.StringBuilder()
-
+	push, pos := macro.StringBuilder()
 	for _, key := range EnvNames() {
 		var found bool = false
-		foreach_environment(envv1.TransFormDbSchema(records), func(elem envv1.Environment) bool {
-
-			if key == *elem.Name {
+	LOOP:
+		for i := range records {
+			if key == *records[i].Name {
 				found = true
-				return false
+				break LOOP
 			}
-			return true
-		})
+		}
 		if !found {
 			count++
-			appnd(key)
+			push(key)
 		}
 	}
 	if 0 < count {
-		return fmt.Errorf("not found environment keys=['%s']", build("', '"))
+		return fmt.Errorf("not exists environment keys=['%s']", pos("', '"))
 	}
 
 	return nil
 }
 
 func (chron *EnvironmentChron) Merge() error {
-	const where = ""
-
-	records, err := chron.ctx.FindEnvironment(where)
-	if err != nil {
-		return fmt.Errorf("enviroment chron error: %w", err)
+	records := make([]envv1.DbSchema, 0)
+	if err := chron.ctx.Find(&records); err != nil {
+		return errors.Wrapf(err, "Database Find")
 	}
 
 	for _, key := range EnvNames() {
 		var found bool = false
-		foreach_environment(envv1.TransFormDbSchema(records), func(elem envv1.Environment) bool {
-
-			if key == *elem.Name {
+	LOOP:
+		for i := range records {
+			if key == *records[i].Name {
 				found = true
-				return false
+				break LOOP
 			}
-			return true
-		})
+		}
 		if !found {
-			key, err := ParseEnv(key)
+			env, err := ParseEnv(key)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "ParseEnv key=%s", key)
 			}
-			value, ok := DefaultEnvironmanets[key]
-			if !ok {
-				return fmt.Errorf("not found environment key")
-			}
-			value_ := Convert(key, value)
 
-			err = chron.ctx.CreateEnvironment(envv1.DbSchemaEnvironment{Environment: value_})
-			if err != nil {
-				return err
+			value, ok := DefaultEnvironmanets[env]
+			if !ok {
+				return fmt.Errorf("not found default environment key=%s", key)
+			}
+
+			value_ := Convert(env, value)
+			if err = chron.ctx.Create(envv1.DbSchema{Environment: value_}); err != nil {
+				return errors.Wrapf(err, "database create")
 			}
 		}
 	}
@@ -115,11 +105,11 @@ func (chron *EnvironmentChron) Merge() error {
 	return nil
 }
 
-func foreach_environment(elems []envv1.Environment, fn func(elem envv1.Environment) bool) {
-	for n := range elems {
-		ok := fn(elems[n])
-		if !ok {
-			return
-		}
-	}
-}
+// func foreach_environment(elems []envv1.Environment, fn func(elem envv1.Environment) bool) {
+// 	for n := range elems {
+// 		ok := fn(elems[n])
+// 		if !ok {
+// 			return
+// 		}
+// 	}
+// }

@@ -54,9 +54,9 @@ func New(cfg *config.Config) (*DBManipulator, error) {
 	return db, nil
 }
 
-func (d *DBManipulator) session() *xorm.Session {
-	return d.engine.NewSession()
-}
+// func (d *DBManipulator) session() *xorm.Session {
+// 	return d.engine.NewSession()
+// }
 
 func (d *DBManipulator) Close() {
 	d.engine.Close()

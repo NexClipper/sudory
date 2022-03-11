@@ -1,8 +1,7 @@
 package control
 
 import (
-	"github.com/NexClipper/sudory/pkg/server/control/operator"
-	"github.com/NexClipper/sudory/pkg/server/database/prepared"
+	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -19,21 +18,15 @@ import (
 // @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.HttpRspSession
 func (c *Control) FindSession() func(ctx echo.Context) error {
-
 	binder := func(ctx Contexter) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		preparer, err := prepared.NewParser(ctx.Queries())
+		records, err := vault.NewSession(ctx.Database()).Query(ctx.Queries())
 		if err != nil {
-			return nil, errors.Wrapf(err, "NewParser queries=%+v", ctx.Queries())
+			return nil, errors.Wrapf(err, "NewSession Query")
 		}
-
-		records := make([]sessionv1.DbSchemaSession, 0)
-		if err := ctx.Database().Prepared(preparer).Find(&records); err != nil {
-			return nil, errors.Wrapf(err, "Database Find")
-		}
-		return sessionv1.TransToHttpRsp(sessionv1.TransFormDbSchema(records)), nil
+		return sessionv1.TransToHttpRsp(records), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
@@ -51,7 +44,7 @@ func (c *Control) FindSession() func(ctx echo.Context) error {
 			}
 			return v, nil
 		},
-		HttpResponser: HttpResponse,
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Nolock(c.db.Engine()),
 	})
 }
@@ -65,7 +58,6 @@ func (c *Control) FindSession() func(ctx echo.Context) error {
 // @Param       uuid          path string true "Session 의 Uuid"
 // @Success     200 {object} v1.HttpRspSession
 func (c *Control) GetSession() func(ctx echo.Context) error {
-
 	binder := func(ctx Contexter) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
@@ -79,18 +71,29 @@ func (c *Control) GetSession() func(ctx echo.Context) error {
 	operator := func(ctx Contexter) (interface{}, error) {
 
 		uuid := ctx.Params()[__UUID__]
-		rst, err := operator.NewSession(ctx.Database()).
-			Get(uuid)
+		record, err := vault.NewSession(ctx.Database()).Get(uuid)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "NewSession Get")
 		}
-		return sessionv1.HttpRspSession{Session: *rst}, nil
+		return sessionv1.HttpRspSession{DbSchema: *record}, nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "GetSession binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "GetSession operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Nolock(c.db.Engine()),
 	})
 }
@@ -117,19 +120,29 @@ func (c *Control) DeleteSession() func(ctx echo.Context) error {
 	operator := func(ctx Contexter) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
-		err := operator.NewSession(ctx.Database()).
-			Delete(uuid)
-		if err != nil {
-			return nil, err
+		if err := vault.NewSession(ctx.Database()).Delete(uuid); err != nil {
+			return nil, errors.Wrapf(err, "NewSession Delete")
 		}
 
 		return OK(), nil
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder:        binder,
-		Operator:      operator,
-		HttpResponser: HttpResponse,
+		Binder: func(ctx Contexter) error {
+			err := binder(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "DeleteSession binder")
+			}
+			return nil
+		},
+		Operator: func(ctx Contexter) (interface{}, error) {
+			v, err := operator(ctx)
+			if err != nil {
+				return nil, errors.Wrapf(err, "DeleteSession operator")
+			}
+			return v, nil
+		},
+		HttpResponsor: HttpJsonResponsor,
 		Behavior:      Lock(c.db.Engine()),
 	})
 }
