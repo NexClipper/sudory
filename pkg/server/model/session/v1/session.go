@@ -4,7 +4,6 @@ import (
 	"time"
 
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
-	"github.com/NexClipper/sudory/pkg/server/model/orm"
 )
 
 //Session Property
@@ -27,8 +26,6 @@ type DbSchema struct {
 	metav1.DbMeta `xorm:"extends"`
 	Session       `xorm:"extends"`
 }
-
-var _ orm.TableName = (*DbSchema)(nil)
 
 func (DbSchema) TableName() string {
 	return "session"

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
-	"github.com/NexClipper/sudory/pkg/server/model/orm"
 )
 
 //Token Property
@@ -28,8 +27,6 @@ type DbSchema struct {
 	metav1.DbMeta `xorm:"extends"`
 	Token         `xorm:"extends"`
 }
-
-var _ orm.TableName = (*DbSchema)(nil)
 
 func (DbSchema) TableName() string {
 	return "token"

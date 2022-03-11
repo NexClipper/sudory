@@ -2,7 +2,6 @@ package v1
 
 import (
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
-	"github.com/NexClipper/sudory/pkg/server/model/orm"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
 )
 
@@ -26,8 +25,6 @@ type DbSchema struct {
 	Template      `xorm:"extends"`
 }
 
-var _ orm.TableName = (*DbSchema)(nil)
-
 func (DbSchema) TableName() string {
 	return "template"
 }
@@ -43,7 +40,7 @@ type HttpRspTemplate struct {
 }
 
 type TemplateWithCommands struct {
-	Template Template                    `json:",inline"`
+	Template `json:",inline"`
 	Commands []commandv1.TemplateCommand `json:"commands"`
 }
 

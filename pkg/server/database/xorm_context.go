@@ -6,6 +6,10 @@ import (
 	"xorm.io/xorm"
 )
 
+type XormTableNameHolder interface {
+	TableName() string
+}
+
 // XormContext
 type XormContext struct {
 	tx *xorm.Session

@@ -2,7 +2,6 @@ package v1
 
 import (
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
-	"github.com/NexClipper/sudory/pkg/server/model/orm"
 )
 
 //Environment Property
@@ -22,8 +21,6 @@ type DbSchema struct {
 	metav1.DbMeta `xorm:"extends"`
 	Environment   `xorm:"extends"`
 }
-
-var _ orm.TableName = (*DbSchema)(nil)
 
 func (DbSchema) TableName() string {
 	return "environment"

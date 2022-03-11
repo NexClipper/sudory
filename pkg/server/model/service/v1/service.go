@@ -2,7 +2,6 @@ package v1
 
 import (
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
-	"github.com/NexClipper/sudory/pkg/server/model/orm"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 )
 
@@ -56,8 +55,6 @@ type DbSchema struct {
 	metav1.DbMeta `xorm:"extends"`
 	Service       `xorm:"extends"`
 }
-
-var _ orm.TableName = (*DbSchema)(nil)
 
 func (DbSchema) TableName() string {
 	return "service"
