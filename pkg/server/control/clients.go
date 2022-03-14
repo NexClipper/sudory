@@ -299,7 +299,7 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 
 		//valid token
 		tokens, err := vault.NewToken(ctx.Database()).
-			Find("user_kind = ? AND user_uuid = ? AND token = ?", token_user_kind_cluster, auth.ClientUuid, auth.Assertion)
+			Find("user_kind = ? AND user_uuid = ? AND token = ?", token_user_kind_cluster, auth.ClusterUuid, auth.Assertion)
 		if err != nil {
 			return nil, errors.Wrapf(err, "NewToken Find")
 		}
