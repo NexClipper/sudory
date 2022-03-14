@@ -119,7 +119,7 @@ type HttpReqClientSideService struct {
 
 //HTTP RESPONSE BODY: SERVICE (client)
 type HttpRspClientSideService struct {
-	DbSchemaServiceAndSteps `json:",inline"`
+	ServiceAndSteps `json:",inline"`
 }
 
 //변환 DbSchema -> Service
