@@ -12,5 +12,7 @@ COPY /conf/script/server/entrypoint.sh /app/
 COPY /conf/script/server/init-db.sh /app/
 COPY /conf/sudory-server.yml /app/
 
+RUN chmod +x /app/init-db.sh
+
 ENTRYPOINT ["bash", "/app/entrypoint.sh"]
 EXPOSE 8099
