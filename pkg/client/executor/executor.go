@@ -1,60 +1,63 @@
-package service
+package executor
 
 import (
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/client/log"
+	"github.com/NexClipper/sudory/pkg/client/service"
 )
 
 type ServiceExecutor struct {
-	service       Service
-	updateChannel chan<- Service
+	service       service.Service
+	updateChannel chan<- service.Service
 }
 
-func NewServiceExecutor(service Service, updateChannel chan<- Service) *ServiceExecutor {
+func NewServiceExecutor(service service.Service, updateChannel chan<- service.Service) *ServiceExecutor {
 	return &ServiceExecutor{service: service, updateChannel: updateChannel}
 }
 
 func (se *ServiceExecutor) Execute() (err error) {
-	var result Result
+	var result service.Result
 
 	defer func() {
+		se.service.EndTime = time.Now()
 		if err != nil {
 			log.Errorf(err.Error())
-			se.service.Status = ServiceStatusFailed
-			se.service.Result.err = err
+			se.service.Status = service.ServiceStatusFailed
+			se.service.Result.Err = err
 			se.SendStatusUpdate()
 		} else {
-			se.service.Status = ServiceStatusSuccess
+			se.service.Status = service.ServiceStatusSuccess
 			se.service.Result = result
 			se.SendStatusUpdate()
 		}
 	}()
 
-	se.service.Status = ServiceStatusProcessing
+	se.service.StartTime = time.Now()
+	se.service.Status = service.ServiceStatusProcessing
 	se.SendStatusUpdate()
 	for i, step := range se.service.Steps {
 		var te *StepExecutor
 
 		te, err = NewStepExecutor(*step)
 		if err != nil {
-			se.service.Steps[i].Status = StepStatusFail
+			se.service.Steps[i].Status = service.StepStatusFail
 			se.service.Steps[i].EndTime = time.Now()
 			return err
 		}
 		// update execute result to service scheduler through returnChannel.
-		se.service.Steps[i].Status = StepStatusProcessing
+		se.service.Steps[i].Status = service.StepStatusProcessing
 		se.service.Steps[i].StartTime = time.Now()
 		se.SendStatusUpdate()
 		result = te.Execute()
-		if err = result.err; err != nil {
-			se.service.Steps[i].Status = StepStatusFail
+		if err = result.Err; err != nil {
+			se.service.Steps[i].Status = service.StepStatusFail
 			se.service.Steps[i].EndTime = time.Now()
 			return err
 		}
 
 		// update execute result to service scheduler through returnChannel.
-		se.service.Steps[i].Status = StepStatusSuccess
+		se.service.Steps[i].Status = service.StepStatusSuccess
 		se.service.Steps[i].EndTime = time.Now()
 		se.SendStatusUpdate()
 	}
@@ -70,10 +73,10 @@ func (se *ServiceExecutor) SendStatusUpdate() {
 
 type StepExecutor struct {
 	commander Commander
-	step      Step
+	step      service.Step
 }
 
-func NewStepExecutor(step Step) (*StepExecutor, error) {
+func NewStepExecutor(step service.Step) (*StepExecutor, error) {
 	commander, err := NewCommander(step.Command)
 	if err != nil {
 		return nil, err
@@ -82,13 +85,13 @@ func NewStepExecutor(step Step) (*StepExecutor, error) {
 	return &StepExecutor{commander: commander, step: step}, nil
 }
 
-func (se *StepExecutor) Execute() Result {
+func (se *StepExecutor) Execute() service.Result {
 	res, err := se.commander.Run()
 	if err != nil {
 		log.Errorf("Failed to Execute method : %s.\n", se.step.Command.Method)
-		return Result{err: err}
+		return service.Result{Err: err}
 	}
 	log.Debugf("Executed method : %s.\n", se.step.Command.Method)
 
-	return Result{body: res}
+	return service.Result{Body: res}
 }

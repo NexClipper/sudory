@@ -5,11 +5,11 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/NexClipper/sudory/pkg/client/fetcher"
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/k8s"
 	"github.com/NexClipper/sudory/pkg/client/log"
-	"github.com/NexClipper/sudory/pkg/client/poll"
-	"github.com/NexClipper/sudory/pkg/client/service"
+	"github.com/NexClipper/sudory/pkg/client/scheduler"
 )
 
 func main() {
@@ -52,10 +52,10 @@ func main() {
 	}
 	log.Debugf("Successed to check K8s's api-server status.\n")
 
-	serviceScheduler := service.NewScheduler()
-	serviceScheduler.Start()
+	scheduler := scheduler.NewScheduler()
+	scheduler.Start()
 
-	poller, err := poll.NewPoller(*token, *server, *clusterid, serviceScheduler)
+	poller, err := fetcher.NewFetcher(*token, *server, *clusterid, scheduler)
 	if err != nil {
 		log.Fatalf("Failed to create poller : %v.\n", err)
 	}
@@ -65,7 +65,7 @@ func main() {
 	}
 
 	// polling
-	poller.Start()
+	poller.Polling()
 
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt)

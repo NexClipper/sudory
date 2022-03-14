@@ -1,4 +1,4 @@
-package service
+package executor
 
 import (
 	"fmt"
@@ -10,6 +10,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/jq"
 	"github.com/NexClipper/sudory/pkg/client/k8s"
 	"github.com/NexClipper/sudory/pkg/client/p8s"
+	"github.com/NexClipper/sudory/pkg/client/service"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 )
 
@@ -39,7 +40,7 @@ type Commander interface {
 	Run() (string, error)
 }
 
-func NewCommander(command *StepCommand) (Commander, error) {
+func NewCommander(command *service.StepCommand) (Commander, error) {
 	mlist := strings.Split(command.Method, ".")
 	ctype := mlist[0]
 
@@ -67,7 +68,7 @@ type K8sCommander struct {
 	labels    map[string]string
 }
 
-func NewK8sCommander(command *StepCommand) (Commander, error) {
+func NewK8sCommander(command *service.StepCommand) (Commander, error) {
 	client, err := k8s.GetClient()
 	if err != nil {
 		return nil, err
@@ -86,7 +87,7 @@ func (c *K8sCommander) GetCommandType() CommandType {
 	return CommandTypeK8s
 }
 
-func (c *K8sCommander) ParseCommand(command *StepCommand) error {
+func (c *K8sCommander) ParseCommand(command *service.StepCommand) error {
 	mlist := strings.SplitN(command.Method, ".", 4)
 
 	if len(mlist) != 4 {
@@ -130,7 +131,7 @@ type P8sCommander struct {
 	queryParams map[string]interface{}
 }
 
-func NewP8sCommander(command *StepCommand) (Commander, error) {
+func NewP8sCommander(command *service.StepCommand) (Commander, error) {
 	cmdr := &P8sCommander{}
 
 	if err := cmdr.ParseCommand(command); err != nil {
@@ -144,7 +145,7 @@ func (c *P8sCommander) GetCommandType() CommandType {
 	return CommandTypeP8s
 }
 
-func (c *P8sCommander) ParseCommand(command *StepCommand) error {
+func (c *P8sCommander) ParseCommand(command *service.StepCommand) error {
 	mlist := strings.SplitN(command.Method, ".", 3)
 
 	if len(mlist) != 3 {
@@ -180,7 +181,7 @@ type HelmCommander struct {
 	args   map[string]interface{}
 }
 
-func NewHelmCommander(command *StepCommand) (Commander, error) {
+func NewHelmCommander(command *service.StepCommand) (Commander, error) {
 	cmdr := &HelmCommander{}
 
 	if err := cmdr.ParseCommand(command); err != nil {
@@ -194,7 +195,7 @@ func (c *HelmCommander) GetCommandType() CommandType {
 	return CommandTypeHelm
 }
 
-func (c *HelmCommander) ParseCommand(command *StepCommand) error {
+func (c *HelmCommander) ParseCommand(command *service.StepCommand) error {
 	mlist := strings.SplitN(command.Method, ".", 2)
 
 	if len(mlist) != 2 {
@@ -223,7 +224,7 @@ type JqCommander struct {
 	filter string
 }
 
-func NewJqCommander(command *StepCommand) (Commander, error) {
+func NewJqCommander(command *service.StepCommand) (Commander, error) {
 	cmdr := &JqCommander{}
 
 	if err := cmdr.ParseCommand(command); err != nil {
@@ -237,7 +238,7 @@ func (c *JqCommander) GetCommandType() CommandType {
 	return CommandTypeJq
 }
 
-func (c *JqCommander) ParseCommand(command *StepCommand) error {
+func (c *JqCommander) ParseCommand(command *service.StepCommand) error {
 	if m, ok := macro.MapMap(command.Args, "input"); ok {
 		c.input = m
 	} else {
