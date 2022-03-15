@@ -13,14 +13,25 @@ import (
 const CustomHeaderClientToken = "x-sudory-client-token"
 
 type HttpClient struct {
-	url           string
-	token         string
-	RetryMax      int
-	RetryInterval int
+	url    string
+	token  string
+	client *retryablehttp.Client
 }
 
 func NewHttpClient(url, token string, retryMax, retryInterval int) *HttpClient {
-	return &HttpClient{url: url, token: token, RetryMax: retryMax, RetryInterval: retryInterval}
+	client := retryablehttp.NewClient()
+
+	client.HTTPClient.Transport.(*http.Transport).MaxIdleConns = 100
+	client.HTTPClient.Transport.(*http.Transport).MaxIdleConnsPerHost = 100
+	client.Logger = &log.RetryableHttpLogger{}
+	client.RetryMax = retryMax
+	client.Backoff = func(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration {
+		return time.Millisecond * time.Duration(retryInterval)
+	}
+	client.ErrorHandler = RetryableHttpErrorHandler
+	// client.HTTPClient.Timeout = time.Second
+
+	return &HttpClient{url: url, token: token, client: client}
 }
 
 func (hc *HttpClient) GetToken() string {
@@ -48,19 +59,7 @@ func (hc *HttpClient) Request(method, path string, params map[string]string, bod
 		req.Header.Add(CustomHeaderClientToken, hc.token)
 	}
 
-	client := retryablehttp.NewClient()
-	client.Logger = &log.RetryableHttpLogger{}
-
-	client.RetryMax = hc.RetryMax
-	client.Backoff = func(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration {
-		return time.Millisecond * time.Duration(hc.RetryInterval)
-	}
-
-	client.ErrorHandler = RetryableHttpErrorHandler
-
-	// client.HTTPClient.Timeout = time.Second
-
-	resp, err := client.Do(req)
+	resp, err := hc.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
