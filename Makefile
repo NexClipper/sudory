@@ -17,10 +17,10 @@ go-build:
 	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -o ./bin/${target}/sudory-${target} ./cmd/${target}
 
 docker-build:
-	docker build -t ${image}-${target}:$(version) -f Dockerfile.${target} .
+	docker build -t ${image}-${target}:$(VERSION) -f Dockerfile.${target} .
 
 docker-push:
-	docker push ${image}-${target}:${version}
+	docker push ${image}-${target}:$(VERSION)
 
 clean:
 	rm ./bin/server
