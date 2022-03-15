@@ -80,10 +80,15 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 		service_create := body.ServiceCreate
 		steps_create := body.Steps
 
-		//origin template uuid
+		//valid
+		//valid origin
 		trace, err := TraceServiceOrigin(ctx.Database(), service_create.OriginKind, service_create.OriginUuid)
 		if err != nil {
 			return nil, errors.Wrapf(err, "TraceServiceOrigin originkind=%s originuuid=%s", service_create.OriginKind, service_create.OriginUuid)
+		}
+		//valid cluster
+		if _, err := vault.NewCluster(ctx.Database()).Get(service_create.ClusterUuid); err != nil {
+			return nil, errors.Wrapf(err, "NewCluster Find")
 		}
 
 		template_uuid := strings.Split(trace[len(trace)-1], ":")[1] //last
