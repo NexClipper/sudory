@@ -62,7 +62,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router.e.GET("/server/service/:uuid", controller.GetService())
 	router.e.GET("/server/service/:uuid/result", controller.GetServiceResult())
 	router.e.POST("/server/service", controller.CreateService())
-	router.e.PUT("/server/service/:uuid", controller.UpdateService())
+	// router.e.PUT("/server/service/:uuid", controller.UpdateService())
 	router.e.DELETE("/server/service/:uuid", controller.DeleteService())
 	//route /server/service_step*
 	router.e.GET("/server/service/:service_uuid/step", controller.FindServiceStep())

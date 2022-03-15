@@ -681,44 +681,6 @@ var doc = `{
                     }
                 }
             },
-            "put": {
-                "description": "Update a Service",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/service"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Service 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "HttpReqService",
-                        "name": "service",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpReqService"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpRspService"
-                        }
-                    }
-                }
-            },
             "delete": {
                 "description": "Delete a Service",
                 "consumes": [
@@ -1667,75 +1629,6 @@ var doc = `{
                 }
             }
         },
-        "v1.HttpReqService": {
-            "type": "object",
-            "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
-                "assigned_client_uuid": {
-                    "description": "할당된 클라이언트 UUID",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
-                    "type": "string"
-                },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
-                },
-                "interval": {
-                    "description": "Interval",
-                    "type": "integer"
-                },
-                "name": {
-                    "description": "label name",
-                    "type": "string"
-                },
-                "origin_kind": {
-                    "description": "오리진 종류",
-                    "type": "string"
-                },
-                "origin_uuid": {
-                    "description": "오리진 UUID",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
-                },
-                "summary": {
-                    "description": "label summary",
-                    "type": "string"
-                },
-                "template_uuid": {
-                    "description": "텔플릿 UUID",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
-                },
-                "uuid": {
-                    "description": "UUID",
-                    "type": "string"
-                }
-            }
-        },
         "v1.HttpReqServiceCreate": {
             "type": "object",
             "properties": {
@@ -1908,14 +1801,6 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "assigned_client_uuid": {
-                    "description": "할당된 클라이언트 UUID",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
-                    "type": "string"
-                },
                 "created": {
                     "description": "생성시간",
                     "type": "string"
@@ -1924,60 +1809,35 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
+                "expiration_time": {
+                    "type": "string"
                 },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
                 },
-                "interval": {
-                    "description": "Interval",
-                    "type": "integer"
+                "issued_at_time": {
+                    "type": "string"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
-                "origin_kind": {
-                    "description": "오리진 종류",
-                    "type": "string"
-                },
-                "origin_uuid": {
-                    "description": "오리진 UUID",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
-                },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
                 },
-                "template_uuid": {
-                    "description": "텔플릿 UUID",
+                "token": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "description": "수정시간",
+                    "type": "string"
+                },
+                "user_kind": {
+                    "type": "string"
+                },
+                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -2001,20 +1861,8 @@ var doc = `{
                     "description": "클러스터 UUID",
                     "type": "string"
                 },
-                "created": {
-                    "description": "생성시간",
-                    "type": "string"
-                },
-                "deleted": {
-                    "description": "삭제시간, 삭제 플래그",
-                    "type": "string"
-                },
                 "epoch": {
                     "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
-                },
-                "id": {
-                    "description": "아이디 PK",
                     "type": "integer"
                 },
                 "interval": {
@@ -2052,7 +1900,7 @@ var doc = `{
                 "steps": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1.DbSchema"
+                        "$ref": "#/definitions/v1.ServiceStep"
                     }
                 },
                 "summary": {
@@ -2067,10 +1915,6 @@ var doc = `{
                     "description": "Type; 0: Once, 1: repeat(epoch, interval)",
                     "type": "integer"
                 },
-                "updated": {
-                    "description": "수정시간",
-                    "type": "string"
-                },
                 "uuid": {
                     "description": "UUID",
                     "type": "string"
@@ -2084,14 +1928,6 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "assigned_client_uuid": {
-                    "description": "할당된 클라이언트 UUID",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
-                    "type": "string"
-                },
                 "created": {
                     "description": "생성시간",
                     "type": "string"
@@ -2100,60 +1936,35 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
+                "expiration_time": {
+                    "type": "string"
                 },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
                 },
-                "interval": {
-                    "description": "Interval",
-                    "type": "integer"
+                "issued_at_time": {
+                    "type": "string"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
-                "origin_kind": {
-                    "description": "오리진 종류",
-                    "type": "string"
-                },
-                "origin_uuid": {
-                    "description": "오리진 UUID",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
-                },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
                 },
-                "template_uuid": {
-                    "description": "텔플릿 UUID",
+                "token": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "description": "수정시간",
+                    "type": "string"
+                },
+                "user_kind": {
+                    "type": "string"
+                },
+                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -2169,14 +1980,6 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "assigned_client_uuid": {
-                    "description": "할당된 클라이언트 UUID",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
-                    "type": "string"
-                },
                 "created": {
                     "description": "생성시간",
                     "type": "string"
@@ -2185,145 +1988,35 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
+                "expiration_time": {
+                    "type": "string"
                 },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
                 },
-                "interval": {
-                    "description": "Interval",
-                    "type": "integer"
+                "issued_at_time": {
+                    "type": "string"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
-                "origin_kind": {
-                    "description": "오리진 종류",
-                    "type": "string"
-                },
-                "origin_uuid": {
-                    "description": "오리진 UUID",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
-                },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
                 },
-                "template_uuid": {
-                    "description": "텔플릿 UUID",
+                "token": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "description": "수정시간",
                     "type": "string"
                 },
-                "uuid": {
-                    "description": "UUID",
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpRspService": {
-            "type": "object",
-            "properties": {
-                "api_version": {
-                    "description": "api version",
+                "user_kind": {
                     "type": "string"
                 },
-                "assigned_client_uuid": {
-                    "description": "할당된 클라이언트 UUID",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
-                    "type": "string"
-                },
-                "created": {
-                    "description": "생성시간",
-                    "type": "string"
-                },
-                "deleted": {
-                    "description": "삭제시간, 삭제 플래그",
-                    "type": "string"
-                },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
-                },
-                "id": {
-                    "description": "아이디 PK",
-                    "type": "integer"
-                },
-                "interval": {
-                    "description": "Interval",
-                    "type": "integer"
-                },
-                "name": {
-                    "description": "label name",
-                    "type": "string"
-                },
-                "origin_kind": {
-                    "description": "오리진 종류",
-                    "type": "string"
-                },
-                "origin_uuid": {
-                    "description": "오리진 UUID",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
-                },
-                "summary": {
-                    "description": "label summary",
-                    "type": "string"
-                },
-                "template_uuid": {
-                    "description": "텔플릿 UUID",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
-                },
-                "updated": {
-                    "description": "수정시간",
+                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -2339,14 +2032,6 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "assigned_client_uuid": {
-                    "description": "할당된 클라이언트 UUID",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
-                    "type": "string"
-                },
                 "created": {
                     "description": "생성시간",
                     "type": "string"
@@ -2355,60 +2040,35 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
+                "expiration_time": {
+                    "type": "string"
                 },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
                 },
-                "interval": {
-                    "description": "Interval",
-                    "type": "integer"
+                "issued_at_time": {
+                    "type": "string"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
-                "origin_kind": {
-                    "description": "오리진 종류",
-                    "type": "string"
-                },
-                "origin_uuid": {
-                    "description": "오리진 UUID",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
-                },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
                 },
-                "template_uuid": {
-                    "description": "텔플릿 UUID",
+                "token": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "description": "수정시간",
+                    "type": "string"
+                },
+                "user_kind": {
+                    "type": "string"
+                },
+                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -2424,14 +2084,6 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "assigned_client_uuid": {
-                    "description": "할당된 클라이언트 UUID",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
-                    "type": "string"
-                },
                 "created": {
                     "description": "생성시간",
                     "type": "string"
@@ -2440,45 +2092,19 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
+                "expiration_time": {
+                    "type": "string"
                 },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
                 },
-                "interval": {
-                    "description": "Interval",
-                    "type": "integer"
+                "issued_at_time": {
+                    "type": "string"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
-                },
-                "origin_kind": {
-                    "description": "오리진 종류",
-                    "type": "string"
-                },
-                "origin_uuid": {
-                    "description": "오리진 UUID",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
                 },
                 "steps": {
                     "type": "array",
@@ -2490,16 +2116,17 @@ var doc = `{
                     "description": "label summary",
                     "type": "string"
                 },
-                "template_uuid": {
-                    "description": "텔플릿 UUID",
+                "token": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "description": "수정시간",
+                    "type": "string"
+                },
+                "user_kind": {
+                    "type": "string"
+                },
+                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -2515,14 +2142,6 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "assigned_client_uuid": {
-                    "description": "할당된 클라이언트 UUID",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
-                    "type": "string"
-                },
                 "created": {
                     "description": "생성시간",
                     "type": "string"
@@ -2531,60 +2150,35 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
+                "expiration_time": {
+                    "type": "string"
                 },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
                 },
-                "interval": {
-                    "description": "Interval",
-                    "type": "integer"
+                "issued_at_time": {
+                    "type": "string"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
-                "origin_kind": {
-                    "description": "오리진 종류",
-                    "type": "string"
-                },
-                "origin_uuid": {
-                    "description": "오리진 UUID",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
-                },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
                 },
-                "template_uuid": {
-                    "description": "텔플릿 UUID",
+                "token": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "description": "수정시간",
+                    "type": "string"
+                },
+                "user_kind": {
+                    "type": "string"
+                },
+                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -2600,14 +2194,6 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "assigned_client_uuid": {
-                    "description": "할당된 클라이언트 UUID",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
-                    "type": "string"
-                },
                 "created": {
                     "description": "생성시간",
                     "type": "string"
@@ -2616,60 +2202,35 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
+                "expiration_time": {
+                    "type": "string"
                 },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
                 },
-                "interval": {
-                    "description": "Interval",
-                    "type": "integer"
+                "issued_at_time": {
+                    "type": "string"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
-                "origin_kind": {
-                    "description": "오리진 종류",
-                    "type": "string"
-                },
-                "origin_uuid": {
-                    "description": "오리진 UUID",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
-                },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
                 },
-                "template_uuid": {
-                    "description": "텔플릿 UUID",
+                "token": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "description": "수정시간",
+                    "type": "string"
+                },
+                "user_kind": {
+                    "type": "string"
+                },
+                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -2685,14 +2246,6 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "assigned_client_uuid": {
-                    "description": "할당된 클라이언트 UUID",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
-                    "type": "string"
-                },
                 "created": {
                     "description": "생성시간",
                     "type": "string"
@@ -2701,60 +2254,35 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
+                "expiration_time": {
+                    "type": "string"
                 },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
                 },
-                "interval": {
-                    "description": "Interval",
-                    "type": "integer"
+                "issued_at_time": {
+                    "type": "string"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
-                "origin_kind": {
-                    "description": "오리진 종류",
-                    "type": "string"
-                },
-                "origin_uuid": {
-                    "description": "오리진 UUID",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
-                },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
                 },
-                "template_uuid": {
-                    "description": "텔플릿 UUID",
+                "token": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "description": "수정시간",
+                    "type": "string"
+                },
+                "user_kind": {
+                    "type": "string"
+                },
+                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -2770,14 +2298,6 @@ var doc = `{
                     "description": "api version",
                     "type": "string"
                 },
-                "assigned_client_uuid": {
-                    "description": "할당된 클라이언트 UUID",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "클러스터 UUID",
-                    "type": "string"
-                },
                 "created": {
                     "description": "생성시간",
                     "type": "string"
@@ -2786,60 +2306,35 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "Epoch -1: infinite, 0 :",
-                    "type": "integer"
+                "expiration_time": {
+                    "type": "string"
                 },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
                 },
-                "interval": {
-                    "description": "Interval",
-                    "type": "integer"
+                "issued_at_time": {
+                    "type": "string"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
-                "origin_kind": {
-                    "description": "오리진 종류",
-                    "type": "string"
-                },
-                "origin_uuid": {
-                    "description": "오리진 UUID",
-                    "type": "string"
-                },
-                "result": {
-                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Status",
-                    "type": "integer"
-                },
-                "step_count": {
-                    "description": "스탭 카운트",
-                    "type": "integer"
-                },
-                "step_position": {
-                    "description": "스탭 Position",
-                    "type": "integer"
-                },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
                 },
-                "template_uuid": {
-                    "description": "텔플릿 UUID",
+                "token": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "description": "수정시간",
+                    "type": "string"
+                },
+                "user_kind": {
+                    "type": "string"
+                },
+                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {

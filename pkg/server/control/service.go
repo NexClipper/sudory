@@ -341,70 +341,70 @@ func (c *Control) GetServiceResult() func(ctx echo.Context) error {
 	})
 }
 
-// Update Service
-// @Description Update a Service
-// @Accept      json
-// @Produce     json
-// @Tags        server/service
-// @Router      /server/service/{uuid} [put]
-// @Param       uuid    path string true "Service 의 Uuid"
-// @Param       service body v1.HttpReqService true "HttpReqService"
-// @Success     200 {object} v1.HttpRspService
-func (c *Control) UpdateService() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
-		body := new(servicev1.HttpReqService)
-		if err := ctx.Bind(body); err != nil {
-			return ErrorBindRequestObject(err)
-		}
+// // Update Service
+// // @Description Update a Service
+// // @Accept      json
+// // @Produce     json
+// // @Tags        server/service
+// // @Router      /server/service/{uuid} [put]
+// // @Param       uuid    path string true "Service 의 Uuid"
+// // @Param       service body v1.HttpReqService true "HttpReqService"
+// // @Success     200 {object} v1.HttpRspService
+// func (c *Control) UpdateService() func(ctx echo.Context) error {
+// 	binder := func(ctx Contexter) error {
+// 		body := new(servicev1.HttpReqService)
+// 		if err := ctx.Bind(body); err != nil {
+// 			return ErrorBindRequestObject(err)
+// 		}
 
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-		if len(ctx.Params()[__UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__UUID__)
-		}
+// 		if len(ctx.Params()) == 0 {
+// 			return ErrorInvaliedRequestParameter()
+// 		}
+// 		if len(ctx.Params()[__UUID__]) == 0 {
+// 			return ErrorInvaliedRequestParameterName(__UUID__)
+// 		}
 
-		return nil
-	}
-	operator := func(ctx Contexter) (interface{}, error) {
-		body, ok := ctx.Object().(*servicev1.HttpReqService)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+// 		return nil
+// 	}
+// 	operator := func(ctx Contexter) (interface{}, error) {
+// 		body, ok := ctx.Object().(*servicev1.HttpReqService)
+// 		if !ok {
+// 			return nil, ErrorFailedCast()
+// 		}
 
-		service := body.Service
+// 		service := body.Service
 
-		//set uuid from path
-		service.Uuid = ctx.Params()[__UUID__]
+// 		//set uuid from path
+// 		service.Uuid = ctx.Params()[__UUID__]
 
-		//update service
-		service_, err := vault.NewService(ctx.Database()).Update(service)
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewService Update")
-		}
+// 		//update service
+// 		service_, err := vault.NewService(ctx.Database()).Update(service)
+// 		if err != nil {
+// 			return nil, errors.Wrapf(err, "NewService Update")
+// 		}
 
-		return servicev1.HttpRspService{DbSchema: *service_}, nil
-	}
+// 		return servicev1.HttpRspService{DbSchema: *service_}, nil
+// 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "UpdateService binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Contexter) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "UpdateService operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Lock(c.db.Engine()),
-	})
-}
+// 	return MakeMiddlewareFunc(Option{
+// 		Binder: func(ctx Contexter) error {
+// 			err := binder(ctx)
+// 			if err != nil {
+// 				return errors.Wrapf(err, "UpdateService binder")
+// 			}
+// 			return nil
+// 		},
+// 		Operator: func(ctx Contexter) (interface{}, error) {
+// 			v, err := operator(ctx)
+// 			if err != nil {
+// 				return nil, errors.Wrapf(err, "UpdateService operator")
+// 			}
+// 			return v, nil
+// 		},
+// 		HttpResponsor: HttpJsonResponsor,
+// 		Behavior:      Lock(c.db.Engine()),
+// 	})
+// }
 
 // Delete Service
 // @Description Delete a Service
