@@ -1,8 +1,13 @@
 package control
 
 import (
+	"sort"
+
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
+	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
+	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -17,7 +22,7 @@ import (
 // @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
 // @Param       command       body v1.HttpReqTemplateCommand true "HttpReqTemplateCommand"
 // @Success 200 {object} v1.HttpRspTemplateCommand
-func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
+func (c Control) CreateTemplateCommand() func(ctx echo.Context) error {
 
 	binder := func(ctx Contexter) error {
 		body := new(commandv1.HttpReqTemplateCommand)
@@ -41,6 +46,57 @@ func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
+		chaining_sequence := func(command commandv1.TemplateCommand) error {
+			where := "template_uuid = ? AND uuid <> ?"
+			args := []interface{}{
+				command.TemplateUuid,
+				command.Uuid,
+			}
+			commands, err := vault.NewTemplateCommand(ctx.Database()).Find(where, args...)
+			if err != nil {
+				return errors.Wrapf(err, "NewTemplateCommand Find")
+			}
+
+			//sort -> Sequence ASC
+			sort.Slice(commands, func(i, j int) bool {
+				return nullable.Int32(commands[i].Sequence).Value() < nullable.Int32(commands[j].Sequence).Value()
+			})
+
+			commands_ := make([]commandv1.DbSchema, 0, len(commands)+1)
+			for i := range commands {
+				itor := commands[i]
+
+				//순서 중간에 비교해서 적용하려는 command 우선으로 적용
+				sequence := nullable.Int32(command.Sequence)
+				if sequence.Has() && int32(i) == sequence.Value() {
+					commands_ = append(commands_, commandv1.DbSchema{TemplateCommand: command})
+				}
+				commands_ = append(commands_, itor)
+			}
+			//마지막에 비교해서 빠져있으면 넣는다
+			//command.Sequence 중간에 껴넣는게 아니라면 마지막에 위치 시킨다
+			if len(commands) == len(commands_) {
+				commands_ = append(commands_, commandv1.DbSchema{TemplateCommand: command})
+			}
+
+		LOOP:
+			for i := range commands_ {
+				itor := commands_[i]
+
+				//Sequence 동일함
+				sequence := nullable.Int32(command.Sequence)
+				if sequence.Has() && int32(i) == sequence.Value() {
+					continue LOOP //change nothing
+				}
+
+				itor.Sequence = newist.Int32(int32(i))
+				if _, err := vault.NewTemplateCommand(ctx.Database()).Update(itor.TemplateCommand); err != nil {
+					return errors.Wrapf(err, "NewTemplateCommand Update")
+				}
+			}
+			return nil
+		}
+
 		body, ok := ctx.Object().(*commandv1.HttpReqTemplateCommand)
 		if !ok {
 			return nil, ErrorFailedCast()
@@ -49,29 +105,22 @@ func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
 
 		template_uuid := ctx.Params()[__TEMPLATE_UUID__]
 
+		if _, err := vault.NewTemplate(ctx.Database()).Get(template_uuid); err != nil {
+			return nil, errors.Wrapf(err, "NewTemplate Get")
+		}
 		//property
 		command.UuidMeta = NewUuidMeta()
 		command.LabelMeta = NewLabelMeta(command.Name, command.Summary)
 		command.TemplateUuid = template_uuid
-		if command.Sequence == nil {
-			//마직막 순서를 지정하기 위해서 스텝을 가져온다
-			where := "template_uuid = ?"
-			commands, err := vault.NewTemplateCommand(ctx.Database()).
-				Find(where, template_uuid)
-			if err != nil {
-				return nil, errors.Wrapf(err, "NewTemplateCommand Find")
-			}
-			//스탭 순서 지정
-			command.Sequence = newist.Int32(int32(len(commands)))
-		}
+
 		command_, err := vault.NewTemplateCommand(ctx.Database()).Create(command)
 		if err != nil {
 			return nil, errors.Wrapf(err, "NewTemplateCommand Create")
 		}
 
-		//ChainingSequence
-		if err := vault.NewTemplateCommand(ctx.Database()).ChainingSequence(template_uuid, command.Uuid); err != nil {
-			return nil, errors.Wrapf(err, "NewTemplateCommand ChainingSequence")
+		// Chaining
+		if err := chaining_sequence(command); err != nil {
+			return nil, errors.Wrapf(err, "chaining sequence")
 		}
 
 		return commandv1.HttpRspTemplateCommand{DbSchema: *command_}, nil
@@ -105,7 +154,7 @@ func (c *Control) CreateTemplateCommand() func(ctx echo.Context) error {
 // @Router      /server/template/{template_uuid}/command [get]
 // @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
 // @Success 200 {array} v1.HttpRspTemplateCommand
-func (c *Control) FindTemplateCommand() func(ctx echo.Context) error {
+func (c Control) FindTemplateCommand() func(ctx echo.Context) error {
 
 	binder := func(ctx Contexter) error {
 		if len(ctx.Params()) == 0 {
@@ -158,7 +207,7 @@ func (c *Control) FindTemplateCommand() func(ctx echo.Context) error {
 // @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
 // @Param       uuid          path string true "HttpReqTemplateCommand 의 Uuid"
 // @Success 200 {object} v1.HttpRspTemplateCommand
-func (c *Control) GetTemplateCommand() func(ctx echo.Context) error {
+func (c Control) GetTemplateCommand() func(ctx echo.Context) error {
 
 	binder := func(ctx Contexter) error {
 		if len(ctx.Params()) == 0 {
@@ -214,8 +263,7 @@ func (c *Control) GetTemplateCommand() func(ctx echo.Context) error {
 // @Param       uuid          path string true "HttpReqTemplateCommand 의 Uuid"
 // @Param       command       body v1.HttpReqTemplateCommand true "HttpReqTemplateCommand"
 // @Success 200 {object} v1.HttpRspTemplateCommand
-func (c *Control) UpdateTemplateCommand() func(ctx echo.Context) error {
-
+func (c Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 	binder := func(ctx Contexter) error {
 		body := new(commandv1.HttpReqTemplateCommand)
 		if err := ctx.Bind(body); err != nil {
@@ -235,6 +283,62 @@ func (c *Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
+		chaining_sequence := func(command commandv1.TemplateCommand) error {
+			//valid
+			if command.Sequence == nil {
+				return nil //Sequence 값이 있어야 처리
+			}
+
+			where := "template_uuid = ? AND uuid <> ?"
+			args := []interface{}{
+				command.TemplateUuid,
+				command.Uuid,
+			}
+			commands, err := vault.NewTemplateCommand(ctx.Database()).Find(where, args...)
+			if err != nil {
+				return errors.Wrapf(err, "NewTemplateCommand Find")
+			}
+
+			//sort -> Sequence ASC
+			sort.Slice(commands, func(i, j int) bool {
+				return nullable.Int32(commands[i].Sequence).Value() < nullable.Int32(commands[j].Sequence).Value()
+			})
+
+			commands_ := make([]commandv1.DbSchema, 0, len(commands)+1)
+			for i := range commands {
+				itor := commands[i]
+
+				//순서 중간에 비교해서 적용하려는 command 우선으로 적용
+				sequence := nullable.Int32(command.Sequence)
+				if sequence.Has() && int32(i) == sequence.Value() {
+					commands_ = append(commands_, commandv1.DbSchema{TemplateCommand: command})
+				}
+				commands_ = append(commands_, itor)
+			}
+			//마지막에 비교해서 빠져있으면 넣는다
+			//command.Sequence 중간에 껴넣는게 아니라면 마지막에 위치 시킨다
+			if len(commands) == len(commands_) {
+				commands_ = append(commands_, commandv1.DbSchema{TemplateCommand: command})
+			}
+
+		LOOP:
+			for i := range commands_ {
+				itor := commands_[i]
+
+				//Sequence 동일함
+				sequence := nullable.Int32(command.Sequence)
+				if sequence.Has() && int32(i) == sequence.Value() {
+					continue LOOP //change nothing
+				}
+
+				itor.Sequence = newist.Int32(int32(i))
+				if _, err := vault.NewTemplateCommand(ctx.Database()).Update(itor.TemplateCommand); err != nil {
+					return errors.Wrapf(err, "NewTemplateCommand Update")
+				}
+			}
+			return nil
+		}
+
 		body, ok := ctx.Object().(*commandv1.HttpReqTemplateCommand)
 		if !ok {
 			return nil, ErrorFailedCast()
@@ -242,23 +346,19 @@ func (c *Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 
 		template_uuid := ctx.Params()[__TEMPLATE_UUID__]
 		uuid := ctx.Params()[__UUID__]
-
 		command := body.TemplateCommand
 
-		//set template uuid from path
-		command.TemplateUuid = template_uuid
-		//set uuid from path
-		command.Uuid = uuid
+		command.TemplateUuid = template_uuid //set template uuid from path
+		command.Uuid = uuid                  //set uuid from path
 
 		command_, err := vault.NewTemplateCommand(ctx.Database()).
-			Update(body.TemplateCommand)
-		if err != nil {
+			Update(command)
+		if err != nil && !macro.Eqaul(database.ErrorNoAffected(), errors.Cause(err)) {
 			return nil, errors.Wrapf(err, "NewTemplateCommand Update")
 		}
 
-		//ChainingSequence
-		if err := vault.NewTemplateCommand(ctx.Database()).ChainingSequence(template_uuid, command.Uuid); err != nil {
-			return nil, errors.Wrapf(err, "NewTemplateCommand ChainingSequence")
+		if err := chaining_sequence(command_.TemplateCommand); err != nil {
+			return nil, errors.Wrapf(err, "chaining sequence")
 		}
 
 		return commandv1.HttpRspTemplateCommand{DbSchema: *command_}, nil
@@ -293,7 +393,7 @@ func (c *Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 // @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
 // @Param       uuid          path string true "HttpReqTemplateCommand 의 Uuid"
 // @Success 200
-func (c *Control) DeleteTemplateCommand() func(ctx echo.Context) error {
+func (c Control) DeleteTemplateCommand() func(ctx echo.Context) error {
 
 	binder := func(ctx Contexter) error {
 		if len(ctx.Params()) == 0 {
@@ -309,11 +409,49 @@ func (c *Control) DeleteTemplateCommand() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		_ = ctx.Params()[__TEMPLATE_UUID__]
+		chaining_sequence := func(template_uuid, uuid string) error {
+			vault_command := vault.NewTemplateCommand(ctx.Database())
+			where := "template_uuid = ?"
+			args := []interface{}{
+				template_uuid,
+			}
+			commands, err := vault_command.Find(where, args...)
+			if err != nil {
+				return errors.Wrapf(err, "NewTemplateCommand Find")
+			}
+
+			//sort -> Sequence ASC
+			sort.Slice(commands, func(i, j int) bool {
+				return nullable.Int32(commands[i].Sequence).Value() < nullable.Int32(commands[j].Sequence).Value()
+			})
+
+		LOOP:
+			for i := range commands {
+				command := commands[i]
+
+				//Sequence 동일함
+				sequence := nullable.Int32(command.Sequence)
+				if sequence.Has() && sequence.Value() == int32(i) {
+					continue LOOP //change nothing
+				}
+
+				command.Sequence = newist.Int32(int32(i))
+				if _, err := vault_command.Update(command.TemplateCommand); err != nil {
+					return errors.Wrapf(err, "NewTemplateCommand Update")
+				}
+			}
+			return nil
+		}
+
+		template_uuid := ctx.Params()[__TEMPLATE_UUID__]
 		uuid := ctx.Params()[__UUID__]
 
 		if err := vault.NewTemplateCommand(ctx.Database()).Delete(uuid); err != nil {
 			return nil, errors.Wrapf(err, "NewTemplateCommand Delete")
+		}
+
+		if err := chaining_sequence(template_uuid, uuid); err != nil {
+			return nil, errors.Wrapf(err, "chaining sequence")
 		}
 
 		return OK(), nil

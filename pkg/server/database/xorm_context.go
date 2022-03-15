@@ -71,9 +71,14 @@ func (context XormContext) Find(records interface{}) error {
 
 // Update
 func (context XormContext) Update(record interface{}) error {
-	if affect, err := context.tx.Update(record); err != nil {
+	//레코드 업데이트
+	if _, err := context.tx.Update(record); err != nil {
 		return errors.Wrapf(err, "xorm update record=%#v", record)
-	} else if !(0 < affect) {
+	}
+
+	//affect 카운트로 적용 확인 하지 않고
+	//Get으로 검사 및 변경 값 가져오기
+	if has, _ := context.tx.Get(record); !has {
 		return errors.Wrapf(ErrorNoAffected(), "xorm update record=%#v", record)
 	}
 

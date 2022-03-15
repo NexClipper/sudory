@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/database/prepare"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
@@ -42,9 +43,25 @@ func (vault ServiceStep) Get(uuid string) (*stepv1.DbSchema, error) {
 }
 
 func (vault ServiceStep) Find(where string, args ...interface{}) ([]stepv1.DbSchema, error) {
-	records := make([]stepv1.DbSchema, 0)
-	if err := vault.ctx.Where(where, args...).Find(&records); err != nil {
+	steps := make([]stepv1.DbSchema, 0)
+	if err := vault.ctx.Where(where, args...).Find(&steps); err != nil {
 		return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
+	}
+
+	return steps, nil
+}
+
+func (vault ServiceStep) Query(query map[string]string) ([]stepv1.DbSchema, error) {
+	//parse query
+	preparer, err := prepare.NewParser(query)
+	if err != nil {
+		return nil, errors.Wrapf(err, "prepare newParser query=%+v", query)
+	}
+
+	//find service
+	records := make([]stepv1.DbSchema, 0)
+	if err := vault.ctx.Prepared(preparer).Find(&records); err != nil {
+		return nil, errors.Wrapf(err, "database find query=%+v", query)
 	}
 
 	return records, nil
@@ -60,13 +77,7 @@ func (vault ServiceStep) Update(model stepv1.ServiceStep) (*stepv1.DbSchema, err
 		return nil, errors.Wrapf(err, "database update where=%s args=%+v", where, args)
 	}
 
-	//make result
-	record_, err := vault.Get(record.Uuid)
-	if err != nil {
-		return nil, errors.Wrapf(err, "make update result")
-	}
-
-	return record_, nil
+	return record, nil
 }
 
 func (vault ServiceStep) Delete(uuid string) error {

@@ -1,8 +1,11 @@
 package vault
 
 import (
+	"sort"
+
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/prepare"
+	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/pkg/errors"
@@ -26,9 +29,9 @@ func (vault Service) Create(model servicev1.ServiceAndSteps) (*servicev1.DbSchem
 	//create steps
 	record_steps := make([]stepv1.DbSchema, len(model.Steps))
 	for i := range model.Steps {
-		record, err := NewServiceStep(vault.ctx).Create(model.Steps[i])
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewServiceStep Create")
+		record := &stepv1.DbSchema{ServiceStep: model.Steps[i]}
+		if err := vault.ctx.Create(record); err != nil {
+			return nil, errors.Wrapf(err, "database create")
 		}
 		record_steps[i] = *record
 	}
@@ -50,12 +53,16 @@ func (vault Service) Get(uuid string) (*servicev1.DbSchemaServiceAndSteps, error
 	//find step
 	where = "service_uuid = ?"
 	args = []interface{}{
-		uuid,
+		service.Uuid,
 	}
-	steps, err := NewServiceStep(vault.ctx).Find(where, args...)
-	if err != nil {
-		return nil, errors.Wrapf(err, "NewServiceStep Find")
+	steps := make([]stepv1.DbSchema, 0)
+	if err := vault.ctx.Where(where, args...).Find(&steps); err != nil {
+		return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
 	}
+	//sort -> Sequence ASC
+	sort.Slice(steps, func(i, j int) bool {
+		return nullable.Int32(steps[i].Sequence).Value() < nullable.Int32(steps[j].Sequence).Value()
+	})
 
 	return &servicev1.DbSchemaServiceAndSteps{DbSchema: *service, Steps: steps}, nil
 }
@@ -73,10 +80,19 @@ func (vault Service) Find(where string, args ...interface{}) ([]servicev1.DbSche
 		//set service
 		services[i].DbSchema = service
 		//find step
-		steps, err := NewServiceStep(vault.ctx).Find("service_uuid = ?", service.Uuid)
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewServiceStep Find")
+		where := "service_uuid = ?"
+		args := []interface{}{
+			service.Uuid,
 		}
+		steps := make([]stepv1.DbSchema, 0)
+		if err := vault.ctx.Where(where, args...).Find(&steps); err != nil {
+			return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
+		}
+		//sort -> Sequence ASC
+		sort.Slice(steps, func(i, j int) bool {
+			return nullable.Int32(steps[i].Sequence).Value() < nullable.Int32(steps[j].Sequence).Value()
+		})
+
 		//set steps
 		services[i].Steps = steps
 	}
@@ -104,10 +120,19 @@ func (vault Service) Query(query map[string]string) ([]servicev1.DbSchemaService
 		//set service
 		services[i].DbSchema = service
 		//find step
-		steps, err := NewServiceStep(vault.ctx).Find("service_uuid = ?", service.Uuid)
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewServiceStep Find")
+		where := "service_uuid = ?"
+		args := []interface{}{
+			service.Uuid,
 		}
+		steps := make([]stepv1.DbSchema, 0)
+		if err := vault.ctx.Where(where, args...).Find(&steps); err != nil {
+			return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
+		}
+		//sort -> Sequence ASC
+		sort.Slice(steps, func(i, j int) bool {
+			return nullable.Int32(steps[i].Sequence).Value() < nullable.Int32(steps[j].Sequence).Value()
+		})
+
 		//set steps
 		services[i].Steps = steps
 	}
@@ -125,21 +150,7 @@ func (vault Service) Update(model servicev1.Service) (*servicev1.DbSchema, error
 		return nil, errors.Wrapf(err, "database update where=%s args=%+v", where, args)
 	}
 
-	// //get service
-	// where = "uuid = ?"
-	// args = []interface{}{
-	// 	record.Uuid,
-	// }
-	// if err := vault.ctx.Where(where, args...).Get(record); err != nil {
-	// 	return nil, errors.Wrapf(err, "database get where=%s args=%+v", where, args)
-	// }
-
-	//make result
-	record_, err := vault.Get(record.Uuid)
-	if err != nil {
-		return nil, errors.Wrapf(err, "make update result")
-	}
-	return &record_.DbSchema, nil
+	return record, nil
 }
 
 func (vault Service) Delete(uuid string) error {

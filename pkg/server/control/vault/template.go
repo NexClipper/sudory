@@ -1,8 +1,11 @@
 package vault
 
 import (
+	"sort"
+
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/prepare"
+	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	"github.com/pkg/errors"
 
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
@@ -21,21 +24,21 @@ func NewTemplate(ctx database.Context) *Template {
 
 func (vault Template) Create(model templatev1.TemplateWithCommands) (*templatev1.DbSchemaTemplateWithCommands, error) {
 	//create service
-	record_template := &templatev1.DbSchema{Template: model.Template}
-	if err := vault.ctx.Create(record_template); err != nil {
+	template := &templatev1.DbSchema{Template: model.Template}
+	if err := vault.ctx.Create(template); err != nil {
 		return nil, errors.Wrapf(err, "database create")
 	}
 	//create steps
-	record_commands := make([]commandv1.DbSchema, len(model.Commands))
+	commands := make([]commandv1.DbSchema, len(model.Commands))
 	for i := range model.Commands {
-		record, err := NewTemplateCommand(vault.ctx).Create(model.Commands[i])
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewServiceStep Create")
+		command := &commandv1.DbSchema{TemplateCommand: model.Commands[i]}
+		if err := vault.ctx.Create(command); err != nil {
+			return nil, errors.Wrapf(err, "database create")
 		}
-		record_commands[i] = *record
+		commands[i] = *command
 	}
 
-	return &templatev1.DbSchemaTemplateWithCommands{DbSchema: *record_template, Commands: record_commands}, nil
+	return &templatev1.DbSchemaTemplateWithCommands{DbSchema: *template, Commands: commands}, nil
 }
 
 func (vault Template) Get(uuid string) (*templatev1.DbSchemaTemplateWithCommands, error) {
@@ -54,8 +57,13 @@ func (vault Template) Get(uuid string) (*templatev1.DbSchemaTemplateWithCommands
 	}
 	commands := make([]commandv1.DbSchema, 0)
 	if err := vault.ctx.Where(where, args...).Find(&commands); err != nil {
-		return nil, errors.Wrapf(err, "database get where=%s args=%+v", where, args)
+		return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
 	}
+
+	//sort -> Sequence ASC
+	sort.Slice(commands, func(i, j int) bool {
+		return nullable.Int32(commands[i].Sequence).Value() < nullable.Int32(commands[j].Sequence).Value()
+	})
 
 	return &templatev1.DbSchemaTemplateWithCommands{DbSchema: *template, Commands: commands}, nil
 }
@@ -73,10 +81,19 @@ func (vault Template) Find(where string, args ...interface{}) ([]templatev1.DbSc
 		//set template
 		templates[i].DbSchema = template
 		//find command
-		commands, err := NewTemplateCommand(vault.ctx).Find("template_uuid = ?", template.Uuid)
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewTemplateCommand Find")
+		where := "template_uuid = ?"
+		args := []interface{}{
+			template.Uuid,
 		}
+		commands := make([]commandv1.DbSchema, 0)
+		if err := vault.ctx.Where(where, args...).Find(&commands); err != nil {
+			return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
+		}
+		//sort -> Sequence ASC
+		sort.Slice(commands, func(i, j int) bool {
+			return nullable.Int32(commands[i].Sequence).Value() < nullable.Int32(commands[j].Sequence).Value()
+		})
+
 		//set commands
 		templates[i].Commands = commands
 	}
@@ -104,10 +121,19 @@ func (vault Template) Query(query map[string]string) ([]templatev1.DbSchemaTempl
 		//set template
 		templates[i].DbSchema = template
 		//find command
-		commands, err := NewTemplateCommand(vault.ctx).Find("template_uuid = ?", template.Uuid)
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewTemplateCommand Find")
+		where := "template_uuid = ?"
+		args := []interface{}{
+			template.Uuid,
 		}
+		commands := make([]commandv1.DbSchema, 0)
+		if err := vault.ctx.Where(where, args...).Find(&commands); err != nil {
+			return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
+		}
+		//sort -> Sequence ASC
+		sort.Slice(commands, func(i, j int) bool {
+			return nullable.Int32(commands[i].Sequence).Value() < nullable.Int32(commands[j].Sequence).Value()
+		})
+
 		//set commands
 		templates[i].Commands = commands
 	}
@@ -125,13 +151,7 @@ func (vault Template) Update(model templatev1.Template) (*templatev1.DbSchema, e
 		return nil, errors.Wrapf(err, "database update where=%s args=%+v", where, args)
 	}
 
-	//make result
-	record_, err := vault.Get(record.Uuid)
-	if err != nil {
-		return nil, errors.Wrapf(err, "make update result")
-	}
-
-	return &record_.DbSchema, nil
+	return record, nil
 }
 
 func (vault Template) Delete(uuid string) error {

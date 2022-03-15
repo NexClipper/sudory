@@ -72,13 +72,7 @@ func (vault Client) Update(model clientv1.Client) (*clientv1.DbSchema, error) {
 		return nil, errors.Wrapf(err, "database update where=%s args=%+v", where, args)
 	}
 
-	//make result
-	record_, err := vault.Get(record.Uuid)
-	if err != nil {
-		return nil, errors.Wrapf(err, "make update result")
-	}
-
-	return record_, nil
+	return record, nil
 }
 
 func (vault Client) Delete(uuid string) error {
