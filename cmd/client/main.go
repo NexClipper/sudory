@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 
@@ -10,15 +11,25 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/k8s"
 	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/client/scheduler"
+	"github.com/NexClipper/sudory/pkg/version"
 )
 
+const APP_NAME = "sudory-client"
+
 func main() {
+	versionFlag := flag.Bool("version", false, "print the current version")
+
 	server := flag.String("server", "http://localhost:8099", "sudory server url")
 	clusterid := flag.String("clusterid", "", "sudory client's cluster id")
 	token := flag.String("token", "", "sudory client's token for server connection")
 	loglevel := flag.String("loglevel", "debug", "sudory client's log level. One of: debug(defualt)|info|warn|error")
 
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println(version.BuildVersion(APP_NAME))
+		return
+	}
 
 	log.New(*loglevel)
 
@@ -55,17 +66,17 @@ func main() {
 	scheduler := scheduler.NewScheduler()
 	scheduler.Start()
 
-	poller, err := fetcher.NewFetcher(*token, *server, *clusterid, scheduler)
+	fetcher, err := fetcher.NewFetcher(*token, *server, *clusterid, scheduler)
 	if err != nil {
 		log.Fatalf("Failed to create poller : %v.\n", err)
 	}
 
-	if err := poller.HandShake(); err != nil {
+	if err := fetcher.HandShake(); err != nil {
 		log.Fatalf("Failed to handshake : %v.\n", err)
 	}
 
 	// polling
-	poller.Polling()
+	fetcher.Polling()
 
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt)
