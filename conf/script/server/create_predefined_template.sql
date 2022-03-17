@@ -37,6 +37,10 @@ INSERT INTO `template` (`created`, `updated`, `deleted`, `uuid`, `name`, `summar
 INSERT INTO `template` (`created`, `updated`, `deleted`, `uuid`, `name`, `summary`, `api_version`, `origin`) VALUES (NULL, NULL, NULL, '00000000000000000000000000002001', 'kubernetes_ingresses_get', NULL, 'v1', 'predefined');
 INSERT INTO `template` (`created`, `updated`, `deleted`, `uuid`, `name`, `summary`, `api_version`, `origin`) VALUES (NULL, NULL, NULL, '00000000000000000000000000002002', 'kubernetes_ingresses_list', NULL, 'v1', 'predefined');
 
+-- k8s.group_version: storage.k8s.io/v1
+INSERT INTO `template` (`created`, `updated`, `deleted`, `uuid`, `name`, `summary`, `api_version`, `origin`) VALUES (NULL, NULL, NULL, '00000000000000000000000000003001', 'kubernetes_storageclasses_get', NULL, 'v1', 'predefined');
+INSERT INTO `template` (`created`, `updated`, `deleted`, `uuid`, `name`, `summary`, `api_version`, `origin`) VALUES (NULL, NULL, NULL, '00000000000000000000000000003002', 'kubernetes_storageclasses_list', NULL, 'v1', 'predefined');
+
 -- p8s
 INSERT INTO `template` (`created`, `updated`, `deleted`, `uuid`, `name`, `summary`, `api_version`, `origin`) VALUES (NULL, NULL, NULL, '10000000000000000000000000000001', 'prometheus_query', NULL, 'v1', 'predefined');
 INSERT INTO `template` (`created`, `updated`, `deleted`, `uuid`, `name`, `summary`, `api_version`, `origin`) VALUES (NULL, NULL, NULL, '10000000000000000000000000000002', 'prometheus_query_range', NULL, 'v1', 'predefined');
@@ -84,6 +88,10 @@ INSERT INTO `template_command` (`created`, `updated`, `deleted`, `uuid`, `name`,
 -- k8s.group_version: networking.k8s.io/v1
 INSERT INTO `template_command` (`created`, `updated`, `deleted`, `uuid`, `name`, `summary`, `api_version`, `template_uuid`, `sequence`, `method`, `args`, `result_filter`) VALUES (NULL, NULL, NULL, '00000000000000000000000000002001', 'kubernetes_ingresses_get_0', NULL, 'v1', '00000000000000000000000000002001', 0, 'kubernetes.ingresses.get.networking.k8s.io/v1', '{"namespace": "","name":""}', NULL);
 INSERT INTO `template_command` (`created`, `updated`, `deleted`, `uuid`, `name`, `summary`, `api_version`, `template_uuid`, `sequence`, `method`, `args`, `result_filter`) VALUES (NULL, NULL, NULL, '00000000000000000000000000002002', 'kubernetes_ingresses_list_0', NULL, 'v1', '00000000000000000000000000002002', 0, 'kubernetes.ingresses.list.networking.k8s.io/v1', '{"namespace":"","labels":{}}', NULL);
+
+-- k8s.group_version: storage.k8s.io/v1
+INSERT INTO `template_command` (`created`, `updated`, `deleted`, `uuid`, `name`, `summary`, `api_version`, `template_uuid`, `sequence`, `method`, `args`, `result_filter`) VALUES (NULL, NULL, NULL, '00000000000000000000000000002001', 'kubernetes_storageclasses_get_0', NULL, 'v1', '00000000000000000000000000003001', 0, 'kubernetes.storageclasses.get.storage.k8s.io/v1', '{"name":""}', NULL);
+INSERT INTO `template_command` (`created`, `updated`, `deleted`, `uuid`, `name`, `summary`, `api_version`, `template_uuid`, `sequence`, `method`, `args`, `result_filter`) VALUES (NULL, NULL, NULL, '00000000000000000000000000002002', 'kubernetes_storageclasses_list_0', NULL, 'v1', '00000000000000000000000000003002', 0, 'kubernetes.storageclasses.list.storage.k8s.io/v1', '{"labels":{}}', NULL);
 
 -- p8s
 INSERT INTO `template_command` (`created`, `updated`, `deleted`, `uuid`, `name`, `summary`, `api_version`, `template_uuid`, `sequence`, `method`, `args`, `result_filter`) VALUES (NULL, NULL, NULL, '10000000000000000000000000000001', 'prometheus_query_0', NULL, 'v1', '10000000000000000000000000000001', 0, 'prometheus.query.v1', '{"url":"","query":"","time":""}', NULL);

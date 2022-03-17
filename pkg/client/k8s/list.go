@@ -109,6 +109,16 @@ func (c *Client) ResourceList(gv schema.GroupVersion, resource, namespace string
 		default:
 			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
 		}
+	case "storage.k8s.io/v1":
+		switch resource {
+		case "storageclasses":
+			result, err = c.client.StorageV1().StorageClasses().List(context.TODO(), metav1.ListOptions{LabelSelector: labelsString})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
 	default:
 		err = fmt.Errorf("unsupported group version(%s)", gv.Identifier())
 	}
