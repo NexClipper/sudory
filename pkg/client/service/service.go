@@ -57,11 +57,12 @@ type Result struct {
 }
 
 type Step struct {
-	Id        int
-	ParentId  string
-	Command   *StepCommand
-	StartTime time.Time
-	EndTime   time.Time
-	Status    StepStatus
-	Result    Result
+	Id           int
+	ParentId     string
+	Command      *StepCommand
+	StartTime    time.Time
+	EndTime      time.Time
+	Status       StepStatus
+	ResultFilter string
+	Result       Result
 }

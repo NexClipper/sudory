@@ -213,3 +213,20 @@ ALTER TABLE `session`
 -- (FIN) OSS-143
 --
 
+
+
+--
+-- OSS-180
+--
+
+ALTER TABLE `template_command`
+	ADD COLUMN IF NOT EXISTS `result_filter` VARCHAR(4096) NULL DEFAULT NULL COMMENT 'result_filter' COLLATE 'utf8mb4_bin' AFTER `args`;
+
+ALTER TABLE `service_step`
+	ADD COLUMN IF NOT EXISTS `result_filter` VARCHAR(4096) NULL DEFAULT NULL COMMENT 'result_filter' COLLATE 'utf8mb4_bin' AFTER `args`;
+
+--
+-- (FIN) OSS-180
+--
+
+

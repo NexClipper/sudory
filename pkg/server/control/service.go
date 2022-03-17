@@ -128,6 +128,7 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 			step.Status = newist.Int32(int32(servicev1.StatusRegist))    //Status(Regist)
 			step.Method = command.Method                                 //Method
 			step.Args = sse.Args                                         //Args
+			step.ResultFilter = command.ResultFilter                     //ResultFilter
 			// step.Result = newist.String("")
 			return step
 		})

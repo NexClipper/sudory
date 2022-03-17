@@ -1,8 +1,10 @@
 package executor
 
 import (
+	"encoding/json"
 	"time"
 
+	"github.com/NexClipper/sudory/pkg/client/jq"
 	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/client/service"
 )
@@ -92,6 +94,23 @@ func (se *StepExecutor) Execute() service.Result {
 		return service.Result{Err: err}
 	}
 	log.Debugf("Executed method : %s.\n", se.step.Command.Method)
+
+	if se.step.ResultFilter != "" {
+		m := make(map[string]interface{})
+		json.Unmarshal([]byte(res), &m)
+		o, err := jq.Process(m, se.step.ResultFilter)
+		if err != nil {
+			log.Warnf("Failed jq process : %v\n", err)
+			return service.Result{Body: res}
+		}
+
+		b, err := json.Marshal(o)
+		if err != nil {
+			log.Warnf("Failed json marshal from jq process result : %v\n", err)
+			return service.Result{Body: res}
+		}
+		return service.Result{Body: string(b)}
+	}
 
 	return service.Result{Body: res}
 }

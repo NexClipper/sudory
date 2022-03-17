@@ -8,7 +8,29 @@ import (
 	"github.com/itchyny/gojq"
 )
 
-func ProcessJson(input map[string]interface{}, filter string) (string, error) {
+func Request(input map[string]interface{}, filter string) (string, error) {
+	res := &JqResult{Filter: filter}
+	var err error
+
+	res.Results, err = Process(input, filter)
+	if err != nil {
+		return "", err
+	}
+
+	b, err := json.Marshal(res)
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
+}
+
+type JqResult struct {
+	Filter  string      `json:"filter"`
+	Results interface{} `json:"results"`
+}
+
+func Process(input map[string]interface{}, filter string) (interface{}, error) {
 	if input == nil || filter == "" {
 		return "", fmt.Errorf("input or filter value is empty")
 	}
@@ -18,7 +40,8 @@ func ProcessJson(input map[string]interface{}, filter string) (string, error) {
 		return "", err
 	}
 
-	res := &JqResult{Filter: filter}
+	var rootRes interface{}
+	var res []interface{}
 
 	iter := query.RunWithContext(context.TODO(), input)
 	for {
@@ -31,19 +54,15 @@ func ProcessJson(input map[string]interface{}, filter string) (string, error) {
 		}
 
 		if v != nil {
-			res.Results = append(res.Results, v)
+			res = append(res, v)
 		}
 	}
 
-	b, err := json.Marshal(res)
-	if err != nil {
-		return "", err
+	if len(res) > 1 {
+		rootRes = res
+	} else if len(res) == 1 {
+		rootRes = res[0]
 	}
 
-	return string(b), nil
-}
-
-type JqResult struct {
-	Filter  string        `json:"filter"`
-	Results []interface{} `json:"results"`
+	return rootRes, nil
 }

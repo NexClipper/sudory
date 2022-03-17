@@ -16,10 +16,16 @@ func ServiceListServerToClient2(server []servicev1.HttpRspClientSideService) map
 			ServerData: v,
 		}
 		for i, s := range v.Steps {
+			rf := ""
+			if s.ResultFilter != nil {
+				rf = *s.ResultFilter
+			}
 			serv.Steps = append(serv.Steps, &service.Step{
-				Id:       i,
-				ParentId: serv.Id,
-				Command:  &service.StepCommand{Method: *s.Method, Args: s.Args}})
+				Id:           i,
+				ParentId:     serv.Id,
+				Command:      &service.StepCommand{Method: *s.Method, Args: s.Args},
+				ResultFilter: rf,
+			})
 		}
 		client[v.Uuid] = serv
 	}

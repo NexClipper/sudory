@@ -15,6 +15,8 @@ type ServiceStepProperty struct {
 	Method *string `json:"method,omitempty" xorm:"varchar(255) null 'method' comment('method')"`
 	//arguments
 	Args map[string]interface{} `json:"args,omitempty" xorm:"text null 'args' comment('args')"`
+	//ResultFilter 스탭 결과 필터
+	ResultFilter *string `json:"result_filter,omitempty" xorm:"varchar(4096) null 'result_filter' comment('result_filter')"`
 	//Status 상태
 	Status *int32 `json:"status,omitempty" xorm:"int null index default(0) 'status' comment('status')"`
 	//Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')

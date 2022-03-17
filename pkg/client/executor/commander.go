@@ -255,5 +255,5 @@ func (c *JqCommander) ParseCommand(command *service.StepCommand) error {
 }
 
 func (c *JqCommander) Run() (string, error) {
-	return jq.ProcessJson(c.input, c.filter)
+	return jq.Request(c.input, c.filter)
 }
