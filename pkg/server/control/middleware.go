@@ -12,7 +12,6 @@ import (
 
 	"github.com/NexClipper/logger"
 	"github.com/NexClipper/sudory/pkg/server/database"
-	"github.com/NexClipper/sudory/pkg/server/events"
 	"github.com/NexClipper/sudory/pkg/server/macro/exceptions"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 
@@ -316,11 +315,11 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 			reqPath   = func() string { return ctxEcho.Request().URL.Path }
 			reqMethod = func() string { return ctxEcho.Request().Method }
 			reqStatus = func() int { return ctxEcho.Response().Status }
-			reqForm   = func() string { return context.FormString() }
-			reqParam  = func() string { return context.ParamString() }
-			reqQuery  = func() string { return context.QueryString() }
-			reqBody   = func() []byte { return context.Body() }
-			rspBody   = func() func() []byte {
+			// reqForm   = func() string { return context.FormString() }
+			reqParam = func() string { return context.ParamString() }
+			reqQuery = func() string { return context.QueryString() }
+			reqBody  = func() []byte { return context.Body() }
+			rspBody  = func() func() []byte {
 				var (
 					onceRspbody sync.Once
 					rspbody     []byte
@@ -343,35 +342,35 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 			errOperateSink  = tidSink.WithName("failed operate")
 		)
 
-		//event invoke
-		defer func() {
+		// //event invoke
+		// defer func() {
 
-			args := map[string]interface{}{}
+		// 	args := map[string]interface{}{}
 
-			args["path"] = reqPath()
-			if 0 < len(reqQuery()) {
-				args["query"] = reqQuery()
-			}
-			if 0 < len(reqParam()) {
-				args["param"] = reqParam()
-			}
-			if 0 < len(reqForm()) {
-				args["form"] = reqForm()
-			}
-			args["method"] = reqMethod()
-			if 0 < len(reqBody()) {
-				args["reqbody"] = reqBody()
-			}
-			if 0 < len(rspBody()) {
-				args["rspbody"] = rspBody()
-			}
-			args["status"] = reqStatus()
-			if err != nil {
-				args["error"] = err
-			}
+		// 	args["path"] = reqPath()
+		// 	if 0 < len(reqQuery()) {
+		// 		args["query"] = reqQuery()
+		// 	}
+		// 	if 0 < len(reqParam()) {
+		// 		args["param"] = reqParam()
+		// 	}
+		// 	if 0 < len(reqForm()) {
+		// 		args["form"] = reqForm()
+		// 	}
+		// 	args["method"] = reqMethod()
+		// 	if 0 < len(reqBody()) {
+		// 		args["reqbody"] = reqBody()
+		// 	}
+		// 	if 0 < len(rspBody()) {
+		// 		args["rspbody"] = rspBody()
+		// 	}
+		// 	args["status"] = reqStatus()
+		// 	if err != nil {
+		// 		args["error"] = err
+		// 	}
 
-			events.Invoke(&events.EventArgs{Sender: reqPath(), Args: args})
-		}()
+		// 	event.Invoke(&event.EventArgs{Sender: reqPath(), Args: args})
+		// }()
 
 		requestSink := tidSink.WithName("C")
 		if logs.V(0) {

@@ -16,7 +16,7 @@ func TestNewUuid(t *testing.T) {
 
 func TestUuidParse(t *testing.T) {
 
-	u, err := uuid.Parse("ab6e82680f79457d8ca67843fbe6ce2e")
+	u, err := uuid.Parse("ab6e82680f79457c8ca67843fbe6ce2e")
 	if err != nil {
 		t.Error(err)
 	}

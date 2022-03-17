@@ -1,16 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"flag"
-	"log"
+	"fmt"
 	"os"
 	"time"
 
 	"github.com/NexClipper/logger"
 	"github.com/NexClipper/sudory/pkg/server/config"
 	"github.com/NexClipper/sudory/pkg/server/database"
-	"github.com/NexClipper/sudory/pkg/server/events"
-	"github.com/NexClipper/sudory/pkg/server/macro/channels"
+	"github.com/NexClipper/sudory/pkg/server/event"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/route"
 	"github.com/NexClipper/sudory/pkg/server/status"
@@ -47,11 +47,12 @@ func main() {
 	}
 	defer db.Close()
 
-	//events
-	deactivate := event(*configPath)
-	defer func() {
-		deactivate() //stop when closing
-	}()
+	//init event
+	eventCancel, err := newEvent(*configPath)
+	if err != nil {
+		panic(err)
+	}
+	defer eventCancel() //이벤트 종료
 
 	//chrons
 	chronStop := chron(db.Engine())
@@ -64,31 +65,56 @@ func main() {
 	r.Start(cfg.Host.Port)
 }
 
-func event(filename string) func() {
-	var err error
-	//events
-	var contexts []events.EventContexter
-	var config *events.Config
-	//event config
-	if config, err = events.NewConfig(filename); err != nil { //config file load
-		panic(err)
+func newEvent(filename string) (func(), error) {
+	cfgevent, err := event.NewEventConfig(filename)
+	if err != nil {
+		return nil, errors.Wrapf(err, "make new event config")
 	}
-	//event config vaild
-	if err = config.Vaild(); err != nil { //config vaild
-		panic(err)
-	}
-	//event config make listener
-	if contexts, err = config.MakeEventListener(); err != nil { //events regist listener
-		panic(err)
-	}
-	//event manager
-	sender := channels.NewSafeChannel(0)
-	manager := events.NewManager(sender, contexts, log.Printf)
-	deactivate := events.Activate(manager, len(contexts)) //manager activate
 
-	events.Invoke = manager.Invoker //setting invoker
+	pub := event.NewEventPublish()
 
-	return deactivate
+	for i := range cfgevent.EventSubscribeConfigs {
+		cfgsub := cfgevent.EventSubscribeConfigs[i]
+
+		sub := event.NewEventSub(cfgsub)
+		sub.ErrorHandlers().Add(func(sub event.EventSubscriber, err error) {
+
+			err_ := errors.Cause(err)
+
+			type stackTracer interface {
+				StackTrace() errors.StackTrace
+			}
+
+			sink := logs.WithError(err)
+			sink = sink.WithValue(
+				"event-name", sub.Config().Name,
+			)
+
+			buff := &bytes.Buffer{}
+			if err, ok := err_.(stackTracer); ok {
+				for _, f := range err.StackTrace() {
+					fmt.Fprintf(buff, "%+s:%d\n", f, f)
+				}
+
+				sink = sink.WithValue(
+					"stack", buff.Bytes(),
+				)
+			}
+
+			logger.Errorf("%w %s", err, sink.String())
+		})
+
+		if err := event.RegistNotifier(sub); err != nil {
+			return nil, errors.Wrapf(err, "regist notifier")
+		}
+
+		sub.Regist(pub)
+
+	}
+	event.PrintEventConfiguation(os.Stdout, pub)
+
+	//return closer
+	return pub.Close, nil
 }
 
 func chron(engine *xorm.Engine) func() {

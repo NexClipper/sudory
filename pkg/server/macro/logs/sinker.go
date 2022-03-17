@@ -5,18 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/NexClipper/sudory/pkg/server/macro/logs/internal/serialize"
 	"github.com/pkg/errors"
 )
-
-func put(keysAndValues ...interface{}) string {
-
-	buf := bytes.Buffer{}
-
-	serialize.KVListFormat(&buf, keysAndValues...)
-
-	return buf.String()
-}
 
 type sinker interface {
 	Id() uint64
@@ -78,7 +68,7 @@ func (sink sink) String() string {
 		case 2:
 			buf.WriteString("err=" + err.Error())
 		case 3:
-			buf.WriteString(put(values...))
+			buf.WriteString(parseKVList(values...))
 		}
 
 	}
@@ -150,6 +140,7 @@ func WithName(name string) sinker {
 func WithValue(keysAndValues ...interface{}) sinker {
 	return &sink{keysAndValues: keysAndValues}
 }
+
 func WithError(err error) sinker {
 	return &sink{errors: []error{err}}
 }
