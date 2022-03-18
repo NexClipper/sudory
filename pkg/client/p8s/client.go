@@ -37,6 +37,8 @@ func (c *Client) ApiRequest(apiVersion, apiName string, queryParams map[string]i
 			data, err = c.Alerts()
 		case "rules":
 			data, err = c.Rules()
+		case "alertmanagers":
+			data, err = c.AlertManagers()
 		default:
 			return "", fmt.Errorf("unknown api name(%s)", apiName)
 		}
