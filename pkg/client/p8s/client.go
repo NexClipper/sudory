@@ -2,11 +2,14 @@ package p8s
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/api"
 
 	"github.com/NexClipper/sudory/pkg/client/log"
 )
+
+const defaultQueryTimeout = 10 * time.Second
 
 type Client struct {
 	client api.Client
@@ -39,6 +42,8 @@ func (c *Client) ApiRequest(apiVersion, apiName string, queryParams map[string]i
 			data, err = c.Rules()
 		case "alertmanagers":
 			data, err = c.AlertManagers()
+		case "targets":
+			data, err = c.Targets()
 		default:
 			return "", fmt.Errorf("unknown api name(%s)", apiName)
 		}

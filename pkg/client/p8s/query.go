@@ -9,8 +9,6 @@ import (
 	"github.com/prometheus/common/model"
 )
 
-const defaultQueryTimeout = 10 * time.Second
-
 func (c *Client) Query(params map[string]interface{}) (string, []string, error) {
 	type queryParams struct {
 		Query string    `json:"query,omitempty"`
