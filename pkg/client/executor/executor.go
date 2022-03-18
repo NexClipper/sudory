@@ -97,17 +97,21 @@ func (se *StepExecutor) Execute() service.Result {
 
 	if se.step.ResultFilter != "" {
 		m := make(map[string]interface{})
-		json.Unmarshal([]byte(res), &m)
+		if err := json.Unmarshal([]byte(res), &m); err != nil {
+			log.Errorf("Failed json unmarshal : %v\n", err)
+			return service.Result{Err: err}
+		}
+
 		o, err := jq.Process(m, se.step.ResultFilter)
 		if err != nil {
-			log.Warnf("Failed jq process : %v\n", err)
-			return service.Result{Body: res}
+			log.Errorf("Failed jq process : %v\n", err)
+			return service.Result{Err: err}
 		}
 
 		b, err := json.Marshal(o)
 		if err != nil {
-			log.Warnf("Failed json marshal from jq process result : %v\n", err)
-			return service.Result{Body: res}
+			log.Errorf("Failed json marshal from jq process result : %v\n", err)
+			return service.Result{Err: err}
 		}
 		return service.Result{Body: string(b)}
 	}
