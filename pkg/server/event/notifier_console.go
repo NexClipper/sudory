@@ -9,27 +9,27 @@ import (
 	"github.com/pkg/errors"
 )
 
-type consolNotifier struct {
+type consoleNotifier struct {
 	sub EventSubscriber
 }
 
-func NewConsolNotifier() *consolNotifier {
-	notifier := &consolNotifier{}
+func NewConsoleNotifier() *consoleNotifier {
+	notifier := &consoleNotifier{}
 
 	return notifier
 }
-func (notifier consolNotifier) Type() string {
-	return NotifierTypeConsol.String()
+func (notifier consoleNotifier) Type() string {
+	return NotifierTypeConsole.String()
 }
 
-func (notifier consolNotifier) Property() map[string]string {
+func (notifier consoleNotifier) Property() map[string]string {
 	return map[string]string{
 		"name": notifier.sub.Config().Name,
 		"type": notifier.Type(),
 	}
 }
 
-func (notifier consolNotifier) PropertyString() string {
+func (notifier consoleNotifier) PropertyString() string {
 	buff := bytes.Buffer{}
 	for key, value := range notifier.Property() {
 		if 0 < buff.Len() {
@@ -42,7 +42,7 @@ func (notifier consolNotifier) PropertyString() string {
 	return buff.String()
 }
 
-func (notifier *consolNotifier) Regist(sub EventSubscriber) {
+func (notifier *consoleNotifier) Regist(sub EventSubscriber) {
 	//Subscribe
 	if !(sub == nil && notifier.sub != nil) {
 		notifier.sub = sub
@@ -50,7 +50,7 @@ func (notifier *consolNotifier) Regist(sub EventSubscriber) {
 	}
 }
 
-func (notifier *consolNotifier) Close() {
+func (notifier *consoleNotifier) Close() {
 	//Unsubscribe
 	if notifier.sub != nil {
 		notifier.sub.Notifiers().Remove(notifier)
@@ -58,7 +58,7 @@ func (notifier *consolNotifier) Close() {
 	}
 }
 
-func (notifier consolNotifier) OnNotify(factory MarshalFactory) error {
+func (notifier consoleNotifier) OnNotify(factory MarshalFactory) error {
 	w := os.Stdout
 
 	b, err := factory("application/json")
@@ -72,7 +72,7 @@ func (notifier consolNotifier) OnNotify(factory MarshalFactory) error {
 	return nil
 }
 
-func (notifier consolNotifier) OnNotifyAsync(factory MarshalFactory) <-chan NotifierFuture {
+func (notifier consoleNotifier) OnNotifyAsync(factory MarshalFactory) <-chan NotifierFuture {
 	future := make(chan NotifierFuture)
 	go func() {
 		defer close(future)

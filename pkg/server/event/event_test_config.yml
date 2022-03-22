@@ -3,18 +3,18 @@ events:
   name: 'test'
   update-interval: 5s
   notifiers:
-  # - notifier:
-  #   type: consol
+  - notifier:
+    type: console
   # - notifier: 
   #   type: 'file'
   #   path: ../../../../log/event-test.log
-  - notifier:
-    type: 'webhook'
-    method: post
-    url: 'http://localhost:8000/'
-    request-headers: 
-      Content-Type: "application/json" 
-    request-timeout: 30s
+  # - notifier:
+  #   type: 'webhook'
+  #   method: post
+  #   url: 'http://localhost:8000/'
+  #   request-headers: 
+  #     Content-Type: "application/json" 
+  #   request-timeout: 30s
   # - notifier:
   #   type: rabbitmq
   #   url: amqp://localhost:5672/

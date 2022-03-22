@@ -35,7 +35,7 @@ events:
 #   update-interval: 5s
 #   notifiers:
 #   - notifier:
-#     type: consol
+#     type: console
 #   - notifier: 
 #     type: 'file'
 #     path: ./log/server.log
@@ -56,7 +56,7 @@ events:
   update-interval: 5s
   notifiers:
   # - notifier:
-  #   type: consol
+  #   type: console
   - notifier:
     type: 'webhook'
     method: post
@@ -69,7 +69,7 @@ events:
   update-interval: 5s
   notifiers:
   # - notifier:
-  #   type: consol
+  #   type: console
   - notifier:
     type: 'webhook'
     method: post
@@ -82,7 +82,7 @@ events:
   update-interval: 5s
   notifiers:
   # - notifier:
-  #   type: consol
+  #   type: console
   - notifier:
     type: 'webhook'
     method: post

@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	// NotifierTypeConsol is a NotifierType of type Consol.
-	NotifierTypeConsol NotifierType = iota
+	// NotifierTypeConsole is a NotifierType of type Console.
+	NotifierTypeConsole NotifierType = iota
 	// NotifierTypeWebhook is a NotifierType of type Webhook.
 	NotifierTypeWebhook
 	// NotifierTypeFile is a NotifierType of type File.
@@ -22,13 +22,13 @@ const (
 	NotifierTypeRabbitMQ
 )
 
-const _NotifierTypeName = "consolwebhookfilerabbitMQ"
+const _NotifierTypeName = "consolewebhookfilerabbitMQ"
 
 var _NotifierTypeNames = []string{
-	_NotifierTypeName[0:6],
-	_NotifierTypeName[6:13],
-	_NotifierTypeName[13:17],
-	_NotifierTypeName[17:25],
+	_NotifierTypeName[0:7],
+	_NotifierTypeName[7:14],
+	_NotifierTypeName[14:18],
+	_NotifierTypeName[18:26],
 }
 
 // NotifierTypeNames returns a list of possible string values of NotifierType.
@@ -39,10 +39,10 @@ func NotifierTypeNames() []string {
 }
 
 var _NotifierTypeMap = map[NotifierType]string{
-	NotifierTypeConsol:   _NotifierTypeName[0:6],
-	NotifierTypeWebhook:  _NotifierTypeName[6:13],
-	NotifierTypeFile:     _NotifierTypeName[13:17],
-	NotifierTypeRabbitMQ: _NotifierTypeName[17:25],
+	NotifierTypeConsole:  _NotifierTypeName[0:7],
+	NotifierTypeWebhook:  _NotifierTypeName[7:14],
+	NotifierTypeFile:     _NotifierTypeName[14:18],
+	NotifierTypeRabbitMQ: _NotifierTypeName[18:26],
 }
 
 // String implements the Stringer interface.
@@ -54,14 +54,14 @@ func (x NotifierType) String() string {
 }
 
 var _NotifierTypeValue = map[string]NotifierType{
-	_NotifierTypeName[0:6]:                    NotifierTypeConsol,
-	strings.ToLower(_NotifierTypeName[0:6]):   NotifierTypeConsol,
-	_NotifierTypeName[6:13]:                   NotifierTypeWebhook,
-	strings.ToLower(_NotifierTypeName[6:13]):  NotifierTypeWebhook,
-	_NotifierTypeName[13:17]:                  NotifierTypeFile,
-	strings.ToLower(_NotifierTypeName[13:17]): NotifierTypeFile,
-	_NotifierTypeName[17:25]:                  NotifierTypeRabbitMQ,
-	strings.ToLower(_NotifierTypeName[17:25]): NotifierTypeRabbitMQ,
+	_NotifierTypeName[0:7]:                    NotifierTypeConsole,
+	strings.ToLower(_NotifierTypeName[0:7]):   NotifierTypeConsole,
+	_NotifierTypeName[7:14]:                   NotifierTypeWebhook,
+	strings.ToLower(_NotifierTypeName[7:14]):  NotifierTypeWebhook,
+	_NotifierTypeName[14:18]:                  NotifierTypeFile,
+	strings.ToLower(_NotifierTypeName[14:18]): NotifierTypeFile,
+	_NotifierTypeName[18:26]:                  NotifierTypeRabbitMQ,
+	strings.ToLower(_NotifierTypeName[18:26]): NotifierTypeRabbitMQ,
 }
 
 // ParseNotifierType attempts to convert a string to a NotifierType.

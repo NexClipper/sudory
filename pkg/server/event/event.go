@@ -142,7 +142,7 @@ func NotifierFactory(cfgnotifire NotifierConfig) (Notifier, error) {
 
 	var opt interface{}
 	switch notifier_type {
-	case NotifierTypeConsol: //consol
+	case NotifierTypeConsole: //console
 		opt = &ConsoleNotifierConfig{}
 	case NotifierTypeWebhook: //webhook
 		opt = &WebhookNotifierConfig{
@@ -171,7 +171,7 @@ func NotifierFactory(cfgnotifire NotifierConfig) (Notifier, error) {
 	var new_notifier Notifier
 	switch opt := opt.(type) {
 	case *ConsoleNotifierConfig:
-		new_notifier = NewConsolNotifier()
+		new_notifier = NewConsoleNotifier()
 	case *WebhookNotifierConfig:
 		new_notifier = NewWebhookNotifier(*opt)
 	case *FileNotifierConfig:

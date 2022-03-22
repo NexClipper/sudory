@@ -6,7 +6,7 @@
 package event
 
 /* ENUM(
-consol
+console
 webhook
 file
 rabbitMQ
