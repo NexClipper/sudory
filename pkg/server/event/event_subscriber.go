@@ -131,7 +131,7 @@ func (subscriber *EventSub) Update(sender string, v ...interface{}) {
 					item := subscriber.Queue.Next()
 					sl = append(sl, item)
 				}
-				factory := MarshalFactoryClosure(sl...)
+				factory := NewMarshalFactory(sl...)
 
 				//모든 리스너의 Update 호출 (async)
 				futures := make([]<-chan NotifierFuture, 0, len(subscriber.notifiers))

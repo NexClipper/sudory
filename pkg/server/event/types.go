@@ -93,7 +93,7 @@ type EventPublisher interface {
 
 type MarshalFactory func(string) ([][]byte, error)
 
-func MarshalFactoryClosure(v ...interface{}) func(string) ([][]byte, error) {
+func NewMarshalFactory(v ...interface{}) func(string) ([][]byte, error) {
 	mux := sync.Mutex{}
 	m := make(map[string][][]byte)
 
@@ -101,10 +101,12 @@ func MarshalFactoryClosure(v ...interface{}) func(string) ([][]byte, error) {
 		mux.Lock()
 		defer mux.Unlock()
 
+		//이미 저장된 데이터가 있으면 저장된 데이터를 리턴
 		if _, ok := m[mime]; ok {
 			return m[mime], nil
 		}
 
+		//저장된 데이터가 없으면 데이터 만들어서 저장
 		m[mime] = make([][]byte, 0, len(v))
 		for _, v := range v {
 			var (
@@ -128,5 +130,4 @@ func MarshalFactoryClosure(v ...interface{}) func(string) ([][]byte, error) {
 
 		return m[mime], nil
 	}
-
 }
