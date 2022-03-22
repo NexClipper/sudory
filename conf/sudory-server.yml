@@ -30,24 +30,63 @@ logger:
   compress: false
 
 events:
-  - event:
-    name: 'client poll'
-    update-interval: 5s
-    notifiers:
-    # - notifier:
-    #   type: consol
-    # - notifier: 
-    #   type: 'file'
-    #   path: ./log/server.log
-    # - notifier:
-    #   type: 'webhook'
-    #   method: post
-    #   url: 'http://localhost:8000/'
-    #   request-headers: 
-    #     Content-Type: "application/json" 
-    #   timeout: 30s
-    # - notifier:
-    #   type: rabbitmq
-    #   url: amqp://localhost:5672/
-    #   routing-key: 'client poll'
-    #   message-content-type: 'application/json'
+# - event:
+#   name: 'client poll'
+#   update-interval: 5s
+#   notifiers:
+#   - notifier:
+#     type: consol
+#   - notifier: 
+#     type: 'file'
+#     path: ./log/server.log
+#   - notifier:
+#     type: 'webhook'
+#     method: post
+#     url: 'http://localhost:8000/'
+#     request-headers: 
+#       Content-Type: "application/json" 
+#     timeout: 30s
+#   - notifier:
+#     type: rabbitmq
+#     url: amqp://localhost:5672/
+#     routing-key: 'client poll'
+#     message-content-type: 'application/json'
+- event:
+  name: 'service-poll-in'
+  update-interval: 5s
+  notifiers:
+  # - notifier:
+  #   type: consol
+  - notifier:
+    type: 'webhook'
+    method: post
+    url: 'http://localhost:8000/'
+    request-headers: 
+      Content-Type: "application/json" 
+    request-timeout: 30s
+- event:
+  name: 'service-poll-out'
+  update-interval: 5s
+  notifiers:
+  # - notifier:
+  #   type: consol
+  - notifier:
+    type: 'webhook'
+    method: post
+    url: 'http://localhost:8000/'
+    request-headers: 
+      Content-Type: "application/json" 
+    request-timeout: 30s
+- event:
+  name: 'client-auth-accept'
+  update-interval: 5s
+  notifiers:
+  # - notifier:
+  #   type: consol
+  - notifier:
+    type: 'webhook'
+    method: post
+    url: 'http://localhost:8000/'
+    request-headers: 
+      Content-Type: "application/json" 
+    request-timeout: 30s

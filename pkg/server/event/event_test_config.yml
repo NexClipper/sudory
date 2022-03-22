@@ -18,5 +18,5 @@ events:
   # - notifier:
   #   type: rabbitmq
   #   url: amqp://localhost:5672/
-  #   routing-key: sudory-event
+  #   routing-key: 'sudory-event'
   #   message-content-type: application/json

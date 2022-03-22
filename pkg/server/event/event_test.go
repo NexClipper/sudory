@@ -73,16 +73,27 @@ func TestNewConfig(t *testing.T) {
 	}
 	event.PrintEventConfiguation(os.Stdout, pub)
 
-	for i := 0; i < 10; i++ {
-		for j := 0; j < 10; j++ {
-			event.Invoke("test",
-				struct {
-					I       int
-					J       int
-					Message string
-				}{I: i, J: j, Message: fmt.Sprintf("hello %v %v", i, j)})
-		}
+	for i := 0; i < 1; i++ {
+		// for j := 0; j < 10; j++ {
+		event.Invoke("test",
+			struct {
+				I       int
+				J       int
+				Message string
+			}{I: i, Message: fmt.Sprintf("hello %v", i)})
+		// }
 	}
+
+	// for i := 0; i < 10; i++ {
+	// 	for j := 0; j < 10; j++ {
+	// 		event.Invoke("test",
+	// 			struct {
+	// 				I       int
+	// 				J       int
+	// 				Message string
+	// 			}{I: i, J: j, Message: fmt.Sprintf("hello %v %v", i, j)})
+	// 	}
+	// }
 
 	t.Log("closing")
 	pub.Close()

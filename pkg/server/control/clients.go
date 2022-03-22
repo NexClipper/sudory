@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
+	"github.com/NexClipper/sudory/pkg/server/event"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/status/env"
 	"github.com/pkg/errors"
@@ -57,10 +58,10 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			return ErrorBindRequestObject(err)
 		}
 
-		//read client token
-		if _, err := clientTokenPayload(ctx.Echo()); err != nil {
-			return errors.Wrapf(err, "clientTokenPayload")
-		}
+		// //read client token
+		// if _, err := clientTokenPayload(ctx.Echo()); err != nil {
+		// 	return errors.Wrapf(err, "clientTokenPayload")
+		// }
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
@@ -78,16 +79,14 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			}
 			return out
 		}
-
-		make_request := func(serviceAndSteps servicev1.ServiceAndSteps) servicev1.ServiceAndSteps {
-			map_step := func(elems []stepv1.ServiceStep, mapper func(stepv1.ServiceStep) stepv1.ServiceStep) []stepv1.ServiceStep {
-				rst := make([]stepv1.ServiceStep, len(elems))
-				for n := range elems {
-					rst[n] = mapper(elems[n])
-				}
-				return rst
+		map_step := func(elems []stepv1.ServiceStep, mapper func(stepv1.ServiceStep) stepv1.ServiceStep) []stepv1.ServiceStep {
+			rst := make([]stepv1.ServiceStep, len(elems))
+			for n := range elems {
+				rst[n] = mapper(elems[n])
 			}
-
+			return rst
+		}
+		make_request := func(serviceAndSteps servicev1.ServiceAndSteps) servicev1.ServiceAndSteps {
 			service := serviceAndSteps.Service
 			steps := serviceAndSteps.Steps
 
@@ -138,6 +137,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			}
 			return rst
 		}
+
 		// foreach_client_service_and_steps := func(elems []servicev1.ServiceAndSteps, fn func(servicev1.ServiceAndSteps) error) error {
 		// 	for _, it := range elems {
 		// 		if err := fn(it); err != nil {
@@ -148,13 +148,6 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		// }
 
 		make_response := func(serviceAndSteps servicev1.ServiceAndSteps) servicev1.ServiceAndSteps {
-			map_step := func(elems []stepv1.ServiceStep, mapper func(stepv1.ServiceStep) stepv1.ServiceStep) []stepv1.ServiceStep {
-				rst := make([]stepv1.ServiceStep, len(elems))
-				for n := range elems {
-					rst[n] = mapper(elems[n])
-				}
-				return rst
-			}
 
 			service := serviceAndSteps.Service
 			steps := serviceAndSteps.Steps
@@ -191,11 +184,26 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 
 		//update request
 		request := map_service_req(unwarp(*body), make_request)
-		for i := range request {
-			_, err := update_service(request[i])
-			if err != nil {
+		for _, request := range request {
+			//update request
+			if _, err := update_service(request); err != nil {
 				return nil, errors.Wrapf(err, "update request")
 			}
+		}
+		//invoke event (service-poll-in)
+		for _, request := range request {
+			m := map[string]interface{}{
+				"event-name":           "service-poll-in",
+				"service_uuid":         request.Uuid,
+				"service-name":         nullable.String(request.Name).Value(),
+				"cluster_uuid":         nullable.String(request.ClusterUuid).Value(),
+				"assigned_client_uuid": nullable.String(request.AssignedClientUuid).Value(),
+				"status":               nullable.Int32(request.Status).Value(),
+				"result":               nullable.String(request.Result).Value(),
+				"step_count":           nullable.Int32(request.StepCount).Value(),
+				"step_position":        nullable.Int32(request.StepPosition).Value(),
+			}
+			event.Invoke("service-poll-in", m)
 		}
 
 		//make response
@@ -216,6 +224,22 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 				return nil, errors.Wrapf(err, "update response")
 			}
 			response_[i].Service = record.Service
+		}
+
+		//invoke event (service-poll-out)
+		for _, response := range response_ {
+			m := map[string]interface{}{
+				"event-name":           "service-poll-out",
+				"service_uuid":         response.Uuid,
+				"service-name":         nullable.String(response.Name).Value(),
+				"cluster_uuid":         nullable.String(response.ClusterUuid).Value(),
+				"assigned_client_uuid": nullable.String(response.AssignedClientUuid).Value(),
+				"status":               nullable.Int32(response.Status).Value(),
+				"result":               nullable.String(response.Result).Value(),
+				"step_count":           nullable.Int32(response.StepCount).Value(),
+				"step_position":        nullable.Int32(response.StepPosition).Value(),
+			}
+			event.Invoke("service-poll-out", m)
 		}
 
 		return warp(response_), nil
@@ -366,7 +390,16 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 		//save token to header
 		ctx.Echo().Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, new_token)
 
+		//invoke event (client-auth-accept)
+		m := map[string]interface{}{
+			"event-name":   "client-auth-accept",
+			"cluster_uuid": auth.ClusterUuid,
+			"client_uuid":  auth.ClientUuid,
+		}
+		event.Invoke("client-auth-accept", m)
+
 		return OK(), nil
+
 	}
 
 	return MakeMiddlewareFunc(Option{

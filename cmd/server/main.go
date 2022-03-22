@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"os"
@@ -90,29 +89,17 @@ func newEvent(filename string) (func(), error) {
 		sub := event.NewEventSub(cfgsub)
 		sub.ErrorHandlers().Add(func(sub event.EventSubscriber, err error) {
 
-			err_ := errors.Cause(err)
+			var stack string
+			logs.CauseIter(err, func(err error) {
+				logs.StackIter(err, func(s string) {
+					stack = s
+				})
+			})
 
-			type stackTracer interface {
-				StackTrace() errors.StackTrace
-			}
-
-			sink := logs.WithError(err)
-			sink = sink.WithValue(
-				"event-name", sub.Config().Name,
-			)
-
-			buff := &bytes.Buffer{}
-			if err, ok := err_.(stackTracer); ok {
-				for _, f := range err.StackTrace() {
-					fmt.Fprintf(buff, "%+s:%d\n", f, f)
-				}
-
-				sink = sink.WithValue(
-					"stack", buff.Bytes(),
-				)
-			}
-
-			logger.Errorf("%w %s", err, sink.String())
+			logger.Error(fmt.Errorf("%w %s", err,
+				logs.KVL(
+					"stack", stack,
+				)))
 		})
 
 		if err := event.RegistNotifier(sub); err != nil {
