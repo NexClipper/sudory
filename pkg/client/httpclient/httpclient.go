@@ -6,8 +6,11 @@ import (
 	urlPkg "net/url"
 	"time"
 
-	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/hashicorp/go-retryablehttp"
+
+	"github.com/NexClipper/sudory/pkg/client/log"
+	"github.com/NexClipper/sudory/pkg/server/macro/jwt"
+	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 )
 
 const CustomHeaderClientToken = "x-sudory-client-token"
@@ -36,6 +39,20 @@ func NewHttpClient(url, token string, retryMax, retryInterval int) *HttpClient {
 
 func (hc *HttpClient) GetToken() string {
 	return hc.token
+}
+
+func (hc *HttpClient) IsTokenExpired() bool {
+	claims := new(sessionv1.ClientSessionPlayload)
+	if err := jwt.BindPayload(hc.token, &claims); err != nil {
+		log.Warnf("jwt.BindPayload error : %v\n", err)
+		return false
+	}
+
+	if time.Until(claims.Exp) < 0 {
+		return true
+	}
+
+	return false
 }
 
 func (hc *HttpClient) Request(method, path string, params map[string]string, bodyType string, rawBody []byte) ([]byte, error) {

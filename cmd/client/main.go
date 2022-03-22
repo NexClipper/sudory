@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/NexClipper/sudory/pkg/client/fetcher"
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
@@ -75,14 +77,18 @@ func main() {
 		log.Fatalf("Failed to handshake : %v.\n", err)
 	}
 
-	// polling
-	fetcher.Polling()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	quit := make(chan os.Signal)
-	signal.Notify(quit, os.Interrupt)
+	// polling
+	fetcher.Polling(ctx)
 
 	select {
-	case <-quit:
-		os.Exit(1)
+	case <-ctx.Done():
+		log.Infof("Received Signal")
+		return
+	case <-fetcher.Done():
+		log.Infof("Received Fetcher Done")
+		return
 	}
 }

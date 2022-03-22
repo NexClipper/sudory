@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -28,6 +29,7 @@ type Fetcher struct {
 	ticker          *time.Ticker
 	pollingInterval int
 	scheduler       *scheduler.Scheduler
+	done            chan struct{}
 }
 
 func NewFetcher(bearerToken, server, clusterId string, scheduler *scheduler.Scheduler) (*Fetcher, error) {
@@ -44,7 +46,8 @@ func NewFetcher(bearerToken, server, clusterId string, scheduler *scheduler.Sche
 		client:          httpclient.NewHttpClient(server, "", 0, 0),
 		ticker:          time.NewTicker(defaultPollingInterval * time.Second),
 		pollingInterval: defaultPollingInterval,
-		scheduler:       scheduler}, nil
+		scheduler:       scheduler,
+		done:            make(chan struct{})}, nil
 }
 
 func (f *Fetcher) ChangePollingInterval(interval int) error {
@@ -58,14 +61,27 @@ func (f *Fetcher) ChangePollingInterval(interval int) error {
 	return nil
 }
 
-func (f *Fetcher) Polling() error {
+func (f *Fetcher) Done() <-chan struct{} {
+	return f.done
+}
+
+func (f *Fetcher) Cancel() {
+	close(f.done)
+}
+
+func (f *Fetcher) Polling(ctx context.Context) error {
 	if f == nil || f.ticker == nil {
 		return fmt.Errorf("fetcher or fetcher.ticker is not created")
 	}
 
 	go func() {
-		for ; ; <-f.ticker.C {
-			f.poll()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-f.ticker.C:
+				f.poll()
+			}
 		}
 	}()
 
@@ -89,6 +105,12 @@ func (f *Fetcher) poll() {
 	if err != nil {
 		f.scheduler.RollbackServicesWithDoneUpdatedFlag(updatedServices)
 		log.Errorf(err.Error())
+
+		if f.client.IsTokenExpired() {
+			f.ticker.Stop()
+			go f.RetryHandshake()
+		}
+
 		return
 	}
 	f.scheduler.DeleteServicesWithDoneFlag(updatedServices)
