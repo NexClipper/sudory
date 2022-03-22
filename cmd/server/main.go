@@ -15,9 +15,12 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/route"
 	"github.com/NexClipper/sudory/pkg/server/status"
 	"github.com/NexClipper/sudory/pkg/server/status/env"
+	"github.com/NexClipper/sudory/pkg/version"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
 )
+
+const APP_NAME = "sudory-server"
 
 func init() {
 	println("init timezone UTC")
@@ -25,6 +28,8 @@ func init() {
 }
 
 func main() {
+	versionFlag := flag.Bool("version", false, "print the current version")
+
 	cfg := &config.Config{}
 	flag.StringVar(&cfg.Database.Host, "db-host", "127.0.0.1", "Database's host")
 	flag.StringVar(&cfg.Database.Port, "db-port", "3306", "Database's port")
@@ -34,6 +39,12 @@ func main() {
 
 	configPath := flag.String("config", "../../conf/sudory-server.yml", "Path to sudory-server's config file")
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println(version.BuildVersion(APP_NAME))
+		return
+	}
+
 	config.LazyInitLogger(*configPath) //init logger
 
 	cfg, err := config.New(cfg, *configPath)

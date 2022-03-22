@@ -34,21 +34,20 @@ events:
     name: 'client poll'
     update-interval: 5s
     notifiers:
-    - notifier:
-      type: 'webhook'
-      method: post
-      url: 'http://localhost:8000/'
-      content-type: 'application/json'
-      timeout: 30  
-    # - listener: 
+    # - notifier:
+    #   type: consol
+    # - notifier: 
     #   type: 'file'
     #   path: ./log/server.log
-  - event:
-    name: 'client --all'
-    notifiers:
-    - notifier:
-      type: 'webhook'
-      method: post
-      url: 'http://localhost:8000/'
-      content-type: 'application/json'
-      timeout: 30
+    # - notifier:
+    #   type: 'webhook'
+    #   method: post
+    #   url: 'http://localhost:8000/'
+    #   request-headers: 
+    #     Content-Type: "application/json" 
+    #   timeout: 30s
+    # - notifier:
+    #   type: rabbitmq
+    #   url: amqp://localhost:5672/
+    #   routing-key: 'client poll'
+    #   message-content-type: 'application/json'
