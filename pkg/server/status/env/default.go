@@ -27,13 +27,8 @@ var DefaultEnvironmanets = map[Env]Default{
 }
 
 func Convert(env Env, value Default) envv1.Environment {
-
-	const ApiVersion = "v1"
-
 	out := envv1.Environment{}
-
 	out.Uuid = value.Uuid
-	out.ApiVersion = newist.String(ApiVersion)
 	out.Name = newist.String(env.String())
 	out.Summary = newist.String(fmt.Sprintf("%s default='%s'", value.Summary, value.Value))
 	out.Value = newist.String(value.Value)

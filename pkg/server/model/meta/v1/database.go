@@ -23,8 +23,6 @@ type LabelMeta struct {
 	Name *string `json:"name" xorm:"varchar(255) notnull 'name' comment('label meta's name')"`
 	//label summary
 	Summary *string `json:"summary,omitempty" xorm:"varchar(255) null 'summary' comment('label meta's summary')"`
-	//api version
-	ApiVersion *string `json:"api_version" xorm:"varchar(255) notnull 'api_version' comment('label meta's api version')"`
 }
 
 //uuid meta info
