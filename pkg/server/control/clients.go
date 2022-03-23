@@ -65,20 +65,28 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		return nil
 	}
 	operator := func(ctx Contexter) (interface{}, error) {
-		unwarp := func(elems []servicev1.HttpReqClientSideService) []servicev1.ServiceAndSteps {
+		unwrap := func(elems []servicev1.HttpReqClientSideService) []servicev1.ServiceAndSteps {
 			out := make([]servicev1.ServiceAndSteps, len(elems))
 			for n := range elems {
 				out[n] = elems[n].ServiceAndSteps
 			}
 			return out
 		}
-		warp := func(elems []servicev1.ServiceAndSteps) []servicev1.HttpRspClientSideService {
+		wrap := func(elems []servicev1.ServiceAndSteps) []servicev1.HttpRspClientSideService {
 			out := make([]servicev1.HttpRspClientSideService, len(elems))
 			for n := range elems {
 				out[n] = servicev1.HttpRspClientSideService{ServiceAndSteps: elems[n]}
 			}
 			return out
 		}
+		unwrap_dbschema := func(elems []servicev1.DbSchemaServiceAndSteps) []servicev1.ServiceAndSteps {
+			rst := make([]servicev1.ServiceAndSteps, len(elems))
+			for n := range elems {
+				rst[n] = servicev1.ServiceAndSteps{Service: elems[n].Service, Steps: stepv1.TransFormDbSchema(elems[n].Steps)}
+			}
+			return rst
+		}
+
 		map_step := func(elems []stepv1.ServiceStep, mapper func(stepv1.ServiceStep) stepv1.ServiceStep) []stepv1.ServiceStep {
 			rst := make([]stepv1.ServiceStep, len(elems))
 			for n := range elems {
@@ -86,7 +94,24 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			}
 			return rst
 		}
-		make_request := func(serviceAndSteps servicev1.ServiceAndSteps) servicev1.ServiceAndSteps {
+		map_service_and_step := func(elems []servicev1.ServiceAndSteps, mapper func(servicev1.ServiceAndSteps) servicev1.ServiceAndSteps) []servicev1.ServiceAndSteps {
+			rst := make([]servicev1.ServiceAndSteps, len(elems))
+			for n := range elems {
+				rst[n] = mapper(elems[n])
+			}
+			return rst
+		}
+
+		foreach_service_and_steps := func(elems []servicev1.ServiceAndSteps, fn func(servicev1.ServiceAndSteps) error) error {
+			for _, it := range elems {
+				if err := fn(it); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
+		make_status_and_position := func(serviceAndSteps servicev1.ServiceAndSteps) servicev1.ServiceAndSteps {
 			service := serviceAndSteps.Service
 			steps := serviceAndSteps.Steps
 
@@ -95,80 +120,36 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			//service.StepPosition; 상태가 가장큰 step의 Sequence
 			service.Status = newist.Int32(int32(servicev1.StatusRegist))
 			service.StepPosition = newist.Int32(0)
+
 			steps = map_step(steps, func(step stepv1.ServiceStep) stepv1.ServiceStep {
 				//step.Status 상태가 service.Status 보다 크다면
 				//서비스의 상태 정보를 해당 값으로 덮어쓰기
 				if nullable.Int32(service.Status).Value() < nullable.Int32(step.Status).Value() {
-					service.Status = newist.Int32(nullable.Int32(step.Status).Value())         //status
-					service.StepPosition = newist.Int32(nullable.Int32(step.Sequence).Value()) //position
+					service.Status = newist.Int32(nullable.Int32(step.Status).Value()) //status
+					*service.StepPosition = *service.StepPosition + 1                  //position
 				}
 				return step
 			})
 			return servicev1.ServiceAndSteps{Service: service, Steps: steps}
 		}
-		update_service := func(serviceAndSteps servicev1.ServiceAndSteps) (*servicev1.DbSchemaServiceAndSteps, error) {
-			//save service
-			service, err := vault.NewService(ctx.Database()).Update(serviceAndSteps.Service)
-			if err != nil {
-				return nil, errors.Wrapf(err, "NewService Update")
-			}
-			//save steps
-			steps := make([]stepv1.DbSchema, len(serviceAndSteps.Steps))
-			for i := range serviceAndSteps.Steps {
-				step, err := vault.NewServiceStep(ctx.Database()).Update(serviceAndSteps.Steps[i])
-				if err != nil {
-					return nil, errors.Wrapf(err, "NewServiceStep Update")
-				}
-				steps[i] = *step
-			}
-			return &servicev1.DbSchemaServiceAndSteps{DbSchema: *service, Steps: steps}, nil
-		}
-		map_service_req := func(elems []servicev1.ServiceAndSteps, mapper func(servicev1.ServiceAndSteps) servicev1.ServiceAndSteps) []servicev1.ServiceAndSteps {
-			rst := make([]servicev1.ServiceAndSteps, len(elems))
-			for n := range elems {
-				rst[n] = mapper(elems[n])
-			}
-			return rst
-		}
-		map_service_rsp := func(elems []servicev1.DbSchemaServiceAndSteps, mapper func(servicev1.ServiceAndSteps) servicev1.ServiceAndSteps) []servicev1.ServiceAndSteps {
-			rst := make([]servicev1.ServiceAndSteps, len(elems))
-			for n := range elems {
-				rst[n] = mapper(servicev1.ServiceAndSteps{Service: elems[n].Service, Steps: stepv1.TransFormDbSchema(elems[n].Steps)})
-			}
-			return rst
-		}
-
-		// foreach_client_service_and_steps := func(elems []servicev1.ServiceAndSteps, fn func(servicev1.ServiceAndSteps) error) error {
-		// 	for _, it := range elems {
-		// 		if err := fn(it); err != nil {
-		// 			return err
-		// 		}
-		// 	}
-		// 	return nil
-		// }
-
-		make_response := func(serviceAndSteps servicev1.ServiceAndSteps) servicev1.ServiceAndSteps {
-
+		make_response_status := func(serviceAndSteps servicev1.ServiceAndSteps) servicev1.ServiceAndSteps {
 			service := serviceAndSteps.Service
 			steps := serviceAndSteps.Steps
 
-			//service.Status 초기화
-			service.Status = newist.Int32(int32(servicev1.StatusRegist))
-			service.StepPosition = newist.Int32(0)
+			//StatusSend 보다 작으면 응답 전 업데이트
 			steps = map_step(steps, func(step stepv1.ServiceStep) stepv1.ServiceStep {
-				//StatusSend 보다 작으면 응답 전 업데이트
 				if nullable.Int32(step.Status).Value() < int32(servicev1.StatusSend) {
 					step.Status = newist.Int32(int32(servicev1.StatusSend))
 				}
 
-				//step.Status 상태가 service.Status 보다 크다면
-				//서비스의 상태 정보를 해당 값으로 덮어쓰기
-				if nullable.Int32(service.Status).Value() < nullable.Int32(step.Status).Value() {
-					service.Status = nullable.Int32(step.Status).Ptr()         //status
-					service.StepPosition = nullable.Int32(step.Sequence).Ptr() //position
-				}
 				return step
 			})
+
+			return servicev1.ServiceAndSteps{Service: service, Steps: steps}
+		}
+		make_response_assign_info := func(serviceAndSteps servicev1.ServiceAndSteps) servicev1.ServiceAndSteps {
+			service := serviceAndSteps.Service
+			steps := serviceAndSteps.Steps
 
 			//할당된 클라이언트 정보 추가
 			payload, _ := clientTokenPayload(ctx.Echo())
@@ -177,19 +158,34 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			return servicev1.ServiceAndSteps{Service: service, Steps: steps}
 		}
 
+		update_service := func(serviceAndSteps servicev1.ServiceAndSteps) error {
+			//save service
+			if _, err := vault.NewService(ctx.Database()).Update(serviceAndSteps.Service); err != nil {
+				return errors.Wrapf(err, "NewService Update")
+			}
+			//save steps
+			for _, step := range serviceAndSteps.Steps {
+				if _, err := vault.NewServiceStep(ctx.Database()).Update(step); err != nil {
+					return errors.Wrapf(err, "NewServiceStep Update")
+				}
+			}
+			return nil
+		}
+
 		body, ok := ctx.Object().(*[]servicev1.HttpReqClientSideService)
 		if !ok {
 			return nil, ErrorFailedCast()
 		}
 
 		//update request
-		request := map_service_req(unwarp(*body), make_request)
-		for _, request := range request {
-			//update request
-			if _, err := update_service(request); err != nil {
-				return nil, errors.Wrapf(err, "update request")
-			}
+		request := unwrap(*body)
+		request = map_service_and_step(request, make_status_and_position)
+
+		//save request
+		if err := foreach_service_and_steps(request, update_service); err != nil {
+			return nil, errors.Wrapf(err, "update request")
 		}
+
 		//invoke event (service-poll-in)
 		for _, request := range request {
 			m := map[string]interface{}{
@@ -215,15 +211,14 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			return nil, errors.Wrapf(err, "NewService Find")
 		}
 		//update response
-		response_ := map_service_rsp(response, make_response)
-		for i := range response_ {
-			service := response_[i].Service
-			steps := response_[i].Steps
-			record, err := update_service(servicev1.ServiceAndSteps{Service: service, Steps: steps})
-			if err != nil {
-				return nil, errors.Wrapf(err, "update response")
-			}
-			response_[i].Service = record.Service
+		response_ := unwrap_dbschema(response)
+		response_ = map_service_and_step(response_, make_response_status)
+		response_ = map_service_and_step(response_, make_response_assign_info)
+		response_ = map_service_and_step(response_, make_status_and_position)
+
+		//save response
+		if err := foreach_service_and_steps(response_, update_service); err != nil {
+			return nil, errors.Wrapf(err, "update response")
 		}
 
 		//invoke event (service-poll-out)
@@ -242,7 +237,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 			event.Invoke("service-poll-out", m)
 		}
 
-		return warp(response_), nil
+		return wrap(response_), nil
 	}
 
 	return MakeMiddlewareFunc(Option{

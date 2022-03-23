@@ -54,7 +54,7 @@ func NewServiceCommand() DbSchema {
 	out.Uuid = "00001111222233334444555566667777"
 	out.Name = newist.String("test-name")
 	out.Summary = newist.String("test: ...")
-	out.ApiVersion = newist.String("v1")
+	// out.ApiVersion = newist.String("v1")
 	out.TemplateUuid = "00001111222233334444555566667777"
 	out.Sequence = newist.Int32(0)
 	out.Method = newist.String("test.method.get.v1")

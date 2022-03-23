@@ -58,17 +58,24 @@ type (
 
 	RequestValue struct {
 		//echo
-		echo                                          echo.Context
-		onceParam, onceQuery, onceBody, onceFormParam sync.Once //once
-		param, query, formParam                       map[string]string
-		body                                          []byte
-		object                                        interface{}
+		echo                    echo.Context
+		param, query, formParam OnceMapStringString
+		body                    OnceBytes
+		object                  interface{}
 		//database
 		db database.Context
-		//ticket
-		// ticketId uint64
 	}
 )
+
+type OnceMapStringString struct {
+	sync.Once
+	v map[string]string
+}
+
+type OnceBytes struct {
+	sync.Once
+	v []byte
+}
 
 // func (holder RequestValue) TicketId() uint64 {
 // 	return holder.ticketId
@@ -87,65 +94,65 @@ func (holder RequestValue) SetEcho(e echo.Context) Contexter {
 }
 
 func (holder *RequestValue) Params() map[string]string {
-	holder.onceParam.Do(func() {
-		holder.param = make(map[string]string)
+	holder.param.Do(func() {
+		holder.param.v = make(map[string]string)
 		for _, name := range holder.echo.ParamNames() {
-			holder.param[name] = holder.echo.Param(name)
+			holder.param.v[name] = holder.echo.Param(name)
 		}
 	})
-	return holder.param
+	return holder.param.v
 }
 func (holder *RequestValue) ParamString() string {
-	s := make([]string, 0, len(holder.query))
-	for key := range holder.param {
-		s = append(s, fmt.Sprintf("%s:%s", key, holder.query[key]))
+	s := make([]string, 0, len(holder.Params()))
+	for key := range holder.Params() {
+		s = append(s, fmt.Sprintf("%s:%s", key, holder.Params()[key]))
 	}
 	return strings.Join(s, ",")
 }
 
 func (holder *RequestValue) Queries() map[string]string {
-	holder.onceQuery.Do(func() {
-		holder.query = make(map[string]string)
+	holder.query.Do(func() {
+		holder.query.v = make(map[string]string)
 		for key := range holder.echo.QueryParams() {
-			holder.query[key] = holder.echo.QueryParam(key)
+			holder.query.v[key] = holder.echo.QueryParam(key)
 		}
 	})
-	return holder.query
+	return holder.query.v
 }
 func (holder *RequestValue) QueryString() string {
 	return holder.echo.QueryString()
 }
 
 func (holder *RequestValue) Forms() map[string]string {
-	holder.onceFormParam.Do(func() {
-		holder.formParam = make(map[string]string)
+	holder.formParam.Do(func() {
+		holder.formParam.v = make(map[string]string)
 		formdatas, err := holder.echo.FormParams()
 		if err != nil {
 			return
 		}
 		for key := range formdatas {
-			holder.formParam[key] = holder.echo.FormValue(key)
+			holder.formParam.v[key] = holder.echo.FormValue(key)
 		}
 	})
-	return holder.formParam
+	return holder.formParam.v
 }
 func (holder *RequestValue) FormString() string {
-	s := make([]string, 0, len(holder.formParam))
-	for key := range holder.formParam {
-		s = append(s, fmt.Sprintf("%s=%s", key, holder.formParam[key]))
+	s := make([]string, 0, len(holder.Forms()))
+	for key := range holder.Forms() {
+		s = append(s, fmt.Sprintf("%s=%s", key, holder.Forms()[key]))
 	}
 	return strings.Join(s, "&")
 }
 
 func (holder *RequestValue) Body() []byte {
-	holder.onceBody.Do(func() {
+	holder.body.Do(func() {
 		//body read all
 		//ranout buffer
-		holder.body, _ = ioutil.ReadAll(holder.echo.Request().Body) //read all body
+		holder.body.v, _ = ioutil.ReadAll(holder.echo.Request().Body) //read all body
 		//restore
-		holder.echo.Request().Body = ioutil.NopCloser(bytes.NewBuffer(holder.body))
+		holder.echo.Request().Body = ioutil.NopCloser(bytes.NewBuffer(holder.body.v))
 	})
-	return holder.body
+	return holder.body.v
 }
 
 func (holder *RequestValue) Bind(v interface{}) error {
@@ -189,12 +196,12 @@ type (
 	//  에러: InternalServerError
 	Operator func(Contexter) (interface{}, error)
 
-	Operate struct {
-		status int
-		Name   string
-		Behavior
-		Operator
-	}
+	// Operate struct {
+	// 	status int
+	// 	Name   string
+	// 	Behavior
+	// 	Operator
+	// }
 
 	// HttpResponser
 	//  응답
@@ -207,7 +214,7 @@ type Option struct {
 	TokenVerifier
 	Binder
 	Operator
-	Operates []Operate
+	// Operates []Operate
 	HttpResponsor
 	Behavior
 }
