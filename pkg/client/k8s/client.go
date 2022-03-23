@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	monitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -15,21 +16,18 @@ import (
 var k8sClient *Client
 
 type Client struct {
-	client *kubernetes.Clientset
+	client  *kubernetes.Clientset
+	mclient monitoringclient.Interface
 }
 
-func getClientsetInCluster() (*kubernetes.Clientset, error) {
+func getClusterConfig() (*rest.Config, error) {
 	// creates the in-cluster config
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
+	config, err1 := rest.InClusterConfig()
+	if err1 == nil {
+		return config, nil
 	}
 
-	// creates the clientset
-	return kubernetes.NewForConfig(config)
-}
-
-func getClientsetOutOfCluster() (*kubernetes.Clientset, error) {
+	// creates the out-of-cluster config
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
@@ -39,13 +37,12 @@ func getClientsetOutOfCluster() (*kubernetes.Clientset, error) {
 	flag.Parse()
 
 	// use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		return nil, err
+	config, err2 := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err2 != nil {
+		return nil, fmt.Errorf("in cluster error: %s, out of cluster error: %s", err1.Error(), err2.Error())
 	}
 
-	// create the clientset
-	return kubernetes.NewForConfig(config)
+	return config, nil
 }
 
 func NewClient() (*Client, error) {
@@ -53,18 +50,22 @@ func NewClient() (*Client, error) {
 		return k8sClient, nil
 	}
 
-	clientset, err := getClientsetInCluster()
-	if err == nil {
-		return &Client{client: clientset}, nil
+	cfg, err := getClusterConfig()
+	if err != nil {
+		return nil, err
 	}
 
-	// If the getClientsetInCluster() fails to get clientset, use getClientsetOutOfCluster() function.
-	clientset, err2 := getClientsetOutOfCluster()
-	if err2 != nil {
-		return nil, fmt.Errorf("in cluster error: %s, out of cluster error: %s", err.Error(), err2.Error())
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
 	}
 
-	k8sClient = &Client{client: clientset}
+	mclient, err := monitoringclient.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	k8sClient = &Client{client: clientset, mclient: mclient}
 
 	return k8sClient, nil
 }

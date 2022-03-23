@@ -13,8 +13,10 @@ require (
 	github.com/labstack/echo/v4 v4.6.1
 	github.com/panta/machineid v1.0.1
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.55.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/common v0.28.0
+	github.com/streadway/amqp v1.0.0
 	github.com/swaggo/echo-swagger v1.1.4
 	github.com/swaggo/swag v1.7.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
@@ -106,6 +108,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.55.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/rubenv/sql-migrate v0.0.0-20210614095031-55d5740dbbcc // indirect
@@ -115,7 +118,6 @@ require (
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/cobra v1.3.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/streadway/amqp v1.0.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/swaggo/files v0.0.0-20190704085106-630677cd5c14 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect

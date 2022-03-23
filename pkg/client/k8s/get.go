@@ -114,6 +114,26 @@ func (c *Client) ResourceGet(gv schema.GroupVersion, resource, namespace, name s
 		default:
 			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
 		}
+	case "monitoring.coreos.com/v1":
+		switch resource {
+		case "prometheuses":
+			result, err = c.mclient.MonitoringV1().Prometheuses(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "prometheusrules":
+			result, err = c.mclient.MonitoringV1().PrometheusRules(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "servicemonitors":
+			result, err = c.mclient.MonitoringV1().ServiceMonitors(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
 	default:
 		err = fmt.Errorf("unsupported group version(%s)", gv.Identifier())
 	}
