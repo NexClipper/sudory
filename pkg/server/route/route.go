@@ -15,11 +15,12 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/config"
 	"github.com/NexClipper/sudory/pkg/server/control"
 	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/version"
 
 	"github.com/labstack/echo/v4"
 	echoSwagger "github.com/swaggo/echo-swagger"
 
-	_ "github.com/NexClipper/sudory/pkg/server/route/docs"
+	"github.com/NexClipper/sudory/pkg/server/route/docs"
 )
 
 type Route struct {
@@ -94,6 +95,9 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router.e.POST("/client/regist", controller.CreateClient)
 	*/
 	router.e.GET("/swagger/*", echoSwagger.WrapHandler)
+
+	//swago docs
+	docs.SwaggerInfo.Version = version.Version
 
 	return router
 }
