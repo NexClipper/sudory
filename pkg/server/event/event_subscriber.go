@@ -26,21 +26,20 @@ type EventSub struct {
 	arrival        *gate.ManualReset //item arrival gate
 }
 
-func NewEventSub(cfg EventSubscribeConfig) *EventSub {
+func NewEventSubscribe(cfg EventSubscribeConfig, errorHandler HashsetErrorHandlers) *EventSub {
 	if cfg.UpdateInterval == time.Duration(0) {
 		cfg.UpdateInterval = time.Second * 15 //default update-interval is 15s
 	}
 
 	sub := &EventSub{}
-	sub.config = cfg //config
-
-	sub.Queue = fifo.NewQueue()
 	sub.notifiers = HashsetNotifiers{}
-	sub.errorHandler = HashsetErrorHandlers{}
-
+	sub.Queue = fifo.NewQueue()
 	sub.closing, sub.doClose = context.WithCancel(context.Background())
 	sub.closed = gate.NewManualReset(true)
 	sub.arrival = gate.NewManualReset(false)
+
+	sub.config = cfg //config
+	sub.errorHandler = errorHandler
 
 	return sub
 }
@@ -53,27 +52,9 @@ func (subscriber EventSub) Notifiers() HashsetNotifiers {
 	return subscriber.notifiers
 }
 
-func (subscriber *EventSub) AddNotifier(notifier ...Notifier) {
-	for _, notifier := range notifier {
-		subscriber.notifiers[notifier] = struct{}{}
-	}
-}
-
-func (subscriber *EventSub) RemoveNotifiers(notifier ...Notifier) {
-	for _, notifier := range notifier {
-		delete(subscriber.notifiers, notifier)
-	}
-}
-
-func (subscriber EventSub) ErrorHandlers() HashsetErrorHandlers {
-	return subscriber.errorHandler
-}
-
-func (subscriber EventSub) OnError(err error) {
-	for _, handler := range subscriber.errorHandler {
-		handler(&subscriber, err)
-	}
-}
+// func (subscriber EventSub) ErrorHandlers() HashsetErrorHandlers {
+// 	return subscriber.errorHandler
+// }
 
 func (subscriber *EventSub) Update(sender string, v ...interface{}) {
 	//이벤트 이름으로 처리하는 이벤트 검사
@@ -134,16 +115,13 @@ func (subscriber *EventSub) Update(sender string, v ...interface{}) {
 				factory := NewMarshalFactory(sl...)
 
 				//모든 리스너의 Update 호출 (async)
-				futures := make([]<-chan NotifierFuture, 0, len(subscriber.notifiers))
-				for iter := range subscriber.notifiers {
-					futures = append(futures, iter.OnNotifyAsync(factory))
-				}
+				futures := subscriber.notifiers.OnNotifyAsync(factory)
 
 				for _, future := range futures {
 					for future := range future {
 						if future.Error != nil {
 							//업데이트 오류 처리
-							subscriber.OnError(errors.Wrapf(future.Error, "event notify %s",
+							subscriber.errorHandler.OnError(errors.Wrapf(future.Error, "event notify %s",
 								future.Notifier.PropertyString()))
 						}
 					}

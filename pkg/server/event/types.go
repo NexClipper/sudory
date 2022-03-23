@@ -36,27 +36,40 @@ func (hashset HashsetNotifiers) Remove(notifier ...Notifier) {
 		delete(hashset, notifier)
 	}
 }
+func (hashset HashsetNotifiers) OnNotify(factory MarshalFactory) []error {
+	rst := make([]error, 0, len(hashset))
+	for notifier := range hashset {
+		rst = append(rst, notifier.OnNotify(factory))
+	}
+	return rst
+}
+func (hashset HashsetNotifiers) OnNotifyAsync(factory MarshalFactory) []<-chan NotifierFuture {
+	futures := make([]<-chan NotifierFuture, 0, len(hashset))
+	for notifier := range hashset {
+		futures = append(futures, notifier.OnNotifyAsync(factory))
+	}
+	return futures
+}
 
-type HashsetErrorHandlers map[uintptr]func(EventSubscriber, error)
+type HashsetErrorHandlers map[uintptr]func(error)
 
-func (hashset HashsetErrorHandlers) Add(fn ...func(EventSubscriber, error)) {
+func (hashset HashsetErrorHandlers) Add(fn ...func(error)) {
 	for _, fn := range fn {
 		ptr := reflect.ValueOf(fn).Pointer()
 		hashset[ptr] = fn
 	}
 }
-func (hashset HashsetErrorHandlers) Remove(fn ...func(EventSubscriber, error)) {
+func (hashset HashsetErrorHandlers) Remove(fn ...func(error)) {
 	for _, fn := range fn {
 		ptr := reflect.ValueOf(fn).Pointer()
 		delete(hashset, ptr)
 	}
 }
-
-// //EventArgs
-// type EventArgs struct {
-// 	Sender string
-// 	Args   interface{}
-// }
+func (hashset HashsetErrorHandlers) OnError(err error) {
+	for _, handler := range hashset {
+		handler(err)
+	}
+}
 
 type NotifierFuture struct {
 	Notifier Notifier
@@ -77,11 +90,11 @@ type Notifier interface {
 //EventSubscriber
 type EventSubscriber interface {
 	Config() *EventSubscribeConfig //설정
-	OnError(error)                 //에러 발생
 	Notifiers() HashsetNotifiers   //Notifiers
 	Update(string, ...interface{}) //Update 발생
 	Regist(EventPublisher)         //EventPublisher 등록
 	Close()                        //이벤트 구독 취소 //전체 Notifier 제거
+	// ErrorHandlers() HashsetErrorHandlers //에러 핸들러
 }
 
 //EventPublisher

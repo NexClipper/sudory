@@ -6,27 +6,25 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro"
-	"github.com/NexClipper/sudory/pkg/server/status"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/pkg/errors"
 
 	envv1 "github.com/NexClipper/sudory/pkg/server/model/environment/v1"
 )
 
-type EnvironmentChron struct {
+type EnvironmentUpdate struct {
 	ctx database.Context
 }
 
-func NewEnvironmentChron(ctx database.Context) *EnvironmentChron {
-	return &EnvironmentChron{ctx: ctx}
+func NewEnvironmentUpdate(ctx database.Context) *EnvironmentUpdate {
+	return &EnvironmentUpdate{ctx: ctx}
 }
-
-var _ status.ChronUpdater = (*EnvironmentChron)(nil)
 
 // Update
 //  Update = read -> os.Setenv
-func (chron *EnvironmentChron) Update() error {
+func (worker *EnvironmentUpdate) Update() error {
 	records := make([]envv1.DbSchema, 0)
-	if err := chron.ctx.Find(&records); err != nil {
+	if err := worker.ctx.Find(&records); err != nil {
 		return errors.Wrapf(err, "Database Find")
 	}
 
@@ -39,15 +37,14 @@ func (chron *EnvironmentChron) Update() error {
 
 // WhiteListCheck
 //  리스트 체크
-func (chron *EnvironmentChron) WhiteListCheck() error {
-
+func (worker *EnvironmentUpdate) WhiteListCheck() error {
 	records := make([]envv1.DbSchema, 0)
-	if err := chron.ctx.Find(&records); err != nil {
+	if err := worker.ctx.Find(&records); err != nil {
 		return errors.Wrapf(err, "Database Find")
 	}
 
 	count := 0
-	push, pos := macro.StringBuilder()
+	push, pop := macro.StringBuilder()
 	for _, key := range EnvNames() {
 		var found bool = false
 	LOOP:
@@ -63,15 +60,15 @@ func (chron *EnvironmentChron) WhiteListCheck() error {
 		}
 	}
 	if 0 < count {
-		return fmt.Errorf("not exists environment keys=['%s']", pos("', '"))
+		return fmt.Errorf("not exists environment keys=['%s']", pop("', '"))
 	}
 
 	return nil
 }
 
-func (chron *EnvironmentChron) Merge() error {
+func (worker *EnvironmentUpdate) Merge() error {
 	records := make([]envv1.DbSchema, 0)
-	if err := chron.ctx.Find(&records); err != nil {
+	if err := worker.ctx.Find(&records); err != nil {
 		return errors.Wrapf(err, "Database Find")
 	}
 
@@ -87,16 +84,22 @@ func (chron *EnvironmentChron) Merge() error {
 		if !found {
 			env, err := ParseEnv(key)
 			if err != nil {
-				return errors.Wrapf(err, "ParseEnv key=%s", key)
+				return errors.Wrapf(err, "ParseEnv %s",
+					logs.KVL(
+						"key", key,
+					))
 			}
 
 			value, ok := DefaultEnvironmanets[env]
 			if !ok {
-				return fmt.Errorf("not found default environment key=%s", key)
+				return fmt.Errorf("not found default environment  %s",
+					logs.KVL(
+						"key", key,
+					))
 			}
 
 			value_ := Convert(env, value)
-			if err = chron.ctx.Create(envv1.DbSchema{Environment: value_}); err != nil {
+			if err = worker.ctx.Create(envv1.DbSchema{Environment: value_}); err != nil {
 				return errors.Wrapf(err, "database create")
 			}
 		}

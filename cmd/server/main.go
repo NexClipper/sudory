@@ -58,17 +58,18 @@ func main() {
 	defer db.Close()
 
 	//init event
-	eventCancel, err := newEvent(*configPath)
+	eventClose, err := newEvent(*configPath)
 	if err != nil {
 		panic(err)
 	}
-	defer eventCancel() //이벤트 종료
+	defer eventClose() //이벤트 종료
 
-	//chrons
-	chronStop := chron(db.Engine())
-	defer func() {
-		chronStop()
-	}()
+	//init cron
+	cronClose, err := newCron(db.Engine())
+	if err != nil {
+		panic(err)
+	}
+	defer cronClose() //크론잡 종료
 
 	r := route.New(cfg, db)
 
@@ -76,6 +77,23 @@ func main() {
 }
 
 func newEvent(filename string) (func(), error) {
+	//에러 핸들러 등록
+	errorHandlers := event.HashsetErrorHandlers{}
+	errorHandlers.Add(func(err error) {
+
+		var stack string
+		logs.CauseIter(err, func(err error) {
+			logs.StackIter(err, func(s string) {
+				stack = s
+			})
+		})
+
+		logger.Error(fmt.Errorf("event notify: %w %s", err,
+			logs.KVL(
+				"stack", stack,
+			)))
+	})
+
 	cfgevent, err := event.NewEventConfig(filename)
 	if err != nil {
 		return nil, errors.Wrapf(err, "make new event config")
@@ -86,21 +104,7 @@ func newEvent(filename string) (func(), error) {
 	for i := range cfgevent.EventSubscribeConfigs {
 		cfgsub := cfgevent.EventSubscribeConfigs[i]
 
-		sub := event.NewEventSub(cfgsub)
-		sub.ErrorHandlers().Add(func(sub event.EventSubscriber, err error) {
-
-			var stack string
-			logs.CauseIter(err, func(err error) {
-				logs.StackIter(err, func(s string) {
-					stack = s
-				})
-			})
-
-			logger.Error(fmt.Errorf("%w %s", err,
-				logs.KVL(
-					"stack", stack,
-				)))
-		})
+		sub := event.NewEventSubscribe(cfgsub, errorHandlers)
 
 		if err := event.RegistNotifier(sub); err != nil {
 			return nil, errors.Wrapf(err, "regist notifier")
@@ -115,28 +119,57 @@ func newEvent(filename string) (func(), error) {
 	return pub.Close, nil
 }
 
-func chron(engine *xorm.Engine) func() {
-	const ChronInterval = 10
-	chronStop := status.NewChron(os.Stdout, ChronInterval*time.Second,
-		//chron environment
-		func() status.ChronUpdater {
-			sink := logs.WithName("Chron Environment")
-			updator := env.NewEnvironmentChron(database.NewXormContext(engine.NewSession()))
-			//환경변수 리스트 검사
-			if err := updator.WhiteListCheck(); err != nil {
-				logger.Info(sink.WithError(errors.Wrapf(err, "WhiteListCheck")).String())
-				logger.Debugln("merge environment setting") //환경변수 병합
-				if err := updator.Merge(); err != nil {
-					logger.Error(sink.WithError(errors.Wrapf(err, "Merge")).String())
-				}
+func newCron(engine *xorm.Engine) (func(), error) {
+	const interval = 10 * time.Second
+
+	//환경설정 updater 생성
+	envUpdater, err := newEnvironmentUpdate(engine)
+	if err != nil {
+		return nil, errors.Wrapf(err, "create environment cron updater")
+	}
+
+	//에러 핸들러 등록
+	errorHandlers := status.HashsetErrorHandlers{}
+	errorHandlers.Add(func(err error) {
+		var stack string
+		logs.CauseIter(err, func(err error) {
+			logs.StackIter(err, func(s string) {
+				stack = s
+			})
+		})
+
+		logger.Error(fmt.Errorf("cron jobs: %w %s", err,
+			logs.KVL(
+				"stack", stack,
+			)))
+	})
+
+	//new ticker
+	tickerClose := status.NewTicker(interval,
+		//environment update
+		func() {
+			if err := envUpdater.Update(); err != nil {
+				errorHandlers.OnError(errors.Wrapf(err, "environment update"))
 			}
-			//환경변수 업데이트
-			if err := updator.Update(); err != nil {
-				logger.Fatal(err) //first work error //(exit)
-			}
-			return updator
 		},
 	)
 
-	return chronStop
+	return tickerClose, nil
+}
+
+func newEnvironmentUpdate(engine *xorm.Engine) (*env.EnvironmentUpdate, error) {
+	updator := env.NewEnvironmentUpdate(database.NewXormContext(engine.NewSession()))
+	//환경변수 리스트 검사
+	if err := updator.WhiteListCheck(); err != nil {
+		//빠져있는 환경변수 추가
+		if err := updator.Merge(); err != nil {
+			return nil, errors.Wrapf(err, "merge")
+		}
+	}
+	//환경변수 업데이트
+	if err := updator.Update(); err != nil {
+		return nil, errors.Wrapf(err, "update")
+	}
+
+	return updator, nil
 }

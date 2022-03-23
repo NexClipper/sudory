@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/NexClipper/logger"
 	"github.com/NexClipper/sudory/pkg/server/event"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/jinzhu/configor"
@@ -37,6 +38,23 @@ func TestNewConfig(t *testing.T) {
 
 	os.Setenv("CONFIGOR_DEBUG_MODE", "true")
 
+	//에러 핸들러 등록
+	errorHandlers := event.HashsetErrorHandlers{}
+	errorHandlers.Add(func(err error) {
+
+		var stack string
+		logs.CauseIter(err, func(err error) {
+			logs.StackIter(err, func(s string) {
+				stack = s
+			})
+		})
+
+		logger.Error(fmt.Errorf("event notify: %w %s", err,
+			logs.KVL(
+				"stack", stack,
+			)))
+	})
+
 	cfgevent, err := event.NewEventConfig(test_config_filename)
 	if err != nil {
 		t.Fatal(err)
@@ -47,21 +65,7 @@ func TestNewConfig(t *testing.T) {
 	for i := range cfgevent.EventSubscribeConfigs {
 		cfgsub := cfgevent.EventSubscribeConfigs[i]
 
-		sub := event.NewEventSub(cfgsub)
-		sub.ErrorHandlers().Add(func(sub event.EventSubscriber, err error) {
-
-			var stack string
-			logs.CauseIter(err, func(err error) {
-				logs.StackIter(err, func(s string) {
-					stack = s
-				})
-			})
-
-			t.Error(fmt.Errorf("%w %s", err,
-				logs.KVL(
-					"stack", stack,
-				)))
-		})
+		sub := event.NewEventSubscribe(cfgsub, errorHandlers)
 
 		if err := event.RegistNotifier(sub); err != nil {
 			t.Fatal(err)

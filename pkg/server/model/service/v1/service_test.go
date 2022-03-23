@@ -94,7 +94,7 @@ func NewService() DbSchema {
 	out.Uuid = "00001111222233334444555566667777"
 	out.Name = newist.String("test-name")
 	out.Summary = newist.String("test: ...")
-	out.ApiVersion = newist.String("v1")
+	// out.ApiVersion = newist.String("v1")
 	out.ClusterUuid = newist.String(ClusterUuid)
 	out.StepCount = newist.Int32(0)
 	out.StepPosition = newist.Int32(0)
