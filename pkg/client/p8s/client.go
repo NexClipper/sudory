@@ -44,6 +44,8 @@ func (c *Client) ApiRequest(apiVersion, apiName string, queryParams map[string]i
 			data, err = c.AlertManagers()
 		case "targets":
 			data, err = c.Targets()
+		case "targets/metadata":
+			data, err = c.TargetsMetadata(queryParams)
 		default:
 			return "", fmt.Errorf("unknown api name(%s)", apiName)
 		}
