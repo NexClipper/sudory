@@ -1,0 +1,19 @@
+USE `sudory`;
+
+TRUNCATE TABLE `client`;
+	
+TRUNCATE TABLE `cluster`;
+
+TRUNCATE TABLE `environment`;
+
+TRUNCATE TABLE `service`;
+
+TRUNCATE TABLE `service_step`;
+
+TRUNCATE TABLE `session`;
+
+TRUNCATE TABLE `template`;
+
+TRUNCATE TABLE `template_command`;
+	
+TRUNCATE TABLE `token`;

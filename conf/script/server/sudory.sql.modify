@@ -230,3 +230,39 @@ ALTER TABLE `service_step`
 --
 
 
+--
+-- OSS-198
+--
+
+ALTER TABLE `client`
+	DROP COLUMN IF EXISTS  `api_version`;
+	
+ALTER TABLE `cluster`
+	DROP COLUMN IF EXISTS  `api_version`;
+
+ALTER TABLE `environment`
+	DROP COLUMN IF EXISTS  `api_version`;
+
+ALTER TABLE `service`
+	DROP COLUMN IF EXISTS  `api_version`;
+
+ALTER TABLE `service_step`
+	DROP COLUMN IF EXISTS  `api_version`;
+
+ALTER TABLE `session`
+	DROP COLUMN IF EXISTS  `api_version`;
+
+ALTER TABLE `template`
+	DROP COLUMN IF EXISTS  `api_version`;
+
+ALTER TABLE `template_command`
+	DROP COLUMN IF EXISTS  `api_version`;
+	
+ALTER TABLE `token`
+	DROP COLUMN IF EXISTS  `api_version`;
+
+--
+-- (FIN) OSS-198
+--
+
+
