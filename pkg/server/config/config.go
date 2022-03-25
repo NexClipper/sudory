@@ -23,6 +23,11 @@ type Config struct {
 		ShowSQL         bool
 		LogLevel        string
 	}
+
+	CORSConfig struct {
+		AllowOrigins string `env:"SUDORY_CORSCONFIG_ALLOW_ORIGINS" yaml:"allow-origins,omitempty"`
+		AllowMethods string `env:"SUDORY_CORSCONFIG_ALLOW_METHODS" yaml:"allow-methods,omitempty"`
+	} `yaml:"cors-config,omitempty"`
 }
 
 func New(c *Config, configPath string) (*Config, error) {

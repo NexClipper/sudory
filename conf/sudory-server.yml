@@ -29,6 +29,10 @@ logger:
   max-backups: 20
   compress: false
 
+# cors-config:
+#   allow-origins:  google.com, example.com
+#   allow-methods:  get, put, delete
+
 events:
 # - event:
 #   name: 'client poll'

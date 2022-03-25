@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/config"
@@ -18,6 +19,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/version"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
 
 	"github.com/NexClipper/sudory/pkg/server/route/docs"
@@ -28,8 +30,17 @@ type Route struct {
 }
 
 func New(cfg *config.Config, db *database.DBManipulator) *Route {
-	router := &Route{e: echo.New()}
+	echo_ := echo.New()
+	router := &Route{e: echo_}
 	controller := control.New(db)
+
+	//echo cors config
+	echoCORSConfig(echo_, cfg)
+
+	//swago
+	router.e.GET("/swagger/*", echoSwagger.WrapHandler)
+	//swago docs version
+	docs.SwaggerInfo.Version = version.Version
 
 	//route /client/service*
 	router.e.PUT("/client/service", controller.PollService())
@@ -94,10 +105,6 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 
 	router.e.POST("/client/regist", controller.CreateClient)
 	*/
-	router.e.GET("/swagger/*", echoSwagger.WrapHandler)
-
-	//swago docs
-	docs.SwaggerInfo.Version = version.Version
 
 	return router
 }
@@ -121,4 +128,34 @@ func (r *Route) Start(port int32) error {
 	}
 
 	return nil
+}
+
+func echoCORSConfig(_echo *echo.Echo, _config *config.Config) {
+	CORSConfig := middleware.DefaultCORSConfig //use default cors config
+	//cors allow orign
+	if 0 < len(_config.CORSConfig.AllowOrigins) {
+		origins := strings.Split(_config.CORSConfig.AllowOrigins, ",")
+		for i := range origins {
+			origins[i] = strings.TrimSpace(origins[i])
+		}
+
+		CORSConfig.AllowOrigins = origins
+	}
+	//cors allow method
+	if 0 < len(_config.CORSConfig.AllowMethods) {
+		methods := strings.Split(_config.CORSConfig.AllowMethods, ",")
+		for i := range methods {
+			methods[i] = strings.TrimSpace(methods[i]) //trim space
+			methods[i] = strings.ToUpper(methods[i])   //to upper
+		}
+
+		CORSConfig.AllowMethods = methods
+	}
+
+	_echo.Use(middleware.CORSWithConfig(CORSConfig))
+
+	fmt.Fprintf(os.Stdout, "ECHO CORS Config:\n")
+	fmt.Fprintf(os.Stdout, "- allow-origins: %v\n", strings.Join(CORSConfig.AllowOrigins, ", "))
+	fmt.Fprintf(os.Stdout, "- allow-methods: %v\n", strings.Join(CORSConfig.AllowMethods, ", "))
+	fmt.Fprintf(os.Stdout, "%s\n", strings.Repeat("_", 40))
 }
