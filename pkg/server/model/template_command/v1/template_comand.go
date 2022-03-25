@@ -4,7 +4,7 @@ import (
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 )
 
-//TemplateCommand Property
+// TemplateCommandProperty
 type TemplateCommandProperty struct {
 	//템플릿 UUID
 	TemplateUuid string `json:"template_uuid" xorm:"char(32) notnull index 'template_uuid' comment('templates uuid')"`
@@ -19,14 +19,14 @@ type TemplateCommandProperty struct {
 	ResultFilter *string `json:"result_filter,omitempty" xorm:"varchar(4096) null 'result_filter' comment('result_filter')"`
 }
 
-//MODEL: TEMPLATE_COMMAND
+// MODEL: TEMPLATE_COMMAND
 type TemplateCommand struct {
 	metav1.UuidMeta         `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta        `json:",inline" xorm:"extends"` //inline labelmeta
 	TemplateCommandProperty `json:",inline" xorm:"extends"` //inline property
 }
 
-//DATABASE SCHEMA: TEMPLATE_COMMAND
+// DATABASE SCHEMA: TEMPLATE_COMMAND
 type DbSchema struct {
 	metav1.DbMeta   `xorm:"extends"`
 	TemplateCommand `xorm:"extends"`
@@ -36,12 +36,12 @@ func (DbSchema) TableName() string {
 	return "template_command"
 }
 
-//HTTP REQUEST BODY: TEMPLATE
+// HTTP REQUEST BODY: TEMPLATE_COMMAND
 type HttpReqTemplateCommand struct {
 	TemplateCommand `json:",inline"`
 }
 
-//HTTP RESPONSE BODY: TEMPLATE
+// HTTP RESPONSE BODY: TEMPLATE_COMMAND
 type HttpRspTemplateCommand struct {
 	DbSchema `json:",inline"`
 }
@@ -55,7 +55,7 @@ type HttpRspTemplateCommand struct {
 // 	return out
 // }
 
-//변환 DbSchema -> TemplateCommand
+// 변환 DbSchema -> TemplateCommand
 func TransFromDbSchema(s []DbSchema) []TemplateCommand {
 	var out = make([]TemplateCommand, len(s))
 	for n, it := range s {
@@ -73,7 +73,7 @@ func TransFromDbSchema(s []DbSchema) []TemplateCommand {
 // 	return out
 // }
 
-//변환 TemplateCommand -> HttpRsp
+// 변환 TemplateCommand -> HttpRsp
 func TransToHttpRsp(s []DbSchema) []HttpRspTemplateCommand {
 	var out = make([]HttpRspTemplateCommand, len(s))
 	for n, it := range s {

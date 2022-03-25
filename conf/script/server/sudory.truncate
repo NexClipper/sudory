@@ -15,5 +15,7 @@ TRUNCATE TABLE `session`;
 TRUNCATE TABLE `template`;
 
 TRUNCATE TABLE `template_command`;
+
+TRUNCATE TABLE `template_recipe`;
 	
 TRUNCATE TABLE `token`;

@@ -1,9 +1,6 @@
 definitions:
   v1.DbSchema:
     properties:
-      api_version:
-        description: api version
-        type: string
       args:
         additionalProperties: true
         description: arguments
@@ -28,6 +25,9 @@ definitions:
         type: string
       result:
         description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
+        type: string
+      result_filter:
+        description: ResultFilter 스탭 결과 필터
         type: string
       sequence:
         description: 순서
@@ -59,15 +59,15 @@ definitions:
       client_uuid:
         description: client uuid
         type: string
+      client_version:
+        description: client version
+        type: string
       cluster_uuid:
         description: cluster uuid
         type: string
     type: object
   v1.HttpReqClientSideService:
     properties:
-      api_version:
-        description: api version
-        type: string
       assigned_client_uuid:
         description: 할당된 클라이언트 UUID
         type: string
@@ -120,9 +120,6 @@ definitions:
     type: object
   v1.HttpReqCluster:
     properties:
-      api_version:
-        description: api version
-        type: string
       name:
         description: label name
         type: string
@@ -140,9 +137,6 @@ definitions:
     type: object
   v1.HttpReqServiceCreate:
     properties:
-      api_version:
-        description: api version
-        type: string
       cluster_uuid:
         description: 클러스터 UUID
         type: string
@@ -165,9 +159,6 @@ definitions:
     type: object
   v1.HttpReqTemplate:
     properties:
-      api_version:
-        description: api version
-        type: string
       name:
         description: label name
         type: string
@@ -185,9 +176,6 @@ definitions:
     type: object
   v1.HttpReqTemplateCommand:
     properties:
-      api_version:
-        description: api version
-        type: string
       args:
         additionalProperties: true
         description: arguments
@@ -199,6 +187,9 @@ definitions:
         type: string
       name:
         description: label name
+        type: string
+      result_filter:
+        description: ResultFilter 스탭 결과 필터
         type: string
       sequence:
         description: 순서
@@ -215,9 +206,6 @@ definitions:
     type: object
   v1.HttpReqTemplateWithCommands:
     properties:
-      api_version:
-        description: api version
-        type: string
       commands:
         items:
           $ref: '#/definitions/v1.TemplateCommand'
@@ -239,9 +227,6 @@ definitions:
     type: object
   v1.HttpReqToken:
     properties:
-      api_version:
-        description: api version
-        type: string
       expiration_time:
         type: string
       issued_at_time:
@@ -264,8 +249,8 @@ definitions:
     type: object
   v1.HttpRspClient:
     properties:
-      api_version:
-        description: api version
+      cluster_uuid:
+        description: ClusterUuid
         type: string
       created:
         description: 생성시간
@@ -273,27 +258,17 @@ definitions:
       deleted:
         description: 삭제시간, 삭제 플래그
         type: string
-      expiration_time:
-        type: string
       id:
         description: 아이디 PK
         type: integer
-      issued_at_time:
-        type: string
       name:
         description: label name
         type: string
       summary:
         description: label summary
         type: string
-      token:
-        type: string
       updated:
         description: 수정시간
-        type: string
-      user_kind:
-        type: string
-      user_uuid:
         type: string
       uuid:
         description: UUID
@@ -301,9 +276,6 @@ definitions:
     type: object
   v1.HttpRspClientSideService:
     properties:
-      api_version:
-        description: api version
-        type: string
       assigned_client_uuid:
         description: 할당된 클라이언트 UUID
         type: string
@@ -356,36 +328,23 @@ definitions:
     type: object
   v1.HttpRspCluster:
     properties:
-      api_version:
-        description: api version
-        type: string
       created:
         description: 생성시간
         type: string
       deleted:
         description: 삭제시간, 삭제 플래그
         type: string
-      expiration_time:
-        type: string
       id:
         description: 아이디 PK
         type: integer
-      issued_at_time:
-        type: string
       name:
         description: label name
         type: string
       summary:
         description: label summary
         type: string
-      token:
-        type: string
       updated:
         description: 수정시간
-        type: string
-      user_kind:
-        type: string
-      user_uuid:
         type: string
       uuid:
         description: UUID
@@ -393,73 +352,77 @@ definitions:
     type: object
   v1.HttpRspEnvironment:
     properties:
-      api_version:
-        description: api version
-        type: string
       created:
         description: 생성시간
         type: string
       deleted:
         description: 삭제시간, 삭제 플래그
         type: string
-      expiration_time:
-        type: string
       id:
         description: 아이디 PK
         type: integer
-      issued_at_time:
-        type: string
       name:
         description: label name
         type: string
       summary:
         description: label summary
         type: string
-      token:
-        type: string
       updated:
         description: 수정시간
-        type: string
-      user_kind:
-        type: string
-      user_uuid:
         type: string
       uuid:
         description: UUID
         type: string
+      value:
+        type: string
     type: object
   v1.HttpRspServiceStep:
     properties:
-      api_version:
-        description: api version
-        type: string
+      args:
+        additionalProperties: true
+        description: arguments
+        type: object
       created:
         description: 생성시간
         type: string
       deleted:
         description: 삭제시간, 삭제 플래그
         type: string
-      expiration_time:
+      ended:
+        description: Started 스탭 완료 시간
         type: string
       id:
         description: 아이디 PK
         type: integer
-      issued_at_time:
+      method:
+        description: 메소드
         type: string
       name:
         description: label name
         type: string
+      result:
+        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
+        type: string
+      result_filter:
+        description: ResultFilter 스탭 결과 필터
+        type: string
+      sequence:
+        description: 순서
+        type: integer
+      service_uuid:
+        description: 서비스 Uuid
+        type: string
+      srated:
+        description: Started 스탭 시작 시간
+        type: string
+      status:
+        description: Status 상태
+        type: integer
       summary:
         description: label summary
         type: string
-      token:
-        type: string
       updated:
         description: 수정시간
-        type: string
-      user_kind:
-        type: string
-      user_uuid:
         type: string
       uuid:
         description: UUID
@@ -467,8 +430,11 @@ definitions:
     type: object
   v1.HttpRspServiceWithSteps:
     properties:
-      api_version:
-        description: api version
+      assigned_client_uuid:
+        description: 할당된 클라이언트 UUID
+        type: string
+      cluster_uuid:
+        description: 클러스터 UUID
         type: string
       created:
         description: 생성시간
@@ -476,16 +442,36 @@ definitions:
       deleted:
         description: 삭제시간, 삭제 플래그
         type: string
-      expiration_time:
-        type: string
+      epoch:
+        description: 'Epoch -1: infinite, 0 :'
+        type: integer
       id:
         description: 아이디 PK
         type: integer
-      issued_at_time:
-        type: string
+      interval:
+        description: Interval
+        type: integer
       name:
         description: label name
         type: string
+      origin_kind:
+        description: 오리진 종류
+        type: string
+      origin_uuid:
+        description: 오리진 UUID
+        type: string
+      result:
+        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
+        type: string
+      status:
+        description: Status
+        type: integer
+      step_count:
+        description: 스탭 카운트
+        type: integer
+      step_position:
+        description: 스탭 Position
+        type: integer
       steps:
         items:
           $ref: '#/definitions/v1.DbSchema'
@@ -493,14 +479,14 @@ definitions:
       summary:
         description: label summary
         type: string
-      token:
+      template_uuid:
+        description: 텔플릿 UUID
         type: string
+      type:
+        description: 'Type; 0: Once, 1: repeat(epoch, interval)'
+        type: integer
       updated:
         description: 수정시간
-        type: string
-      user_kind:
-        type: string
-      user_uuid:
         type: string
       uuid:
         description: UUID
@@ -508,9 +494,6 @@ definitions:
     type: object
   v1.HttpRspSession:
     properties:
-      api_version:
-        description: api version
-        type: string
       created:
         description: 생성시간
         type: string
@@ -523,12 +506,6 @@ definitions:
         description: 아이디 PK
         type: integer
       issued_at_time:
-        type: string
-      name:
-        description: label name
-        type: string
-      summary:
-        description: label summary
         type: string
       token:
         type: string
@@ -545,36 +522,28 @@ definitions:
     type: object
   v1.HttpRspTemplate:
     properties:
-      api_version:
-        description: api version
-        type: string
       created:
         description: 생성시간
         type: string
       deleted:
         description: 삭제시간, 삭제 플래그
         type: string
-      expiration_time:
-        type: string
       id:
         description: 아이디 PK
         type: integer
-      issued_at_time:
-        type: string
       name:
         description: label name
+        type: string
+      origin:
+        description: |-
+          origin
+          @example: predefined, userdefined
         type: string
       summary:
         description: label summary
         type: string
-      token:
-        type: string
       updated:
         description: 수정시간
-        type: string
-      user_kind:
-        type: string
-      user_uuid:
         type: string
       uuid:
         description: UUID
@@ -582,8 +551,50 @@ definitions:
     type: object
   v1.HttpRspTemplateCommand:
     properties:
-      api_version:
-        description: api version
+      args:
+        additionalProperties: true
+        description: arguments
+        type: object
+      created:
+        description: 생성시간
+        type: string
+      deleted:
+        description: 삭제시간, 삭제 플래그
+        type: string
+      id:
+        description: 아이디 PK
+        type: integer
+      method:
+        description: |-
+          메소드
+          @example: "kubernetes.deployment.get.v1", "kubernetes.pod.list.v1"
+        type: string
+      name:
+        description: label name
+        type: string
+      result_filter:
+        description: ResultFilter 스탭 결과 필터
+        type: string
+      sequence:
+        description: 순서
+        type: integer
+      summary:
+        description: label summary
+        type: string
+      template_uuid:
+        description: 템플릿 UUID
+        type: string
+      updated:
+        description: 수정시간
+        type: string
+      uuid:
+        description: UUID
+        type: string
+    type: object
+  v1.HttpRspTemplateRecipe:
+    properties:
+      args:
+        description: arguments
         type: string
       created:
         description: 생성시간
@@ -591,12 +602,11 @@ definitions:
       deleted:
         description: 삭제시간, 삭제 플래그
         type: string
-      expiration_time:
-        type: string
       id:
         description: 아이디 PK
         type: integer
-      issued_at_time:
+      method:
+        description: method
         type: string
       name:
         description: label name
@@ -604,24 +614,12 @@ definitions:
       summary:
         description: label summary
         type: string
-      token:
-        type: string
       updated:
         description: 수정시간
-        type: string
-      user_kind:
-        type: string
-      user_uuid:
-        type: string
-      uuid:
-        description: UUID
         type: string
     type: object
   v1.HttpRspToken:
     properties:
-      api_version:
-        description: api version
-        type: string
       created:
         description: 생성시간
         type: string
@@ -656,9 +654,6 @@ definitions:
     type: object
   v1.LabelMeta:
     properties:
-      api_version:
-        description: api version
-        type: string
       name:
         description: label name
         type: string
@@ -668,9 +663,6 @@ definitions:
     type: object
   v1.ServiceStep:
     properties:
-      api_version:
-        description: api version
-        type: string
       args:
         additionalProperties: true
         description: arguments
@@ -686,6 +678,9 @@ definitions:
         type: string
       result:
         description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
+        type: string
+      result_filter:
+        description: ResultFilter 스탭 결과 필터
         type: string
       sequence:
         description: 순서
@@ -715,9 +710,6 @@ definitions:
     type: object
   v1.TemplateCommand:
     properties:
-      api_version:
-        description: api version
-        type: string
       args:
         additionalProperties: true
         description: arguments
@@ -729,6 +721,9 @@ definitions:
         type: string
       name:
         description: label name
+        type: string
+      result_filter:
+        description: ResultFilter 스탭 결과 필터
         type: string
       sequence:
         description: 순서
@@ -1513,6 +1508,25 @@ paths:
             $ref: '#/definitions/v1.HttpRspTemplate'
       tags:
       - server/template
+  /server/template_recipe:
+    get:
+      description: Find TemplateRecipe
+      parameters:
+      - description: Template Command 의 Method
+        in: query
+        name: method
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.HttpRspTemplateRecipe'
+            type: array
+      tags:
+      - server/template_recipe
   /server/token:
     get:
       consumes:

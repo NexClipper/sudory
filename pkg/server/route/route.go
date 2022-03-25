@@ -69,6 +69,8 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	router.e.POST("/server/template/:template_uuid/command", controller.CreateTemplateCommand())
 	router.e.PUT("/server/template/:template_uuid/command/:uuid", controller.UpdateTemplateCommand())
 	router.e.DELETE("/server/template/:template_uuid/command/:uuid", controller.DeleteTemplateCommand())
+	//route /server/template_recipe*
+	router.e.GET("/server/template_recipe", controller.FindTemplateRecipe())
 	//route /server/service*
 	router.e.GET("/server/service", controller.FindService())
 	router.e.GET("/server/service/:uuid", controller.GetService())

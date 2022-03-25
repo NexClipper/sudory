@@ -1199,6 +1199,36 @@ var doc = `{
                 }
             }
         },
+        "/server/template_recipe": {
+            "get": {
+                "description": "Find TemplateRecipe",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/template_recipe"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Template Command 의 Method",
+                        "name": "method",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.HttpRspTemplateRecipe"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/server/token": {
             "get": {
                 "description": "Find Token",
@@ -1441,10 +1471,6 @@ var doc = `{
         "v1.DbSchema": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "args": {
                     "description": "arguments",
                     "type": "object",
@@ -1476,6 +1502,10 @@ var doc = `{
                 },
                 "result": {
                     "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
+                    "type": "string"
+                },
+                "result_filter": {
+                    "description": "ResultFilter 스탭 결과 필터",
                     "type": "string"
                 },
                 "sequence": {
@@ -1519,6 +1549,10 @@ var doc = `{
                     "description": "client uuid",
                     "type": "string"
                 },
+                "client_version": {
+                    "description": "client version",
+                    "type": "string"
+                },
                 "cluster_uuid": {
                     "description": "cluster uuid",
                     "type": "string"
@@ -1528,10 +1562,6 @@ var doc = `{
         "v1.HttpReqClientSideService": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "assigned_client_uuid": {
                     "description": "할당된 클라이언트 UUID",
                     "type": "string"
@@ -1603,10 +1633,6 @@ var doc = `{
         "v1.HttpReqCluster": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "name": {
                     "description": "label name",
                     "type": "string"
@@ -1632,10 +1658,6 @@ var doc = `{
         "v1.HttpReqServiceCreate": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "cluster_uuid": {
                     "description": "클러스터 UUID",
                     "type": "string"
@@ -1667,10 +1689,6 @@ var doc = `{
         "v1.HttpReqTemplate": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "name": {
                     "description": "label name",
                     "type": "string"
@@ -1692,10 +1710,6 @@ var doc = `{
         "v1.HttpReqTemplateCommand": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "args": {
                     "description": "arguments",
                     "type": "object",
@@ -1707,6 +1721,10 @@ var doc = `{
                 },
                 "name": {
                     "description": "label name",
+                    "type": "string"
+                },
+                "result_filter": {
+                    "description": "ResultFilter 스탭 결과 필터",
                     "type": "string"
                 },
                 "sequence": {
@@ -1730,10 +1748,6 @@ var doc = `{
         "v1.HttpReqTemplateWithCommands": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "commands": {
                     "type": "array",
                     "items": {
@@ -1761,10 +1775,6 @@ var doc = `{
         "v1.HttpReqToken": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "expiration_time": {
                     "type": "string"
                 },
@@ -1797,8 +1807,8 @@ var doc = `{
         "v1.HttpRspClient": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
+                "cluster_uuid": {
+                    "description": "ClusterUuid",
                     "type": "string"
                 },
                 "created": {
@@ -1809,15 +1819,9 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "expiration_time": {
-                    "type": "string"
-                },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
-                },
-                "issued_at_time": {
-                    "type": "string"
                 },
                 "name": {
                     "description": "label name",
@@ -1827,17 +1831,8 @@ var doc = `{
                     "description": "label summary",
                     "type": "string"
                 },
-                "token": {
-                    "type": "string"
-                },
                 "updated": {
                     "description": "수정시간",
-                    "type": "string"
-                },
-                "user_kind": {
-                    "type": "string"
-                },
-                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -1849,10 +1844,6 @@ var doc = `{
         "v1.HttpRspClientSideService": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "assigned_client_uuid": {
                     "description": "할당된 클라이언트 UUID",
                     "type": "string"
@@ -1924,10 +1915,6 @@ var doc = `{
         "v1.HttpRspCluster": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "created": {
                     "description": "생성시간",
                     "type": "string"
@@ -1936,15 +1923,9 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "expiration_time": {
-                    "type": "string"
-                },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
-                },
-                "issued_at_time": {
-                    "type": "string"
                 },
                 "name": {
                     "description": "label name",
@@ -1954,17 +1935,8 @@ var doc = `{
                     "description": "label summary",
                     "type": "string"
                 },
-                "token": {
-                    "type": "string"
-                },
                 "updated": {
                     "description": "수정시간",
-                    "type": "string"
-                },
-                "user_kind": {
-                    "type": "string"
-                },
-                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -1976,10 +1948,6 @@ var doc = `{
         "v1.HttpRspEnvironment": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "created": {
                     "description": "생성시간",
                     "type": "string"
@@ -1988,15 +1956,9 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "expiration_time": {
-                    "type": "string"
-                },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
-                },
-                "issued_at_time": {
-                    "type": "string"
                 },
                 "name": {
                     "description": "label name",
@@ -2006,21 +1968,15 @@ var doc = `{
                     "description": "label summary",
                     "type": "string"
                 },
-                "token": {
-                    "type": "string"
-                },
                 "updated": {
                     "description": "수정시간",
                     "type": "string"
                 },
-                "user_kind": {
-                    "type": "string"
-                },
-                "user_uuid": {
-                    "type": "string"
-                },
                 "uuid": {
                     "description": "UUID",
+                    "type": "string"
+                },
+                "value": {
                     "type": "string"
                 }
             }
@@ -2028,9 +1984,10 @@ var doc = `{
         "v1.HttpRspServiceStep": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
+                "args": {
+                    "description": "arguments",
+                    "type": "object",
+                    "additionalProperties": true
                 },
                 "created": {
                     "description": "생성시간",
@@ -2040,35 +1997,52 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "expiration_time": {
+                "ended": {
+                    "description": "Started 스탭 완료 시간",
                     "type": "string"
                 },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
                 },
-                "issued_at_time": {
+                "method": {
+                    "description": "메소드",
                     "type": "string"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
                 },
+                "result": {
+                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
+                    "type": "string"
+                },
+                "result_filter": {
+                    "description": "ResultFilter 스탭 결과 필터",
+                    "type": "string"
+                },
+                "sequence": {
+                    "description": "순서",
+                    "type": "integer"
+                },
+                "service_uuid": {
+                    "description": "서비스 Uuid",
+                    "type": "string"
+                },
+                "srated": {
+                    "description": "Started 스탭 시작 시간",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status 상태",
+                    "type": "integer"
+                },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
                 },
-                "token": {
-                    "type": "string"
-                },
                 "updated": {
                     "description": "수정시간",
-                    "type": "string"
-                },
-                "user_kind": {
-                    "type": "string"
-                },
-                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -2080,8 +2054,12 @@ var doc = `{
         "v1.HttpRspServiceWithSteps": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
+                "assigned_client_uuid": {
+                    "description": "할당된 클라이언트 UUID",
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "description": "클러스터 UUID",
                     "type": "string"
                 },
                 "created": {
@@ -2092,19 +2070,45 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "expiration_time": {
-                    "type": "string"
+                "epoch": {
+                    "description": "Epoch -1: infinite, 0 :",
+                    "type": "integer"
                 },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
                 },
-                "issued_at_time": {
-                    "type": "string"
+                "interval": {
+                    "description": "Interval",
+                    "type": "integer"
                 },
                 "name": {
                     "description": "label name",
                     "type": "string"
+                },
+                "origin_kind": {
+                    "description": "오리진 종류",
+                    "type": "string"
+                },
+                "origin_uuid": {
+                    "description": "오리진 UUID",
+                    "type": "string"
+                },
+                "result": {
+                    "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status",
+                    "type": "integer"
+                },
+                "step_count": {
+                    "description": "스탭 카운트",
+                    "type": "integer"
+                },
+                "step_position": {
+                    "description": "스탭 Position",
+                    "type": "integer"
                 },
                 "steps": {
                     "type": "array",
@@ -2116,17 +2120,16 @@ var doc = `{
                     "description": "label summary",
                     "type": "string"
                 },
-                "token": {
+                "template_uuid": {
+                    "description": "텔플릿 UUID",
                     "type": "string"
+                },
+                "type": {
+                    "description": "Type; 0: Once, 1: repeat(epoch, interval)",
+                    "type": "integer"
                 },
                 "updated": {
                     "description": "수정시간",
-                    "type": "string"
-                },
-                "user_kind": {
-                    "type": "string"
-                },
-                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -2138,10 +2141,6 @@ var doc = `{
         "v1.HttpRspSession": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "created": {
                     "description": "생성시간",
                     "type": "string"
@@ -2158,14 +2157,6 @@ var doc = `{
                     "type": "integer"
                 },
                 "issued_at_time": {
-                    "type": "string"
-                },
-                "name": {
-                    "description": "label name",
-                    "type": "string"
-                },
-                "summary": {
-                    "description": "label summary",
                     "type": "string"
                 },
                 "token": {
@@ -2190,10 +2181,6 @@ var doc = `{
         "v1.HttpRspTemplate": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "created": {
                     "description": "생성시간",
                     "type": "string"
@@ -2202,35 +2189,24 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "expiration_time": {
-                    "type": "string"
-                },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
                 },
-                "issued_at_time": {
-                    "type": "string"
-                },
                 "name": {
                     "description": "label name",
+                    "type": "string"
+                },
+                "origin": {
+                    "description": "origin\n@example: predefined, userdefined",
                     "type": "string"
                 },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
                 },
-                "token": {
-                    "type": "string"
-                },
                 "updated": {
                     "description": "수정시간",
-                    "type": "string"
-                },
-                "user_kind": {
-                    "type": "string"
-                },
-                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -2242,8 +2218,62 @@ var doc = `{
         "v1.HttpRspTemplateCommand": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
+                "args": {
+                    "description": "arguments",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "created": {
+                    "description": "생성시간",
+                    "type": "string"
+                },
+                "deleted": {
+                    "description": "삭제시간, 삭제 플래그",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "아이디 PK",
+                    "type": "integer"
+                },
+                "method": {
+                    "description": "메소드\n@example: \"kubernetes.deployment.get.v1\", \"kubernetes.pod.list.v1\"",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "label name",
+                    "type": "string"
+                },
+                "result_filter": {
+                    "description": "ResultFilter 스탭 결과 필터",
+                    "type": "string"
+                },
+                "sequence": {
+                    "description": "순서",
+                    "type": "integer"
+                },
+                "summary": {
+                    "description": "label summary",
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "description": "템플릿 UUID",
+                    "type": "string"
+                },
+                "updated": {
+                    "description": "수정시간",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "UUID",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpRspTemplateRecipe": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "description": "arguments",
                     "type": "string"
                 },
                 "created": {
@@ -2254,14 +2284,12 @@ var doc = `{
                     "description": "삭제시간, 삭제 플래그",
                     "type": "string"
                 },
-                "expiration_time": {
-                    "type": "string"
-                },
                 "id": {
                     "description": "아이디 PK",
                     "type": "integer"
                 },
-                "issued_at_time": {
+                "method": {
+                    "description": "method",
                     "type": "string"
                 },
                 "name": {
@@ -2272,21 +2300,8 @@ var doc = `{
                     "description": "label summary",
                     "type": "string"
                 },
-                "token": {
-                    "type": "string"
-                },
                 "updated": {
                     "description": "수정시간",
-                    "type": "string"
-                },
-                "user_kind": {
-                    "type": "string"
-                },
-                "user_uuid": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "UUID",
                     "type": "string"
                 }
             }
@@ -2294,10 +2309,6 @@ var doc = `{
         "v1.HttpRspToken": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "created": {
                     "description": "생성시간",
                     "type": "string"
@@ -2346,10 +2357,6 @@ var doc = `{
         "v1.LabelMeta": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "name": {
                     "description": "label name",
                     "type": "string"
@@ -2363,10 +2370,6 @@ var doc = `{
         "v1.ServiceStep": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "args": {
                     "description": "arguments",
                     "type": "object",
@@ -2386,6 +2389,10 @@ var doc = `{
                 },
                 "result": {
                     "description": "Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')",
+                    "type": "string"
+                },
+                "result_filter": {
+                    "description": "ResultFilter 스탭 결과 필터",
                     "type": "string"
                 },
                 "sequence": {
@@ -2427,10 +2434,6 @@ var doc = `{
         "v1.TemplateCommand": {
             "type": "object",
             "properties": {
-                "api_version": {
-                    "description": "api version",
-                    "type": "string"
-                },
                 "args": {
                     "description": "arguments",
                     "type": "object",
@@ -2442,6 +2445,10 @@ var doc = `{
                 },
                 "name": {
                     "description": "label name",
+                    "type": "string"
+                },
+                "result_filter": {
+                    "description": "ResultFilter 스탭 결과 필터",
                     "type": "string"
                 },
                 "sequence": {
