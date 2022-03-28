@@ -3,6 +3,7 @@ package env
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro"
@@ -13,24 +14,32 @@ import (
 )
 
 type EnvironmentUpdate struct {
-	ctx database.Context
+	ctx    database.Context
+	offset time.Time //updated column
 }
 
 func NewEnvironmentUpdate(ctx database.Context) *EnvironmentUpdate {
-	return &EnvironmentUpdate{ctx: ctx}
+	return &EnvironmentUpdate{ctx: ctx, offset: time.Now()}
 }
 
 // Update
 //  Update = read -> os.Setenv
 func (worker *EnvironmentUpdate) Update() error {
+	where := "updated > ?"
+	args := []interface{}{
+		worker.offset,
+	}
 	records := make([]envv1.DbSchema, 0)
-	if err := worker.ctx.Find(&records); err != nil {
+	if err := worker.ctx.Where(where, args...).Find(&records); err != nil {
 		return errors.Wrapf(err, "Database Find")
 	}
 
 	for i := range records {
 		os.Setenv(*records[i].Name, *records[i].Value)
 	}
+
+	//update offset
+	worker.offset = time.Now()
 
 	return nil
 }
