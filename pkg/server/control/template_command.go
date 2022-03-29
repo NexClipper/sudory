@@ -24,7 +24,7 @@ import (
 // @Success 200 {object} v1.HttpRspTemplateCommand
 func (c Control) CreateTemplateCommand() func(ctx echo.Context) error {
 
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		body := new(commandv1.HttpReqTemplateCommand)
 		if err := ctx.Bind(body); err != nil {
 			return ErrorBindRequestObject(err)
@@ -45,7 +45,7 @@ func (c Control) CreateTemplateCommand() func(ctx echo.Context) error {
 
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		chaining_sequence := func(command commandv1.TemplateCommand) error {
 			where := "template_uuid = ? AND uuid <> ?"
 			args := []interface{}{
@@ -127,14 +127,14 @@ func (c Control) CreateTemplateCommand() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "CreateTemplateCommand binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "CreateTemplateCommand operator")
@@ -156,7 +156,7 @@ func (c Control) CreateTemplateCommand() func(ctx echo.Context) error {
 // @Success 200 {array} v1.HttpRspTemplateCommand
 func (c Control) FindTemplateCommand() func(ctx echo.Context) error {
 
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -166,7 +166,7 @@ func (c Control) FindTemplateCommand() func(ctx echo.Context) error {
 
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		where := "template_uuid = ?"
 		template_uuid := ctx.Params()[__TEMPLATE_UUID__]
 
@@ -179,14 +179,14 @@ func (c Control) FindTemplateCommand() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "FindTemplateCommand binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "FindTemplateCommand operator")
@@ -209,7 +209,7 @@ func (c Control) FindTemplateCommand() func(ctx echo.Context) error {
 // @Success 200 {object} v1.HttpRspTemplateCommand
 func (c Control) GetTemplateCommand() func(ctx echo.Context) error {
 
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -222,7 +222,7 @@ func (c Control) GetTemplateCommand() func(ctx echo.Context) error {
 
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		_ = ctx.Params()[__TEMPLATE_UUID__]
 		uuid := ctx.Params()[__UUID__]
 
@@ -234,14 +234,14 @@ func (c Control) GetTemplateCommand() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "GetTemplateCommand binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "GetTemplateCommand operator")
@@ -264,7 +264,7 @@ func (c Control) GetTemplateCommand() func(ctx echo.Context) error {
 // @Param       command       body v1.HttpReqTemplateCommand true "HttpReqTemplateCommand"
 // @Success 200 {object} v1.HttpRspTemplateCommand
 func (c Control) UpdateTemplateCommand() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		body := new(commandv1.HttpReqTemplateCommand)
 		if err := ctx.Bind(body); err != nil {
 			return ErrorBindRequestObject(err)
@@ -282,7 +282,7 @@ func (c Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		chaining_sequence := func(command commandv1.TemplateCommand) error {
 			//valid
 			if command.Sequence == nil {
@@ -365,14 +365,14 @@ func (c Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "UpdateTemplateCommand binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "UpdateTemplateCommand operator")
@@ -395,7 +395,7 @@ func (c Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 // @Success 200
 func (c Control) DeleteTemplateCommand() func(ctx echo.Context) error {
 
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -408,7 +408,7 @@ func (c Control) DeleteTemplateCommand() func(ctx echo.Context) error {
 
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		chaining_sequence := func(template_uuid, uuid string) error {
 			vault_command := vault.NewTemplateCommand(ctx.Database())
 			where := "template_uuid = ?"
@@ -458,14 +458,14 @@ func (c Control) DeleteTemplateCommand() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "DeleteTemplateCommand binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "DeleteTemplateCommand operator")

@@ -123,6 +123,9 @@ definitions:
       name:
         description: label name
         type: string
+      polling_option:
+        additionalProperties: true
+        type: object
       summary:
         description: label summary
         type: string
@@ -340,6 +343,9 @@ definitions:
       name:
         description: label name
         type: string
+      polling_option:
+        additionalProperties: true
+        type: object
       summary:
         description: label summary
         type: string
@@ -661,6 +667,8 @@ definitions:
         description: label summary
         type: string
     type: object
+  v1.RagulerPollingOption:
+    type: object
   v1.ServiceStep:
     properties:
       args:
@@ -700,6 +708,13 @@ definitions:
       uuid:
         description: UUID
         type: string
+    type: object
+  v1.SmartPollingOption:
+    properties:
+      buzy:
+        type: integer
+      idle:
+        type: integer
     type: object
   v1.StepCreate:
     properties:
@@ -973,6 +988,58 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/v1.HttpReqCluster'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspCluster'
+      tags:
+      - server/cluster
+  /server/cluster/{uuid}/polling/raguler:
+    put:
+      consumes:
+      - application/json
+      description: Update a cluster Polling Reguar
+      parameters:
+      - description: Cluster 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: RagulerPollingOption
+        in: body
+        name: polling_option
+        required: true
+        schema:
+          $ref: '#/definitions/v1.RagulerPollingOption'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.HttpRspCluster'
+      tags:
+      - server/cluster
+  /server/cluster/{uuid}/polling/smart:
+    put:
+      consumes:
+      - application/json
+      description: Update a cluster Polling Smart
+      parameters:
+      - description: Cluster 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: SmartPollingOption
+        in: body
+        name: polling_option
+        required: true
+        schema:
+          $ref: '#/definitions/v1.SmartPollingOption'
       produces:
       - application/json
       responses:

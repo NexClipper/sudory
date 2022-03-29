@@ -290,3 +290,19 @@ CREATE TABLE IF NOT EXISTS `template_recipe` (
 --
 -- (FIN) OSS-131
 --
+
+
+
+--
+-- OSS-132
+--
+
+ALTER TABLE `cluster`
+	ADD COLUMN IF NOT EXISTS `polling_option` TEXT NULL AFTER `summary`;
+
+--
+-- (FIN) OSS-132
+--
+
+
+

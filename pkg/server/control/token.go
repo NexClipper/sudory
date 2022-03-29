@@ -26,7 +26,7 @@ const token_user_kind_cluster = "cluster"
 // @Success     200 {object} v1.HttpRspToken
 func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 	const user_kind = token_user_kind_cluster
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 
 		body := new(tokenv1.HttpReqToken)
 		if err := ctx.Bind(body); err != nil {
@@ -44,7 +44,7 @@ func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 		// }
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		body, ok := ctx.Object().(*tokenv1.HttpReqToken)
 		if !ok {
 			return nil, ErrorFailedCast()
@@ -73,13 +73,13 @@ func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			if err := binder(ctx); err != nil {
 				return errors.Wrapf(err, "CreateClusterToken binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "CreateClusterToken operator")
@@ -103,10 +103,10 @@ func (c *Control) CreateClusterToken() func(ctx echo.Context) error {
 // @Success     200 {array} v1.HttpRspToken
 func (c *Control) FindToken() func(ctx echo.Context) error {
 
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		records, err := vault.NewToken(ctx.Database()).Query(ctx.Queries())
 		if err != nil {
 			return nil, errors.Wrapf(err, "NewToken Query")
@@ -116,13 +116,13 @@ func (c *Control) FindToken() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			if err := binder(ctx); err != nil {
 				return errors.Wrapf(err, "FindToken binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "FindToken operator")
@@ -143,7 +143,7 @@ func (c *Control) FindToken() func(ctx echo.Context) error {
 // @Param       uuid path string true "Token 의 Uuid"
 // @Success     200 {object} v1.HttpRspToken
 func (c *Control) GetToken() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -153,7 +153,7 @@ func (c *Control) GetToken() func(ctx echo.Context) error {
 		}
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
 		rst, err := vault.NewToken(ctx.Database()).Get(uuid)
@@ -164,13 +164,13 @@ func (c *Control) GetToken() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			if err := binder(ctx); err != nil {
 				return errors.Wrapf(err, "GetToken binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "GetToken operator")
@@ -192,7 +192,7 @@ func (c *Control) GetToken() func(ctx echo.Context) error {
 // @Param       object body v1.LabelMeta true "Token 의 LabelMeta"
 // @Success 	200 {object} v1.HttpRspToken
 func (c *Control) UpdateTokenLabel() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
@@ -213,7 +213,7 @@ func (c *Control) UpdateTokenLabel() func(ctx echo.Context) error {
 
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 
 		body, ok := ctx.Object().(*labelv1.LabelMeta)
 		if !ok {
@@ -243,13 +243,13 @@ func (c *Control) UpdateTokenLabel() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			if err := binder(ctx); err != nil {
 				return errors.Wrapf(err, "UpdateTokenLabel binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "UpdateTokenLabel operator")
@@ -271,7 +271,7 @@ func (c *Control) UpdateTokenLabel() func(ctx echo.Context) error {
 // @Success     200 {object} v1.HttpRspToken
 func (c *Control) RefreshClusterTokenTime() func(ctx echo.Context) error {
 
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -281,7 +281,7 @@ func (c *Control) RefreshClusterTokenTime() func(ctx echo.Context) error {
 		}
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
 		token, err := vault.NewToken(ctx.Database()).Get(uuid)
@@ -300,13 +300,13 @@ func (c *Control) RefreshClusterTokenTime() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			if err := binder(ctx); err != nil {
 				return errors.Wrapf(err, "RefreshClusterTokenTime binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "RefreshClusterTokenTime operator")
@@ -328,7 +328,7 @@ func (c *Control) RefreshClusterTokenTime() func(ctx echo.Context) error {
 // @Success     200 {object} v1.HttpRspToken
 func (c *Control) ExpireClusterToken() func(ctx echo.Context) error {
 
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -338,7 +338,7 @@ func (c *Control) ExpireClusterToken() func(ctx echo.Context) error {
 		}
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
 		token, err := vault.NewToken(ctx.Database()).Get(uuid)
@@ -357,13 +357,13 @@ func (c *Control) ExpireClusterToken() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			if err := binder(ctx); err != nil {
 				return errors.Wrapf(err, "ExpireClusterToken binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "ExpireClusterToken operator")
@@ -385,7 +385,7 @@ func (c *Control) ExpireClusterToken() func(ctx echo.Context) error {
 // @Success     200
 func (c *Control) DeleteToken() func(ctx echo.Context) error {
 
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -394,7 +394,7 @@ func (c *Control) DeleteToken() func(ctx echo.Context) error {
 		}
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
 		if err := vault.NewToken(ctx.Database()).Delete(uuid); err != nil {
@@ -405,13 +405,13 @@ func (c *Control) DeleteToken() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			if err := binder(ctx); err != nil {
 				return errors.Wrapf(err, "DeleteToken binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "DeleteToken operator")

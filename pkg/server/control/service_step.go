@@ -99,7 +99,7 @@ import (
 // @Param       service_uuid path string true "ServiceStep 의 service_uuid"
 // @Success     200 {array} v1.HttpRspServiceStep
 func (c *Control) FindServiceStep() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -108,7 +108,7 @@ func (c *Control) FindServiceStep() func(ctx echo.Context) error {
 		}
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		where := "service_uuid = ?"
 		service_uuid := ctx.Params()[__SERVICE_UUID__]
 
@@ -121,14 +121,14 @@ func (c *Control) FindServiceStep() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "FindServiceStep binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "FindServiceStep operator")
@@ -150,7 +150,7 @@ func (c *Control) FindServiceStep() func(ctx echo.Context) error {
 // @Param       uuid         path string true "ServiceStep 의 Uuid"
 // @Success     200 {object} v1.HttpRspServiceStep
 func (c *Control) GetServiceStep() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -162,7 +162,7 @@ func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 		}
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		_ = ctx.Params()[__SERVICE_UUID__]
 		uuid := ctx.Params()[__UUID__]
 
@@ -175,14 +175,14 @@ func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "GetServiceStep binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "GetServiceStep operator")

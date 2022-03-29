@@ -18,10 +18,10 @@ import (
 // @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.HttpRspSession
 func (c *Control) FindSession() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		records, err := vault.NewSession(ctx.Database()).Query(ctx.Queries())
 		if err != nil {
 			return nil, errors.Wrapf(err, "NewSession Query")
@@ -30,14 +30,14 @@ func (c *Control) FindSession() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "FindSession binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "FindSession operator")
@@ -58,7 +58,7 @@ func (c *Control) FindSession() func(ctx echo.Context) error {
 // @Param       uuid          path string true "Session 의 Uuid"
 // @Success     200 {object} v1.HttpRspSession
 func (c *Control) GetSession() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -68,7 +68,7 @@ func (c *Control) GetSession() func(ctx echo.Context) error {
 
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 
 		uuid := ctx.Params()[__UUID__]
 		record, err := vault.NewSession(ctx.Database()).Get(uuid)
@@ -79,14 +79,14 @@ func (c *Control) GetSession() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "GetSession binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "GetSession operator")
@@ -107,7 +107,7 @@ func (c *Control) GetSession() func(ctx echo.Context) error {
 // @Param       uuid path string true "Session 의 Uuid"
 // @Success     200
 func (c *Control) DeleteSession() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -117,7 +117,7 @@ func (c *Control) DeleteSession() func(ctx echo.Context) error {
 
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
 		if err := vault.NewSession(ctx.Database()).Delete(uuid); err != nil {
@@ -128,14 +128,14 @@ func (c *Control) DeleteSession() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "DeleteSession binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "DeleteSession operator")

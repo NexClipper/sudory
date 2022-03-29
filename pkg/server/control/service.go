@@ -23,7 +23,7 @@ import (
 // @Param       service body v1.HttpReqServiceCreate true "HttpReqServiceCreate"
 // @Success     200 {object} v1.HttpRspServiceWithSteps
 func (c *Control) CreateService() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		foreach_step := func(elems []stepv1.StepCreate, fn func(stepv1.StepCreate) error) error {
 			for _, it := range elems {
 				if err := fn(it); err != nil {
@@ -63,7 +63,7 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 		}
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		map_step_create := func(elems []stepv1.StepCreate, mapper func(stepv1.StepCreate, int) stepv1.ServiceStep) []stepv1.ServiceStep {
 			rst := make([]stepv1.ServiceStep, len(elems))
 			for n := range elems {
@@ -150,13 +150,13 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 	// }
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			if err := binder(ctx); err != nil {
 				return errors.Wrapf(err, "CreateService binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "CreateService operator")
@@ -183,13 +183,13 @@ func (c *Control) CreateService() func(ctx echo.Context) error {
 // @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.HttpRspServiceWithSteps
 func (c *Control) FindService() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		// if len(ctx.Query()) == 0 {
 		// 	return ErrorInvaliedRequestParameter()
 		// }
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		map_service := func(elems []servicev1.DbSchemaServiceAndSteps, mapper func(servicev1.DbSchemaServiceAndSteps) servicev1.DbSchemaServiceAndSteps) []servicev1.DbSchemaServiceAndSteps {
 			rst := make([]servicev1.DbSchemaServiceAndSteps, len(elems))
 			for n := range elems {
@@ -217,14 +217,14 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "FindService binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "FindService operator")
@@ -245,7 +245,7 @@ func (c *Control) FindService() func(ctx echo.Context) error {
 // @Param       uuid path string true "Service 의 Uuid"
 // @Success     200 {object} v1.HttpRspServiceWithSteps
 func (c *Control) GetService() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -255,7 +255,7 @@ func (c *Control) GetService() func(ctx echo.Context) error {
 		}
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
 		//get service
@@ -271,14 +271,14 @@ func (c *Control) GetService() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "GetService binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "GetService operator")
@@ -299,7 +299,7 @@ func (c *Control) GetService() func(ctx echo.Context) error {
 // @Param       uuid path string true "Service 의 Uuid"
 // @Success     200 {object} v1.HttpRspServiceWithSteps
 func (c *Control) GetServiceResult() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -309,7 +309,7 @@ func (c *Control) GetServiceResult() func(ctx echo.Context) error {
 		}
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		//get service
 		uuid := ctx.Params()[__UUID__]
 
@@ -323,14 +323,14 @@ func (c *Control) GetServiceResult() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "GetServiceResult binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "GetServiceResult operator")
@@ -416,7 +416,7 @@ func (c *Control) GetServiceResult() func(ctx echo.Context) error {
 // @Param       uuid path string true "Service 의 Uuid"
 // @Success     200
 func (c *Control) DeleteService() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -425,7 +425,7 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 		}
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
 		if err := vault.NewService(ctx.Database()).Delete(uuid); err != nil {
@@ -436,14 +436,14 @@ func (c *Control) DeleteService() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "DeleteService binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "DeleteService operator")

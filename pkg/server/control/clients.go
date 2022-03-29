@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/jwt"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	authv1 "github.com/NexClipper/sudory/pkg/server/model/auth/v1"
@@ -22,7 +23,6 @@ import (
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
-	"xorm.io/xorm"
 
 	"github.com/labstack/echo/v4"
 )
@@ -52,7 +52,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		}
 	}()
 
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		body := new([]servicev1.HttpReqClientSideService)
 		if err := ctx.Bind(body); err != nil {
 			return ErrorBindRequestObject(err)
@@ -64,7 +64,7 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		// }
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		unwrap := func(elems []servicev1.HttpReqClientSideService) []servicev1.ServiceAndSteps {
 			out := make([]servicev1.ServiceAndSteps, len(elems))
 			for n := range elems {
@@ -205,11 +205,22 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 		//make response
 		payload, _ := clientTokenPayload(ctx.Echo())
 		//find service
-		response, err := vault.NewService(ctx.Database()).
-			Find("cluster_uuid = ? AND status BETWEEN ? AND ?", payload.ClusterUuid, servicev1.StatusRegist, servicev1.StatusProcessing)
+		// where := "cluster_uuid = ? AND (status BETWEEN ? AND ?)"
+		// args := []interface{}{
+		// 	payload.ClusterUuid,
+		// 	servicev1.StatusRegist,
+		// 	servicev1.StatusProcessing,
+		// }
+		// response, err := vault.NewService(ctx.Database()).
+		// 	Find(where, args...)
+		// if err != nil {
+		// 	return nil, errors.Wrapf(err, "NewService Find")
+		// }
+		response, err := gatherClusterService(ctx, payload.ClusterUuid)
 		if err != nil {
-			return nil, errors.Wrapf(err, "NewService Find")
+			return nil, errors.Wrapf(err, "make cluster service")
 		}
+
 		//update response
 		response_ := unwrap_dbschema(response)
 		response_ = map_service_and_step(response_, make_response_status)
@@ -241,19 +252,19 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		TokenVerifier: func(ctx Contexter) error {
-			if err := verifyClientSessionToken(c.db.Engine(), Nolock)(ctx); err != nil {
+		TokenVerifier: func(ctx Context) error {
+			if err := verifyClientSessionToken(ctx); err != nil {
 				return errors.Wrapf(err, "PollService TokenVerifier")
 			}
 			return nil
 		},
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			if err := binder(ctx); err != nil {
 				return errors.Wrapf(err, "PollService binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "PollService operator")
@@ -275,14 +286,14 @@ func (c *Control) PollService() func(ctx echo.Context) error {
 // @Success     200 {string} ok
 // @Header      200 {string} x-sudory-client-token "x-sudory-client-token"
 func (c *Control) AuthClient() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		body := new(authv1.HttpReqAuth)
 		if err := ctx.Bind(body); err != nil {
 			return ErrorBindRequestObject(err)
 		}
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		body, ok := ctx.Object().(*authv1.HttpReqAuth)
 		if !ok {
 			return nil, ErrorFailedCast()
@@ -398,14 +409,14 @@ func (c *Control) AuthClient() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "AuthClient binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "AuthClient operator")
@@ -428,64 +439,66 @@ func newClientSession(payload sessionv1.ClientSessionPlayload, token string) ses
 	return session
 }
 
-func verifyClientSessionToken(engine *xorm.Engine, behave func(*xorm.Engine) func(Contexter, func(Contexter) (interface{}, error)) (interface{}, error)) func(ctx Contexter) error {
-	operate := func(ctx Contexter) error {
-		token := ctx.Echo().Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
-		if len(token) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-
-		//verify
-		//jwt verify
-		if err := jwt.Verify(token, []byte(env.ClientSessionSignatureSecret())); err != nil {
-			return errors.Wrapf(err, "jwt verify")
-		}
-
-		payload := new(sessionv1.ClientSessionPlayload)
-		if err := jwt.BindPayload(token, payload); err != nil {
-			return errors.Wrapf(err, "jwt bind payload")
-		}
-
-		//만료시간 비교
-		if time.Until(payload.Exp) < 0 {
-			return fmt.Errorf("token expierd")
-		}
-
-		//reflesh payload
-		payload.Exp = env.ClientSessionExpirationTime(time.Now())
-		payload.PollInterval = env.ClientConfigPollInterval()
-		payload.Loglevel = env.ClientConfigLoglevel()
-
-		//new jwt-new_token
-		new_token, err := jwt.New(payload, []byte(env.ClientSessionSignatureSecret()))
-		if err != nil {
-			return errors.Wrapf(err, "new jwt")
-		}
-
-		//udpate session
-		session := newClientSession(*payload, new_token)
-		if _, err := vault.NewSession(ctx.Database()).Update(session); err != nil {
-			return errors.Wrapf(err, "update session-token")
-		}
-
-		//save client session-token to header
-		ctx.Echo().Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, new_token)
-
-		return nil
+func verifyClientSessionToken(ctx Context) error {
+	token := ctx.Echo().Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
+	if len(token) == 0 {
+		return ErrorInvaliedRequestParameter()
 	}
 
-	return func(ctx Contexter) error {
-		fackRight := func(fn func(ctx Contexter) error) func(ctx Contexter) (interface{}, error) {
-			return func(ctx Contexter) (interface{}, error) {
-				return nil, fn(ctx) //return fack and error
-			}
-		}
-		left := func(v interface{}, err error) error {
-			return err
-		}
-
-		return left(behave(engine)(ctx, fackRight(operate)))
+	//verify
+	//jwt verify
+	if err := jwt.Verify(token, []byte(env.ClientSessionSignatureSecret())); err != nil {
+		return errors.Wrapf(err, "%s verify", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
 	}
+
+	payload := new(sessionv1.ClientSessionPlayload)
+	if err := jwt.BindPayload(token, payload); err != nil {
+		return errors.Wrapf(err, "%s bind payload", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
+	}
+
+	//만료시간 비교
+	if time.Until(payload.Exp) < 0 {
+		return fmt.Errorf("%s expierd", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
+	}
+
+	//smart polling
+	cluster, err := vault.NewCluster(ctx.Database()).Get(payload.ClusterUuid)
+	if err != nil {
+		return errors.Wrapf(err, "get cluster %s",
+			logs.KVL(
+				"uuid", payload.ClusterUuid,
+			))
+	}
+	service_count, err := countGatherClusterService(ctx, payload.ClusterUuid)
+	if err != nil {
+		return errors.Wrapf(err, "count undone service %s",
+			logs.KVL(
+				"cluster_uuid", payload.ClusterUuid,
+			))
+	}
+
+	//reflesh payload
+	payload.Exp = env.ClientSessionExpirationTime(time.Now())
+	// payload.PollInterval = env.ClientConfigPollInterval()
+	payload.PollInterval = int(cluster.GetPollingOption().Interval(time.Duration(int64(env.ClientConfigPollInterval())*int64(time.Second)), int(service_count)) / time.Second)
+	payload.Loglevel = env.ClientConfigLoglevel()
+
+	//new jwt-new_token
+	new_token, err := jwt.New(payload, []byte(env.ClientSessionSignatureSecret()))
+	if err != nil {
+		return errors.Wrapf(err, "new jwt")
+	}
+
+	//udpate session
+	session := newClientSession(*payload, new_token)
+	if _, err := vault.NewSession(ctx.Database()).Update(session); err != nil {
+		return errors.Wrapf(err, "update session-token")
+	}
+
+	//save client session-token to header
+	ctx.Echo().Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, new_token)
+
+	return nil
 }
 
 func getClientTokenPayload(ctx echo.Context) (*sessionv1.ClientSessionPlayload, error) {
@@ -500,6 +513,46 @@ func getClientTokenPayload(ctx echo.Context) (*sessionv1.ClientSessionPlayload, 
 		return nil, errors.Wrapf(err, "jwt BindPayload token=%s", token)
 	}
 	return payload, nil
+}
+
+func gatherClusterService(ctx Context, cluster_uuid string) ([]servicev1.DbSchemaServiceAndSteps, error) {
+	where := "cluster_uuid = ? AND (status BETWEEN ? AND ?)"
+	args := []interface{}{
+		cluster_uuid,
+		servicev1.StatusRegist,
+		servicev1.StatusProcessing,
+	}
+	response, err := vault.NewService(ctx.Database()).
+		Find(where, args...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "NewService Find %s",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
+	}
+
+	return response, nil
+}
+
+func countGatherClusterService(ctx Context, cluster_uuid string) (int64, error) {
+	where := "cluster_uuid = ? AND (status BETWEEN ? AND ?)"
+	args := []interface{}{
+		cluster_uuid,
+		servicev1.StatusRegist,
+		servicev1.StatusProcessing,
+	}
+
+	count, err := ctx.Database().Where(where, args...).Count(new(servicev1.DbSchema))
+	if err != nil {
+		return 0, errors.Wrapf(err, "service count %s",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
+	}
+
+	return count, nil
 }
 
 // setCookie

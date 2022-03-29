@@ -19,10 +19,10 @@ import (
 // @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success 200 {array} v1.HttpRspEnvironment
 func (c *Control) FindEnvironment() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		records, err := vault.NewEnvironment(ctx.Database()).Query(ctx.Queries())
 		if err != nil {
 			return nil, errors.Wrapf(err, "NewEnvironment Query")
@@ -32,14 +32,14 @@ func (c *Control) FindEnvironment() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "FindEnvironment binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "FindEnvironment operator")
@@ -61,7 +61,7 @@ func (c *Control) FindEnvironment() func(ctx echo.Context) error {
 // @Success 200 {object} v1.HttpRspEnvironment
 func (c *Control) GetEnvironment() func(ctx echo.Context) error {
 
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -71,7 +71,7 @@ func (c *Control) GetEnvironment() func(ctx echo.Context) error {
 		}
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
 		rst, err := vault.NewEnvironment(ctx.Database()).Get(uuid)
@@ -82,14 +82,14 @@ func (c *Control) GetEnvironment() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "GetEnvironment binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "GetEnvironment operator")
@@ -111,7 +111,7 @@ func (c *Control) GetEnvironment() func(ctx echo.Context) error {
 // @Param       enviroment body v1.HttpReqEnvironmentUpdate false "HttpReqEnvironmentUpdate"
 // @Success 200 {object} v1.HttpRspEnvironment
 func (c *Control) UpdateEnvironmentValue() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		body := new(envv1.HttpReqEnvironmentUpdate)
 		if err := ctx.Bind(body); err != nil {
 			return ErrorBindRequestObject(err)
@@ -127,7 +127,7 @@ func (c *Control) UpdateEnvironmentValue() func(ctx echo.Context) error {
 
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		body, ok := ctx.Object().(*envv1.HttpReqEnvironmentUpdate)
 		if !ok {
 			return nil, ErrorFailedCast()
@@ -156,14 +156,14 @@ func (c *Control) UpdateEnvironmentValue() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "UpdateEnvironmentValue binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "UpdateEnvironmentValue operator")

@@ -19,10 +19,10 @@ import (
 // @Success 200 {array} v1.HttpRspClient
 func (c *Control) FindClient() func(ctx echo.Context) error {
 
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		records, err := vault.NewClient(ctx.Database()).Query(ctx.Queries())
 		if err != nil {
 			return nil, errors.Wrapf(err, "NewClient Query")
@@ -31,14 +31,14 @@ func (c *Control) FindClient() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "FindClient binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "FindClient operator")
@@ -60,7 +60,7 @@ func (c *Control) FindClient() func(ctx echo.Context) error {
 // @Success 200 {object} v1.HttpRspClient
 func (c *Control) GetClient() func(ctx echo.Context) error {
 
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -70,7 +70,7 @@ func (c *Control) GetClient() func(ctx echo.Context) error {
 
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
 		rst, err := vault.NewClient(ctx.Database()).Get(uuid)
@@ -81,14 +81,14 @@ func (c *Control) GetClient() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "GetClient binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "GetClient operator")
@@ -110,7 +110,7 @@ func (c *Control) GetClient() func(ctx echo.Context) error {
 // @Success 200
 func (c *Control) DeleteClient() func(ctx echo.Context) error {
 
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		if len(ctx.Params()) == 0 {
 			return ErrorInvaliedRequestParameter()
 		}
@@ -120,7 +120,7 @@ func (c *Control) DeleteClient() func(ctx echo.Context) error {
 
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		uuid := ctx.Params()[__UUID__]
 
 		if err := vault.NewClient(ctx.Database()).Delete(uuid); err != nil {
@@ -131,14 +131,14 @@ func (c *Control) DeleteClient() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			err := binder(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "GetClient binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "GetClient operator")

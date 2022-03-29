@@ -390,6 +390,86 @@ var doc = `{
                 }
             }
         },
+        "/server/cluster/{uuid}/polling/raguler": {
+            "put": {
+                "description": "Update a cluster Polling Reguar",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/cluster"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cluster 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "RagulerPollingOption",
+                        "name": "polling_option",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.RagulerPollingOption"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspCluster"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/cluster/{uuid}/polling/smart": {
+            "put": {
+                "description": "Update a cluster Polling Smart",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/cluster"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cluster 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "SmartPollingOption",
+                        "name": "polling_option",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.SmartPollingOption"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpRspCluster"
+                        }
+                    }
+                }
+            }
+        },
         "/server/environment": {
             "get": {
                 "description": "Find Environment",
@@ -1637,6 +1717,10 @@ var doc = `{
                     "description": "label name",
                     "type": "string"
                 },
+                "polling_option": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
                 "summary": {
                     "description": "label summary",
                     "type": "string"
@@ -1930,6 +2014,10 @@ var doc = `{
                 "name": {
                     "description": "label name",
                     "type": "string"
+                },
+                "polling_option": {
+                    "type": "object",
+                    "additionalProperties": true
                 },
                 "summary": {
                     "description": "label summary",
@@ -2367,6 +2455,9 @@ var doc = `{
                 }
             }
         },
+        "v1.RagulerPollingOption": {
+            "type": "object"
+        },
         "v1.ServiceStep": {
             "type": "object",
             "properties": {
@@ -2418,6 +2509,17 @@ var doc = `{
                 "uuid": {
                     "description": "UUID",
                     "type": "string"
+                }
+            }
+        },
+        "v1.SmartPollingOption": {
+            "type": "object",
+            "properties": {
+                "buzy": {
+                    "type": "integer"
+                },
+                "idle": {
+                    "type": "integer"
                 }
             }
         },

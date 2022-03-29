@@ -80,7 +80,7 @@ func init() {
 
 		logger.SetLevel(logger.Level(severity(cfg.Logger.Severity)))
 
-		logs.SetVerbose(cfg.Logger.VerboseLevel)
+		// logs.SetVerbose(cfg.Logger.VerboseLevel)
 
 		//first log
 		logger.Debugln(logs.WithName("init logger").WithValue(

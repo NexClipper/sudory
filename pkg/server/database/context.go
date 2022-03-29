@@ -12,6 +12,7 @@ type Context interface {
 	Where(where string, args ...interface{}) Context
 	//operator
 	Create(record interface{}) error
+	Count(records interface{}) (int64, error)
 	Get(record interface{}) error
 	Find(records interface{}) error
 	Update(record interface{}) error

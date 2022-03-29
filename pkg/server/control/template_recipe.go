@@ -21,10 +21,10 @@ import (
 // @Param       method query string false "Template Command 의 Method"
 // @Success     200 {array} v1.HttpRspTemplateRecipe
 func (c *Control) FindTemplateRecipe() func(ctx echo.Context) error {
-	binder := func(ctx Contexter) error {
+	binder := func(ctx Context) error {
 		return nil
 	}
-	operator := func(ctx Contexter) (interface{}, error) {
+	operator := func(ctx Context) (interface{}, error) {
 		method := ctx.Queries()["method"]
 
 		buff := bytes.Buffer{}
@@ -59,13 +59,13 @@ func (c *Control) FindTemplateRecipe() func(ctx echo.Context) error {
 	}
 
 	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Contexter) error {
+		Binder: func(ctx Context) error {
 			if err := binder(ctx); err != nil {
 				return errors.Wrapf(err, "FindTemplateRecipe binder")
 			}
 			return nil
 		},
-		Operator: func(ctx Contexter) (interface{}, error) {
+		Operator: func(ctx Context) (interface{}, error) {
 			v, err := operator(ctx)
 			if err != nil {
 				return nil, errors.Wrapf(err, "FindTemplateRecipe operator")

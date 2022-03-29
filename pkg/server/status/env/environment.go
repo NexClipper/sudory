@@ -19,7 +19,7 @@ type EnvironmentUpdate struct {
 }
 
 func NewEnvironmentUpdate(ctx database.Context) *EnvironmentUpdate {
-	return &EnvironmentUpdate{ctx: ctx, offset: time.Now()}
+	return &EnvironmentUpdate{ctx: ctx}
 }
 
 // Update

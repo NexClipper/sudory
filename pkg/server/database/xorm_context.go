@@ -49,6 +49,16 @@ func (context XormContext) Create(record interface{}) error {
 	return nil
 }
 
+// Count
+func (context XormContext) Count(record interface{}) (int64, error) {
+	count, err := context.tx.Count(record)
+	if err != nil {
+		return 0, errors.Wrapf(err, "xorm count record=%#v", record)
+	}
+
+	return count, nil
+}
+
 // Get
 func (context XormContext) Get(record interface{}) error {
 	if has, err := context.tx.Get(record); err != nil {
