@@ -208,7 +208,7 @@ type (
 	//  에러: InternalServerError
 	HttpResponsor func(echo.Context, int, interface{}) error
 
-	Behavior func(Context, func(Context) (interface{}, error)) (interface{}, error)
+	Behavior func(Context, func(Context) error) error
 )
 type Option struct {
 	TokenVerifier
@@ -269,13 +269,13 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 		return
 	}
 
-	exec_operator := func(behave Behavior, operate Operator, ctx Context) (out interface{}, err error) {
+	exec_operator := func(operate Operator, ctx Context) (out interface{}, err error) {
 		exceptions.Block{
 			Try: func() {
 				if operate == nil {
 					exceptions.Throw("operator is nil")
 				}
-				out, err = behave(ctx, operate) //exec operate
+				out, err = operate(ctx) //exec operate
 			},
 			Catch: func(ex error) {
 				err = ex
@@ -380,14 +380,15 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 			}
 			logger.V(0).Info(responseSink.String())
 		}()
-		err = exec_token_verifier(opt.TokenVerifier, context)
-		if ErrorWithHandler(err,
-			func(err error) {
+
+		err = opt.Behavior(context, func(context Context) (err error) {
+			err = exec_token_verifier(opt.TokenVerifier, context)
+			if err != nil {
 				type codecarrier interface {
 					Code() int
 				}
 
-				status := http.StatusForbidden //기본 http status code
+				status := http.StatusUnauthorized //기본 http status code
 
 				e, ok := err.(codecarrier) //에러에 코드가 포함되어 있는지 확인
 				if ok {
@@ -396,55 +397,41 @@ func MakeMiddlewareFunc(opt Option) echo.HandlerFunc {
 
 				//세션-토큰 검증 오류
 				if err := context.Echo().String(status, err.Error()); err != nil {
-					errRspSink := errRspSink.WithValue(
-						"error", err.Error(),
-					)
-					logger.Error(errRspSink.String())
+					logger.Error(errRspSink.WithValue("error", err.Error()).String())
 				}
-			}, //실패 응답
-		) {
-			return err //return HandlerFunc
-		}
-		err = exec_binder(opt.Binder, context)
-		if ErrorWithHandler(err,
-			func(err error) {
-				if erro := context.Echo().String(http.StatusBadRequest, err.Error()); erro != nil {
-					errRspSink := errRspSink.WithValue(
-						"error", err.Error(),
-					)
-					logger.Error(errRspSink.String())
+
+				return err
+			}
+			err = exec_binder(opt.Binder, context)
+			if err != nil {
+				//내부작업 오류
+				if err_ := context.Echo().String(http.StatusBadRequest, err.Error()); err_ != nil {
+					logger.Error(errRspSink.WithValue("error", err.Error()).String())
 				}
-			}, //실패 응답
-		) {
-			return err //return HandlerFunc
-		}
-		rsp, err = exec_operator(opt.Behavior, opt.Operator, context)
-		if ErrorWithHandler(err,
-			func(err error) {
+				return err
+			}
+			rsp, err = exec_operator(opt.Operator, context)
+			if err != nil {
 				//내부작업 오류
 				if err_ := context.Echo().String(http.StatusInternalServerError, err.Error()); err_ != nil {
-					errRspSink := errRspSink.WithValue(
-						"error", err.Error(),
-					)
-					logger.Error(errRspSink.String())
+					logger.Error(errRspSink.WithValue("error", err.Error()).String())
 				}
-			}, //실패 응답
-		) {
-			return err //return HandlerFunc
-		}
-		err = exec_responser(opt.HttpResponsor, context.Echo(), http.StatusOK, rsp)
-		if ErrorWithHandler(err,
-			func(err error) {
-				errRspSink := errRspSink.WithValue(
-					"error", err.Error(),
-				)
-				logger.Error(errRspSink.String())
-			},
-		) {
-			//응답 오류
-			return err //return HandlerFunc
-		}
-		return nil
+
+				return err
+			}
+			err = exec_responser(opt.HttpResponsor, context.Echo(), http.StatusOK, rsp)
+			if err != nil {
+				//내부작업 오류
+				if err_ := context.Echo().String(http.StatusInternalServerError, err.Error()); err_ != nil {
+					logger.Error(errRspSink.WithValue("error", err.Error()).String())
+				}
+
+				return err
+			}
+			return nil
+		})
+
+		return err
 	}
 }
 
@@ -456,18 +443,18 @@ func OK() interface{} {
 	return "OK"
 }
 
-func Lock(engine *xorm.Engine) func(Context, func(Context) (interface{}, error)) (interface{}, error) {
-	return func(ctx Context, operate func(Context) (interface{}, error)) (interface{}, error) {
-		return engine.Transaction(func(s *xorm.Session) (interface{}, error) {
+func Lock(engine *xorm.Engine) func(Context, func(Context) error) error {
+	return func(ctx Context, operate func(Context) error) error {
+		_, err := engine.Transaction(func(s *xorm.Session) (interface{}, error) {
 			ctx = ctx.SetDatabase(database.NewXormContext(s)) //new database context
-
-			return operate(ctx)
+			return nil, operate(ctx)
 		})
+		return err
 	}
 }
 
-func Nolock(engine *xorm.Engine) func(Context, func(Context) (interface{}, error)) (interface{}, error) {
-	return func(ctx Context, operate func(Context) (interface{}, error)) (interface{}, error) {
+func Nolock(engine *xorm.Engine) func(Context, func(Context) error) error {
+	return func(ctx Context, operate func(Context) error) error {
 		ctx = ctx.SetDatabase(database.NewXormContext(engine.NewSession())) //new database context
 		defer ctx.Database().Close()
 		//close
