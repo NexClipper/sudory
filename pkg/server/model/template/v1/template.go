@@ -59,6 +59,15 @@ type HttpRspTemplateWithCommands struct {
 	DbSchemaTemplateWithCommands `json:",inline"`
 }
 
+//변환 Service -> HtppRsp
+func TransToHttpRspTemplateWithCommands(s []DbSchemaTemplateWithCommands) []HttpRspTemplateWithCommands {
+	var out = make([]HttpRspTemplateWithCommands, len(s))
+	for n := range s {
+		out[n].Template, out[n].Commands = s[n].Template, s[n].Commands
+	}
+	return out
+}
+
 // //변환 DbSchema -> Template
 // func TransFormDbSchema(s []DbSchema) []Template {
 // 	var out = make([]Template, len(s))

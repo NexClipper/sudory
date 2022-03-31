@@ -1,7 +1,11 @@
 package control
 
 import (
+	"net/http"
+
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
+	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -16,13 +20,13 @@ import (
 // // @Param       service_uuid path string true "ServiceStep 의 service_uuid"
 // // @Param       step         body stepv1.HttpReqServiceStep true "HttpReqServiceStep"
 // // @Success     200 {object} v1.HttpRspServiceStep
-// func (c *Control) CreateServiceStep() func(ctx echo.Context) error {
+// func (ctl Control) CreateServiceStep(ctx echo.Context) error {
 // 	binder := func(ctx Contexter) error {
 // 		body := new(stepv1.HttpReqServiceStep)
 // 		if err := ctx.Bind(body); err != nil {
 // 			return ErrorBindRequestObject(err)
 // 		}
-// 		if body.Name == nil {
+// 		if len(nullable.String(body.Name).Value()) == 0  {
 // 			return ErrorInvaliedRequestParameterName("Name")
 // 		}
 // 		if body.Method == nil {
@@ -98,46 +102,28 @@ import (
 // @Router      /server/service/{service_uuid}/step [get]
 // @Param       service_uuid path string true "ServiceStep 의 service_uuid"
 // @Success     200 {array} v1.HttpRspServiceStep
-func (c *Control) FindServiceStep() func(ctx echo.Context) error {
-	binder := func(ctx Context) error {
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-		if len(ctx.Params()[__SERVICE_UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__SERVICE_UUID__)
-		}
-		return nil
-	}
-	operator := func(ctx Context) (interface{}, error) {
-		where := "service_uuid = ?"
-		service_uuid := ctx.Params()[__SERVICE_UUID__]
-
-		record, err := vault.NewServiceStep(ctx.Database()).
-			Find(where, service_uuid)
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewServiceStep Find")
-		}
-		return stepv1.TransToHttpRsp(record), nil
+func (ctl Control) FindServiceStep(ctx echo.Context) error {
+	if len(echoutil.Param(ctx)[__SERVICE_UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __SERVICE_UUID__,
+				)))
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "FindServiceStep binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "FindServiceStep operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Nolock(c.db.Engine()),
-	})
+	where := "service_uuid = ?"
+	service_uuid := echoutil.Param(ctx)[__SERVICE_UUID__]
+
+	r, err := vault.NewServiceStep(ctl.NewSession()).Find(where, service_uuid)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			errors.Wrapf(err, "find service step%s",
+				logs.KVL(
+					"query", echoutil.QueryParamString(ctx),
+				)))
+	}
+
+	return ctx.JSON(http.StatusOK, stepv1.TransToHttpRsp(r))
 }
 
 // Get ServiceStep
@@ -149,49 +135,36 @@ func (c *Control) FindServiceStep() func(ctx echo.Context) error {
 // @Param       service_uuid path string true "ServiceStep 의 service_uuid"
 // @Param       uuid         path string true "ServiceStep 의 Uuid"
 // @Success     200 {object} v1.HttpRspServiceStep
-func (c *Control) GetServiceStep() func(ctx echo.Context) error {
-	binder := func(ctx Context) error {
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-		if len(ctx.Params()[__SERVICE_UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__SERVICE_UUID__)
-		}
-		if len(ctx.Params()[__UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__UUID__)
-		}
-		return nil
-	}
-	operator := func(ctx Context) (interface{}, error) {
-		_ = ctx.Params()[__SERVICE_UUID__]
-		uuid := ctx.Params()[__UUID__]
-
-		record, err := vault.NewServiceStep(ctx.Database()).Get(uuid)
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewServiceStep Get")
-		}
-
-		return &stepv1.HttpRspServiceStep{DbSchema: *record}, nil
+func (ctl Control) GetServiceStep(ctx echo.Context) error {
+	if len(echoutil.Param(ctx)[__SERVICE_UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __SERVICE_UUID__,
+				)))
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "GetServiceStep binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "GetServiceStep operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Nolock(c.db.Engine()),
-	})
+	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valvalidied%s",
+				logs.KVL(
+					"param", __UUID__,
+				)))
+	}
+
+	_ = echoutil.Param(ctx)[__SERVICE_UUID__]
+	uuid := echoutil.Param(ctx)[__UUID__]
+
+	r, err := vault.NewServiceStep(ctl.NewSession()).Get(uuid)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			errors.Wrapf(err, "get service step%s",
+				logs.KVL(
+					"uuid", uuid,
+				)))
+	}
+
+	return ctx.JSON(http.StatusOK, stepv1.HttpRspServiceStep{DbSchema: *r})
 }
 
 // // Update ServiceStep
@@ -204,7 +177,7 @@ func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 // // @Param       uuid         path string true "ServiceStep 의 Uuid"
 // // @Param       step         body stepv1.HttpReqServiceStep true "HttpReqServiceStep"
 // // @Success     200 {object} v1.HttpRspServiceStep
-// func (c *Control) UpdateServiceStep() func(ctx echo.Context) error {
+// func (ctl Control) UpdateServiceStep(ctx echo.Context) error {
 // 	binder := func(ctx Contexter) error {
 // 		body := new(stepv1.HttpReqServiceStep)
 // 		if err := ctx.Bind(body); err != nil {
@@ -269,7 +242,7 @@ func (c *Control) GetServiceStep() func(ctx echo.Context) error {
 // // @Param       service_uuid path string true "ServiceStep 의 service_uuid"
 // // @Param       uuid         path string true "ServiceStep 의 Uuid"
 // // @Success     200
-// func (c *Control) DeleteServiceStep() func(ctx echo.Context) error {
+// func (ctl Control) DeleteServiceStep(ctx echo.Context) error {
 // 	binder := func(ctx Contexter) error {
 // 		if len(ctx.Params()) == 0 {
 // 			return ErrorInvaliedRequestParameter()

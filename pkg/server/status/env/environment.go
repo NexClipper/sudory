@@ -93,7 +93,7 @@ func (worker *EnvironmentUpdate) Merge() error {
 		if !found {
 			env, err := ParseEnv(key)
 			if err != nil {
-				return errors.Wrapf(err, "ParseEnv %s",
+				return errors.Wrapf(err, "ParseEnv%s",
 					logs.KVL(
 						"key", key,
 					))
@@ -101,7 +101,7 @@ func (worker *EnvironmentUpdate) Merge() error {
 
 			value, ok := DefaultEnvironmanets[env]
 			if !ok {
-				return fmt.Errorf("not found default environment  %s",
+				return fmt.Errorf("not found default environment%s",
 					logs.KVL(
 						"key", key,
 					))

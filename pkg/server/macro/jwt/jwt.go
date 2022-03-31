@@ -70,7 +70,7 @@ func New(payload interface{}, secret []byte) (jwt string, err error) {
 }
 
 // JWT Verify
-//  valied signature
+//  valid signature
 func Verify(jwt string, secret []byte) error {
 
 	parts := strings.Split(jwt, ".") //split diffrent parts

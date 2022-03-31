@@ -1,7 +1,12 @@
 package control
 
 import (
+	"net/http"
+
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
+	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -17,36 +22,17 @@ import (
 // @Param       o query string false "order  pkg/server/database/prepared/README.md"
 // @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.HttpRspSession
-func (c *Control) FindSession() func(ctx echo.Context) error {
-	binder := func(ctx Context) error {
-		return nil
-	}
-	operator := func(ctx Context) (interface{}, error) {
-		records, err := vault.NewSession(ctx.Database()).Query(ctx.Queries())
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewSession Query")
-		}
-		return sessionv1.TransToHttpRsp(records), nil
+func (ctl Control) FindSession(ctx echo.Context) error {
+	r, err := vault.NewSession(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			errors.Wrapf(err, "find session%s",
+				logs.KVL(
+					"query", echoutil.QueryParamString(ctx),
+				)))
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "FindSession binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "FindSession operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Nolock(c.db.Engine()),
-	})
+	return ctx.JSON(http.StatusOK, sessionv1.TransToHttpRsp(r))
 }
 
 // Get Session
@@ -57,45 +43,27 @@ func (c *Control) FindSession() func(ctx echo.Context) error {
 // @Router      /server/session/{uuid} [get]
 // @Param       uuid          path string true "Session 의 Uuid"
 // @Success     200 {object} v1.HttpRspSession
-func (c *Control) GetSession() func(ctx echo.Context) error {
-	binder := func(ctx Context) error {
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-		if len(ctx.Params()[__UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__UUID__)
-		}
-
-		return nil
-	}
-	operator := func(ctx Context) (interface{}, error) {
-
-		uuid := ctx.Params()[__UUID__]
-		record, err := vault.NewSession(ctx.Database()).Get(uuid)
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewSession Get")
-		}
-		return sessionv1.HttpRspSession{DbSchema: *record}, nil
+func (ctl Control) GetSession(ctx echo.Context) error {
+	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __UUID__,
+				)))
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "GetSession binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "GetSession operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Nolock(c.db.Engine()),
-	})
+	uuid := echoutil.Param(ctx)[__UUID__]
+
+	r, err := vault.NewSession(ctl.NewSession()).Get(uuid)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			errors.Wrapf(err, "get session%s",
+				logs.KVL(
+					"uuid", uuid,
+				)))
+	}
+
+	return ctx.JSON(http.StatusOK, sessionv1.HttpRspSession{DbSchema: *r})
 }
 
 // Delete Session
@@ -106,43 +74,31 @@ func (c *Control) GetSession() func(ctx echo.Context) error {
 // @Router      /server/session/{uuid} [delete]
 // @Param       uuid path string true "Session 의 Uuid"
 // @Success     200
-func (c *Control) DeleteSession() func(ctx echo.Context) error {
-	binder := func(ctx Context) error {
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-		if len(ctx.Params()[__UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__UUID__)
-		}
-
-		return nil
-	}
-	operator := func(ctx Context) (interface{}, error) {
-		uuid := ctx.Params()[__UUID__]
-
-		if err := vault.NewSession(ctx.Database()).Delete(uuid); err != nil {
-			return nil, errors.Wrapf(err, "NewSession Delete")
-		}
-
-		return OK(), nil
+func (ctl Control) DeleteSession(ctx echo.Context) error {
+	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __UUID__,
+				)))
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "DeleteSession binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "DeleteSession operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Lock(c.db.Engine()),
+	uuid := echoutil.Param(ctx)[__UUID__]
+
+	_, err := ctl.Scope(func(db database.Context) (interface{}, error) {
+		err := vault.NewSession(db).Delete(uuid)
+		if err != nil {
+			return nil, errors.Wrapf(err, "delete session%s",
+				logs.KVL(
+					"uuid", uuid,
+				))
+		}
+
+		return nil, nil
 	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	return ctx.JSON(http.StatusOK, OK())
 }

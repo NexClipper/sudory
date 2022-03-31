@@ -1,6 +1,10 @@
 package database
 
-import "github.com/NexClipper/sudory/pkg/server/database/prepare"
+import (
+	"reflect"
+
+	"github.com/NexClipper/sudory/pkg/server/database/prepare"
+)
 
 // Context
 //  데이터베이스 컨텍스트
@@ -17,4 +21,9 @@ type Context interface {
 	Find(records interface{}) error
 	Update(record interface{}) error
 	Delete(record interface{}) error
+}
+
+func TypeName(i interface{}) string {
+
+	return reflect.TypeOf(i).String()
 }

@@ -16,7 +16,7 @@ type fileNotifier struct {
 
 func NewFileNotifier(opt FileNotifierConfig) (*fileNotifier, error) {
 	if _, err := filepool.OpenFile(opt.Path); err != nil {
-		return nil, errors.Wrapf(err, "open filepool %s",
+		return nil, errors.Wrapf(err, "open filepool%s",
 			logs.KVL(
 				"file", opt.Path,
 			))
@@ -85,13 +85,13 @@ func (notifier fileNotifier) OnNotify(factory MarshalFactory) error {
 	}
 
 	if _, err := filepool.OpenFile(filepath); err != nil {
-		return errors.Wrapf(err, "open file %s",
+		return errors.Wrapf(err, "open file%s",
 			logs.KVL(
 				"file", filepath,
 			))
 	}
 	if err := filepool.Write(filepath, buff.Bytes()); err != nil {
-		return errors.Wrapf(err, "write to file %s",
+		return errors.Wrapf(err, "write to file%s",
 			logs.KVL(
 				"file", filepath,
 			))

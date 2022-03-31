@@ -5,6 +5,7 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/prepare"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	"github.com/pkg/errors"
 
@@ -48,7 +49,11 @@ func (vault Template) Get(uuid string) (*templatev1.DbSchemaTemplateWithCommands
 	}
 	template := new(templatev1.DbSchema)
 	if err := vault.ctx.Where(where, args...).Get(template); err != nil {
-		return nil, errors.Wrapf(err, "database get where=%s args=%+v", where, args)
+		return nil, errors.Wrapf(err, "database get%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 
 	where = "template_uuid = ?"
@@ -57,7 +62,11 @@ func (vault Template) Get(uuid string) (*templatev1.DbSchemaTemplateWithCommands
 	}
 	commands := make([]commandv1.DbSchema, 0)
 	if err := vault.ctx.Where(where, args...).Find(&commands); err != nil {
-		return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
+		return nil, errors.Wrapf(err, "database find%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 
 	//sort -> Sequence ASC
@@ -72,7 +81,11 @@ func (vault Template) Find(where string, args ...interface{}) ([]templatev1.DbSc
 	//find template
 	records := make([]templatev1.DbSchema, 0)
 	if err := vault.ctx.Where(where, args...).Find(&records); err != nil {
-		return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
+		return nil, errors.Wrapf(err, "database find%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 	//make result
 	var templates = make([]templatev1.DbSchemaTemplateWithCommands, len(records))
@@ -87,7 +100,11 @@ func (vault Template) Find(where string, args ...interface{}) ([]templatev1.DbSc
 		}
 		commands := make([]commandv1.DbSchema, 0)
 		if err := vault.ctx.Where(where, args...).Find(&commands); err != nil {
-			return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
+			return nil, errors.Wrapf(err, "database find%v",
+				logs.KVL(
+					"where", where,
+					"args", args,
+				))
 		}
 		//sort -> Sequence ASC
 		sort.Slice(commands, func(i, j int) bool {
@@ -105,13 +122,19 @@ func (vault Template) Query(query map[string]string) ([]templatev1.DbSchemaTempl
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
-		return nil, errors.Wrapf(err, "prepare newParser query=%+v", query)
+		return nil, errors.Wrapf(err, "prepare newParser%v",
+			logs.KVL(
+				"query", query,
+			))
 	}
 
 	//find service
 	records := make([]templatev1.DbSchema, 0)
 	if err := vault.ctx.Prepared(preparer).Find(&records); err != nil {
-		return nil, errors.Wrapf(err, "database find query=%+v", query)
+		return nil, errors.Wrapf(err, "database find%v",
+			logs.KVL(
+				"query", query,
+			))
 	}
 
 	//make result
@@ -127,7 +150,11 @@ func (vault Template) Query(query map[string]string) ([]templatev1.DbSchemaTempl
 		}
 		commands := make([]commandv1.DbSchema, 0)
 		if err := vault.ctx.Where(where, args...).Find(&commands); err != nil {
-			return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
+			return nil, errors.Wrapf(err, "database find%v",
+				logs.KVL(
+					"where", where,
+					"args", args,
+				))
 		}
 		//sort -> Sequence ASC
 		sort.Slice(commands, func(i, j int) bool {
@@ -148,7 +175,11 @@ func (vault Template) Update(model templatev1.Template) (*templatev1.DbSchema, e
 	}
 	record := &templatev1.DbSchema{Template: model}
 	if err := vault.ctx.Where(where, args...).Update(record); err != nil {
-		return nil, errors.Wrapf(err, "database update where=%s args=%+v", where, args)
+		return nil, errors.Wrapf(err, "database update%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 
 	return record, nil
@@ -162,7 +193,11 @@ func (vault Template) Delete(uuid string) error {
 	}
 	template := &templatev1.DbSchema{}
 	if err := vault.ctx.Where(where, args...).Delete(template); err != nil {
-		return errors.Wrapf(err, "database delete where=%s args=%+v", where, args)
+		return errors.Wrapf(err, "database delete%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 	//delete command
 	where = "template_uuid = ?"
@@ -171,7 +206,11 @@ func (vault Template) Delete(uuid string) error {
 	}
 	command := &commandv1.DbSchema{}
 	if err := vault.ctx.Where(where, args...).Delete(command); err != nil {
-		return errors.Wrapf(err, "database delete where=%s args=%+v", where, args)
+		return errors.Wrapf(err, "database delete%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 
 	return nil

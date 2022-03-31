@@ -5,6 +5,7 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/prepare"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
@@ -36,7 +37,11 @@ func (vault ServiceStep) Get(uuid string) (*stepv1.DbSchema, error) {
 	}
 	record := &stepv1.DbSchema{}
 	if err := vault.ctx.Where(where, args...).Get(record); err != nil {
-		return nil, errors.Wrapf(err, "database get where=%s args=%+v", where, args)
+		return nil, errors.Wrapf(err, "database get%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 
 	return record, nil
@@ -45,7 +50,11 @@ func (vault ServiceStep) Get(uuid string) (*stepv1.DbSchema, error) {
 func (vault ServiceStep) Find(where string, args ...interface{}) ([]stepv1.DbSchema, error) {
 	steps := make([]stepv1.DbSchema, 0)
 	if err := vault.ctx.Where(where, args...).Find(&steps); err != nil {
-		return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
+		return nil, errors.Wrapf(err, "database find%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 
 	return steps, nil
@@ -55,13 +64,19 @@ func (vault ServiceStep) Query(query map[string]string) ([]stepv1.DbSchema, erro
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
-		return nil, errors.Wrapf(err, "prepare newParser query=%+v", query)
+		return nil, errors.Wrapf(err, "prepare newParser%v",
+			logs.KVL(
+				"query", query,
+			))
 	}
 
 	//find service
 	records := make([]stepv1.DbSchema, 0)
 	if err := vault.ctx.Prepared(preparer).Find(&records); err != nil {
-		return nil, errors.Wrapf(err, "database find query=%+v", query)
+		return nil, errors.Wrapf(err, "database find%v",
+			logs.KVL(
+				"query", query,
+			))
 	}
 
 	return records, nil
@@ -74,7 +89,11 @@ func (vault ServiceStep) Update(model stepv1.ServiceStep) (*stepv1.DbSchema, err
 	}
 	record := &stepv1.DbSchema{ServiceStep: model}
 	if err := vault.ctx.Where(where, args...).Update(record); err != nil {
-		return nil, errors.Wrapf(err, "database update where=%s args=%+v", where, args)
+		return nil, errors.Wrapf(err, "database update%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 
 	return record, nil
@@ -87,7 +106,11 @@ func (vault ServiceStep) Delete(uuid string) error {
 	}
 	record := &stepv1.DbSchema{}
 	if err := vault.ctx.Where(where, args...).Delete(record); err != nil {
-		return errors.Wrapf(err, "database delete where=%s args=%+v", where, args)
+		return errors.Wrapf(err, "database delete%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 
 	return nil

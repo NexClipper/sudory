@@ -8,11 +8,11 @@ import (
 
 //Token Property
 type TokenProperty struct {
-	UserKind       string    `json:"user_kind" xorm:"varchar(255) notnull index 'user_kind' comment('user_kind')"`
-	UserUuid       string    `json:"user_uuid" xorm:"char(32) notnull index 'user_uuid' comment('user_uuid')"`
-	Token          string    `json:"token" xorm:"varchar(255) notnull unique 'token' comment('token')"`
-	IssuedAtTime   time.Time `json:"issued_at_time" xorm:"varchar(255) notnull 'issued_at_time' comment('issued at time')"`
-	ExpirationTime time.Time `json:"expiration_time" xorm:"varchar(255) notnull 'expiration_time' comment('expiration time')"`
+	UserKind       *string    `json:"user_kind" xorm:"varchar(255) notnull index 'user_kind' comment('user_kind')"`
+	UserUuid       *string    `json:"user_uuid" xorm:"char(32) notnull index 'user_uuid' comment('user_uuid')"`
+	Token          *string    `json:"token" xorm:"varchar(255) notnull unique 'token' comment('token')"`
+	IssuedAtTime   *time.Time `json:"issued_at_time" xorm:"varchar(255) notnull 'issued_at_time' comment('issued at time')"`
+	ExpirationTime *time.Time `json:"expiration_time" xorm:"varchar(255) notnull 'expiration_time' comment('expiration time')"`
 }
 
 //Token

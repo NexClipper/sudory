@@ -8,6 +8,7 @@ package route
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -37,9 +38,18 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	//echo cors config
 	echoCORSConfig(e, cfg)
 
-	if false {
+	if true {
+		e.Logger.SetOutput(config.LoggerInfoOutput)
+
 		//echo logger
-		e.Use(middleware.LoggerWithConfig(middleware.DefaultLoggerConfig))
+		format := `{"time":"${time_rfc3339_nano}","id":"${id}","remote_ip":"${remote_ip}",` +
+			`"host":"${host}","method":"${method}","uri":"${uri}",` +
+			`"status":${status},"error":"${error}","latency":${latency},"latency_human":"${latency_human}",` +
+			`"bytes_in":${bytes_in},"bytes_out":${bytes_out}}` + "\n"
+		logconfig := middleware.DefaultLoggerConfig
+		logconfig.Output = config.LoggerInfoOutput
+		logconfig.Format = format
+		e.Use(middleware.LoggerWithConfig(logconfig))
 	}
 
 	if true {
@@ -57,69 +67,92 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		}))
 	}
 
+	//echo error handler
+	e.HTTPErrorHandler = func(err error, ctx echo.Context) {
+		echoErrorHandler(err, ctx)
+		// echoErrorHandlerLogger(err, ctx)
+	}
+	// defaultHeader := `{"time":"${time_rfc3339_nano}","id":"${id}","level":"${level}","prefix":"${prefix}"}`
+	// e.Logger.SetHeader(defaultHeader)
+	// e.Logger.SetOutput(config.LoggerInfoOutput)
+
+	//logger
+
 	//swago
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 	//swago docs version
 	docs.SwaggerInfo.Version = version.Version
 
 	//route /client/service*
-	e.PUT("/client/service", controller.PollService())
+	e.PUT("/client/service", controller.PollService, func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) (err error) {
+			if err := controller.VerifyClientSessionToken(c); err != nil {
+				return err
+			}
+
+			if err := next(c); err != nil {
+				return err
+			}
+
+			return nil
+		}
+	})
 	//route /client/auth*
-	e.POST("/client/auth", controller.AuthClient())
+	e.POST("/client/auth", controller.AuthClient)
 
 	//route /server/client*
-	e.GET("/server/client", controller.FindClient())
-	e.GET("/server/client/:uuid", controller.GetClient())
-	e.DELETE("/server/client/:uuid", controller.DeleteClient())
+	e.GET("/server/client", controller.FindClient)
+	e.GET("/server/client/:uuid", controller.GetClient)
+	e.DELETE("/server/client/:uuid", controller.DeleteClient)
 	//route /server/cluster*
-	e.GET("/server/cluster", controller.FindCluster())
-	e.GET("/server/cluster/:uuid", controller.GetCluster())
-	e.POST("/server/cluster", controller.CreateCluster())
-	e.PUT("/server/cluster/:uuid", controller.UpdateCluster())
-	e.PUT("/server/cluster/:uuid/polling/raguler", controller.UpdateClusterPollingRaguler())
-	e.PUT("/server/cluster/:uuid/polling/smart", controller.UpdateClusterPollingSmart())
-	e.DELETE("/server/cluster/:uuid", controller.DeleteCluster())
+	e.GET("/server/cluster", controller.FindCluster)
+	e.GET("/server/cluster/:uuid", controller.GetCluster)
+	e.POST("/server/cluster", controller.CreateCluster)
+	e.PUT("/server/cluster/:uuid", controller.UpdateCluster)
+	e.PUT("/server/cluster/:uuid/polling/raguler", controller.UpdateClusterPollingRaguler)
+	e.PUT("/server/cluster/:uuid/polling/smart", controller.UpdateClusterPollingSmart)
+	e.DELETE("/server/cluster/:uuid", controller.DeleteCluster)
 	//route /server/template*
-	e.GET("/server/template", controller.FindTemplate())
-	e.GET("/server/template/:uuid", controller.GetTemplate())
-	e.POST("/server/template", controller.CreateTemplate())
-	e.PUT("/server/template/:uuid", controller.UpdateTemplate())
-	e.DELETE("/server/template/:uuid", controller.DeleteTemplate())
+	e.GET("/server/template", controller.FindTemplate)
+	e.GET("/server/template/:uuid", controller.GetTemplate)
+	e.POST("/server/template", controller.CreateTemplate)
+	e.PUT("/server/template/:uuid", controller.UpdateTemplate)
+	e.DELETE("/server/template/:uuid", controller.DeleteTemplate)
 	//route /server/template/:template_uuid/command*
-	e.GET("/server/template/:template_uuid/command", controller.FindTemplateCommand())
-	e.GET("/server/template/:template_uuid/command/:uuid", controller.GetTemplateCommand())
-	e.POST("/server/template/:template_uuid/command", controller.CreateTemplateCommand())
-	e.PUT("/server/template/:template_uuid/command/:uuid", controller.UpdateTemplateCommand())
-	e.DELETE("/server/template/:template_uuid/command/:uuid", controller.DeleteTemplateCommand())
+	e.GET("/server/template/:template_uuid/command", controller.FindTemplateCommand)
+	e.GET("/server/template/:template_uuid/command/:uuid", controller.GetTemplateCommand)
+	e.POST("/server/template/:template_uuid/command", controller.CreateTemplateCommand)
+	e.PUT("/server/template/:template_uuid/command/:uuid", controller.UpdateTemplateCommand)
+	e.DELETE("/server/template/:template_uuid/command/:uuid", controller.DeleteTemplateCommand)
 	//route /server/template_recipe*
-	e.GET("/server/template_recipe", controller.FindTemplateRecipe())
+	e.GET("/server/template_recipe", controller.FindTemplateRecipe)
 	//route /server/service*
-	e.GET("/server/service", controller.FindService())
-	e.GET("/server/service/:uuid", controller.GetService())
-	e.GET("/server/service/:uuid/result", controller.GetServiceResult())
-	e.POST("/server/service", controller.CreateService())
-	// router.e.PUT("/server/service/:uuid", controller.UpdateService())
-	e.DELETE("/server/service/:uuid", controller.DeleteService())
+	e.GET("/server/service", controller.FindService)
+	e.GET("/server/service/:uuid", controller.GetService)
+	e.GET("/server/service/:uuid/result", controller.GetServiceResult)
+	e.POST("/server/service", controller.CreateService)
+	// router.e.PUT("/server/service/:uuid", controller.UpdateService)
+	e.DELETE("/server/service/:uuid", controller.DeleteService)
 	//route /server/service_step*
-	e.GET("/server/service/:service_uuid/step", controller.FindServiceStep())
-	e.GET("/server/service/:service_uuid/step/:uuid", controller.GetServiceStep())
+	e.GET("/server/service/:service_uuid/step", controller.FindServiceStep)
+	e.GET("/server/service/:service_uuid/step/:uuid", controller.GetServiceStep)
 	//route /server/environment*
-	e.GET("/server/environment", controller.FindEnvironment())
-	e.GET("/server/environment/:uuid", controller.GetEnvironment())
-	e.PUT("/server/environment/:uuid", controller.UpdateEnvironmentValue())
+	e.GET("/server/environment", controller.FindEnvironment)
+	e.GET("/server/environment/:uuid", controller.GetEnvironment)
+	e.PUT("/server/environment/:uuid", controller.UpdateEnvironmentValue)
 	//route /server/session*
-	e.GET("/server/session", controller.FindSession())
-	e.GET("/server/session/:uuid", controller.GetSession())
-	e.DELETE("/server/session/:uuid", controller.DeleteSession())
+	e.GET("/server/session", controller.FindSession)
+	e.GET("/server/session/:uuid", controller.GetSession)
+	e.DELETE("/server/session/:uuid", controller.DeleteSession)
 	//route /server/token*
-	e.GET("/server/token", controller.FindToken())
-	e.GET("/server/token/:uuid", controller.GetToken())
-	e.PUT("/server/token/:uuid/label", controller.UpdateTokenLabel())
-	e.DELETE("/server/token/:uuid", controller.DeleteToken())
+	e.GET("/server/token", controller.FindToken)
+	e.GET("/server/token/:uuid", controller.GetToken)
+	e.PUT("/server/token/:uuid/label", controller.UpdateTokenLabel)
+	e.DELETE("/server/token/:uuid", controller.DeleteToken)
 	//route /server/token/cluster/*
-	e.POST("/server/token/cluster", controller.CreateClusterToken())
-	e.PUT("/server/token/cluster/:uuid/refresh", controller.RefreshClusterTokenTime())
-	e.PUT("/server/token/cluster/:uuid/expire", controller.ExpireClusterToken())
+	e.POST("/server/token/cluster", controller.CreateClusterToken)
+	e.PUT("/server/token/cluster/:uuid/refresh", controller.RefreshClusterTokenTime)
+	e.PUT("/server/token/cluster/:uuid/expire", controller.ExpireClusterToken)
 
 	/*TODO: 라우트 연결 기능 구현
 	e.POST("/server/cluster/:id/token", controller.CreateToken)
@@ -183,3 +216,36 @@ func echoCORSConfig(_echo *echo.Echo, _config *config.Config) {
 	fmt.Fprintf(os.Stdout, "- allow-methods: %v\n", strings.Join(CORSConfig.AllowMethods, ", "))
 	fmt.Fprintf(os.Stdout, "%s\n", strings.Repeat("_", 40))
 }
+
+func echoErrorHandler(err error, ctx echo.Context) {
+	code := http.StatusInternalServerError
+	if he, ok := err.(*echo.HTTPError); ok {
+		code = he.Code
+		if he.Internal != nil {
+			err = he.Internal
+		}
+	}
+
+	ctx.JSON(code, map[string]interface{}{
+		"code": code,
+		// "status":     http.StatusText(code),
+		"message": err.Error(),
+	})
+}
+
+// func echoErrorHandlerLogger(err error, ctx echo.Context) {
+// 	code := http.StatusInternalServerError
+// 	if he, ok := err.(*echo.HTTPError); ok {
+// 		code = he.Code
+// 		err = he.Internal
+// 	}
+
+// 	id := ctx.Response().Header().Get(echo.HeaderXRequestID)
+// 	reqbody := echoutil.Body(ctx)
+
+// 	logger.Error(fmt.Errorf("%w%v", err, logs.KVL(
+// 		"id", id,
+// 		"code", code,
+// 		"reqbody", string(reqbody),
+// 	)))
+// }

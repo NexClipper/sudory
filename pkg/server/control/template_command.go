@@ -1,11 +1,14 @@
 package control
 
 import (
+	"net/http"
 	"sort"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro"
+	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
@@ -22,128 +25,129 @@ import (
 // @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
 // @Param       command       body v1.HttpReqTemplateCommand true "HttpReqTemplateCommand"
 // @Success 200 {object} v1.HttpRspTemplateCommand
-func (c Control) CreateTemplateCommand() func(ctx echo.Context) error {
-
-	binder := func(ctx Context) error {
-		body := new(commandv1.HttpReqTemplateCommand)
-		if err := ctx.Bind(body); err != nil {
-			return ErrorBindRequestObject(err)
+func (ctl Control) CreateTemplateCommand(ctx echo.Context) error {
+	chaining_sequence := func(db database.Context, command commandv1.TemplateCommand) error {
+		where := "template_uuid = ? AND uuid <> ?"
+		args := []interface{}{
+			command.TemplateUuid,
+			command.Uuid,
 		}
-		if body.Name == nil {
-			return ErrorInvaliedRequestParameterName("Name")
-		}
-		if body.Method == nil {
-			return ErrorInvaliedRequestParameterName("Method")
+		commands, err := vault.NewTemplateCommand(db).Find(where, args...)
+		if err != nil {
+			return errors.Wrapf(err, "find template command")
 		}
 
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-		if len(ctx.Params()[__TEMPLATE_UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__TEMPLATE_UUID__)
-		}
+		//sort -> Sequence ASC
+		sort.Slice(commands, func(i, j int) bool {
+			return nullable.Int32(commands[i].Sequence).Value() < nullable.Int32(commands[j].Sequence).Value()
+		})
 
-		return nil
-	}
-	operator := func(ctx Context) (interface{}, error) {
-		chaining_sequence := func(command commandv1.TemplateCommand) error {
-			where := "template_uuid = ? AND uuid <> ?"
-			args := []interface{}{
-				command.TemplateUuid,
-				command.Uuid,
-			}
-			commands, err := vault.NewTemplateCommand(ctx.Database()).Find(where, args...)
-			if err != nil {
-				return errors.Wrapf(err, "NewTemplateCommand Find")
-			}
+		commands_ := make([]commandv1.DbSchema, 0, len(commands)+1)
+		for i := range commands {
+			itor := commands[i]
 
-			//sort -> Sequence ASC
-			sort.Slice(commands, func(i, j int) bool {
-				return nullable.Int32(commands[i].Sequence).Value() < nullable.Int32(commands[j].Sequence).Value()
-			})
-
-			commands_ := make([]commandv1.DbSchema, 0, len(commands)+1)
-			for i := range commands {
-				itor := commands[i]
-
-				//순서 중간에 비교해서 적용하려는 command 우선으로 적용
-				sequence := nullable.Int32(command.Sequence)
-				if sequence.Has() && int32(i) == sequence.Value() {
-					commands_ = append(commands_, commandv1.DbSchema{TemplateCommand: command})
-				}
-				commands_ = append(commands_, itor)
-			}
-			//마지막에 비교해서 빠져있으면 넣는다
-			//command.Sequence 중간에 껴넣는게 아니라면 마지막에 위치 시킨다
-			if len(commands) == len(commands_) {
+			//순서 중간에 비교해서 적용하려는 command 우선으로 적용
+			sequence := nullable.Int32(command.Sequence)
+			if sequence.Has() && int32(i) == sequence.Value() {
 				commands_ = append(commands_, commandv1.DbSchema{TemplateCommand: command})
 			}
+			commands_ = append(commands_, itor)
+		}
+		//마지막에 비교해서 빠져있으면 넣는다
+		//command.Sequence 중간에 껴넣는게 아니라면 마지막에 위치 시킨다
+		if len(commands) == len(commands_) {
+			commands_ = append(commands_, commandv1.DbSchema{TemplateCommand: command})
+		}
 
-		LOOP:
-			for i := range commands_ {
-				itor := commands_[i]
+	LOOP:
+		for i := range commands_ {
+			itor := commands_[i]
 
-				//Sequence 동일함
-				sequence := nullable.Int32(command.Sequence)
-				if sequence.Has() && int32(i) == sequence.Value() {
-					continue LOOP //change nothing
-				}
-
-				itor.Sequence = newist.Int32(int32(i))
-				if _, err := vault.NewTemplateCommand(ctx.Database()).Update(itor.TemplateCommand); err != nil {
-					return errors.Wrapf(err, "NewTemplateCommand Update")
-				}
+			//Sequence 동일함
+			sequence := nullable.Int32(command.Sequence)
+			if sequence.Has() && int32(i) == sequence.Value() {
+				continue LOOP //change nothing
 			}
-			return nil
+
+			itor.Sequence = newist.Int32(int32(i))
+			if _, err := vault.NewTemplateCommand(db).Update(itor.TemplateCommand); err != nil {
+				return errors.Wrapf(err, "update template command")
+			}
+		}
+		return nil
+	}
+
+	body := new(commandv1.HttpReqTemplateCommand)
+	if err := ctx.Bind(body); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+				logs.KVL(
+					"type", TypeName(body),
+				)))
+	}
+	if len(nullable.String(body.Name).Value()) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", TypeName(body.Name),
+				)))
+	}
+	if len(nullable.String(body.Method).Value()) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", TypeName(body.Method),
+				)))
+	}
+	if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __TEMPLATE_UUID__,
+				)))
+	}
+
+	command := body.TemplateCommand
+	template_uuid := echoutil.Param(ctx)[__TEMPLATE_UUID__]
+
+	//vailed template
+	_, err := ctl.Scope(func(db database.Context) (interface{}, error) {
+		if _, err := vault.NewTemplate(db).Get(template_uuid); err != nil {
+			return nil, errors.Wrapf(err, "valid%s",
+				logs.KVL(
+					"template", template_uuid,
+				))
 		}
 
-		body, ok := ctx.Object().(*commandv1.HttpReqTemplateCommand)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		command := body.TemplateCommand
+		return nil, nil
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
 
-		template_uuid := ctx.Params()[__TEMPLATE_UUID__]
+	//property
+	command.UuidMeta = NewUuidMeta()
+	command.LabelMeta = NewLabelMeta(command.Name, command.Summary)
+	command.TemplateUuid = template_uuid
 
-		if _, err := vault.NewTemplate(ctx.Database()).Get(template_uuid); err != nil {
-			return nil, errors.Wrapf(err, "NewTemplate Get")
-		}
-		//property
-		command.UuidMeta = NewUuidMeta()
-		command.LabelMeta = NewLabelMeta(command.Name, command.Summary)
-		command.TemplateUuid = template_uuid
-
-		command_, err := vault.NewTemplateCommand(ctx.Database()).Create(command)
+	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
+		command_, err := vault.NewTemplateCommand(db).Create(command)
 		if err != nil {
-			return nil, errors.Wrapf(err, "NewTemplateCommand Create")
+			return nil, errors.Wrapf(err, "create template command")
 		}
 
 		// Chaining
-		if err := chaining_sequence(command); err != nil {
+		if err := chaining_sequence(db, command); err != nil {
 			return nil, errors.Wrapf(err, "chaining sequence")
 		}
 
 		return commandv1.HttpRspTemplateCommand{DbSchema: *command_}, nil
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "CreateTemplateCommand binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "CreateTemplateCommand operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Lock(c.db.Engine()),
-	})
+	return ctx.JSON(http.StatusOK, r)
 }
 
 // FindTemplateCommand
@@ -154,48 +158,29 @@ func (c Control) CreateTemplateCommand() func(ctx echo.Context) error {
 // @Router      /server/template/{template_uuid}/command [get]
 // @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
 // @Success 200 {array} v1.HttpRspTemplateCommand
-func (c Control) FindTemplateCommand() func(ctx echo.Context) error {
-
-	binder := func(ctx Context) error {
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-		if len(ctx.Params()[__TEMPLATE_UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__TEMPLATE_UUID__)
-		}
-
-		return nil
-	}
-	operator := func(ctx Context) (interface{}, error) {
-		where := "template_uuid = ?"
-		template_uuid := ctx.Params()[__TEMPLATE_UUID__]
-
-		rst, err := vault.NewTemplateCommand(ctx.Database()).
-			Find(where, template_uuid)
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewTemplateCommand Find")
-		}
-		return commandv1.TransToHttpRsp(rst), nil
+func (ctl Control) FindTemplateCommand(ctx echo.Context) error {
+	if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __TEMPLATE_UUID__,
+				)))
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "FindTemplateCommand binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "FindTemplateCommand operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Nolock(c.db.Engine()),
-	})
+	where := "template_uuid = ?"
+	template_uuid := echoutil.Param(ctx)[__TEMPLATE_UUID__]
+
+	r, err := vault.NewTemplateCommand(ctl.NewSession()).Find(where, template_uuid)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			errors.Wrapf(err, "find template_command%s",
+				logs.KVL(
+					"query", echoutil.QueryParamString(ctx),
+				)))
+	}
+
+	return ctx.JSON(http.StatusOK, commandv1.TransToHttpRsp(r))
+
 }
 
 // Get Template Command
@@ -207,50 +192,38 @@ func (c Control) FindTemplateCommand() func(ctx echo.Context) error {
 // @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
 // @Param       uuid          path string true "HttpReqTemplateCommand 의 Uuid"
 // @Success 200 {object} v1.HttpRspTemplateCommand
-func (c Control) GetTemplateCommand() func(ctx echo.Context) error {
-
-	binder := func(ctx Context) error {
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-		if len(ctx.Params()[__TEMPLATE_UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__TEMPLATE_UUID__)
-		}
-		if len(ctx.Params()[__UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__UUID__)
-		}
-
-		return nil
+func (ctl Control) GetTemplateCommand(ctx echo.Context) error {
+	if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __TEMPLATE_UUID__,
+				)))
 	}
-	operator := func(ctx Context) (interface{}, error) {
-		_ = ctx.Params()[__TEMPLATE_UUID__]
-		uuid := ctx.Params()[__UUID__]
-
-		rst, err := vault.NewTemplateCommand(ctx.Database()).Get(uuid)
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewTemplateCommand Get")
-		}
-		return commandv1.HttpRspTemplateCommand{DbSchema: *rst}, nil
+	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __UUID__,
+				)))
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "GetTemplateCommand binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "GetTemplateCommand operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Nolock(c.db.Engine()),
-	})
+	_ = echoutil.Param(ctx)[__TEMPLATE_UUID__]
+	uuid := echoutil.Param(ctx)[__UUID__]
+
+	// r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
+	r, err := vault.NewTemplateCommand(ctl.NewSession()).Get(uuid)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			errors.Wrapf(err, "get template command"))
+	}
+	// 	return commandv1.HttpRspTemplateCommand{DbSchema: *r}, nil
+	// })
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, err)
+	// }
+
+	return ctx.JSON(http.StatusOK, commandv1.HttpRspTemplateCommand{DbSchema: *r})
 }
 
 // Update Template Command
@@ -263,125 +236,111 @@ func (c Control) GetTemplateCommand() func(ctx echo.Context) error {
 // @Param       uuid          path string true "HttpReqTemplateCommand 의 Uuid"
 // @Param       command       body v1.HttpReqTemplateCommand true "HttpReqTemplateCommand"
 // @Success 200 {object} v1.HttpRspTemplateCommand
-func (c Control) UpdateTemplateCommand() func(ctx echo.Context) error {
-	binder := func(ctx Context) error {
-		body := new(commandv1.HttpReqTemplateCommand)
-		if err := ctx.Bind(body); err != nil {
-			return ErrorBindRequestObject(err)
+func (ctl Control) UpdateTemplateCommand(ctx echo.Context) error {
+	chaining_sequence := func(db database.Context, command commandv1.TemplateCommand) error {
+		//valid
+		if command.Sequence == nil {
+			return nil //Sequence 값이 있어야 처리
 		}
 
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
+		where := "template_uuid = ? AND uuid <> ?"
+		args := []interface{}{
+			command.TemplateUuid,
+			command.Uuid,
 		}
-		if len(ctx.Params()[__TEMPLATE_UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__TEMPLATE_UUID__)
-		}
-		if len(ctx.Params()[__UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__UUID__)
+		commands, err := vault.NewTemplateCommand(db).Find(where, args...)
+		if err != nil {
+			return errors.Wrapf(err, "find template command")
 		}
 
-		return nil
-	}
-	operator := func(ctx Context) (interface{}, error) {
-		chaining_sequence := func(command commandv1.TemplateCommand) error {
-			//valid
-			if command.Sequence == nil {
-				return nil //Sequence 값이 있어야 처리
-			}
+		//sort -> Sequence ASC
+		sort.Slice(commands, func(i, j int) bool {
+			return nullable.Int32(commands[i].Sequence).Value() < nullable.Int32(commands[j].Sequence).Value()
+		})
 
-			where := "template_uuid = ? AND uuid <> ?"
-			args := []interface{}{
-				command.TemplateUuid,
-				command.Uuid,
-			}
-			commands, err := vault.NewTemplateCommand(ctx.Database()).Find(where, args...)
-			if err != nil {
-				return errors.Wrapf(err, "NewTemplateCommand Find")
-			}
+		commands_ := make([]commandv1.DbSchema, 0, len(commands)+1)
+		for i := range commands {
+			itor := commands[i]
 
-			//sort -> Sequence ASC
-			sort.Slice(commands, func(i, j int) bool {
-				return nullable.Int32(commands[i].Sequence).Value() < nullable.Int32(commands[j].Sequence).Value()
-			})
-
-			commands_ := make([]commandv1.DbSchema, 0, len(commands)+1)
-			for i := range commands {
-				itor := commands[i]
-
-				//순서 중간에 비교해서 적용하려는 command 우선으로 적용
-				sequence := nullable.Int32(command.Sequence)
-				if sequence.Has() && int32(i) == sequence.Value() {
-					commands_ = append(commands_, commandv1.DbSchema{TemplateCommand: command})
-				}
-				commands_ = append(commands_, itor)
-			}
-			//마지막에 비교해서 빠져있으면 넣는다
-			//command.Sequence 중간에 껴넣는게 아니라면 마지막에 위치 시킨다
-			if len(commands) == len(commands_) {
+			//순서 중간에 비교해서 적용하려는 command 우선으로 적용
+			sequence := nullable.Int32(command.Sequence)
+			if sequence.Has() && int32(i) == sequence.Value() {
 				commands_ = append(commands_, commandv1.DbSchema{TemplateCommand: command})
 			}
+			commands_ = append(commands_, itor)
+		}
+		//마지막에 비교해서 빠져있으면 넣는다
+		//command.Sequence 중간에 껴넣는게 아니라면 마지막에 위치 시킨다
+		if len(commands) == len(commands_) {
+			commands_ = append(commands_, commandv1.DbSchema{TemplateCommand: command})
+		}
 
-		LOOP:
-			for i := range commands_ {
-				itor := commands_[i]
+	LOOP:
+		for i := range commands_ {
+			itor := commands_[i]
 
-				//Sequence 동일함
-				sequence := nullable.Int32(command.Sequence)
-				if sequence.Has() && int32(i) == sequence.Value() {
-					continue LOOP //change nothing
-				}
-
-				itor.Sequence = newist.Int32(int32(i))
-				if _, err := vault.NewTemplateCommand(ctx.Database()).Update(itor.TemplateCommand); err != nil {
-					return errors.Wrapf(err, "NewTemplateCommand Update")
-				}
+			//Sequence 동일함
+			sequence := nullable.Int32(command.Sequence)
+			if sequence.Has() && int32(i) == sequence.Value() {
+				continue LOOP //change nothing
 			}
-			return nil
+
+			itor.Sequence = newist.Int32(int32(i))
+			if _, err := vault.NewTemplateCommand(db).Update(itor.TemplateCommand); err != nil {
+				return errors.Wrapf(err, "update template command")
+			}
 		}
+		return nil
+	}
 
-		body, ok := ctx.Object().(*commandv1.HttpReqTemplateCommand)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+	body := new(commandv1.HttpReqTemplateCommand)
+	if err := ctx.Bind(body); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+				logs.KVL(
+					"type", TypeName(body),
+				)))
+	}
 
-		template_uuid := ctx.Params()[__TEMPLATE_UUID__]
-		uuid := ctx.Params()[__UUID__]
-		command := body.TemplateCommand
+	if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __TEMPLATE_UUID__,
+				)))
+	}
+	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __UUID__,
+				)))
+	}
 
-		command.TemplateUuid = template_uuid //set template uuid from path
-		command.Uuid = uuid                  //set uuid from path
+	template_uuid := echoutil.Param(ctx)[__TEMPLATE_UUID__]
+	uuid := echoutil.Param(ctx)[__UUID__]
+	command := body.TemplateCommand
 
-		command_, err := vault.NewTemplateCommand(ctx.Database()).
-			Update(command)
+	command.TemplateUuid = template_uuid //set template uuid from path
+	command.Uuid = uuid                  //set uuid from path
+
+	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
+		command_, err := vault.NewTemplateCommand(db).Update(command)
 		if err != nil && !macro.Eqaul(database.ErrorNoAffected(), errors.Cause(err)) {
-			return nil, errors.Wrapf(err, "NewTemplateCommand Update")
+			return nil, errors.Wrapf(err, "update template command")
 		}
 
-		if err := chaining_sequence(command_.TemplateCommand); err != nil {
+		if err := chaining_sequence(db, command_.TemplateCommand); err != nil {
 			return nil, errors.Wrapf(err, "chaining sequence")
 		}
 
 		return commandv1.HttpRspTemplateCommand{DbSchema: *command_}, nil
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "UpdateTemplateCommand binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "UpdateTemplateCommand operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Lock(c.db.Engine()),
-	})
+	return ctx.JSON(http.StatusOK, r)
 }
 
 // Delete Template Command
@@ -393,86 +352,72 @@ func (c Control) UpdateTemplateCommand() func(ctx echo.Context) error {
 // @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
 // @Param       uuid          path string true "HttpReqTemplateCommand 의 Uuid"
 // @Success 200
-func (c Control) DeleteTemplateCommand() func(ctx echo.Context) error {
+func (ctl Control) DeleteTemplateCommand(ctx echo.Context) error {
+	chaining_sequence := func(db database.Context, template_uuid, uuid string) error {
+		vault_command := vault.NewTemplateCommand(db)
+		where := "template_uuid = ?"
+		args := []interface{}{
+			template_uuid,
+		}
+		commands, err := vault_command.Find(where, args...)
+		if err != nil {
+			return errors.Wrapf(err, "NewTemplateCommand Find")
+		}
 
-	binder := func(ctx Context) error {
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-		if len(ctx.Params()[__TEMPLATE_UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__TEMPLATE_UUID__)
-		}
-		if len(ctx.Params()[__UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__UUID__)
-		}
+		//sort -> Sequence ASC
+		sort.Slice(commands, func(i, j int) bool {
+			return nullable.Int32(commands[i].Sequence).Value() < nullable.Int32(commands[j].Sequence).Value()
+		})
 
+	LOOP:
+		for i := range commands {
+			command := commands[i]
+
+			//Sequence 동일함
+			sequence := nullable.Int32(command.Sequence)
+			if sequence.Has() && sequence.Value() == int32(i) {
+				continue LOOP //change nothing
+			}
+
+			command.Sequence = newist.Int32(int32(i))
+			if _, err := vault_command.Update(command.TemplateCommand); err != nil {
+				return errors.Wrapf(err, "NewTemplateCommand Update")
+			}
+		}
 		return nil
 	}
-	operator := func(ctx Context) (interface{}, error) {
-		chaining_sequence := func(template_uuid, uuid string) error {
-			vault_command := vault.NewTemplateCommand(ctx.Database())
-			where := "template_uuid = ?"
-			args := []interface{}{
-				template_uuid,
-			}
-			commands, err := vault_command.Find(where, args...)
-			if err != nil {
-				return errors.Wrapf(err, "NewTemplateCommand Find")
-			}
 
-			//sort -> Sequence ASC
-			sort.Slice(commands, func(i, j int) bool {
-				return nullable.Int32(commands[i].Sequence).Value() < nullable.Int32(commands[j].Sequence).Value()
-			})
+	if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __TEMPLATE_UUID__,
+				)))
+	}
+	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __UUID__,
+				)))
+	}
 
-		LOOP:
-			for i := range commands {
-				command := commands[i]
-
-				//Sequence 동일함
-				sequence := nullable.Int32(command.Sequence)
-				if sequence.Has() && sequence.Value() == int32(i) {
-					continue LOOP //change nothing
-				}
-
-				command.Sequence = newist.Int32(int32(i))
-				if _, err := vault_command.Update(command.TemplateCommand); err != nil {
-					return errors.Wrapf(err, "NewTemplateCommand Update")
-				}
-			}
-			return nil
+	template_uuid := echoutil.Param(ctx)[__TEMPLATE_UUID__]
+	uuid := echoutil.Param(ctx)[__UUID__]
+	_, err := ctl.Scope(func(db database.Context) (interface{}, error) {
+		if err := vault.NewTemplateCommand(db).Delete(uuid); err != nil {
+			return nil, errors.Wrapf(err, "delete template command")
 		}
 
-		template_uuid := ctx.Params()[__TEMPLATE_UUID__]
-		uuid := ctx.Params()[__UUID__]
-
-		if err := vault.NewTemplateCommand(ctx.Database()).Delete(uuid); err != nil {
-			return nil, errors.Wrapf(err, "NewTemplateCommand Delete")
-		}
-
-		if err := chaining_sequence(template_uuid, uuid); err != nil {
+		if err := chaining_sequence(db, template_uuid, uuid); err != nil {
 			return nil, errors.Wrapf(err, "chaining sequence")
 		}
 
-		return OK(), nil
+		return nil, nil
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "DeleteTemplateCommand binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "DeleteTemplateCommand operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Lock(c.db.Engine()),
-	})
+	return ctx.JSON(http.StatusOK, OK())
 }

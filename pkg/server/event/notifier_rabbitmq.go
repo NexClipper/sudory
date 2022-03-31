@@ -21,7 +21,7 @@ type rabbitMQNotifier struct {
 func NewRabbitMqNotifier(opt RabbitMQNotifierConfig) (*rabbitMQNotifier, error) {
 	conn, ch, err := new(rabbitMQNotifier).dial(opt.Url)
 	if err != nil {
-		return nil, errors.Wrapf(err, "dial to rabbimq %s",
+		return nil, errors.Wrapf(err, "dial to rabbimq%s",
 			logs.KVL(
 				"url", opt.Url,
 			))
@@ -88,7 +88,7 @@ func (notifier *rabbitMQNotifier) OnNotify(factory MarshalFactory) error {
 	if !established {
 		conn, ch, err := notifier.dial(notifier.opt.Url)
 		if err != nil {
-			return errors.Wrapf(err, "dial to rabbimq %s",
+			return errors.Wrapf(err, "dial to rabbimq%s",
 				logs.KVL(
 					"url", notifier.opt.Url,
 				))
@@ -107,7 +107,7 @@ func (notifier *rabbitMQNotifier) OnNotify(factory MarshalFactory) error {
 	}
 	for _, b := range b {
 		if err := notifier.publish(opt, ch, b); err != nil {
-			return errors.Wrapf(err, "publish to rabbimq %s",
+			return errors.Wrapf(err, "publish to rabbimq%s",
 				logs.KVL(
 					"opt", opt,
 				))
@@ -162,7 +162,7 @@ func (rabbitMQNotifier) publish(opt RabbitMQNotifierConfig, ch *amqp.Channel, b 
 	publishing.Body = b
 
 	if err := ch.Publish(opt.Exchange, opt.RoutingKey, opt.Mandatory, opt.Immediate, publishing); err != nil {
-		return errors.Wrapf(err, "publish to rabbitmq %s",
+		return errors.Wrapf(err, "publish to rabbitmq%s",
 			logs.KVL("exchange", opt.Exchange,
 				"pouting_key", opt.RoutingKey,
 				"mandatory", opt.Mandatory,

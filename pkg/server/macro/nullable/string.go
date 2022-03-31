@@ -9,8 +9,8 @@ type nullString struct {
 	bool
 }
 
-func String(v interface{}) nullString {
-	return *(new(nullString).scan(v))
+func String(v *string) *nullString {
+	return new(nullString).scan(v)
 }
 
 func (nullable nullString) Value() string {

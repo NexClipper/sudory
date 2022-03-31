@@ -131,6 +131,15 @@ func TransFormDbSchema(s []DbSchema) []Service {
 	return out
 }
 
+//변환 Service -> HtppRsp
+func TransToHttpRspServiceAndSteps(s []DbSchemaServiceAndSteps) []HttpRspServiceWithSteps {
+	var out = make([]HttpRspServiceWithSteps, len(s))
+	for n := range s {
+		out[n].Service, out[n].Steps = s[n].Service, s[n].Steps
+	}
+	return out
+}
+
 // //변환 Service -> HtppRsp
 // func TransToHttpRsp(s []Service) []HttpRspService {
 // 	var out = make([]HttpRspService, len(s))

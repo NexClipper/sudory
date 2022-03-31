@@ -84,14 +84,13 @@ func newEvent(filename string) (func(), error) {
 		var stack string
 		logs.CauseIter(err, func(err error) {
 			logs.StackIter(err, func(s string) {
-				stack = s
+				stack = logs.KVL(
+					"stack", s,
+				)
 			})
 		})
 
-		logger.Error(fmt.Errorf("event notify: %w %s", err,
-			logs.KVL(
-				"stack", stack,
-			)))
+		logger.Error(fmt.Errorf("event notify: %w%s", err, stack))
 	})
 
 	cfgevent, err := event.NewEventConfig(filename)
@@ -134,14 +133,13 @@ func newCron(engine *xorm.Engine) (func(), error) {
 		var stack string
 		logs.CauseIter(err, func(err error) {
 			logs.StackIter(err, func(s string) {
-				stack = s
+				stack = logs.KVL(
+					"stack", s,
+				)
 			})
 		})
 
-		logger.Error(fmt.Errorf("cron jobs: %w %s", err,
-			logs.KVL(
-				"stack", stack,
-			)))
+		logger.Error(fmt.Errorf("cron jobs: %w%s", err, stack))
 	})
 
 	//new ticker

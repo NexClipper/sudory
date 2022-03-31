@@ -3,23 +3,39 @@ package control
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
+	"github.com/labstack/echo/v4"
 )
 
-func ErrorInvaliedRequestParameter() error {
+func ErrorInvalidRequestParameter() error {
 	return fmt.Errorf("invalid request parameter")
 }
-func ErrorInvaliedRequestParameterName(name string) error {
-	return fmt.Errorf("invalid request parameter name='%s'", name)
-}
 
-// func ErrorInvaliedRequestParameterError(err error) error {
-// 	return errors.WithMessage(err, "invalied request parameter")
+// func ErrorInvaliedRequestParameterName() error {
+// 	return fmt.Errorf("invalid request parameter")
 // }
 
-func ErrorBindRequestObject(err error) error {
-	return errors.Wrapf(err, "cannot bind request")
+// func ErrorInvaliedRequestParameterError(err error) error {
+// 	return errors.WithMessage(err, "invalid request parameter")
+// }
+
+func ErrorBindRequestObject() error {
+	return fmt.Errorf("cannot bind request")
 }
 func ErrorFailedCast() error {
 	return fmt.Errorf("failed cast")
+}
+
+func HttpError(code int, err error) *echo.HTTPError {
+	// msg := make([]string, 0, 3)
+	// msg = append(msg, http.StatusText(code))
+	// msg = append(msg, err.Error())
+	// logs.CauseIter(err, func(err error) {
+	// 	logs.StackIter(err, func(stack string) {
+	// 		msg = append(msg, logs.KVL(
+	// 			"stack", stack,
+	// 		))
+	// 	})
+	// })
+
+	return echo.NewHTTPError(code).SetInternal(err)
 }

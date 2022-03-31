@@ -1,4 +1,4 @@
-package exceptions
+package block
 
 import (
 	"github.com/pkg/errors"
@@ -32,7 +32,11 @@ func (b Block) Do() {
 	if b.Catch != nil {
 		defer func() {
 			if r := recover(); r != nil {
-				b.Catch(errors.Errorf("%+v", r))
+				if r, ok := r.(error); ok {
+					b.Catch(r)
+				} else {
+					b.Catch(errors.Errorf("%+v", r))
+				}
 			}
 		}()
 	}

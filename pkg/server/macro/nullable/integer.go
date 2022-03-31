@@ -9,8 +9,8 @@ type nullInt32 struct {
 	bool
 }
 
-func Int32(v interface{}) nullInt32 {
-	return *(new(nullInt32).scan(v))
+func Int32(v *int32) *nullInt32 {
+	return new(nullInt32).scan(v)
 }
 
 func (nullable nullInt32) Value() int32 {

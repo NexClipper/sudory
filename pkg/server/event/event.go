@@ -26,14 +26,14 @@ func NewEventConfig(configfile string) (*EventConfig, error) {
 		//설정파일 로드 실패
 		if b, err_ := ioutil.ReadFile(configfile); err_ != nil {
 			//설정 파일 읽기 실패
-			return nil, errors.Wrapf(err_, "read config file %s",
+			return nil, errors.Wrapf(err_, "read config file%s",
 				logs.KVL(
 					"dest-type-name", reflected.TypeName(cfgevent),
 					"config-file-path", configfile,
 					"err", err.Error(),
 				))
 		} else {
-			return nil, errors.Wrapf(err, "load config file %s",
+			return nil, errors.Wrapf(err, "load config file%s",
 				logs.KVL(
 					"dest-type-name", reflected.TypeName(cfgevent),
 					"config-file-path", configfile,
@@ -53,7 +53,7 @@ func RegistNotifier(sub EventSubscriber) error {
 		//new notifier
 		notifier, err := NotifierFactory(cfgnotifier)
 		if err != nil {
-			return errors.Wrapf(err, "notifier factory %s",
+			return errors.Wrapf(err, "notifier factory%s",
 				logs.KVL(
 					"config-event", sub.Config(),
 					"config-notifier", cfgnotifier,
@@ -118,7 +118,7 @@ func PrintEventConfiguation(w io.Writer, pub EventPublisher) {
 
 func NotifierFactory(cfgnotifire NotifierConfig) (Notifier, error) {
 	if _, ok := cfgnotifire["type"]; !ok {
-		return nil, errors.Errorf("not found key int listener config %s",
+		return nil, errors.Errorf("not found key int listener config%s",
 			logs.KVL(
 				"key", "type",
 			))
@@ -126,7 +126,7 @@ func NotifierFactory(cfgnotifire NotifierConfig) (Notifier, error) {
 
 	listener_type_name, ok := cfgnotifire["type"].(string)
 	if !ok {
-		return nil, errors.Errorf("failed to listener type cast to string %s",
+		return nil, errors.Errorf("failed to listener type cast to string%s",
 			logs.KVL(
 				"type", cfgnotifire["type"],
 			))
@@ -134,7 +134,7 @@ func NotifierFactory(cfgnotifire NotifierConfig) (Notifier, error) {
 
 	notifier_type, err := ParseNotifierType(listener_type_name)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to type parse to ListenerType %s",
+		return nil, errors.Wrapf(err, "failed to type parse to ListenerType%s",
 			logs.KVL(
 				"type", listener_type_name,
 			))
@@ -155,14 +155,14 @@ func NotifierFactory(cfgnotifire NotifierConfig) (Notifier, error) {
 			MessageHeaders: map[string]interface{}{},
 		}
 	default:
-		return nil, errors.Errorf("unsupported notifier type %s",
+		return nil, errors.Errorf("unsupported notifier type%s",
 			logs.KVL(
 				"notifier_type", notifier_type,
 			))
 	}
 
 	if err := deepcopy(opt, cfgnotifire); err != nil {
-		return nil, errors.Wrapf(err, "deepcopy %s",
+		return nil, errors.Wrapf(err, "deepcopy%s",
 			logs.KVL(
 				"opt", opt,
 			))
@@ -177,7 +177,7 @@ func NotifierFactory(cfgnotifire NotifierConfig) (Notifier, error) {
 	case *FileNotifierConfig:
 		new_notifier, err = NewFileNotifier(*opt)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to create file notifier %s",
+			return nil, errors.Wrapf(err, "failed to create file notifier%s",
 				logs.KVL(
 					"opt", opt,
 				))
@@ -185,13 +185,13 @@ func NotifierFactory(cfgnotifire NotifierConfig) (Notifier, error) {
 	case *RabbitMQNotifierConfig:
 		new_notifier, err = NewRabbitMqNotifier(*opt)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to create rabbitmq notifier %s",
+			return nil, errors.Wrapf(err, "failed to create rabbitmq notifier%s",
 				logs.KVL(
 					"opt", opt,
 				))
 		}
 	default:
-		return nil, errors.Errorf("unsupported notifier config %s",
+		return nil, errors.Errorf("unsupported notifier config%s",
 			logs.KVL(
 				"opt", opt,
 			))
@@ -206,7 +206,7 @@ func NotifierFactory(cfgnotifire NotifierConfig) (Notifier, error) {
 func deepcopy(dest, src interface{}) error {
 	data, err := yaml.Marshal(src)
 	if err != nil {
-		return errors.Wrapf(err, "failed to marshal yaml %s",
+		return errors.Wrapf(err, "failed to marshal yaml%s",
 			logs.KVL(
 				"src-type-name", reflected.TypeName(src),
 				"src", src,
@@ -214,7 +214,7 @@ func deepcopy(dest, src interface{}) error {
 	}
 
 	if err := yaml.Unmarshal(data, dest); err != nil {
-		return errors.Wrapf(err, "failed to unmarshal yaml %s",
+		return errors.Wrapf(err, "failed to unmarshal yaml%s",
 			logs.KVL(
 				"dest-type-name", reflected.TypeName(dest),
 				"yaml", data,

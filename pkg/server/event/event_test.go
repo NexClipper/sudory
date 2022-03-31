@@ -49,7 +49,7 @@ func TestNewConfig(t *testing.T) {
 			})
 		})
 
-		logger.Error(fmt.Errorf("event notify: %w %s", err,
+		logger.Error(fmt.Errorf("event notify: %w%s", err,
 			logs.KVL(
 				"stack", stack,
 			)))

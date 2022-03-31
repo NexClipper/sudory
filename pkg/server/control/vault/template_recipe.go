@@ -3,6 +3,7 @@ package vault
 import (
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/prepare"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/pkg/errors"
 
 	recipev1 "github.com/NexClipper/sudory/pkg/server/model/template_recipe/v1"
@@ -22,13 +23,19 @@ func (vault TemplateRecipe) Query(query map[string]string) ([]recipev1.DbSchema,
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
-		return nil, errors.Wrapf(err, "prepare newParser query=%+v", query)
+		return nil, errors.Wrapf(err, "prepare newParser%v",
+			logs.KVL(
+				"query", query,
+			))
 	}
 
 	//find service
 	records := make([]recipev1.DbSchema, 0)
 	if err := vault.ctx.Prepared(preparer).Find(&records); err != nil {
-		return nil, errors.Wrapf(err, "database find query=%+v", query)
+		return nil, errors.Wrapf(err, "database find%v",
+			logs.KVL(
+				"query", query,
+			))
 	}
 
 	return records, nil

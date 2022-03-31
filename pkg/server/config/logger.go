@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -40,6 +41,9 @@ var LazyInitLogger func(string) = func(configfile string) {
 	})
 }
 
+var LoggerInfoOutput io.Writer = os.Stdout
+var LoggerErrorOutput io.Writer = os.Stderr
+
 // 로그 환경설정 초기화
 func init() {
 
@@ -68,7 +72,7 @@ func init() {
 			fmt.Fprintln(os.Stderr, "ENV Unmarshal", err.Error())
 		}
 
-		rotate := lumberjack.Logger{
+		rotate := &lumberjack.Logger{
 			Filename:   cfg.Logger.Filename,
 			MaxSize:    cfg.Logger.MaxSize,
 			MaxAge:     cfg.Logger.MaxAge,
@@ -76,7 +80,12 @@ func init() {
 			Compress:   cfg.Logger.Compress,
 		}
 
-		logger.Init(cfg.Logger.SystemEventName, cfg.Logger.Verbose, cfg.Logger.SystemEvent, &rotate)
+		LoggerInfoOutput = io.MultiWriter(rotate, LoggerInfoOutput)
+		LoggerErrorOutput = io.MultiWriter(rotate, LoggerErrorOutput)
+
+		io.MultiWriter()
+
+		logger.Init(cfg.Logger.SystemEventName, cfg.Logger.Verbose, cfg.Logger.SystemEvent, rotate)
 
 		logger.SetLevel(logger.Level(severity(cfg.Logger.Severity)))
 

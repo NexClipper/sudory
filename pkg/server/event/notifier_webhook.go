@@ -129,7 +129,7 @@ func (webhookNotifier) HttpMultipartReq(opt WebhookNotifierConfig, httpclient *h
 	//Create request with timeout
 	req, err := http.NewRequestWithContext(timeout, opt.Method, opt.Url, body)
 	if err != nil {
-		return errors.Wrapf(err, "make request with context %s",
+		return errors.Wrapf(err, "make request with context%s",
 			logs.KVL(
 				"method", opt.Method,
 				"url", opt.Url,
@@ -145,7 +145,7 @@ func (webhookNotifier) HttpMultipartReq(opt WebhookNotifierConfig, httpclient *h
 	//Request to update services's status to server.
 	rsp, err := httpclient.Do(req)
 	if err != nil {
-		return errors.Wrapf(err, "request to %s",
+		return errors.Wrapf(err, "request to%s",
 			logs.KVL(
 				"method", opt.Method,
 				"url", opt.Url,
@@ -160,16 +160,14 @@ func (webhookNotifier) HttpMultipartReq(opt WebhookNotifierConfig, httpclient *h
 	}
 
 	if rsp.StatusCode/100 != 2 {
-		err := errors.Errorf("bad response status %s",
+
+		return errors.Errorf("bad response status%s",
 			logs.KVL(
 				"status", rsp.Status,
 				"code", rsp.StatusCode,
 				"body", buffer.String(),
 			))
 
-		// return errors.Errorf("bad http response status %s", sink.String())
-
-		return err
 	}
 
 	return nil

@@ -1,7 +1,12 @@
 package control
 
 import (
+	"net/http"
+
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
+	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	envv1 "github.com/NexClipper/sudory/pkg/server/model/environment/v1"
 	"github.com/labstack/echo/v4"
@@ -18,37 +23,17 @@ import (
 // @Param       o query string false "order  pkg/server/database/prepared/README.md"
 // @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success 200 {array} v1.HttpRspEnvironment
-func (c *Control) FindEnvironment() func(ctx echo.Context) error {
-	binder := func(ctx Context) error {
-		return nil
-	}
-	operator := func(ctx Context) (interface{}, error) {
-		records, err := vault.NewEnvironment(ctx.Database()).Query(ctx.Queries())
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewEnvironment Query")
-		}
-
-		return envv1.TransToHttpRsp(records), nil
+func (ctl Control) FindEnvironment(ctx echo.Context) error {
+	r, err := vault.NewEnvironment(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			errors.Wrapf(err, "find environment%s",
+				logs.KVL(
+					"query", echoutil.QueryParamString(ctx),
+				)))
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "FindEnvironment binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "FindEnvironment operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Nolock(c.db.Engine()),
-	})
+	return ctx.JSON(http.StatusOK, envv1.TransToHttpRsp(r))
 }
 
 // Get Environment
@@ -59,46 +44,27 @@ func (c *Control) FindEnvironment() func(ctx echo.Context) error {
 // @Router      /server/environment/{uuid} [get]
 // @Param       uuid path string true "Environment 의 Uuid"
 // @Success 200 {object} v1.HttpRspEnvironment
-func (c *Control) GetEnvironment() func(ctx echo.Context) error {
-
-	binder := func(ctx Context) error {
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-
-		if len(ctx.Params()[__UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__UUID__)
-		}
-		return nil
-	}
-	operator := func(ctx Context) (interface{}, error) {
-		uuid := ctx.Params()[__UUID__]
-
-		rst, err := vault.NewEnvironment(ctx.Database()).Get(uuid)
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewEnvironment Get")
-		}
-		return envv1.HttpRspEnvironment{DbSchema: *rst}, nil
+func (ctl Control) GetEnvironment(ctx echo.Context) error {
+	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __UUID__,
+				)))
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "GetEnvironment binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "GetEnvironment operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Nolock(c.db.Engine()),
-	})
+	uuid := echoutil.Param(ctx)[__UUID__]
+
+	r, err := vault.NewEnvironment(ctl.NewSession()).Get(uuid)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			errors.Wrapf(err, "get environment%s",
+				logs.KVL(
+					"uuid", uuid,
+				)))
+	}
+
+	return ctx.JSON(http.StatusOK, envv1.HttpRspEnvironment{DbSchema: *r})
 }
 
 // UpdateEnvironment
@@ -110,67 +76,53 @@ func (c *Control) GetEnvironment() func(ctx echo.Context) error {
 // @Param       uuid       path string                      true  "Environment 의 Uuid"
 // @Param       enviroment body v1.HttpReqEnvironmentUpdate false "HttpReqEnvironmentUpdate"
 // @Success 200 {object} v1.HttpRspEnvironment
-func (c *Control) UpdateEnvironmentValue() func(ctx echo.Context) error {
-	binder := func(ctx Context) error {
-		body := new(envv1.HttpReqEnvironmentUpdate)
-		if err := ctx.Bind(body); err != nil {
-			return ErrorBindRequestObject(err)
-		}
-
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-
-		if len(ctx.Params()[__UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__UUID__)
-		}
-
-		return nil
+func (ctl Control) UpdateEnvironmentValue(ctx echo.Context) error {
+	body := new(envv1.HttpReqEnvironmentUpdate)
+	if err := ctx.Bind(body); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+				logs.KVL(
+					"type", TypeName(body),
+				)))
 	}
-	operator := func(ctx Context) (interface{}, error) {
-		body, ok := ctx.Object().(*envv1.HttpReqEnvironmentUpdate)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
-		update_env := body.EnvironmentUpdate
 
-		uuid := ctx.Params()[__UUID__]
+	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __UUID__,
+				)))
+	}
+	update_env := body.EnvironmentUpdate
 
+	uuid := echoutil.Param(ctx)[__UUID__]
+
+	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
 		//get record
-		env, err := vault.NewEnvironment(ctx.Database()).Get(uuid)
+		env, err := vault.NewEnvironment(db).Get(uuid)
 		if err != nil {
-			return nil, errors.Wrapf(err, "NewEnvironment Get")
+			return nil, errors.Wrapf(err, "get environment%s",
+				logs.KVL(
+					"uuid", uuid,
+				))
 		}
 
-		//update property
-		//value
-		env.Value = nullable.String(update_env.Value).Ptr()
+		//property
+		env.Value = nullable.String(update_env.Value).Ptr() //value
 
-		//update record
-		env_, err := vault.NewEnvironment(ctx.Database()).Update(env.Environment)
+		env_, err := vault.NewEnvironment(db).Update(env.Environment)
 		if err != nil {
-			return nil, errors.Wrapf(err, "NewEnvironment Update")
+			return nil, errors.Wrapf(err, "update environment%s",
+				logs.KVL(
+					"environment", env,
+				))
 		}
 
-		return envv1.HttpRspEnvironment{DbSchema: *env_}, nil
+		return envv1.HttpRspEnvironment{DbSchema: *env_}, err
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "UpdateEnvironmentValue binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "UpdateEnvironmentValue operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Nolock(c.db.Engine()),
-	})
+	return ctx.JSON(http.StatusOK, r)
 }

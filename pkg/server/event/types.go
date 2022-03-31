@@ -129,7 +129,7 @@ func NewMarshalFactory(v ...interface{}) func(string) ([][]byte, error) {
 			switch mime {
 			case "application/json":
 				if b, err = json.Marshal(v); err != nil {
-					return nil, errors.Wrapf(err, "json marshal %s",
+					return nil, errors.Wrapf(err, "json marshal%s",
 						logs.KVL(
 							"item", v,
 						))

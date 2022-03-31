@@ -1,7 +1,12 @@
 package control
 
 import (
+	"net/http"
+
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
+	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
@@ -17,78 +22,61 @@ import (
 // @Router      /server/template [post]
 // @Param       template body v1.HttpReqTemplateWithCommands true "HttpReqTemplateWithCommands"
 // @Success 200 {object} v1.HttpReqTemplateWithCommands
-func (c *Control) CreateTemplate() func(ctx echo.Context) error {
-	binder := func(ctx Context) error {
-		body := new(templatev1.HttpReqTemplateWithCommands)
-		if err := ctx.Bind(body); err != nil {
-			return ErrorBindRequestObject(err)
+func (ctl Control) CreateTemplate(ctx echo.Context) error {
+	map_command := func(elems []commandv1.TemplateCommand, mapper func(commandv1.TemplateCommand) commandv1.TemplateCommand) []commandv1.TemplateCommand {
+		rst := make([]commandv1.TemplateCommand, len(elems))
+		for n := range elems {
+			rst[n] = mapper(elems[n])
 		}
-		return nil
+		return rst
 	}
-	operator := func(ctx Context) (interface{}, error) {
-		map_command := func(elems []commandv1.TemplateCommand, mapper func(commandv1.TemplateCommand) commandv1.TemplateCommand) []commandv1.TemplateCommand {
-			rst := make([]commandv1.TemplateCommand, len(elems))
-			for n := range elems {
-				rst[n] = mapper(elems[n])
-			}
-			return rst
-		}
 
-		body, ok := ctx.Object().(*templatev1.HttpReqTemplateWithCommands)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
+	body := new(templatev1.HttpReqTemplateWithCommands)
+	if err := ctx.Bind(body); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+				logs.KVL(
+					"type", TypeName(body),
+				)))
+	}
 
-		template := body.Template
-		commmands := body.Commands
+	template := body.Template
+	commmands := body.Commands
 
-		//property
-		template.UuidMeta = NewUuidMeta()
-		template.LabelMeta = NewLabelMeta(template.Name, template.Summary)
+	//property
+	template.UuidMeta = NewUuidMeta()
+	template.LabelMeta = NewLabelMeta(template.Name, template.Summary)
 
-		//create command
-		seq := int32(0)
-		commmands = map_command(commmands, func(tc commandv1.TemplateCommand) commandv1.TemplateCommand {
-			//LabelMeta
-			tc.UuidMeta = NewUuidMeta()
-			tc.LabelMeta = NewLabelMeta(tc.Name, tc.Summary)
-			//TemplateUuid
-			tc.TemplateUuid = template.Uuid
-			//Sequence
-			tc.Sequence = newist.Int32(seq)
-			seq++
+	//create command
+	seq := int32(0)
+	commmands = map_command(commmands, func(tc commandv1.TemplateCommand) commandv1.TemplateCommand {
+		//LabelMeta
+		tc.UuidMeta = NewUuidMeta()
+		tc.LabelMeta = NewLabelMeta(tc.Name, tc.Summary)
+		//TemplateUuid
+		tc.TemplateUuid = template.Uuid
+		//Sequence
+		tc.Sequence = newist.Int32(seq)
+		seq++
 
-			return tc
-		})
+		return tc
+	})
 
+	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
 		//create template
-		template_, err := vault.NewTemplate(ctx.Database()).
+		template_, err := vault.NewTemplate(db).
 			Create(templatev1.TemplateWithCommands{Template: template, Commands: commmands})
 		if err != nil {
-			return nil, errors.Wrapf(err, "NewTemplate Create")
+			return nil, errors.Wrapf(err, "create template")
 		}
 
 		return templatev1.HttpRspTemplateWithCommands{DbSchemaTemplateWithCommands: *template_}, nil
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "CreateTemplate binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "CreateTemplate operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Lock(c.db.Engine()),
-	})
+	return ctx.JSON(http.StatusOK, r)
 }
 
 // Get Template
@@ -99,46 +87,24 @@ func (c *Control) CreateTemplate() func(ctx echo.Context) error {
 // @Router      /server/template/{uuid} [get]
 // @Param       uuid path string true "Template 의 Uuid"
 // @Success 200 {object} v1.HttpReqTemplateWithCommands
-func (c *Control) GetTemplate() func(ctx echo.Context) error {
-	binder := func(ctx Context) error {
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-		if len(ctx.Params()[__UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__UUID__)
-		}
-
-		return nil
-	}
-	operator := func(ctx Context) (interface{}, error) {
-		uuid := ctx.Params()[__UUID__]
-
-		template, err := vault.NewTemplate(ctx.Database()).Get(uuid)
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewTemplate Get")
-		}
-
-		return templatev1.HttpRspTemplateWithCommands{DbSchemaTemplateWithCommands: *template}, nil
+func (ctl Control) GetTemplate(ctx echo.Context) error {
+	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __UUID__,
+				)))
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "GetTemplate binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "GetTemplate operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Nolock(c.db.Engine()),
-	})
+	uuid := echoutil.Param(ctx)[__UUID__]
+
+	template, err := vault.NewTemplate(ctl.NewSession()).Get(uuid)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			errors.Wrapf(err, "NewTemplate Get"))
+	}
+
+	return ctx.JSON(http.StatusOK, templatev1.HttpRspTemplateWithCommands{DbSchemaTemplateWithCommands: *template})
 }
 
 // Find []Template
@@ -151,41 +117,14 @@ func (c *Control) GetTemplate() func(ctx echo.Context) error {
 // @Param       o query string false "order  pkg/server/database/prepared/README.md"
 // @Param       p query string false "paging pkg/server/database/prepared/README.md"
 // @Success 200 {array} v1.HttpReqTemplateWithCommands
-func (c *Control) FindTemplate() func(ctx echo.Context) error {
-	binder := func(ctx Context) error {
-		return nil
-	}
-	operator := func(ctx Context) (interface{}, error) {
-		templates, err := vault.NewTemplate(ctx.Database()).Query(ctx.Queries())
-		if err != nil {
-			return nil, errors.Wrapf(err, "NewTemplate Query")
-		}
-
-		templates_ := make([]templatev1.HttpRspTemplateWithCommands, len(templates))
-		for n := range templates {
-			templates_[n].DbSchemaTemplateWithCommands = templates[n]
-		}
-		return templates_, nil //pop
+func (ctl Control) FindTemplate(ctx echo.Context) error {
+	templates, err := vault.NewTemplate(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError,
+			errors.Wrapf(err, "find template"))
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "FindTemplate binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "FindTemplate operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Nolock(c.db.Engine()),
-	})
+	return ctx.JSON(http.StatusOK, templatev1.TransToHttpRspTemplateWithCommands(templates))
 }
 
 // Update Template
@@ -197,63 +136,45 @@ func (c *Control) FindTemplate() func(ctx echo.Context) error {
 // @Param       uuid     path string false "Template 의 Uuid"
 // @Param       template body v1.HttpReqTemplate true "HttpReqTemplate"
 // @Success 200 {object} v1.HttpRspTemplate
-func (c *Control) UpdateTemplate() func(ctx echo.Context) error {
+func (ctl Control) UpdateTemplate(ctx echo.Context) error {
 
-	binder := func(ctx Context) error {
-		body := new(templatev1.HttpReqTemplate)
-		if err := ctx.Bind(body); err != nil {
-			return ErrorBindRequestObject(err)
-		}
-
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-		if len(ctx.Params()[__UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__UUID__)
-		}
-
-		return nil
+	body := new(templatev1.HttpReqTemplate)
+	if err := ctx.Bind(body); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+				logs.KVL(
+					"type", TypeName(body),
+				)))
 	}
-	operator := func(ctx Context) (interface{}, error) {
-		body, ok := ctx.Object().(*templatev1.HttpReqTemplate)
-		if !ok {
-			return nil, ErrorFailedCast()
-		}
 
-		tempalte := body.Template
+	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __UUID__,
+				)))
+	}
 
-		uuid := ctx.Params()[__UUID__]
+	tempalte := body.Template
+	uuid := echoutil.Param(ctx)[__UUID__]
 
-		//set uuid from path
-		tempalte.Uuid = uuid
+	//set uuid from path
+	tempalte.Uuid = uuid
 
+	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
 		//upate template
-		tempalte_, err := vault.NewTemplate(ctx.Database()).Update(tempalte)
+		tempalte_, err := vault.NewTemplate(db).Update(tempalte)
 		if err != nil {
-			return nil, errors.Wrapf(err, "NewTemplate Update")
+			return nil, errors.Wrapf(err, "update template")
 		}
 
 		return templatev1.HttpRspTemplate{DbSchema: *tempalte_}, nil
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "UpdateTemplate binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "UpdateTemplate operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Lock(c.db.Engine()),
-	})
+	return ctx.JSON(http.StatusOK, r)
 }
 
 // Delete Template
@@ -264,45 +185,27 @@ func (c *Control) UpdateTemplate() func(ctx echo.Context) error {
 // @Router      /server/template/{uuid} [delete]
 // @Param       uuid path string true "Template 의 Uuid"
 // @Success 200
-func (c *Control) DeleteTemplate() func(ctx echo.Context) error {
-
-	binder := func(ctx Context) error {
-		if len(ctx.Params()) == 0 {
-			return ErrorInvaliedRequestParameter()
-		}
-		if len(ctx.Params()[__UUID__]) == 0 {
-			return ErrorInvaliedRequestParameterName(__UUID__)
-		}
-
-		return nil
+func (ctl Control) DeleteTemplate(ctx echo.Context) error {
+	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest,
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+				logs.KVL(
+					"param", __UUID__,
+				)))
 	}
-	operator := func(ctx Context) (interface{}, error) {
-		uuid := ctx.Params()[__UUID__]
+	uuid := echoutil.Param(ctx)[__UUID__]
 
+	_, err := ctl.Scope(func(db database.Context) (interface{}, error) {
 		//template 삭제
-		if err := vault.NewTemplate(ctx.Database()).Delete(uuid); err != nil {
+		if err := vault.NewTemplate(db).Delete(uuid); err != nil {
 			return nil, errors.Wrapf(err, "NewTemplate Delete")
 		}
 
-		return OK(), nil
+		return nil, nil
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
-	return MakeMiddlewareFunc(Option{
-		Binder: func(ctx Context) error {
-			err := binder(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "DeleteTemplate binder")
-			}
-			return nil
-		},
-		Operator: func(ctx Context) (interface{}, error) {
-			v, err := operator(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "DeleteTemplate operator")
-			}
-			return v, nil
-		},
-		HttpResponsor: HttpJsonResponsor,
-		Behavior:      Lock(c.db.Engine()),
-	})
+	return ctx.JSON(http.StatusOK, OK())
 }

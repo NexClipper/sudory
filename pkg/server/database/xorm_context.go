@@ -2,6 +2,7 @@ package database
 
 import (
 	"github.com/NexClipper/sudory/pkg/server/database/prepare"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
 )
@@ -41,9 +42,15 @@ func (context XormContext) Where(where string, args ...interface{}) Context {
 func (context XormContext) Create(record interface{}) error {
 	affect, err := context.tx.Insert(record)
 	if err != nil {
-		return errors.Wrapf(err, "xorm insert record=%#v", record)
+		return errors.Wrapf(err, "xorm insert%v",
+			logs.KVL(
+				"type_name", TypeName(record),
+			))
 	} else if !(0 < affect) {
-		return errors.Wrapf(ErrorNoAffected(), "xorm insert record=%#v", record)
+		return errors.Wrapf(ErrorNoAffected(), "xorm insert%v",
+			logs.KVL(
+				"type_name", TypeName(record),
+			))
 	}
 
 	return nil
@@ -53,7 +60,10 @@ func (context XormContext) Create(record interface{}) error {
 func (context XormContext) Count(record interface{}) (int64, error) {
 	count, err := context.tx.Count(record)
 	if err != nil {
-		return 0, errors.Wrapf(err, "xorm count record=%#v", record)
+		return 0, errors.Wrapf(err, "xorm count%v",
+			logs.KVL(
+				"type_name", TypeName(record),
+			))
 	}
 
 	return count, nil
@@ -62,9 +72,15 @@ func (context XormContext) Count(record interface{}) (int64, error) {
 // Get
 func (context XormContext) Get(record interface{}) error {
 	if has, err := context.tx.Get(record); err != nil {
-		return errors.Wrapf(err, "xorm get record=%#v", record)
+		return errors.Wrapf(err, "xorm get%v",
+			logs.KVL(
+				"type_name", TypeName(record),
+			))
 	} else if !has {
-		return errors.Wrapf(ErrorRecordWasNotFound(), "xorm get record=%#v", record)
+		return errors.Wrapf(ErrorRecordWasNotFound(), "xorm get%v",
+			logs.KVL(
+				"type_name", TypeName(record),
+			))
 	}
 
 	return nil
@@ -73,7 +89,7 @@ func (context XormContext) Get(record interface{}) error {
 // Find
 func (context XormContext) Find(records interface{}) error {
 	if err := context.tx.Find(records); err != nil {
-		return errors.Wrapf(err, "xorm find records=%#v", records)
+		return errors.Wrapf(err, "xorm find=%v", TypeName(records))
 	}
 
 	return nil
@@ -83,13 +99,19 @@ func (context XormContext) Find(records interface{}) error {
 func (context XormContext) Update(record interface{}) error {
 	//레코드 업데이트
 	if _, err := context.tx.Update(record); err != nil {
-		return errors.Wrapf(err, "xorm update record=%#v", record)
+		return errors.Wrapf(err, "xorm update%v",
+			logs.KVL(
+				"type_name", TypeName(record),
+			))
 	}
 
 	//affect 카운트로 적용 확인 하지 않고
 	//Get으로 검사 및 변경 값 가져오기
 	if has, _ := context.tx.Get(record); !has {
-		return errors.Wrapf(ErrorNoAffected(), "xorm update record=%#v", record)
+		return errors.Wrapf(ErrorNoAffected(), "xorm update%v",
+			logs.KVL(
+				"type_name", TypeName(record),
+			))
 	}
 
 	return nil
@@ -98,7 +120,10 @@ func (context XormContext) Update(record interface{}) error {
 // Delete
 func (context XormContext) Delete(record interface{}) error {
 	if affect, err := context.tx.Delete(record); err != nil {
-		return errors.Wrapf(err, "xorm delete record=%#v", record)
+		return errors.Wrapf(err, "xorm delete%v",
+			logs.KVL(
+				"type_name", TypeName(record),
+			))
 	} else if !(0 < affect) {
 		return nil //idempotent
 	}

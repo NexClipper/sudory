@@ -5,6 +5,7 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/prepare"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
@@ -47,7 +48,11 @@ func (vault Service) Get(uuid string) (*servicev1.DbSchemaServiceAndSteps, error
 	}
 	service := &servicev1.DbSchema{}
 	if err := vault.ctx.Where(where, args...).Get(service); err != nil {
-		return nil, errors.Wrapf(err, "database get where=%s args=%+v", where, args)
+		return nil, errors.Wrapf(err, "database get%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 
 	//find step
@@ -57,7 +62,11 @@ func (vault Service) Get(uuid string) (*servicev1.DbSchemaServiceAndSteps, error
 	}
 	steps := make([]stepv1.DbSchema, 0)
 	if err := vault.ctx.Where(where, args...).Find(&steps); err != nil {
-		return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
+		return nil, errors.Wrapf(err, "database find%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 	//sort -> Sequence ASC
 	sort.Slice(steps, func(i, j int) bool {
@@ -71,7 +80,11 @@ func (vault Service) Find(where string, args ...interface{}) ([]servicev1.DbSche
 	//find service
 	records := make([]servicev1.DbSchema, 0)
 	if err := vault.ctx.Where(where, args...).Find(&records); err != nil {
-		return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
+		return nil, errors.Wrapf(err, "database find%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 	//make result
 	var services = make([]servicev1.DbSchemaServiceAndSteps, len(records))
@@ -86,7 +99,11 @@ func (vault Service) Find(where string, args ...interface{}) ([]servicev1.DbSche
 		}
 		steps := make([]stepv1.DbSchema, 0)
 		if err := vault.ctx.Where(where, args...).Find(&steps); err != nil {
-			return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
+			return nil, errors.Wrapf(err, "database find%v",
+				logs.KVL(
+					"where", where,
+					"args", args,
+				))
 		}
 		//sort -> Sequence ASC
 		sort.Slice(steps, func(i, j int) bool {
@@ -104,13 +121,19 @@ func (vault Service) Query(query map[string]string) ([]servicev1.DbSchemaService
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
-		return nil, errors.Wrapf(err, "prepare newParser query=%+v", query)
+		return nil, errors.Wrapf(err, "prepare newParser%v",
+			logs.KVL(
+				"query", query,
+			))
 	}
 
 	//find service
 	records := make([]servicev1.DbSchema, 0)
 	if err := vault.ctx.Prepared(preparer).Find(&records); err != nil {
-		return nil, errors.Wrapf(err, "database find query=%+v", query)
+		return nil, errors.Wrapf(err, "database find%v",
+			logs.KVL(
+				"query", query,
+			))
 	}
 
 	//make result
@@ -126,7 +149,11 @@ func (vault Service) Query(query map[string]string) ([]servicev1.DbSchemaService
 		}
 		steps := make([]stepv1.DbSchema, 0)
 		if err := vault.ctx.Where(where, args...).Find(&steps); err != nil {
-			return nil, errors.Wrapf(err, "database find where=%s args=%+v", where, args)
+			return nil, errors.Wrapf(err, "database find%v",
+				logs.KVL(
+					"where", where,
+					"args", args,
+				))
 		}
 		//sort -> Sequence ASC
 		sort.Slice(steps, func(i, j int) bool {
@@ -147,7 +174,11 @@ func (vault Service) Update(model servicev1.Service) (*servicev1.DbSchema, error
 	}
 	record := &servicev1.DbSchema{Service: model}
 	if err := vault.ctx.Where(where, args...).Update(record); err != nil {
-		return nil, errors.Wrapf(err, "database update where=%s args=%+v", where, args)
+		return nil, errors.Wrapf(err, "database update%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 
 	return record, nil
@@ -162,7 +193,11 @@ func (vault Service) Delete(uuid string) error {
 	}
 	step := &stepv1.DbSchema{}
 	if err := vault.ctx.Where(where, args...).Delete(step); err != nil {
-		return errors.Wrapf(err, "database delete where=%s args=%+v", where, args)
+		return errors.Wrapf(err, "database delete%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 	//delete service
 	where = "uuid = ?"
@@ -171,7 +206,11 @@ func (vault Service) Delete(uuid string) error {
 	}
 	service := &servicev1.DbSchema{}
 	if err := vault.ctx.Where(where, args...).Delete(service); err != nil {
-		return errors.Wrapf(err, "database delete where=%s args=%+v", where, args)
+		return errors.Wrapf(err, "database delete%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
 	}
 	return nil
 }
