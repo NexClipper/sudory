@@ -23,5 +23,5 @@ docker-push:
 	docker push ${image}-${target}:$(VERSION)
 
 clean:
-	rm ./bin/server
-	rm ./bin/client
+	rm ./bin/server/sudory-server
+	rm ./bin/client/sudory-client
