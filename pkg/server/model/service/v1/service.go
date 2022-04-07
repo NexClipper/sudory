@@ -19,10 +19,6 @@ const (
 type ServiceProperty struct {
 	//텔플릿 UUID
 	TemplateUuid *string `json:"template_uuid,omitempty" xorm:"char(32) notnull index 'template_uuid' comment('template's uuid')"`
-	//오리진 종류
-	OriginKind *string `json:"origin_kind,omitempty" xorm:"varchar(255) notnull index 'origin_kind' comment('service origin kind')"`
-	//오리진 UUID
-	OriginUuid *string `json:"origin_uuid,omitempty" xorm:"char(32) notnull index 'origin_uuid' comment('service origin uuid')"`
 	//클러스터 UUID
 	ClusterUuid *string `json:"cluster_uuid,omitempty" xorm:"char(32) notnull index 'cluster_uuid' comment('cluster's uuid')"`
 	//할당된 클라이언트 UUID
@@ -72,10 +68,8 @@ type DbSchemaServiceAndSteps struct {
 
 // Essential
 type ServiceCreateProperty struct {
-	//오리진 종류
-	OriginKind string `json:"origin_kind"`
-	//오리진 UUID
-	OriginUuid string `json:"origin_uuid"`
+	//TEMPLATE UUID
+	TemplateUuid string `json:"template_uuid"`
 	//클러스터 UUID
 	ClusterUuid string `json:"cluster_uuid"`
 }

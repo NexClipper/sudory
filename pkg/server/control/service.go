@@ -69,18 +69,11 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 					"param", TypeName(body.Name),
 				)))
 	}
-	if len(body.OriginKind) == 0 {
+	if len(body.TemplateUuid) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest,
 			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
 				logs.KVL(
-					"param", TypeName(body.OriginKind),
-				)))
-	}
-	if len(body.OriginUuid) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest,
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
-				logs.KVL(
-					"param", TypeName(body.OriginUuid),
+					"param", TypeName(body.TemplateUuid),
 				)))
 	}
 	if len(body.ClusterUuid) == 0 {
@@ -110,20 +103,20 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 
 	service_create := body.ServiceCreate
 	steps_create := body.Steps
-	template_uuid := service_create.OriginUuid
+	template_uuid := service_create.TemplateUuid
 
 	//valid template
 	if _, err := vault.NewTemplate(ctl.NewSession()).Get(template_uuid); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, errors.Wrapf(err, "found template%s",
 			logs.KVL(
-				"query", echoutil.QueryParamString(ctx),
+				"OriginUuid", service_create.TemplateUuid,
 			)))
 	}
 	//valid cluster
 	if _, err := vault.NewCluster(ctl.NewSession()).Get(service_create.ClusterUuid); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, errors.Wrapf(err, "found template%s",
 			logs.KVL(
-				"query", echoutil.QueryParamString(ctx),
+				"ClusterUuid", service_create.ClusterUuid,
 			)))
 	}
 
@@ -132,8 +125,6 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 	service := servicev1.Service{}
 	service.Name = nullable.String(service_create.Name).Ptr()
 	service.Summary = nullable.String(service_create.Summary).Ptr()
-	service.OriginKind = newist.String(service_create.OriginKind)
-	service.OriginUuid = newist.String(service_create.OriginUuid)
 	service.ClusterUuid = newist.String(service_create.ClusterUuid)
 	service.TemplateUuid = newist.String(template_uuid)
 	service.UuidMeta = NewUuidMeta()                                //meta uuid
@@ -384,40 +375,40 @@ func (ctl Control) DeleteService(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, OK())
 }
 
-func TraceServiceOrigin(ctx database.Context, originkind, originuuid string) ([]string, error) {
-	trace := make([]string, 0)
-	trace_append := func(kind, uuid string) {
-		trace = append(trace, fmt.Sprintf("%s:%s", kind, uuid))
-	}
+// func TraceServiceOrigin(ctx database.Context, originkind, originuuid string) ([]string, error) {
+// 	trace := make([]string, 0)
+// 	trace_append := func(kind, uuid string) {
+// 		trace = append(trace, fmt.Sprintf("%s:%s", kind, uuid))
+// 	}
 
-LOOP:
-	for {
-		switch originkind {
-		case "template":
-			template, err := vault.NewTemplate(ctx).Get(originuuid)
-			if err != nil {
-				return nil, errors.Wrapf(err, "NewTemplate Get")
-			}
-			trace_append("template", template.Uuid)
-			break LOOP
-		case "service":
-			service, err := vault.NewService(ctx).Get(originuuid)
-			if err != nil {
-				return nil, errors.Wrapf(err, "NewService Get")
-			}
-			trace_append("service", service.Uuid)
-			originkind, originuuid = *service.OriginKind, *service.OriginUuid
-		default:
-			return nil, fmt.Errorf("unknown origin_kind=%s", originkind)
-		}
-	}
+// LOOP:
+// 	for {
+// 		switch originkind {
+// 		case "template":
+// 			template, err := vault.NewTemplate(ctx).Get(originuuid)
+// 			if err != nil {
+// 				return nil, errors.Wrapf(err, "NewTemplate Get")
+// 			}
+// 			trace_append("template", template.Uuid)
+// 			break LOOP
+// 		case "service":
+// 			service, err := vault.NewService(ctx).Get(originuuid)
+// 			if err != nil {
+// 				return nil, errors.Wrapf(err, "NewService Get")
+// 			}
+// 			trace_append("service", service.Uuid)
+// 			originkind, originuuid = *service.OriginKind, *service.OriginUuid
+// 		default:
+// 			return nil, fmt.Errorf("unknown origin_kind=%s", originkind)
+// 		}
+// 	}
 
-	if len(trace) == 0 {
-		return nil, fmt.Errorf("not found service origin")
-	}
+// 	if len(trace) == 0 {
+// 		return nil, fmt.Errorf("not found service origin")
+// 	}
 
-	return trace, nil
-}
+// 	return trace, nil
+// }
 
 // service_exclude_result
 

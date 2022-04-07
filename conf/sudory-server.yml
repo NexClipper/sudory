@@ -61,13 +61,13 @@ events:
   notifiers:
   - notifier:
     type: console
-  # - notifier:
-  #   type: 'webhook'
-  #   method: post
-  #   url: 'http://localhost:8000/'
-  #   request-headers: 
-  #     Content-Type: "application/json" 
-  #   request-timeout: 30s
+  - notifier:
+    type: 'webhook'
+    method: post
+    url: 'http://localhost:8081/hook'
+    request-headers: 
+      Content-Type: "application/json" 
+    request-timeout: 30s
 - event:
   name: 'service-poll-out'
   update-interval: 5s
