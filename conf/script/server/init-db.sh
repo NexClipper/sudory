@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-HOST=$1
-PORT=$2
-SCHEME=$3
+DB_HOST=$1
+DB_PORT=$2
+DB_SCHEME=$3
 SQL_PATH=$4
 EXPORT_PATH=$5
 ROOT_USERNAME=$6
@@ -10,9 +10,9 @@ ROOT_PASSWORD=$7
 SERVER_USERNAME=$8
 SERVER_PASSWORD=$9
 
-echo HOST=${HOST}
-echo PORT=${PORT}
-echo SCHEME=${SCHEME}
+echo DB_HOST=${DB_HOST}
+echo DB_PORT=${DB_PORT}
+echo SCHEME=${DB_SCHEME}
 echo SQL_PATH=${SQL_PATH}
 echo EXPORT_PATH=${EXPORT_PATH}
 echo ROOT_USERNAME=${ROOT_USERNAME}
@@ -20,22 +20,22 @@ echo ROOT_PASSWORD=${ROOT_PASSWORD}
 echo SERVER_USERNAME=${SERVER_USERNAME}
 echo SERVER_PASSWORD=${SERVER_PASSWORD}
 
-EXPORT_FILE=${EXPORT_PATH}/${SCHEME}_$(date +%Y%m%d%H%M).sql
+EXPORT_FILE=${EXPORT_PATH}/${DB_SCHEME}_$(date +%Y%m%d%H%M).sql
 
-CMD_PRE="mysql --user=${ROOT_USERNAME} --password=${ROOT_PASSWORD} --host=${HOST} --port=${PORT}"
+CMD_PRE="mysql --user=${ROOT_USERNAME} --password=${ROOT_PASSWORD} --host=${DB_HOST} --port=${DB_PORT}"
 
 
 apk update
 apk add mariadb-client
 
 
-EXISTS=$(${CMD_PRE} --execute "show databases" | grep "${SCHEME}")
+EXISTS=$(${CMD_PRE} --execute "show databases" | grep "${DB_SCHEME}")
 
 
 if [[ ${EXISTS} != "" && ${EXPORT_PATH} != "" ]] ; then
 	echo "=============== start export for backup scheme ==============="
 	mkdir ${EXPORT_PATH}
-	CMD=$(mysqldump --user=${ROOT_USERNAME} --password=${ROOT_PASSWORD} --host=${HOST} --port=${PORT} -e --single-transaction -c ${SCHEME} > ${EXPORT_FILE})
+	CMD=$(mysqldump --user=${ROOT_USERNAME} --password=${ROOT_PASSWORD} --host=${DB_HOST} --port=${DB_PORT} -e --single-transaction -c ${DB_SCHEME} > ${EXPORT_FILE})
 	echo "=============== complete export for backup scheme ==============="
 fi
 
