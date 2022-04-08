@@ -1,5 +1,5 @@
+
 --	https://docs.google.com/spreadsheets/d/1vp8PuyQanxLlfmrKMM6BPI8Mf02lZmd9X2YsVEM4A80/edit?usp=sharing
-	use sudory;
 --	template_recipe
 -- kubernetes	
 	REPLACE INTO `template_recipe` ( `method`, `args`, `name`, `summary`, `id`, `created`) VALUES ('kubernetes.configmaps.get.v1', 'namespace,name', 'kubernetes-configmaps-get-v1', 'namespace:required;string;,name:required;string;', '1', '2022-03-31 10:51:40');

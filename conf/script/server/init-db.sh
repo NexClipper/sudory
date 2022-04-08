@@ -58,6 +58,8 @@ else
 	
 	cat ${SQL_PATH}.create >> ${SQL_PATH}.execute
 	cat ${SQL_PATH}.truncate >> ${SQL_PATH}.execute
+	cat ${SQL_PATH}.template.insert >> ${SQL_PATH}.execute
+	cat ${SQL_PATH}.recipe.insert >> ${SQL_PATH}.execute
 	
 	SQL_PATH="${SQL_PATH}.execute"
 fi

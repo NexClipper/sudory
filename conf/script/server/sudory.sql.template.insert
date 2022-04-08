@@ -1,4 +1,3 @@
-use sudory;
 
 -- template
 -- k8s.group_version: v1
