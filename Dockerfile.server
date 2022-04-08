@@ -8,6 +8,7 @@ RUN mkdir /app
 COPY /bin/server/sudory-server /app/
 COPY /conf/script/server/sudory.sql.create /app/
 COPY /conf/script/server/sudory.sql.modify /app/
+COPY /conf/script/server/sudory.sql.truncate /app/
 COPY /conf/script/server/entrypoint.sh /app/
 COPY /conf/script/server/init-db.sh /app/
 COPY /conf/sudory-server.yml /app/

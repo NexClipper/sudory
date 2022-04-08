@@ -1,4 +1,3 @@
-USE `sudory`;
 
 TRUNCATE TABLE `client`;
 	

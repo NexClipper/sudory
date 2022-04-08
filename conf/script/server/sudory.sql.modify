@@ -1,5 +1,3 @@
-USE `sudory`;
-
 ALTER TABLE `service`
 	DROP COLUMN IF EXISTS `origin_kind`,
 	DROP COLUMN IF EXISTS `origin_uuid`;

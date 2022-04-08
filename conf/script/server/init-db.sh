@@ -12,7 +12,7 @@ SERVER_PASSWORD=$9
 
 echo DB_HOST=${DB_HOST}
 echo DB_PORT=${DB_PORT}
-echo SCHEME=${DB_SCHEME}
+echo DB_SCHEME=${DB_SCHEME}
 echo SQL_PATH=${SQL_PATH}
 echo EXPORT_PATH=${EXPORT_PATH}
 echo ROOT_USERNAME=${ROOT_USERNAME}
@@ -42,7 +42,7 @@ fi
 
 if [[ ${EXISTS} != "" ]] ; then
 	cat > ${SQL_PATH}.execute <<- EOM
-		USE \`${SCHEME}\`;
+		USE \`${DB_SCHEME}\`;
 	EOM
 	
 	cat ${SQL_PATH}.modify >> ${SQL_PATH}.execute
@@ -50,18 +50,19 @@ if [[ ${EXISTS} != "" ]] ; then
 	SQL_PATH="${SQL_PATH}.execute"
 else
 	cat > ${SQL_PATH}.execute <<- EOM
-		CREATE DATABASE IF NOT EXISTS \`${SCHEME}\` DEFAULT CHARACTER SET utf8;
-		USE \`${SCHEME}\`;
+		CREATE DATABASE IF NOT EXISTS \`${DB_SCHEME}\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+		USE \`${DB_SCHEME}\`;
 		CREATE USER IF NOT EXISTS \`${SERVER_USERNAME}\`@\`%\` IDENTIFIED BY '${SERVER_PASSWORD}';
-		GRANT ALL PRIVILEGES ON \`${SCHEME}\`.* to \`${SERVER_USERNAME}\`@\`%\`;
+		GRANT ALL PRIVILEGES ON \`${DB_SCHEME}\`.* to \`${SERVER_USERNAME}\`@\`%\`;
 	EOM
 	
 	cat ${SQL_PATH}.create >> ${SQL_PATH}.execute
+	cat ${SQL_PATH}.truncate >> ${SQL_PATH}.execute
 	
 	SQL_PATH="${SQL_PATH}.execute"
 fi
 
-cat ${SQL_PATH} > ${EXPORT_PATH}/${SCHEME}.execute.sql
+cat ${SQL_PATH} > ${EXPORT_PATH}/${DB_SCHEME}.execute.sql
 echo SQL_PATH=${SQL_PATH}
 echo ${EXPORT_PATH}/execute.sql
 
