@@ -19,7 +19,7 @@ func NewTemplateRecipe(ctx database.Context) *TemplateRecipe {
 	return &TemplateRecipe{ctx: ctx}
 }
 
-func (vault TemplateRecipe) Query(query map[string]string) ([]recipev1.DbSchema, error) {
+func (vault TemplateRecipe) Query(query map[string]string) ([]recipev1.TemplateRecipe, error) {
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
@@ -30,18 +30,18 @@ func (vault TemplateRecipe) Query(query map[string]string) ([]recipev1.DbSchema,
 	}
 
 	//find service
-	records := make([]recipev1.DbSchema, 0)
-	if err := vault.ctx.Prepared(preparer).Find(&records); err != nil {
+	models := make([]recipev1.TemplateRecipe, 0)
+	if err := vault.ctx.Prepared(preparer).Find(&models); err != nil {
 		return nil, errors.Wrapf(err, "database find%v",
 			logs.KVL(
 				"query", query,
 			))
 	}
 
-	return records, nil
+	return models, nil
 }
 
-func (vault TemplateRecipe) Prepare(condition map[string]interface{}) ([]recipev1.DbSchema, error) {
+func (vault TemplateRecipe) Prepare(condition map[string]interface{}) ([]recipev1.TemplateRecipe, error) {
 	//parse cond
 	preparer, err := prepare.NewConditionMap(condition)
 	if err != nil {
@@ -49,10 +49,10 @@ func (vault TemplateRecipe) Prepare(condition map[string]interface{}) ([]recipev
 	}
 
 	//find service
-	records := make([]recipev1.DbSchema, 0)
-	if err := vault.ctx.Prepared(preparer).Find(&records); err != nil {
+	models := make([]recipev1.TemplateRecipe, 0)
+	if err := vault.ctx.Prepared(preparer).Find(&models); err != nil {
 		return nil, errors.Wrapf(err, "database find condition=%+v", preparer)
 	}
 
-	return records, nil
+	return models, nil
 }

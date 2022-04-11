@@ -2,7 +2,7 @@ package v1
 
 import "time"
 
-type ClientSessionPlayload struct {
+type ClientSessionPayload struct {
 	Exp          time.Time `json:"exp,omitempty"`           //expiration_time
 	Iat          time.Time `json:"iat,omitempty"`           //issued_at_time
 	Uuid         string    `json:"uuid,omitempty"`          //token_uuid

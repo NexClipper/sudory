@@ -16,22 +16,21 @@ func NewEnvironment(ctx database.Context) *Environment {
 	return &Environment{ctx: ctx}
 }
 
-func (vault Environment) Create(model envv1.Environment) (*envv1.DbSchema, error) {
-	record := &envv1.DbSchema{Environment: model}
-	if err := vault.ctx.Create(record); err != nil {
+func (vault Environment) Create(model envv1.Environment) (*envv1.Environment, error) {
+	if err := vault.ctx.Create(&model); err != nil {
 		return nil, errors.Wrapf(err, "database create")
 	}
 
-	return record, nil
+	return &model, nil
 }
 
-func (vault Environment) Get(uuid string) (*envv1.DbSchema, error) {
+func (vault Environment) Get(uuid string) (*envv1.Environment, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		uuid,
 	}
-	record := &envv1.DbSchema{}
-	if err := vault.ctx.Where(where, args...).Get(record); err != nil {
+	model := &envv1.Environment{}
+	if err := vault.ctx.Where(where, args...).Get(model); err != nil {
 		return nil, errors.Wrapf(err, "database get%v",
 			logs.KVL(
 				"where", where,
@@ -39,12 +38,12 @@ func (vault Environment) Get(uuid string) (*envv1.DbSchema, error) {
 			))
 	}
 
-	return record, nil
+	return model, nil
 }
 
-func (vault Environment) Find(where string, args ...interface{}) ([]envv1.DbSchema, error) {
-	records := make([]envv1.DbSchema, 0)
-	if err := vault.ctx.Where(where, args...).Find(&records); err != nil {
+func (vault Environment) Find(where string, args ...interface{}) ([]envv1.Environment, error) {
+	models := make([]envv1.Environment, 0)
+	if err := vault.ctx.Where(where, args...).Find(&models); err != nil {
 		return nil, errors.Wrapf(err, "database find%v",
 			logs.KVL(
 				"where", where,
@@ -52,10 +51,10 @@ func (vault Environment) Find(where string, args ...interface{}) ([]envv1.DbSche
 			))
 	}
 
-	return records, nil
+	return models, nil
 }
 
-func (vault Environment) Query(query map[string]string) ([]envv1.DbSchema, error) {
+func (vault Environment) Query(query map[string]string) ([]envv1.Environment, error) {
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
@@ -66,24 +65,23 @@ func (vault Environment) Query(query map[string]string) ([]envv1.DbSchema, error
 	}
 
 	//find service
-	records := make([]envv1.DbSchema, 0)
-	if err := vault.ctx.Prepared(preparer).Find(&records); err != nil {
+	models := make([]envv1.Environment, 0)
+	if err := vault.ctx.Prepared(preparer).Find(&models); err != nil {
 		return nil, errors.Wrapf(err, "database find%v",
 			logs.KVL(
 				"query", query,
 			))
 	}
 
-	return records, nil
+	return models, nil
 }
 
-func (vault Environment) Update(model envv1.Environment) (*envv1.DbSchema, error) {
+func (vault Environment) Update(model envv1.Environment) (*envv1.Environment, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		model.Uuid,
 	}
-	record := &envv1.DbSchema{Environment: model}
-	if err := vault.ctx.Where(where, args...).Update(record); err != nil {
+	if err := vault.ctx.Where(where, args...).Update(&model); err != nil {
 		return nil, errors.Wrapf(err, "database update%v",
 			logs.KVL(
 				"where", where,
@@ -91,7 +89,7 @@ func (vault Environment) Update(model envv1.Environment) (*envv1.DbSchema, error
 			))
 	}
 
-	return record, nil
+	return &model, nil
 }
 
 func (vault Environment) Delete(uuid string) error {
@@ -99,8 +97,8 @@ func (vault Environment) Delete(uuid string) error {
 	args := []interface{}{
 		uuid,
 	}
-	record := &envv1.DbSchema{}
-	if err := vault.ctx.Where(where, args...).Delete(record); err != nil {
+	model := &envv1.Environment{}
+	if err := vault.ctx.Where(where, args...).Delete(model); err != nil {
 		return errors.Wrapf(err, "database delete%v",
 			logs.KVL(
 				"where", where,

@@ -7,75 +7,29 @@ import (
 )
 
 type ServiceStepProperty struct {
-	//서비스 Uuid
-	ServiceUuid *string `json:"service_uuid,omitempty" xorm:"char(32) notnull index 'service_uuid' comment('services uuid')"`
-	//순서
-	Sequence *int32 `json:"sequence,omitempty" xorm:"int null default(0) 'sequence' comment('sequence')"`
-	//메소드
-	Method *string `json:"method,omitempty" xorm:"varchar(255) null 'method' comment('method')"`
-	//arguments
-	Args map[string]interface{} `json:"args,omitempty" xorm:"text null 'args' comment('args')"`
-	//ResultFilter 스탭 결과 필터
-	ResultFilter *string `json:"result_filter,omitempty" xorm:"varchar(4096) null 'result_filter' comment('result_filter')"`
-	//Status 상태
-	Status *int32 `json:"status,omitempty" xorm:"int null index default(0) 'status' comment('status')"`
-	//Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
-	Result *string `json:"result,omitempty" xorm:"longtext null 'result' comment('result')"`
-	//Started 스탭 시작 시간
-	Started *time.Time `json:"srated,omitempty" xorm:"datetime null comment('step start time')"`
-	//Started 스탭 완료 시간
-	Ended *time.Time `json:"ended,omitempty" xorm:"datetime null comment(step end time)"`
+	ServiceUuid  string                 `json:"service_uuid"            xorm:"'service_uuid'  char(32)      notnull index comment('services uuid')"`
+	Sequence     *int32                 `json:"sequence,omitempty"      xorm:"'sequence'      int           notnull       comment('sequence')"`
+	Method       string                 `json:"method"                  xorm:"'method'        varchar(255)  notnull       comment('method')"`
+	Args         map[string]interface{} `json:"args,omitempty"          xorm:"'args'          text          null          comment('args')"`
+	ResultFilter *string                `json:"result_filter,omitempty" xorm:"'result_filter' varchar(4096) null          comment('result_filter')"`
+	Status       *int32                 `json:"status,omitempty"        xorm:"'status'        int           notnull index comment('status')"`
+	Result       *string                `json:"result,omitempty"        xorm:"'result'        longtext      null          comment('result')"`
+	Started      *time.Time             `json:"started,omitempty"       xorm:"'started'       datetime      null          comment('step start time')"`
+	Ended        *time.Time             `json:"ended,omitempty"         xorm:"'ended'         datetime      null          comment('step end time)'"`
 }
 
+//DATABASE SCHEMA: SERVICE
 type ServiceStep struct {
+	metav1.DbMeta       `json:",inline" xorm:"extends"`
 	metav1.UuidMeta     `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta    `json:",inline" xorm:"extends"` //inline labelmeta
 	ServiceStepProperty `json:",inline" xorm:"extends"` //inline property
 }
 
-//DATABASE SCHEMA: SERVICE
-type DbSchema struct {
-	metav1.DbMeta `xorm:"extends"`
-	ServiceStep   `xorm:"extends"`
-}
-
-func (DbSchema) TableName() string {
+func (ServiceStep) TableName() string {
 	return "service_step"
 }
 
-type StepCreateProperty struct {
-	//arguments
+type HttpReqServiceStep_Create_ByService struct {
 	Args map[string]interface{} `json:"args,omitempty"`
-}
-
-type StepCreate struct {
-	StepCreateProperty `json:",inline"` //inline property
-}
-
-//HTTP REQUEST BODY: SERVICE_STEP
-type HttpReqServiceStep struct {
-	ServiceStep `json:",inline"`
-}
-
-//HTTP RESPONSE BODY: SERVICE_STEP
-type HttpRspServiceStep struct {
-	DbSchema `json:",inline"`
-}
-
-//변환 DbSchema -> Step
-func TransFormDbSchema(s []DbSchema) []ServiceStep {
-	var out = make([]ServiceStep, len(s))
-	for n, it := range s {
-		out[n] = it.ServiceStep
-	}
-	return out
-}
-
-//변환 Step -> HttpRsp
-func TransToHttpRsp(s []DbSchema) []HttpRspServiceStep {
-	var out = make([]HttpRspServiceStep, len(s))
-	for n, it := range s {
-		out[n].DbSchema = it
-	}
-	return out
 }

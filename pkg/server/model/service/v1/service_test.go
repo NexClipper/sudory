@@ -10,7 +10,7 @@ import (
 
 func TestServiceJson(t *testing.T) {
 
-	m := NewService().Service
+	m := NewService()
 
 	data, err := json.MarshalIndent(m, "", " ")
 	if err != nil {
@@ -44,9 +44,9 @@ func TestDbSchemaServiceJson(t *testing.T) {
 	}
 }
 
-func TestHttpReqServiceJson(t *testing.T) {
+func TestHttpHttpRspService(t *testing.T) {
 
-	m := HttpReqService{NewService().Service}
+	m := HttpRspService{Service: NewService()}
 
 	data, err := json.MarshalIndent(m, "", " ")
 	if err != nil {
@@ -64,7 +64,7 @@ func TestHttpReqServiceJson(t *testing.T) {
 
 func TestHttpReqClientSideServiceJson(t *testing.T) {
 
-	m := HttpReqClientSideService{ServiceAndSteps: ServiceAndSteps{Service: NewService().Service}}
+	m := HttpReqService_ClientSide{Service: NewService()}
 
 	data, err := json.MarshalIndent(m, "", " ")
 	if err != nil {
@@ -83,19 +83,19 @@ func TestHttpReqClientSideServiceJson(t *testing.T) {
 const ServiceUuid = "cda6498a235d4f7eae19661d41bc154c"
 const ClusterUuid = "cda6498a235d4f7eae19661d41bc154c"
 
-func NewService() DbSchema {
+func NewService() Service {
 
-	out := DbSchema{}
+	out := Service{}
 
 	out.Id = 11112222333344445555
 	out.Created = newist.Time(time.Now())
 	out.Updated = newist.Time(time.Now())
 	out.Deleted = nil
 	out.Uuid = "00001111222233334444555566667777"
-	out.Name = newist.String("test-name")
+	out.Name = "test-name"
 	out.Summary = newist.String("test: ...")
 	// out.ApiVersion = newist.String("v1")
-	out.ClusterUuid = newist.String(ClusterUuid)
+	out.ClusterUuid = ClusterUuid
 	out.StepCount = newist.Int32(0)
 	out.StepPosition = newist.Int32(0)
 	out.Type = newist.Int32(0)

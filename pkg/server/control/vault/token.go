@@ -16,22 +16,21 @@ func NewToken(ctx database.Context) *Token {
 	return &Token{ctx: ctx}
 }
 
-func (vault Token) CreateToken(token tokenv1.Token) (*tokenv1.DbSchema, error) {
+func (vault Token) CreateToken(model tokenv1.Token) (*tokenv1.Token, error) {
 	//create
-	record := &tokenv1.DbSchema{Token: token}
-	if err := vault.ctx.Create(record); err != nil {
+	if err := vault.ctx.Create(&model); err != nil {
 		return nil, errors.Wrapf(err, "database create")
 	}
-	return record, nil
+	return &model, nil
 }
 
-func (vault Token) Get(uuid string) (*tokenv1.DbSchema, error) {
+func (vault Token) Get(uuid string) (*tokenv1.Token, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		uuid,
 	}
-	record := &tokenv1.DbSchema{}
-	if err := vault.ctx.Where(where, args...).Get(record); err != nil {
+	model := &tokenv1.Token{}
+	if err := vault.ctx.Where(where, args...).Get(model); err != nil {
 		return nil, errors.Wrapf(err, "database get%v",
 			logs.KVL(
 				"where", where,
@@ -39,12 +38,12 @@ func (vault Token) Get(uuid string) (*tokenv1.DbSchema, error) {
 			))
 	}
 
-	return record, nil
+	return model, nil
 }
 
-func (vault Token) Find(where string, args ...interface{}) ([]tokenv1.DbSchema, error) {
-	records := make([]tokenv1.DbSchema, 0)
-	if err := vault.ctx.Where(where, args...).Find(&records); err != nil {
+func (vault Token) Find(where string, args ...interface{}) ([]tokenv1.Token, error) {
+	models := make([]tokenv1.Token, 0)
+	if err := vault.ctx.Where(where, args...).Find(&models); err != nil {
 		return nil, errors.Wrapf(err, "database find%v",
 			logs.KVL(
 				"where", where,
@@ -52,10 +51,10 @@ func (vault Token) Find(where string, args ...interface{}) ([]tokenv1.DbSchema, 
 			))
 	}
 
-	return records, nil
+	return models, nil
 }
 
-func (vault Token) Query(query map[string]string) ([]tokenv1.DbSchema, error) {
+func (vault Token) Query(query map[string]string) ([]tokenv1.Token, error) {
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
@@ -66,24 +65,23 @@ func (vault Token) Query(query map[string]string) ([]tokenv1.DbSchema, error) {
 	}
 
 	//find service
-	records := make([]tokenv1.DbSchema, 0)
-	if err := vault.ctx.Prepared(preparer).Find(&records); err != nil {
+	models := make([]tokenv1.Token, 0)
+	if err := vault.ctx.Prepared(preparer).Find(&models); err != nil {
 		return nil, errors.Wrapf(err, "database find%v",
 			logs.KVL(
 				"query", query,
 			))
 	}
 
-	return records, nil
+	return models, nil
 }
 
-func (vault Token) Update(model tokenv1.Token) (*tokenv1.DbSchema, error) {
+func (vault Token) Update(model tokenv1.Token) (*tokenv1.Token, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		model.Uuid,
 	}
-	record := &tokenv1.DbSchema{Token: model}
-	if err := vault.ctx.Where(where, args...).Update(record); err != nil {
+	if err := vault.ctx.Where(where, args...).Update(&model); err != nil {
 		return nil, errors.Wrapf(err, "database update%v",
 			logs.KVL(
 				"where", where,
@@ -91,13 +89,7 @@ func (vault Token) Update(model tokenv1.Token) (*tokenv1.DbSchema, error) {
 			))
 	}
 
-	//make result
-	record_, err := vault.Get(record.Uuid)
-	if err != nil {
-		return nil, errors.Wrapf(err, "make update result")
-	}
-
-	return record_, nil
+	return &model, nil
 }
 
 func (vault Token) Delete(uuid string) error {
@@ -105,7 +97,7 @@ func (vault Token) Delete(uuid string) error {
 	args := []interface{}{
 		uuid,
 	}
-	model := &tokenv1.DbSchema{}
+	model := &tokenv1.Token{}
 	if err := vault.ctx.Where(where, args...).Delete(model); err != nil {
 		return errors.Wrapf(err, "database delete%v",
 			logs.KVL(

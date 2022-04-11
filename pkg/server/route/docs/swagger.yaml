@@ -1,54 +1,60 @@
 definitions:
-  v1.DbSchema:
+  v1.Client:
     properties:
-      args:
-        additionalProperties: true
-        description: arguments
-        type: object
+      cluster_uuid:
+        type: string
       created:
-        description: 생성시간
         type: string
       deleted:
-        description: 삭제시간, 삭제 플래그
-        type: string
-      ended:
-        description: Started 스탭 완료 시간
         type: string
       id:
-        description: 아이디 PK
         type: integer
-      method:
-        description: 메소드
-        type: string
       name:
-        description: label name
         type: string
-      result:
-        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
-        type: string
-      result_filter:
-        description: ResultFilter 스탭 결과 필터
-        type: string
-      sequence:
-        description: 순서
-        type: integer
-      service_uuid:
-        description: 서비스 Uuid
-        type: string
-      srated:
-        description: Started 스탭 시작 시간
-        type: string
-      status:
-        description: Status 상태
-        type: integer
       summary:
-        description: label summary
         type: string
       updated:
-        description: 수정시간
         type: string
       uuid:
-        description: UUID
+        type: string
+    type: object
+  v1.Cluster:
+    properties:
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      polling_option:
+        additionalProperties: true
+        type: object
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        type: string
+    type: object
+  v1.Environment:
+    properties:
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        type: string
+      value:
         type: string
     type: object
   v1.HttpReqAuth:
@@ -66,605 +72,291 @@ definitions:
         description: cluster uuid
         type: string
     type: object
-  v1.HttpReqClientSideService:
+  v1.HttpReqCluster_Create:
+    properties:
+      name:
+        type: string
+      polling_option:
+        additionalProperties: true
+        type: object
+      summary:
+        type: string
+    type: object
+  v1.HttpReqCluster_Update:
+    properties:
+      name:
+        type: string
+      polling_option:
+        additionalProperties: true
+        type: object
+      summary:
+        type: string
+    type: object
+  v1.HttpReqEnvironment_Update:
+    properties:
+      value:
+        type: string
+    type: object
+  v1.HttpReqService_ClientSide:
     properties:
       assigned_client_uuid:
-        description: 할당된 클라이언트 UUID
         type: string
       cluster_uuid:
-        description: 클러스터 UUID
+        type: string
+      created:
+        type: string
+      deleted:
         type: string
       epoch:
-        description: 'Epoch -1: infinite, 0 :'
+        description: '-1: infinite'
+        type: integer
+      id:
         type: integer
       interval:
-        description: Interval
         type: integer
       name:
-        description: label name
-        type: string
-      origin_kind:
-        description: 오리진 종류
-        type: string
-      origin_uuid:
-        description: 오리진 UUID
         type: string
       result:
-        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
+        description: 실행 결과(정상:'결과', 오류:'오류 메시지')
         type: string
       status:
-        description: Status
         type: integer
       step_count:
-        description: 스탭 카운트
         type: integer
       step_position:
-        description: 스탭 Position
         type: integer
       steps:
         items:
           $ref: '#/definitions/v1.ServiceStep'
         type: array
       summary:
-        description: label summary
         type: string
       template_uuid:
-        description: 텔플릿 UUID
         type: string
       type:
-        description: 'Type; 0: Once, 1: repeat(epoch, interval)'
+        description: '0: once, 1: repeat(epoch, interval)'
         type: integer
-      uuid:
-        description: UUID
-        type: string
-    type: object
-  v1.HttpReqCluster:
-    properties:
-      name:
-        description: label name
-        type: string
-      polling_option:
-        additionalProperties: true
-        type: object
-      summary:
-        description: label summary
+      updated:
         type: string
       uuid:
-        description: UUID
         type: string
     type: object
-  v1.HttpReqEnvironmentUpdate:
-    properties:
-      value:
-        type: string
-    type: object
-  v1.HttpReqServiceCreate:
+  v1.HttpReqService_Create:
     properties:
       cluster_uuid:
-        description: 클러스터 UUID
         type: string
       name:
-        description: label name
-        type: string
-      origin_kind:
-        description: 오리진 종류
-        type: string
-      origin_uuid:
-        description: 오리진 UUID
         type: string
       steps:
         items:
-          $ref: '#/definitions/v1.StepCreate'
+          $ref: '#/definitions/v1.HttpReqServiceStep_Create_ByService'
         type: array
       summary:
-        description: label summary
+        type: string
+      template_uuid:
         type: string
     type: object
-  v1.HttpReqTemplate:
-    properties:
-      name:
-        description: label name
-        type: string
-      origin:
-        description: |-
-          origin
-          @example: predefined, userdefined
-        type: string
-      summary:
-        description: label summary
-        type: string
-      uuid:
-        description: UUID
-        type: string
-    type: object
-  v1.HttpReqTemplateCommand:
+  v1.HttpReqServiceStep_Create_ByService:
     properties:
       args:
         additionalProperties: true
-        description: arguments
         type: object
-      method:
-        description: |-
-          메소드
-          @example: "kubernetes.deployment.get.v1", "kubernetes.pod.list.v1"
-        type: string
+    type: object
+  v1.HttpReqTemplate_Create:
+    properties:
+      commands:
+        items:
+          $ref: '#/definitions/v1.HttpReqTemplateCommand_Create_ByTemplate'
+        type: array
       name:
-        description: label name
         type: string
-      result_filter:
-        description: ResultFilter 스탭 결과 필터
+      origin:
         type: string
-      sequence:
-        description: 순서
-        type: integer
       summary:
-        description: label summary
-        type: string
-      template_uuid:
-        description: 템플릿 UUID
-        type: string
-      uuid:
-        description: UUID
         type: string
     type: object
-  v1.HttpReqTemplateWithCommands:
+  v1.HttpReqTemplate_Update:
+    properties:
+      name:
+        type: string
+      origin:
+        type: string
+      summary:
+        type: string
+    type: object
+  v1.HttpReqTemplateCommand_Create:
+    properties:
+      args:
+        additionalProperties: true
+        type: object
+      method:
+        type: string
+      name:
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        type: integer
+      summary:
+        type: string
+      template_uuid:
+        type: string
+    type: object
+  v1.HttpReqTemplateCommand_Create_ByTemplate:
+    properties:
+      args:
+        additionalProperties: true
+        type: object
+      method:
+        type: string
+      name:
+        type: string
+      result_filter:
+        type: string
+      summary:
+        type: string
+    type: object
+  v1.HttpReqTemplateCommand_Update:
+    properties:
+      args:
+        additionalProperties: true
+        type: object
+      method:
+        type: string
+      name:
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        type: integer
+      summary:
+        type: string
+    type: object
+  v1.HttpReqToken_CreateClusterToken:
+    properties:
+      name:
+        type: string
+      summary:
+        type: string
+      user_uuid:
+        type: string
+    type: object
+  v1.HttpReqToken_UpdateLabel:
+    properties:
+      name:
+        type: string
+      summary:
+        type: string
+    type: object
+  v1.HttpRspService:
+    properties:
+      assigned_client_uuid:
+        type: string
+      cluster_uuid:
+        type: string
+      created:
+        type: string
+      deleted:
+        type: string
+      epoch:
+        description: '-1: infinite'
+        type: integer
+      id:
+        type: integer
+      interval:
+        type: integer
+      name:
+        type: string
+      result:
+        description: 실행 결과(정상:'결과', 오류:'오류 메시지')
+        type: string
+      status:
+        type: integer
+      step_count:
+        type: integer
+      step_position:
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/v1.ServiceStep'
+        type: array
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      type:
+        description: '0: once, 1: repeat(epoch, interval)'
+        type: integer
+      updated:
+        type: string
+      uuid:
+        type: string
+    type: object
+  v1.HttpRspService_ClientSide:
+    properties:
+      assigned_client_uuid:
+        type: string
+      cluster_uuid:
+        type: string
+      created:
+        type: string
+      deleted:
+        type: string
+      epoch:
+        description: '-1: infinite'
+        type: integer
+      id:
+        type: integer
+      interval:
+        type: integer
+      name:
+        type: string
+      result:
+        description: 실행 결과(정상:'결과', 오류:'오류 메시지')
+        type: string
+      status:
+        type: integer
+      step_count:
+        type: integer
+      step_position:
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/v1.ServiceStep'
+        type: array
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      type:
+        description: '0: once, 1: repeat(epoch, interval)'
+        type: integer
+      updated:
+        type: string
+      uuid:
+        type: string
+    type: object
+  v1.HttpRspTemplate:
     properties:
       commands:
         items:
           $ref: '#/definitions/v1.TemplateCommand'
         type: array
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        type: integer
       name:
-        description: label name
         type: string
       origin:
-        description: |-
-          origin
-          @example: predefined, userdefined
         type: string
       summary:
-        description: label summary
-        type: string
-      uuid:
-        description: UUID
-        type: string
-    type: object
-  v1.HttpReqToken:
-    properties:
-      expiration_time:
-        type: string
-      issued_at_time:
-        type: string
-      name:
-        description: label name
-        type: string
-      summary:
-        description: label summary
-        type: string
-      token:
-        type: string
-      user_kind:
-        type: string
-      user_uuid:
-        type: string
-      uuid:
-        description: UUID
-        type: string
-    type: object
-  v1.HttpRspClient:
-    properties:
-      cluster_uuid:
-        description: ClusterUuid
-        type: string
-      created:
-        description: 생성시간
-        type: string
-      deleted:
-        description: 삭제시간, 삭제 플래그
-        type: string
-      id:
-        description: 아이디 PK
-        type: integer
-      name:
-        description: label name
-        type: string
-      summary:
-        description: label summary
         type: string
       updated:
-        description: 수정시간
         type: string
       uuid:
-        description: UUID
-        type: string
-    type: object
-  v1.HttpRspClientSideService:
-    properties:
-      assigned_client_uuid:
-        description: 할당된 클라이언트 UUID
-        type: string
-      cluster_uuid:
-        description: 클러스터 UUID
-        type: string
-      epoch:
-        description: 'Epoch -1: infinite, 0 :'
-        type: integer
-      interval:
-        description: Interval
-        type: integer
-      name:
-        description: label name
-        type: string
-      origin_kind:
-        description: 오리진 종류
-        type: string
-      origin_uuid:
-        description: 오리진 UUID
-        type: string
-      result:
-        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
-        type: string
-      status:
-        description: Status
-        type: integer
-      step_count:
-        description: 스탭 카운트
-        type: integer
-      step_position:
-        description: 스탭 Position
-        type: integer
-      steps:
-        items:
-          $ref: '#/definitions/v1.ServiceStep'
-        type: array
-      summary:
-        description: label summary
-        type: string
-      template_uuid:
-        description: 텔플릿 UUID
-        type: string
-      type:
-        description: 'Type; 0: Once, 1: repeat(epoch, interval)'
-        type: integer
-      uuid:
-        description: UUID
-        type: string
-    type: object
-  v1.HttpRspCluster:
-    properties:
-      created:
-        description: 생성시간
-        type: string
-      deleted:
-        description: 삭제시간, 삭제 플래그
-        type: string
-      id:
-        description: 아이디 PK
-        type: integer
-      name:
-        description: label name
-        type: string
-      polling_option:
-        additionalProperties: true
-        type: object
-      summary:
-        description: label summary
-        type: string
-      updated:
-        description: 수정시간
-        type: string
-      uuid:
-        description: UUID
-        type: string
-    type: object
-  v1.HttpRspEnvironment:
-    properties:
-      created:
-        description: 생성시간
-        type: string
-      deleted:
-        description: 삭제시간, 삭제 플래그
-        type: string
-      id:
-        description: 아이디 PK
-        type: integer
-      name:
-        description: label name
-        type: string
-      summary:
-        description: label summary
-        type: string
-      updated:
-        description: 수정시간
-        type: string
-      uuid:
-        description: UUID
-        type: string
-      value:
-        type: string
-    type: object
-  v1.HttpRspServiceStep:
-    properties:
-      args:
-        additionalProperties: true
-        description: arguments
-        type: object
-      created:
-        description: 생성시간
-        type: string
-      deleted:
-        description: 삭제시간, 삭제 플래그
-        type: string
-      ended:
-        description: Started 스탭 완료 시간
-        type: string
-      id:
-        description: 아이디 PK
-        type: integer
-      method:
-        description: 메소드
-        type: string
-      name:
-        description: label name
-        type: string
-      result:
-        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
-        type: string
-      result_filter:
-        description: ResultFilter 스탭 결과 필터
-        type: string
-      sequence:
-        description: 순서
-        type: integer
-      service_uuid:
-        description: 서비스 Uuid
-        type: string
-      srated:
-        description: Started 스탭 시작 시간
-        type: string
-      status:
-        description: Status 상태
-        type: integer
-      summary:
-        description: label summary
-        type: string
-      updated:
-        description: 수정시간
-        type: string
-      uuid:
-        description: UUID
-        type: string
-    type: object
-  v1.HttpRspServiceWithSteps:
-    properties:
-      assigned_client_uuid:
-        description: 할당된 클라이언트 UUID
-        type: string
-      cluster_uuid:
-        description: 클러스터 UUID
-        type: string
-      created:
-        description: 생성시간
-        type: string
-      deleted:
-        description: 삭제시간, 삭제 플래그
-        type: string
-      epoch:
-        description: 'Epoch -1: infinite, 0 :'
-        type: integer
-      id:
-        description: 아이디 PK
-        type: integer
-      interval:
-        description: Interval
-        type: integer
-      name:
-        description: label name
-        type: string
-      origin_kind:
-        description: 오리진 종류
-        type: string
-      origin_uuid:
-        description: 오리진 UUID
-        type: string
-      result:
-        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
-        type: string
-      status:
-        description: Status
-        type: integer
-      step_count:
-        description: 스탭 카운트
-        type: integer
-      step_position:
-        description: 스탭 Position
-        type: integer
-      steps:
-        items:
-          $ref: '#/definitions/v1.DbSchema'
-        type: array
-      summary:
-        description: label summary
-        type: string
-      template_uuid:
-        description: 텔플릿 UUID
-        type: string
-      type:
-        description: 'Type; 0: Once, 1: repeat(epoch, interval)'
-        type: integer
-      updated:
-        description: 수정시간
-        type: string
-      uuid:
-        description: UUID
-        type: string
-    type: object
-  v1.HttpRspSession:
-    properties:
-      created:
-        description: 생성시간
-        type: string
-      deleted:
-        description: 삭제시간, 삭제 플래그
-        type: string
-      expiration_time:
-        type: string
-      id:
-        description: 아이디 PK
-        type: integer
-      issued_at_time:
-        type: string
-      token:
-        type: string
-      updated:
-        description: 수정시간
-        type: string
-      user_kind:
-        type: string
-      user_uuid:
-        type: string
-      uuid:
-        description: UUID
-        type: string
-    type: object
-  v1.HttpRspTemplate:
-    properties:
-      created:
-        description: 생성시간
-        type: string
-      deleted:
-        description: 삭제시간, 삭제 플래그
-        type: string
-      id:
-        description: 아이디 PK
-        type: integer
-      name:
-        description: label name
-        type: string
-      origin:
-        description: |-
-          origin
-          @example: predefined, userdefined
-        type: string
-      summary:
-        description: label summary
-        type: string
-      updated:
-        description: 수정시간
-        type: string
-      uuid:
-        description: UUID
-        type: string
-    type: object
-  v1.HttpRspTemplateCommand:
-    properties:
-      args:
-        additionalProperties: true
-        description: arguments
-        type: object
-      created:
-        description: 생성시간
-        type: string
-      deleted:
-        description: 삭제시간, 삭제 플래그
-        type: string
-      id:
-        description: 아이디 PK
-        type: integer
-      method:
-        description: |-
-          메소드
-          @example: "kubernetes.deployment.get.v1", "kubernetes.pod.list.v1"
-        type: string
-      name:
-        description: label name
-        type: string
-      result_filter:
-        description: ResultFilter 스탭 결과 필터
-        type: string
-      sequence:
-        description: 순서
-        type: integer
-      summary:
-        description: label summary
-        type: string
-      template_uuid:
-        description: 템플릿 UUID
-        type: string
-      updated:
-        description: 수정시간
-        type: string
-      uuid:
-        description: UUID
-        type: string
-    type: object
-  v1.HttpRspTemplateRecipe:
-    properties:
-      args:
-        description: arguments
-        type: string
-      created:
-        description: 생성시간
-        type: string
-      deleted:
-        description: 삭제시간, 삭제 플래그
-        type: string
-      id:
-        description: 아이디 PK
-        type: integer
-      method:
-        description: method
-        type: string
-      name:
-        description: label name
-        type: string
-      summary:
-        description: label summary
-        type: string
-      updated:
-        description: 수정시간
-        type: string
-    type: object
-  v1.HttpRspToken:
-    properties:
-      created:
-        description: 생성시간
-        type: string
-      deleted:
-        description: 삭제시간, 삭제 플래그
-        type: string
-      expiration_time:
-        type: string
-      id:
-        description: 아이디 PK
-        type: integer
-      issued_at_time:
-        type: string
-      name:
-        description: label name
-        type: string
-      summary:
-        description: label summary
-        type: string
-      token:
-        type: string
-      updated:
-        description: 수정시간
-        type: string
-      user_kind:
-        type: string
-      user_uuid:
-        type: string
-      uuid:
-        description: UUID
-        type: string
-    type: object
-  v1.LabelMeta:
-    properties:
-      name:
-        description: label name
-        type: string
-      summary:
-        description: label summary
         type: string
     type: object
   v1.RagulerPollingOption:
@@ -673,84 +365,161 @@ definitions:
     properties:
       args:
         additionalProperties: true
-        description: arguments
         type: object
-      ended:
-        description: Started 스탭 완료 시간
+      created:
         type: string
+      deleted:
+        type: string
+      ended:
+        type: string
+      id:
+        type: integer
       method:
-        description: 메소드
         type: string
       name:
-        description: label name
         type: string
       result:
-        description: Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
         type: string
       result_filter:
-        description: ResultFilter 스탭 결과 필터
         type: string
       sequence:
-        description: 순서
         type: integer
       service_uuid:
-        description: 서비스 Uuid
         type: string
-      srated:
-        description: Started 스탭 시작 시간
+      started:
         type: string
       status:
-        description: Status 상태
         type: integer
       summary:
-        description: label summary
+        type: string
+      updated:
         type: string
       uuid:
-        description: UUID
+        type: string
+    type: object
+  v1.Session:
+    properties:
+      created:
+        type: string
+      deleted:
+        type: string
+      expiration_time:
+        type: string
+      id:
+        type: integer
+      issued_at_time:
+        type: string
+      token:
+        type: string
+      updated:
+        type: string
+      user_kind:
+        type: string
+      user_uuid:
+        type: string
+      uuid:
         type: string
     type: object
   v1.SmartPollingOption:
     properties:
       buzy:
+        description: (초)
         type: integer
       idle:
+        description: (초)
         type: integer
     type: object
-  v1.StepCreate:
+  v1.Template:
     properties:
-      args:
-        additionalProperties: true
-        description: arguments
-        type: object
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      origin:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        type: string
     type: object
   v1.TemplateCommand:
     properties:
       args:
         additionalProperties: true
-        description: arguments
         type: object
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        type: integer
       method:
-        description: |-
-          메소드
-          @example: "kubernetes.deployment.get.v1", "kubernetes.pod.list.v1"
         type: string
       name:
-        description: label name
         type: string
       result_filter:
-        description: ResultFilter 스탭 결과 필터
         type: string
       sequence:
-        description: 순서
         type: integer
       summary:
-        description: label summary
         type: string
       template_uuid:
-        description: 템플릿 UUID
+        type: string
+      updated:
         type: string
       uuid:
-        description: UUID
+        type: string
+    type: object
+  v1.TemplateRecipe:
+    properties:
+      args:
+        type: string
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        type: integer
+      method:
+        type: string
+      name:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+    type: object
+  v1.Token:
+    properties:
+      created:
+        type: string
+      deleted:
+        type: string
+      expiration_time:
+        type: string
+      id:
+        type: integer
+      issued_at_time:
+        type: string
+      name:
+        type: string
+      summary:
+        type: string
+      token:
+        type: string
+      updated:
+        type: string
+      user_kind:
+        type: string
+      user_uuid:
+        type: string
+      uuid:
         type: string
     type: object
 info:
@@ -797,13 +566,13 @@ paths:
         name: x-sudory-client-token
         required: true
         type: string
-      - description: HttpReqClientSideService
+      - description: HttpReqService_ClientSide
         in: body
         name: service
         required: true
         schema:
           items:
-            $ref: '#/definitions/v1.HttpReqClientSideService'
+            $ref: '#/definitions/v1.HttpReqService_ClientSide'
           type: array
       produces:
       - application/json
@@ -816,7 +585,7 @@ paths:
               type: string
           schema:
             items:
-              $ref: '#/definitions/v1.HttpRspClientSideService'
+              $ref: '#/definitions/v1.HttpRspService_ClientSide'
             type: array
       tags:
       - client/service
@@ -845,7 +614,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.HttpRspClient'
+              $ref: '#/definitions/v1.Client'
             type: array
       tags:
       - server/client
@@ -883,7 +652,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspClient'
+            $ref: '#/definitions/v1.Client'
       tags:
       - server/client
   /server/cluster:
@@ -911,7 +680,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.HttpRspCluster'
+              $ref: '#/definitions/v1.Cluster'
             type: array
       tags:
       - server/cluster
@@ -920,19 +689,19 @@ paths:
       - application/json
       description: Create a cluster
       parameters:
-      - description: HttpReqCluster
+      - description: HttpReqCluster_Create
         in: body
         name: client
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqCluster'
+          $ref: '#/definitions/v1.HttpReqCluster_Create'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspCluster'
+            $ref: '#/definitions/v1.Cluster'
       tags:
       - server/cluster
   /server/cluster/{uuid}:
@@ -969,7 +738,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspCluster'
+            $ref: '#/definitions/v1.Cluster'
       tags:
       - server/cluster
     put:
@@ -982,19 +751,19 @@ paths:
         name: uuid
         required: true
         type: string
-      - description: HttpReqCluster
+      - description: HttpReqCluster_Update
         in: body
         name: client
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqCluster'
+          $ref: '#/definitions/v1.HttpReqCluster_Update'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspCluster'
+            $ref: '#/definitions/v1.Cluster'
       tags:
       - server/cluster
   /server/cluster/{uuid}/polling/raguler:
@@ -1020,7 +789,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspCluster'
+            $ref: '#/definitions/v1.Cluster'
       tags:
       - server/cluster
   /server/cluster/{uuid}/polling/smart:
@@ -1046,7 +815,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspCluster'
+            $ref: '#/definitions/v1.Cluster'
       tags:
       - server/cluster
   /server/environment:
@@ -1074,7 +843,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.HttpRspEnvironment'
+              $ref: '#/definitions/v1.Environment'
             type: array
       tags:
       - server/environment
@@ -1095,7 +864,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspEnvironment'
+            $ref: '#/definitions/v1.Environment'
       tags:
       - server/environment
     put:
@@ -1108,18 +877,18 @@ paths:
         name: uuid
         required: true
         type: string
-      - description: HttpReqEnvironmentUpdate
+      - description: HttpReqEnvironment_Update
         in: body
         name: enviroment
         schema:
-          $ref: '#/definitions/v1.HttpReqEnvironmentUpdate'
+          $ref: '#/definitions/v1.HttpReqEnvironment_Update'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspEnvironment'
+            $ref: '#/definitions/v1.Environment'
       tags:
       - server/environment
   /server/service:
@@ -1147,7 +916,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.HttpRspServiceWithSteps'
+              $ref: '#/definitions/v1.HttpRspService'
             type: array
       tags:
       - server/service
@@ -1156,19 +925,19 @@ paths:
       - application/json
       description: Create a Service
       parameters:
-      - description: HttpReqServiceCreate
+      - description: HttpReqService_Create
         in: body
         name: service
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqServiceCreate'
+          $ref: '#/definitions/v1.HttpReqService_Create'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspServiceWithSteps'
+            $ref: '#/definitions/v1.HttpRspService'
       tags:
       - server/service
   /server/service/{service_uuid}/step:
@@ -1189,7 +958,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.HttpRspServiceStep'
+              $ref: '#/definitions/v1.ServiceStep'
             type: array
       tags:
       - server/service_step
@@ -1215,7 +984,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspServiceStep'
+            $ref: '#/definitions/v1.ServiceStep'
       tags:
       - server/service_step
   /server/service/{uuid}:
@@ -1252,7 +1021,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspServiceWithSteps'
+            $ref: '#/definitions/v1.HttpRspService'
       tags:
       - server/service
   /server/service/{uuid}/result:
@@ -1272,7 +1041,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspServiceWithSteps'
+            $ref: '#/definitions/v1.HttpRspService'
       tags:
       - server/service
   /server/session:
@@ -1300,7 +1069,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.HttpRspSession'
+              $ref: '#/definitions/v1.Session'
             type: array
       tags:
       - server/session
@@ -1338,7 +1107,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspSession'
+            $ref: '#/definitions/v1.Session'
       tags:
       - server/session
   /server/template:
@@ -1366,7 +1135,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.HttpReqTemplateWithCommands'
+              $ref: '#/definitions/v1.HttpRspTemplate'
             type: array
       tags:
       - server/template
@@ -1375,19 +1144,19 @@ paths:
       - application/json
       description: Create a template
       parameters:
-      - description: HttpReqTemplateWithCommands
+      - description: HttpReqTemplate_Create
         in: body
         name: template
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqTemplateWithCommands'
+          $ref: '#/definitions/v1.HttpReqTemplate_Create'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpReqTemplateWithCommands'
+            $ref: '#/definitions/v1.HttpRspTemplate'
       tags:
       - server/template
   /server/template/{template_uuid}/command:
@@ -1408,7 +1177,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.HttpRspTemplateCommand'
+              $ref: '#/definitions/v1.TemplateCommand'
             type: array
       tags:
       - server/template_command
@@ -1422,19 +1191,19 @@ paths:
         name: template_uuid
         required: true
         type: string
-      - description: HttpReqTemplateCommand
+      - description: HttpReqTemplateCommand_Create
         in: body
         name: command
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqTemplateCommand'
+          $ref: '#/definitions/v1.HttpReqTemplateCommand_Create'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspTemplateCommand'
+            $ref: '#/definitions/v1.TemplateCommand'
       tags:
       - server/template_command
   /server/template/{template_uuid}/command/{uuid}:
@@ -1481,7 +1250,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspTemplateCommand'
+            $ref: '#/definitions/v1.TemplateCommand'
       tags:
       - server/template_command
     put:
@@ -1499,19 +1268,19 @@ paths:
         name: uuid
         required: true
         type: string
-      - description: HttpReqTemplateCommand
+      - description: HttpReqTemplateCommand_Update
         in: body
         name: command
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqTemplateCommand'
+          $ref: '#/definitions/v1.HttpReqTemplateCommand_Update'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspTemplateCommand'
+            $ref: '#/definitions/v1.TemplateCommand'
       tags:
       - server/template_command
   /server/template/{uuid}:
@@ -1548,7 +1317,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpReqTemplateWithCommands'
+            $ref: '#/definitions/v1.HttpRspTemplate'
       tags:
       - server/template
     put:
@@ -1560,19 +1329,19 @@ paths:
         in: path
         name: uuid
         type: string
-      - description: HttpReqTemplate
+      - description: HttpReqTemplate_Update
         in: body
         name: template
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqTemplate'
+          $ref: '#/definitions/v1.HttpReqTemplate_Update'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspTemplate'
+            $ref: '#/definitions/v1.Template'
       tags:
       - server/template
   /server/template_recipe:
@@ -1590,7 +1359,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.HttpRspTemplateRecipe'
+              $ref: '#/definitions/v1.TemplateRecipe'
             type: array
       tags:
       - server/template_recipe
@@ -1619,7 +1388,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.HttpRspToken'
+              $ref: '#/definitions/v1.Token'
             type: array
       tags:
       - server/token
@@ -1657,7 +1426,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspToken'
+            $ref: '#/definitions/v1.Token'
       tags:
       - server/token
   /server/token/{uuid}/label:
@@ -1671,19 +1440,19 @@ paths:
         name: uuid
         required: true
         type: string
-      - description: Token 의 LabelMeta
+      - description: Token 의 HttpReqToken_UpdateLabel
         in: body
         name: object
         required: true
         schema:
-          $ref: '#/definitions/v1.LabelMeta'
+          $ref: '#/definitions/v1.HttpReqToken_UpdateLabel'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspToken'
+            $ref: '#/definitions/v1.Token'
       tags:
       - server/token
   /server/token/cluster:
@@ -1692,19 +1461,19 @@ paths:
       - application/json
       description: Create a Cluster Token
       parameters:
-      - description: HttpReqToken
+      - description: HttpReqToken_CreateClusterToken
         in: body
         name: object
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqToken'
+          $ref: '#/definitions/v1.HttpReqToken_CreateClusterToken'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspToken'
+            $ref: '#/definitions/v1.Token'
       tags:
       - server/token
   /server/token/cluster/{uuid}/expire:
@@ -1724,7 +1493,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspToken'
+            $ref: '#/definitions/v1.Token'
       tags:
       - server/token
   /server/token/cluster/{uuid}/refresh:
@@ -1744,7 +1513,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspToken'
+            $ref: '#/definitions/v1.Token'
       tags:
       - server/token
 swagger: "2.0"

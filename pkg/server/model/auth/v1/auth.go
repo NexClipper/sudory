@@ -9,12 +9,7 @@ type AuthProperty struct {
 	// GrantType   string `json:"grant_type,omitempty" default:"urn:ietf:params:oauth:grant-type:jwt-bearer"` //grant_type
 }
 
-//Auth
-type Auth struct {
-	AuthProperty `json:",inline"` //inline property
-}
-
-//HTTP REQUEST BODY: Auth
+//HttpReqAuth
 type HttpReqAuth struct {
-	Auth `json:",inline"`
+	AuthProperty `json:",inline"` //inline property
 }

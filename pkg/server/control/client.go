@@ -7,7 +7,6 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	clientv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 )
@@ -21,18 +20,15 @@ import (
 // @Param       q query string false "query  pkg/server/database/prepared/README.md"
 // @Param       o query string false "order  pkg/server/database/prepared/README.md"
 // @Param       p query string false "paging pkg/server/database/prepared/README.md"
-// @Success 200 {array} v1.HttpRspClient
+// @Success 200 {array} v1.Client
 func (ctl Control) FindClient(ctx echo.Context) error {
-	// r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
 	r, err := vault.NewClient(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.Wrapf(err, "find client%s",
-			logs.KVL(
-				"query", echoutil.QueryParamString(ctx),
-			)))
+		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+			errors.Wrapf(err, "find client"))
 	}
 
-	return ctx.JSON(http.StatusOK, clientv1.TransToHttpRsp(r))
+	return ctx.JSON(http.StatusOK, r)
 }
 
 // Get Client
@@ -42,10 +38,10 @@ func (ctl Control) FindClient(ctx echo.Context) error {
 // @Tags        server/client
 // @Router      /server/client/{uuid} [get]
 // @Param       uuid          path string true "Client 의 Uuid"
-// @Success 200 {object} v1.HttpRspClient
+// @Success 200 {object} v1.Client
 func (ctl Control) GetClient(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest,
+		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
 				logs.KVL(
 					"param", __UUID__,
@@ -56,13 +52,10 @@ func (ctl Control) GetClient(ctx echo.Context) error {
 
 	r, err := vault.NewClient(ctl.NewSession()).Get(uuid)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, errors.Wrapf(err, "get client%s",
-			logs.KVL(
-				"uuid", uuid,
-			)))
+		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(errors.Wrapf(err, "get client"))
 	}
 
-	return ctx.JSON(http.StatusOK, clientv1.HttpRspClient{DbSchema: *r})
+	return ctx.JSON(http.StatusOK, *r)
 }
 
 // Delete Client
@@ -75,7 +68,7 @@ func (ctl Control) GetClient(ctx echo.Context) error {
 // @Success 200
 func (ctl Control) DeleteClient(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest,
+		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
 				logs.KVL(
 					"param", __UUID__,
@@ -85,18 +78,15 @@ func (ctl Control) DeleteClient(ctx echo.Context) error {
 	uuid := echoutil.Param(ctx)[__UUID__]
 
 	_, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		err := vault.NewClient(db).Delete(uuid)
-		if err != nil {
-			return nil, errors.Wrapf(err, "delete client%s",
-				logs.KVL(
-					"uuid", uuid,
-				))
+		if err := vault.NewClient(db).Delete(uuid); err != nil {
+			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+				errors.Wrapf(err, "delete client"))
 		}
 
 		return nil, nil
 	})
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, OK())

@@ -10,12 +10,12 @@ import (
 )
 
 func (f *Fetcher) HandShake() error {
-	body := &authv1.HttpReqAuth{Auth: authv1.Auth{AuthProperty: authv1.AuthProperty{
+	body := &authv1.HttpReqAuth{AuthProperty: authv1.AuthProperty{
 		ClusterUuid:   f.clusterId,
 		ClientUuid:    f.machineID,
 		Assertion:     f.bearerToken,
 		ClientVersion: version.Version,
-	}}}
+	}}
 
 	b, err := json.Marshal(body)
 	if err != nil {

@@ -1,3 +1,4 @@
+//go:generate go-enum --file=token.go --names --nocase=true
 package v1
 
 import (
@@ -6,47 +7,38 @@ import (
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 )
 
+/* ENUM(
+cluster
+)
+*/
+type TokenUserKind int32
+
 //Token Property
 type TokenProperty struct {
-	UserKind       *string    `json:"user_kind" xorm:"varchar(255) notnull index 'user_kind' comment('user_kind')"`
-	UserUuid       *string    `json:"user_uuid" xorm:"char(32) notnull index 'user_uuid' comment('user_uuid')"`
-	Token          *string    `json:"token" xorm:"varchar(255) notnull unique 'token' comment('token')"`
-	IssuedAtTime   *time.Time `json:"issued_at_time" xorm:"varchar(255) notnull 'issued_at_time' comment('issued at time')"`
-	ExpirationTime *time.Time `json:"expiration_time" xorm:"varchar(255) notnull 'expiration_time' comment('expiration time')"`
+	UserKind       string    `json:"user_kind"       xorm:"'user_kind'       varchar(255) notnull index  comment('user_kind')"`
+	UserUuid       string    `json:"user_uuid"       xorm:"'user_uuid'       char(32)     notnull index  comment('user_uuid')"`
+	Token          string    `json:"token"           xorm:"'token'           varchar(255) notnull unique comment('token')"`
+	IssuedAtTime   time.Time `json:"issued_at_time"  xorm:"'issued_at_time'  varchar(255) notnull        comment('issued at time')"`
+	ExpirationTime time.Time `json:"expiration_time" xorm:"'expiration_time' varchar(255) notnull        comment('expiration time')"`
 }
 
-//Token
+//DATABASE SCHEMA: Token
 type Token struct {
+	metav1.DbMeta    `json:",inline" xorm:"extends"`
 	metav1.UuidMeta  `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta `json:",inline" xorm:"extends"` //inline labelmeta
 	TokenProperty    `json:",inline" xorm:"extends"` //inline property
 }
 
-//DATABASE SCHEMA: Token
-type DbSchema struct {
-	metav1.DbMeta `xorm:"extends"`
-	Token         `xorm:"extends"`
-}
-
-func (DbSchema) TableName() string {
+func (Token) TableName() string {
 	return "token"
 }
 
-//HTTP REQUEST BODY: Token
-type HttpReqToken struct {
-	Token `json:",inline"`
+type HttpReqToken_CreateClusterToken struct {
+	metav1.LabelMeta `json:",inline" xorm:"extends"` //inline labelmeta
+	UserUuid         string                          `json:"user_uuid" `
 }
 
-//HTTP RESPONSE BODY: Token
-type HttpRspToken struct {
-	DbSchema `json:",inline"`
-}
-
-//변환 Token -> HttpRsp
-func TransToHttpRsp(s []DbSchema) []HttpRspToken {
-	var out = make([]HttpRspToken, len(s))
-	for n, it := range s {
-		out[n].DbSchema = it
-	}
-	return out
+type HttpReqToken_UpdateLabel struct {
+	metav1.LabelMeta `json:",inline" xorm:"extends"` //inline labelmeta
 }

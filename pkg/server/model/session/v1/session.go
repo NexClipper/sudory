@@ -8,44 +8,20 @@ import (
 
 //Session Property
 type SessionProperty struct {
-	UserKind       string    `json:"user_kind" xorm:"varchar(255) notnull index 'user_kind' comment('user_kind')"`
-	UserUuid       string    `json:"user_uuid" xorm:"char(32) notnull index 'user_uuid' comment('user_uuid')"`
-	Token          string    `json:"token" xorm:"text notnull 'token' comment('token')"`
-	IssuedAtTime   time.Time `json:"issued_at_time" xorm:"varchar(255) notnull 'issued_at_time' comment('issued at time')"`
-	ExpirationTime time.Time `json:"expiration_time" xorm:"varchar(255) notnull 'expiration_time' comment('expiration time')"`
+	UserKind       string    `json:"user_kind"       xorm:"'user_kind'       varchar(255) notnull index comment('user_kind')"`
+	UserUuid       string    `json:"user_uuid"       xorm:"'user_uuid'       char(32)     notnull index comment('user_uuid')"`
+	Token          string    `json:"token"           xorm:"'token'           text         notnull       comment('token')"`
+	IssuedAtTime   time.Time `json:"issued_at_time"  xorm:"'issued_at_time'  varchar(255) notnull       comment('issued at time')"`
+	ExpirationTime time.Time `json:"expiration_time" xorm:"'expiration_time' varchar(255) notnull       comment('expiration time')"`
 }
 
-//Session
+//DATABASE SCHEMA: Session
 type Session struct {
+	metav1.DbMeta   `json:",inline" xorm:"extends"`
 	metav1.UuidMeta `json:",inline" xorm:"extends"` //inline uuidmeta
 	SessionProperty `json:",inline" xorm:"extends"` //inline property
 }
 
-//DATABASE SCHEMA: Session
-type DbSchema struct {
-	metav1.DbMeta `xorm:"extends"`
-	Session       `xorm:"extends"`
-}
-
-func (DbSchema) TableName() string {
+func (Session) TableName() string {
 	return "session"
-}
-
-//HTTP REQUEST BODY: Session
-type HttpReqSession struct {
-	Session `json:",inline"`
-}
-
-//HTTP RESPONSE BODY: Session
-type HttpRspSession struct {
-	DbSchema `json:",inline"`
-}
-
-//변환 Session -> HttpRsp
-func TransToHttpRsp(s []DbSchema) []HttpRspSession {
-	var out = make([]HttpRspSession, len(s))
-	for n, it := range s {
-		out[n].DbSchema = it
-	}
-	return out
 }

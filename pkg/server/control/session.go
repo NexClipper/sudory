@@ -7,7 +7,6 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 )
@@ -21,18 +20,15 @@ import (
 // @Param       q query string false "query  pkg/server/database/prepared/README.md"
 // @Param       o query string false "order  pkg/server/database/prepared/README.md"
 // @Param       p query string false "paging pkg/server/database/prepared/README.md"
-// @Success     200 {array} v1.HttpRspSession
+// @Success     200 {array} v1.Session
 func (ctl Control) FindSession(ctx echo.Context) error {
 	r, err := vault.NewSession(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError,
-			errors.Wrapf(err, "find session%s",
-				logs.KVL(
-					"query", echoutil.QueryParamString(ctx),
-				)))
+		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+			errors.Wrapf(err, "find session"))
 	}
 
-	return ctx.JSON(http.StatusOK, sessionv1.TransToHttpRsp(r))
+	return ctx.JSON(http.StatusOK, r)
 }
 
 // Get Session
@@ -42,10 +38,10 @@ func (ctl Control) FindSession(ctx echo.Context) error {
 // @Tags        server/session
 // @Router      /server/session/{uuid} [get]
 // @Param       uuid          path string true "Session 의 Uuid"
-// @Success     200 {object} v1.HttpRspSession
+// @Success     200 {object} v1.Session
 func (ctl Control) GetSession(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest,
+		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
 				logs.KVL(
 					"param", __UUID__,
@@ -56,14 +52,11 @@ func (ctl Control) GetSession(ctx echo.Context) error {
 
 	r, err := vault.NewSession(ctl.NewSession()).Get(uuid)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError,
-			errors.Wrapf(err, "get session%s",
-				logs.KVL(
-					"uuid", uuid,
-				)))
+		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+			errors.Wrapf(err, "get session"))
 	}
 
-	return ctx.JSON(http.StatusOK, sessionv1.HttpRspSession{DbSchema: *r})
+	return ctx.JSON(http.StatusOK, r)
 }
 
 // Delete Session
@@ -76,7 +69,7 @@ func (ctl Control) GetSession(ctx echo.Context) error {
 // @Success     200
 func (ctl Control) DeleteSession(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest,
+		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
 				logs.KVL(
 					"param", __UUID__,
@@ -88,16 +81,14 @@ func (ctl Control) DeleteSession(ctx echo.Context) error {
 	_, err := ctl.Scope(func(db database.Context) (interface{}, error) {
 		err := vault.NewSession(db).Delete(uuid)
 		if err != nil {
-			return nil, errors.Wrapf(err, "delete session%s",
-				logs.KVL(
-					"uuid", uuid,
-				))
+			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+				errors.Wrapf(err, "delete session"))
 		}
 
 		return nil, nil
 	})
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err)
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, OK())

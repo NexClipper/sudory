@@ -10,7 +10,7 @@ import (
 
 func TestTemplateJson(t *testing.T) {
 
-	m := NewTemplate().Template
+	m := NewTemplate()
 
 	data, err := json.MarshalIndent(m, "", " ")
 	if err != nil {
@@ -46,7 +46,7 @@ func TestDbSchemaTemplateJson(t *testing.T) {
 
 func TestHttpReqTemplateJson(t *testing.T) {
 
-	m := HttpReqTemplate{NewTemplate().Template}
+	m := NewTemplate()
 
 	data, err := json.MarshalIndent(m, "", " ")
 	if err != nil {
@@ -64,18 +64,18 @@ func TestHttpReqTemplateJson(t *testing.T) {
 
 // const templateUuid = "cda6498a235d4f7eae19661d41bc154c"
 
-func NewTemplate() DbSchema {
+func NewTemplate() Template {
 
-	out := DbSchema{}
+	out := Template{}
 	out.Id = 11112222333344445555
 	out.Created = newist.Time(time.Now())
 	out.Updated = newist.Time(time.Now())
 	out.Deleted = nil
 	out.Uuid = "00001111222233334444555566667777"
-	out.Name = newist.String("test-name")
+	out.Name = "test-name"
 	out.Summary = newist.String("test: ...")
 	// out.ApiVersion = newist.String("v1")
-	out.Origin = newist.String("origin")
+	out.Origin = "origin"
 
 	return out
 }

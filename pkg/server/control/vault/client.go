@@ -16,21 +16,20 @@ func NewClient(ctx database.Context) *Client {
 	return &Client{ctx: ctx}
 }
 
-func (vault Client) Create(model clientv1.Client) (*clientv1.DbSchema, error) {
-	record := &clientv1.DbSchema{Client: model}
-	if err := vault.ctx.Create(record); err != nil {
+func (vault Client) Create(model clientv1.Client) (*clientv1.Client, error) {
+	if err := vault.ctx.Create(&model); err != nil {
 		return nil, errors.Wrapf(err, "database create")
 	}
 
-	return record, nil
+	return &model, nil
 }
 
-func (vault Client) Get(uuid string) (*clientv1.DbSchema, error) {
+func (vault Client) Get(uuid string) (*clientv1.Client, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		uuid,
 	}
-	record := &clientv1.DbSchema{}
+	record := &clientv1.Client{}
 	if err := vault.ctx.Where(where, args...).Get(record); err != nil {
 		return nil, errors.Wrapf(err, "database get%v",
 			logs.KVL(
@@ -42,8 +41,8 @@ func (vault Client) Get(uuid string) (*clientv1.DbSchema, error) {
 	return record, nil
 }
 
-func (vault Client) Find(where string, args ...interface{}) ([]clientv1.DbSchema, error) {
-	records := make([]clientv1.DbSchema, 0)
+func (vault Client) Find(where string, args ...interface{}) ([]clientv1.Client, error) {
+	records := make([]clientv1.Client, 0)
 	if err := vault.ctx.Where(where, args...).Find(&records); err != nil {
 		return nil, errors.Wrapf(err, "database find%v",
 			logs.KVL(
@@ -55,7 +54,7 @@ func (vault Client) Find(where string, args ...interface{}) ([]clientv1.DbSchema
 	return records, nil
 }
 
-func (vault Client) Query(query map[string]string) ([]clientv1.DbSchema, error) {
+func (vault Client) Query(query map[string]string) ([]clientv1.Client, error) {
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
@@ -66,7 +65,7 @@ func (vault Client) Query(query map[string]string) ([]clientv1.DbSchema, error) 
 	}
 
 	//find service
-	records := make([]clientv1.DbSchema, 0)
+	records := make([]clientv1.Client, 0)
 	if err := vault.ctx.Prepared(preparer).Find(&records); err != nil {
 		return nil, errors.Wrapf(err, "database find%v",
 			logs.KVL(
@@ -77,13 +76,13 @@ func (vault Client) Query(query map[string]string) ([]clientv1.DbSchema, error) 
 	return records, nil
 }
 
-func (vault Client) Update(model clientv1.Client) (*clientv1.DbSchema, error) {
+func (vault Client) Update(model clientv1.Client) (*clientv1.Client, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		model.Uuid,
 	}
-	record := &clientv1.DbSchema{Client: model}
-	if err := vault.ctx.Where(where, args...).Update(record); err != nil {
+
+	if err := vault.ctx.Where(where, args...).Update(&model); err != nil {
 		return nil, errors.Wrapf(err, "database update%v",
 			logs.KVL(
 				"where", where,
@@ -91,7 +90,7 @@ func (vault Client) Update(model clientv1.Client) (*clientv1.DbSchema, error) {
 			))
 	}
 
-	return record, nil
+	return &model, nil
 }
 
 func (vault Client) Delete(uuid string) error {
@@ -99,7 +98,7 @@ func (vault Client) Delete(uuid string) error {
 	args := []interface{}{
 		uuid,
 	}
-	record := &clientv1.DbSchema{}
+	record := &clientv1.Client{}
 	if err := vault.ctx.Where(where, args...).Delete(record); err != nil {
 		return errors.Wrapf(err, "database delete%v",
 			logs.KVL(

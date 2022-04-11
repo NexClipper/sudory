@@ -34,7 +34,7 @@ type Service struct {
 	Status     ServiceStatus
 	Steps      []*Step
 	Result     Result
-	ServerData servicev1.HttpRspClientSideService
+	ServerData servicev1.HttpRspService_ClientSide
 }
 
 type StepStatus int32

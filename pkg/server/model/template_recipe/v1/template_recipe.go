@@ -6,38 +6,17 @@ import (
 
 // TemplateRecipeProperty
 type TemplateRecipeProperty struct {
-	//method
-	Method *string `json:"method,omitempty" xorm:"varchar(255) null 'method' comment('method')"`
-	//arguments
-	Args *string `json:"args,omitempty" xorm:"varchar(255) null 'args' comment('args')"`
+	Method *string `json:"method,omitempty" xorm:"'method' varchar(255) notnull unique(recipe_value) comment('method')"`
+	Args   *string `json:"args,omitempty"   xorm:"'args'   varchar(255) notnull unique(recipe_value) comment('args')"`
 }
 
-// MODEL: TEMPLATE_RECIPE
+// DATABASE SCHEMA: TEMPLATE_RECIPE
 type TemplateRecipe struct {
+	metav1.DbMeta          `json:",inline" xorm:"extends"`
 	metav1.LabelMeta       `json:",inline" xorm:"extends"` //inline labelmeta
 	TemplateRecipeProperty `json:",inline" xorm:"extends"` //inline property
 }
 
-// DATABASE SCHEMA: TEMPLATE_RECIPE
-type DbSchema struct {
-	metav1.DbMeta  `xorm:"extends"`
-	TemplateRecipe `xorm:"extends"`
-}
-
-func (DbSchema) TableName() string {
+func (TemplateRecipe) TableName() string {
 	return "template_recipe"
-}
-
-// HTTP RESPONSE BODY: TEMPLATE_RECIPE
-type HttpRspTemplateRecipe struct {
-	DbSchema `json:",inline"`
-}
-
-//변환 Token -> HttpRsp
-func TransToHttpRsp(s []DbSchema) []HttpRspTemplateRecipe {
-	var out = make([]HttpRspTemplateRecipe, len(s))
-	for n, it := range s {
-		out[n].DbSchema = it
-	}
-	return out
 }

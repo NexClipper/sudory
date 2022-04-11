@@ -2,8 +2,6 @@ package control
 
 import (
 	"fmt"
-
-	"github.com/labstack/echo/v4"
 )
 
 func ErrorInvalidRequestParameter() error {
@@ -23,19 +21,4 @@ func ErrorBindRequestObject() error {
 }
 func ErrorFailedCast() error {
 	return fmt.Errorf("failed cast")
-}
-
-func HttpError(code int, err error) *echo.HTTPError {
-	// msg := make([]string, 0, 3)
-	// msg = append(msg, http.StatusText(code))
-	// msg = append(msg, err.Error())
-	// logs.CauseIter(err, func(err error) {
-	// 	logs.StackIter(err, func(stack string) {
-	// 		msg = append(msg, logs.KVL(
-	// 			"stack", stack,
-	// 		))
-	// 	})
-	// })
-
-	return echo.NewHTTPError(code).SetInternal(err)
 }

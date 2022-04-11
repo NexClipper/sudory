@@ -16,22 +16,21 @@ func NewCluster(ctx database.Context) *Cluster {
 	return &Cluster{ctx: ctx}
 }
 
-func (vault Cluster) Create(model clusterv1.Cluster) (*clusterv1.DbSchema, error) {
-	record := &clusterv1.DbSchema{Cluster: model}
-	if err := vault.ctx.Create(record); err != nil {
+func (vault Cluster) Create(model clusterv1.Cluster) (*clusterv1.Cluster, error) {
+	if err := vault.ctx.Create(&model); err != nil {
 		return nil, errors.Wrapf(err, "database create")
 	}
 
-	return record, nil
+	return &model, nil
 }
 
-func (vault Cluster) Get(uuid string) (*clusterv1.DbSchema, error) {
+func (vault Cluster) Get(uuid string) (*clusterv1.Cluster, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		uuid,
 	}
-	record := &clusterv1.DbSchema{}
-	if err := vault.ctx.Where(where, args...).Get(record); err != nil {
+	model := &clusterv1.Cluster{}
+	if err := vault.ctx.Where(where, args...).Get(model); err != nil {
 		return nil, errors.Wrapf(err, "database get%v",
 			logs.KVL(
 				"where", where,
@@ -39,12 +38,12 @@ func (vault Cluster) Get(uuid string) (*clusterv1.DbSchema, error) {
 			))
 	}
 
-	return record, nil
+	return model, nil
 }
 
-func (vault Cluster) Find(where string, args ...interface{}) ([]clusterv1.DbSchema, error) {
-	records := make([]clusterv1.DbSchema, 0)
-	if err := vault.ctx.Where(where, args...).Find(&records); err != nil {
+func (vault Cluster) Find(where string, args ...interface{}) ([]clusterv1.Cluster, error) {
+	models := make([]clusterv1.Cluster, 0)
+	if err := vault.ctx.Where(where, args...).Find(&models); err != nil {
 		return nil, errors.Wrapf(err, "database find%v",
 			logs.KVL(
 				"where", where,
@@ -52,10 +51,10 @@ func (vault Cluster) Find(where string, args ...interface{}) ([]clusterv1.DbSche
 			))
 	}
 
-	return records, nil
+	return models, nil
 }
 
-func (vault Cluster) Query(query map[string]string) ([]clusterv1.DbSchema, error) {
+func (vault Cluster) Query(query map[string]string) ([]clusterv1.Cluster, error) {
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
@@ -66,24 +65,24 @@ func (vault Cluster) Query(query map[string]string) ([]clusterv1.DbSchema, error
 	}
 
 	//find service
-	records := make([]clusterv1.DbSchema, 0)
-	if err := vault.ctx.Prepared(preparer).Find(&records); err != nil {
+	models := make([]clusterv1.Cluster, 0)
+	if err := vault.ctx.Prepared(preparer).Find(&models); err != nil {
 		return nil, errors.Wrapf(err, "database find%v",
 			logs.KVL(
 				"query", query,
 			))
 	}
 
-	return records, nil
+	return models, nil
 }
 
-func (vault Cluster) Update(model clusterv1.Cluster) (*clusterv1.DbSchema, error) {
+func (vault Cluster) Update(model clusterv1.Cluster) (*clusterv1.Cluster, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		model.Uuid,
 	}
-	record := &clusterv1.DbSchema{Cluster: model}
-	if err := vault.ctx.Where(where, args...).Update(record); err != nil {
+
+	if err := vault.ctx.Where(where, args...).Update(&model); err != nil {
 		return nil, errors.Wrapf(err, "database update%v",
 			logs.KVL(
 				"where", where,
@@ -91,7 +90,7 @@ func (vault Cluster) Update(model clusterv1.Cluster) (*clusterv1.DbSchema, error
 			))
 	}
 
-	return record, nil
+	return &model, nil
 }
 
 func (vault Cluster) Delete(uuid string) error {
@@ -99,8 +98,8 @@ func (vault Cluster) Delete(uuid string) error {
 	args := []interface{}{
 		uuid,
 	}
-	record := &clusterv1.DbSchema{}
-	if err := vault.ctx.Where(where, args...).Delete(record); err != nil {
+	model := &clusterv1.Cluster{}
+	if err := vault.ctx.Where(where, args...).Delete(model); err != nil {
 		return errors.Wrapf(err, "database delete%v",
 			logs.KVL(
 				"where", where,

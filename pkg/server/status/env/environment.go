@@ -29,13 +29,13 @@ func (worker *EnvironmentUpdate) Update() error {
 	args := []interface{}{
 		worker.offset,
 	}
-	records := make([]envv1.DbSchema, 0)
+	records := make([]envv1.Environment, 0)
 	if err := worker.ctx.Where(where, args...).Find(&records); err != nil {
 		return errors.Wrapf(err, "Database Find")
 	}
 
 	for i := range records {
-		os.Setenv(*records[i].Name, *records[i].Value)
+		os.Setenv(records[i].Name, *records[i].Value)
 	}
 
 	//update offset
@@ -47,7 +47,7 @@ func (worker *EnvironmentUpdate) Update() error {
 // WhiteListCheck
 //  리스트 체크
 func (worker *EnvironmentUpdate) WhiteListCheck() error {
-	records := make([]envv1.DbSchema, 0)
+	records := make([]envv1.Environment, 0)
 	if err := worker.ctx.Find(&records); err != nil {
 		return errors.Wrapf(err, "Database Find")
 	}
@@ -58,7 +58,7 @@ func (worker *EnvironmentUpdate) WhiteListCheck() error {
 		var found bool = false
 	LOOP:
 		for i := range records {
-			if key == *records[i].Name {
+			if key == records[i].Name {
 				found = true
 				break LOOP
 			}
@@ -76,7 +76,7 @@ func (worker *EnvironmentUpdate) WhiteListCheck() error {
 }
 
 func (worker *EnvironmentUpdate) Merge() error {
-	records := make([]envv1.DbSchema, 0)
+	records := make([]envv1.Environment, 0)
 	if err := worker.ctx.Find(&records); err != nil {
 		return errors.Wrapf(err, "Database Find")
 	}
@@ -85,7 +85,7 @@ func (worker *EnvironmentUpdate) Merge() error {
 		var found bool = false
 	LOOP:
 		for i := range records {
-			if key == *records[i].Name {
+			if key == records[i].Name {
 				found = true
 				break LOOP
 			}
@@ -108,7 +108,7 @@ func (worker *EnvironmentUpdate) Merge() error {
 			}
 
 			value_ := Convert(env, value)
-			if err = worker.ctx.Create(envv1.DbSchema{Environment: value_}); err != nil {
+			if err = worker.ctx.Create(value_); err != nil {
 				return errors.Wrapf(err, "database create")
 			}
 		}

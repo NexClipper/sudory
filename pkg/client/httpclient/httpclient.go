@@ -42,7 +42,7 @@ func (hc *HttpClient) GetToken() string {
 }
 
 func (hc *HttpClient) IsTokenExpired() bool {
-	claims := new(sessionv1.ClientSessionPlayload)
+	claims := new(sessionv1.ClientSessionPayload)
 	if err := jwt.BindPayload(hc.token, &claims); err != nil {
 		log.Warnf("jwt.BindPayload error : %v\n", err)
 		return false

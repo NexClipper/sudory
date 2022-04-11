@@ -1,6 +1,10 @@
 package v1
 
 import (
+	"encoding/json"
+	"math"
+	"sort"
+
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 )
@@ -17,56 +21,71 @@ const (
 
 //ServiceProperty Property
 type ServiceProperty struct {
-	//텔플릿 UUID
-	TemplateUuid *string `json:"template_uuid,omitempty" xorm:"char(32) notnull index 'template_uuid' comment('template's uuid')"`
-	//클러스터 UUID
-	ClusterUuid *string `json:"cluster_uuid,omitempty" xorm:"char(32) notnull index 'cluster_uuid' comment('cluster's uuid')"`
-	//할당된 클라이언트 UUID
-	AssignedClientUuid *string `json:"assigned_client_uuid,omitempty" xorm:"char(32) notnull index 'assigned_client_uuid' comment('client's uuid when service assigned')"`
-	//스탭 카운트
-	StepCount *int32 `json:"step_count,omitempty" xorm:"int null default(0) 'step_count' comment('step_count')"`
-	//스탭 Position
-	StepPosition *int32 `json:"step_position,omitempty" xorm:"int null default(0) 'step_position' comment('step_position')"`
-	//Type; 0: Once, 1: repeat(epoch, interval)
-	Type *int32 `json:"type,omitempty" xorm:"int null default(0) 'type' comment('type')"`
-	//Epoch -1: infinite, 0 :
-	Epoch *int32 `json:"epoch,omitempty" xorm:"int null default(0) 'epoch' comment('epoch (times)')"`
-	//Interval
-	Interval *int32 `json:"interval,omitempty" xorm:"int null default(0) 'interval' comment('interval (sec)')"`
-	//Status
-	Status *int32 `json:"status,omitempty" xorm:"int null default(0) index 'status' comment('status')"`
-	//Result 스탭 실행 결과(정상:'결과', 오류:'오류 메시지')
-	Result *string `json:"result,omitempty" xorm:"longtext null 'result' comment('result')"`
+	TemplateUuid       string  `json:"template_uuid,omitempty"        xorm:"'template_uuid'        char(32) notnull index comment('template_uuid')"`        //
+	ClusterUuid        string  `json:"cluster_uuid,omitempty"         xorm:"'cluster_uuid'         char(32) notnull index comment('cluster_uuid')"`         //
+	AssignedClientUuid string  `json:"assigned_client_uuid,omitempty" xorm:"'assigned_client_uuid' char(32) notnull index comment('assigned client_uuid')"` //
+	StepCount          *int32  `json:"step_count,omitempty"           xorm:"'step_count'           int      notnull       comment('step_count')"`           //
+	StepPosition       *int32  `json:"step_position,omitempty"        xorm:"'step_position'        int      notnull       comment('step_position')"`        //
+	Type               *int32  `json:"type,omitempty"                 xorm:"'type'                 int      notnull       comment('type')"`                 //0: once, 1: repeat(epoch, interval)
+	Epoch              *int32  `json:"epoch,omitempty"                xorm:"'epoch'                int      notnull       comment('epoch (times)')"`        //-1: infinite
+	Interval           *int32  `json:"interval,omitempty"             xorm:"'interval'             int      notnull       comment('interval (sec)')"`       //
+	Status             *int32  `json:"status,omitempty"               xorm:"'status'               int      notnull index comment('status')"`               //
+	Result             *string `json:"result,omitempty"               xorm:"'result'               longtext null          comment('result')"`               //실행 결과(정상:'결과', 오류:'오류 메시지')
+	//  필드 타입에 포인터를 사용하는 이유:
+	//    xorm을 사용하면서 초기값을 갖는 타입들은
+	//    레코드를 수정할 때 해당 컬럼을 무시하기 때문에
+	//    초기값으로 수정이 필요한 필드는 포인터를 사용한다
 }
 
-//MODEL: SERVICE
+func (property ServiceProperty) ChaniningStep(steps []stepv1.ServiceStep) ServiceProperty {
+	ptrInt32 := func(n int32) *int32 {
+		return &n
+	}
+
+	property.StepCount = ptrInt32(int32(len(steps)))
+	property.StepPosition = ptrInt32(0)
+	property.Status = ptrInt32(int32(StatusRegist))
+
+	//sort steps by sequence
+	sort.Slice(steps, func(i, j int) bool {
+		var a, b int32 = math.MaxInt32, math.MaxInt32
+		if steps[i].Sequence != nil {
+			a = *steps[i].Sequence
+		}
+		if steps[j].Sequence != nil {
+			b = *steps[j].Sequence
+		}
+		return a < b
+	})
+
+	for i, step := range steps {
+		//get step status
+		step_status := StatusRegist
+		if step.Status != nil {
+			step_status = Status(*step.Status)
+		}
+
+		if StatusSuccess <= step_status {
+			*property.StepPosition = int32(i) + 1 //step position
+			*property.Status = int32(step_status)
+		}
+	}
+
+	return property
+}
+
+//DATABASE SCHEMA: SERVICE
 type Service struct {
+	metav1.DbMeta    `json:",inline" xorm:"extends"`
 	metav1.UuidMeta  `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta `json:",inline" xorm:"extends"` //inline labelmeta
 	ServiceProperty  `json:",inline" xorm:"extends"` //inline property
 }
 
-//DATABASE SCHEMA: SERVICE
-type DbSchema struct {
-	metav1.DbMeta `xorm:"extends"`
-	Service       `xorm:"extends"`
-}
-
-func (DbSchema) TableName() string {
+func (Service) TableName() string {
 	return "service"
 }
 
-type ServiceAndSteps struct {
-	Service `json:",inline"`
-	Steps   []stepv1.ServiceStep `json:"steps"`
-}
-
-type DbSchemaServiceAndSteps struct {
-	DbSchema `json:",inline"`
-	Steps    []stepv1.DbSchema `json:"steps"`
-}
-
-// Essential
 type ServiceCreateProperty struct {
 	//TEMPLATE UUID
 	TemplateUuid string `json:"template_uuid"`
@@ -74,85 +93,31 @@ type ServiceCreateProperty struct {
 	ClusterUuid string `json:"cluster_uuid"`
 }
 
-// Essential
-type ServiceCreate struct {
-	metav1.LabelMeta      `json:",inline"` //inline labelmeta
-	ServiceCreateProperty `json:",inline"` //inline property
+type HttpReqService_Create struct {
+	metav1.LabelMeta `json:",inline"`                             //inline labelmeta
+	TemplateUuid     string                                       `json:"template_uuid"`
+	ClusterUuid      string                                       `json:"cluster_uuid"`
+	Steps            []stepv1.HttpReqServiceStep_Create_ByService `json:"steps"`
 }
 
-// Essential
-type ServiceAndStepsCreate struct {
-	ServiceCreate `json:",inline"`
-	Steps         []stepv1.StepCreate `json:"steps"`
-}
-
-//HTTP REQUEST BODY: SERVICE
-type HttpReqService struct {
-	Service `json:",inline"`
-}
-
-//HTTP RESPONSE BODY: SERVICE
 type HttpRspService struct {
-	DbSchema `json:",inline"`
+	Service `json:",inline"`
+	Steps   []stepv1.ServiceStep `json:",inline"`
 }
 
-//HTTP REQUEST BODY: SERVICE (with steps)
-type HttpReqServiceCreate struct {
-	ServiceAndStepsCreate `json:",inline"`
-}
-
-//HTTP RESPONSE BODY: SERVICE
-type HttpRspServiceWithSteps struct {
-	DbSchemaServiceAndSteps `json:",inline"`
-}
-
-//HTTP REQUEST BODY: SERVICE (client)
-type HttpReqClientSideService struct {
-	ServiceAndSteps `json:",inline"`
-}
-
-//HTTP RESPONSE BODY: SERVICE (client)
-type HttpRspClientSideService struct {
-	ServiceAndSteps `json:",inline"`
-}
-
-//변환 DbSchema -> Service
-func TransFormDbSchema(s []DbSchema) []Service {
-	var out = make([]Service, len(s))
-	for n := range s {
-		out[n] = s[n].Service
+func (object HttpRspService) MarshalJSON() ([]byte, error) {
+	object.ServiceProperty = object.ServiceProperty.ChaniningStep(object.Steps)
+	v := struct {
+		Service `json:",inline"`
+		Steps   []stepv1.ServiceStep `json:",inline"`
+	}{
+		Service: object.Service,
+		Steps:   object.Steps,
 	}
-	return out
+
+	return json.Marshal(v)
 }
 
-//변환 Service -> HtppRsp
-func TransToHttpRspServiceAndSteps(s []DbSchemaServiceAndSteps) []HttpRspServiceWithSteps {
-	var out = make([]HttpRspServiceWithSteps, len(s))
-	for n := range s {
-		out[n].Service, out[n].Steps = s[n].Service, s[n].Steps
-	}
-	return out
-}
+type HttpReqService_ClientSide HttpRspService
 
-// //변환 Service -> HtppRsp
-// func TransToHttpRsp(s []Service) []HttpRspService {
-// 	var out = make([]HttpRspService, len(s))
-// 	for n, it := range s {
-// 		out[n].Service = it
-// 	}
-// 	return out
-// }
-
-// //Build Template -> HttpRsp
-// func HttpRspBuilder(length int) (func(a Service, b []stepv1.ServiceStep), func() []ServiceAndSteps) {
-// 	var pos int = 0
-// 	queue := make([]ServiceAndSteps, length)
-// 	pusher := func(a Service, b []stepv1.ServiceStep) {
-// 		queue[pos] = ServiceAndSteps{Service: a, Steps: b}
-// 		pos++
-// 	}
-// 	poper := func() []ServiceAndSteps {
-// 		return queue
-// 	}
-// 	return pusher, poper
-// }
+type HttpRspService_ClientSide HttpRspService

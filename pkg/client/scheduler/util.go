@@ -6,13 +6,13 @@ import (
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 )
 
-func ServiceListServerToClient2(server []servicev1.HttpRspClientSideService) map[string]*service.Service {
+func ServiceListServerToClient2(server []servicev1.HttpRspService_ClientSide) map[string]*service.Service {
 	client := make(map[string]*service.Service)
 	for _, v := range server {
 		serv := &service.Service{
 			Id:         v.Uuid,
-			Name:       *v.Name,
-			ClusterId:  *v.ClusterUuid,
+			Name:       v.Name,
+			ClusterId:  v.ClusterUuid,
 			ServerData: v,
 		}
 		for i, s := range v.Steps {
@@ -23,7 +23,7 @@ func ServiceListServerToClient2(server []servicev1.HttpRspClientSideService) map
 			serv.Steps = append(serv.Steps, &service.Step{
 				Id:           i,
 				ParentId:     serv.Id,
-				Command:      &service.StepCommand{Method: *s.Method, Args: s.Args},
+				Command:      &service.StepCommand{Method: s.Method, Args: s.Args},
 				ResultFilter: rf,
 			})
 		}
@@ -33,23 +33,23 @@ func ServiceListServerToClient2(server []servicev1.HttpRspClientSideService) map
 	return client
 }
 
-func ServiceListClientToServer2(client map[string]ServiceChecked) []servicev1.HttpReqClientSideService {
-	var server []servicev1.HttpReqClientSideService
+func ServiceListClientToServer2(client map[string]ServiceChecked) []servicev1.HttpReqService_ClientSide {
+	server := make([]servicev1.HttpReqService_ClientSide, 0, len(client))
 
 	if client == nil {
 		return server
 	}
 
 	for _, v := range client {
-		serv := servicev1.HttpReqClientSideService{ServiceAndSteps: servicev1.ServiceAndSteps{Service: v.service.ServerData.Service, Steps: v.service.ServerData.Steps}}
-		switch v.service.Status {
-		case service.ServiceStatusPreparing, service.ServiceStatusStart, service.ServiceStatusProcessing:
-			serv.Service.Status = newist.Int32(int32(servicev1.StatusProcessing))
-		case service.ServiceStatusSuccess:
-			serv.Service.Status = newist.Int32(int32(servicev1.StatusSuccess))
-		case service.ServiceStatusFailed:
-			serv.Service.Status = newist.Int32(int32(servicev1.StatusFail))
-		}
+		serv := servicev1.HttpReqService_ClientSide{Service: v.service.ServerData.Service, Steps: v.service.ServerData.Steps}
+		// switch v.service.Status {
+		// case service.ServiceStatusPreparing, service.ServiceStatusStart, service.ServiceStatusProcessing:
+		// 	serv.Service.Status = newist.Int32(int32(servicev1.StatusProcessing))
+		// case service.ServiceStatusSuccess:
+		// 	serv.Service.Status = newist.Int32(int32(servicev1.StatusSuccess))
+		// case service.ServiceStatusFailed:
+		// 	serv.Service.Status = newist.Int32(int32(servicev1.StatusFail))
+		// }
 
 		if v.service.Result.Body != "" {
 			serv.Service.Result = newist.String(v.service.Result.Body)

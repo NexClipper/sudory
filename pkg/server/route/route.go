@@ -15,9 +15,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/NexClipper/logger"
 	"github.com/NexClipper/sudory/pkg/server/config"
 	"github.com/NexClipper/sudory/pkg/server/control"
 	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/version"
 
 	"github.com/labstack/echo/v4"
@@ -70,7 +73,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	//echo error handler
 	e.HTTPErrorHandler = func(err error, ctx echo.Context) {
 		echoErrorHandler(err, ctx)
-		// echoErrorHandlerLogger(err, ctx)
+		echoErrorHandlerLogger(err, ctx)
 	}
 	// defaultHeader := `{"time":"${time_rfc3339_nano}","id":"${id}","level":"${level}","prefix":"${prefix}"}`
 	// e.Logger.SetHeader(defaultHeader)
@@ -233,19 +236,28 @@ func echoErrorHandler(err error, ctx echo.Context) {
 	})
 }
 
-// func echoErrorHandlerLogger(err error, ctx echo.Context) {
-// 	code := http.StatusInternalServerError
-// 	if he, ok := err.(*echo.HTTPError); ok {
-// 		code = he.Code
-// 		err = he.Internal
-// 	}
+func echoErrorHandlerLogger(err error, ctx echo.Context) {
+	code := -1
+	if he, ok := err.(*echo.HTTPError); ok {
+		code = he.Code
+		err = he.Internal
+	}
 
-// 	id := ctx.Response().Header().Get(echo.HeaderXRequestID)
-// 	reqbody := echoutil.Body(ctx)
+	var stack string = "none"
+	logs.CauseIter(err, func(err error) {
+		logs.StackIter(err, func(s string) {
+			stack = s
+		})
+	})
 
-// 	logger.Error(fmt.Errorf("%w%v", err, logs.KVL(
-// 		"id", id,
-// 		"code", code,
-// 		"reqbody", string(reqbody),
-// 	)))
-// }
+	id := ctx.Response().Header().Get(echo.HeaderXRequestID)
+
+	reqbody := echoutil.Body(ctx)
+
+	logger.Error(fmt.Errorf("%w%v", err, logs.KVL(
+		"id", id,
+		"code", code,
+		"reqbody", reqbody,
+		"stack", stack,
+	)))
+}

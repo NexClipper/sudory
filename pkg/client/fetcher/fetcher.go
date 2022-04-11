@@ -117,7 +117,7 @@ func (f *Fetcher) poll() {
 
 	f.ChangeClientConfigFromToken()
 
-	respData := []servicev1.HttpRspClientSideService{}
+	respData := []servicev1.HttpRspService_ClientSide{}
 	if body != nil {
 		if err := json.Unmarshal(body, &respData); err != nil {
 			log.Errorf(err.Error())

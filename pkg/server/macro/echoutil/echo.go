@@ -73,6 +73,11 @@ func Body(echo_ echo.Context) []byte {
 }
 
 func Bind(echo_ echo.Context, v interface{}) error {
+	b := Body(echo_)
+	defer func() {
+		echo_.Request().Body = ioutil.NopCloser(bytes.NewBuffer(b))
+	}()
+
 	if err := echo_.Bind(v); err != nil {
 		return err
 	}

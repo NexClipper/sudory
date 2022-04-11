@@ -6,78 +6,45 @@ import (
 
 // TemplateCommandProperty
 type TemplateCommandProperty struct {
-	//템플릿 UUID
-	TemplateUuid string `json:"template_uuid" xorm:"char(32) notnull index 'template_uuid' comment('templates uuid')"`
-	//순서
-	Sequence *int32 `json:"sequence,omitempty" xorm:"int null default(0) 'sequence' comment('sequence')"`
-	//메소드
-	//@example: "kubernetes.deployment.get.v1", "kubernetes.pod.list.v1"
-	Method *string `json:"method,omitempty" xorm:"varchar(255) null 'method' comment('method')"`
-	//arguments
-	Args map[string]interface{} `json:"args,omitempty" xorm:"text null 'args' comment('args')"`
-	//ResultFilter 스탭 결과 필터
-	ResultFilter *string `json:"result_filter,omitempty" xorm:"varchar(4096) null 'result_filter' comment('result_filter')"`
+	TemplateUuid string                 `json:"template_uuid"           xorm:"'template_uuid' char(32)      notnull index comment('templates uuid')"`
+	Sequence     *int32                 `json:"sequence,omitempty"      xorm:"'sequence'      int           notnull       comment('sequence')"`
+	Method       string                 `json:"method,omitempty"        xorm:"'method'        varchar(255)  notnull       comment('method')"`
+	Args         map[string]interface{} `json:"args,omitempty"          xorm:"'args'          text          null          comment('args')"`
+	ResultFilter *string                `json:"result_filter,omitempty" xorm:"'result_filter' varchar(4096) null          comment('result_filter')"`
 }
 
-// MODEL: TEMPLATE_COMMAND
+// DATABASE SCHEMA: TEMPLATE_COMMAND
 type TemplateCommand struct {
+	metav1.DbMeta           `json:",inline" xorm:"extends"` //inline dbmeta
 	metav1.UuidMeta         `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta        `json:",inline" xorm:"extends"` //inline labelmeta
 	TemplateCommandProperty `json:",inline" xorm:"extends"` //inline property
 }
 
-// DATABASE SCHEMA: TEMPLATE_COMMAND
-type DbSchema struct {
-	metav1.DbMeta   `xorm:"extends"`
-	TemplateCommand `xorm:"extends"`
-}
-
-func (DbSchema) TableName() string {
+func (TemplateCommand) TableName() string {
 	return "template_command"
 }
 
-// HTTP REQUEST BODY: TEMPLATE_COMMAND
-type HttpReqTemplateCommand struct {
-	TemplateCommand `json:",inline"`
+type HttpReqTemplateCommand_Create struct {
+	metav1.LabelMeta `json:",inline" xorm:"extends"` //inline labelmeta
+	TemplateUuid     string                          `json:"template_uuid"`
+	Sequence         int32                           `json:"sequence,omitempty"`
+	Method           string                          `json:"method,omitempty"`
+	Args             map[string]interface{}          `json:"args,omitempty"`
+	ResultFilter     string                          `json:"result_filter,omitempty"`
 }
 
-// HTTP RESPONSE BODY: TEMPLATE_COMMAND
-type HttpRspTemplateCommand struct {
-	DbSchema `json:",inline"`
+type HttpReqTemplateCommand_Create_ByTemplate struct {
+	metav1.LabelMeta `json:",inline" xorm:"extends"` //inline labelmeta
+	Method           string                          `json:"method,omitempty"`
+	Args             map[string]interface{}          `json:"args,omitempty"`
+	ResultFilter     string                          `json:"result_filter,omitempty"`
 }
 
-// //변환 TemplateCommand -> DbSchema
-// func TransToDbSchema(s []TemplateCommand) []DbSchema {
-// 	var out = make([]DbSchema, len(s))
-// 	for n, it := range s {
-// 		out[n] = DbSchema{TemplateCommand: it}
-// 	}
-// 	return out
-// }
-
-// 변환 DbSchema -> TemplateCommand
-func TransFromDbSchema(s []DbSchema) []TemplateCommand {
-	var out = make([]TemplateCommand, len(s))
-	for n, it := range s {
-		out[n] = it.TemplateCommand
-	}
-	return out
-}
-
-// //변환 HttpReq -> TemplateCommand
-// func TransFormHttpReq(s []HttpReqTemplateCommand) []TemplateCommand {
-// 	var out = make([]TemplateCommand, len(s))
-// 	for n, it := range s {
-// 		out[n] = it.TemplateCommand
-// 	}
-// 	return out
-// }
-
-// 변환 TemplateCommand -> HttpRsp
-func TransToHttpRsp(s []DbSchema) []HttpRspTemplateCommand {
-	var out = make([]HttpRspTemplateCommand, len(s))
-	for n, it := range s {
-		out[n].DbSchema = it
-	}
-	return out
+type HttpReqTemplateCommand_Update struct {
+	metav1.LabelMeta `json:",inline" xorm:"extends"` //inline labelmeta
+	Sequence         int32                           `json:"sequence,omitempty"`
+	Method           string                          `json:"method,omitempty"`
+	Args             map[string]interface{}          `json:"args,omitempty"`
+	ResultFilter     string                          `json:"result_filter,omitempty"`
 }

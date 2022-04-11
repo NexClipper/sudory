@@ -21,22 +21,21 @@ func NewTemplateCommand(ctx database.Context) *TemplateCommand {
 	return &TemplateCommand{ctx: ctx}
 }
 
-func (vault TemplateCommand) Create(model commandv1.TemplateCommand) (*commandv1.DbSchema, error) {
-	record := &commandv1.DbSchema{TemplateCommand: model}
-	if err := vault.ctx.Create(record); err != nil {
+func (vault TemplateCommand) Create(model commandv1.TemplateCommand) (*commandv1.TemplateCommand, error) {
+	if err := vault.ctx.Create(&model); err != nil {
 		return nil, errors.Wrapf(err, "database create")
 	}
 
-	return record, nil
+	return &model, nil
 }
 
-func (vault TemplateCommand) Get(uuid string) (*commandv1.DbSchema, error) {
+func (vault TemplateCommand) Get(uuid string) (*commandv1.TemplateCommand, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		uuid,
 	}
-	record := &commandv1.DbSchema{}
-	if err := vault.ctx.Where(where, args...).Get(record); err != nil {
+	model := &commandv1.TemplateCommand{}
+	if err := vault.ctx.Where(where, args...).Get(model); err != nil {
 		return nil, errors.Wrapf(err, "database get%v",
 			logs.KVL(
 				"where", where,
@@ -44,12 +43,12 @@ func (vault TemplateCommand) Get(uuid string) (*commandv1.DbSchema, error) {
 			))
 	}
 
-	return record, nil
+	return model, nil
 }
 
-func (vault TemplateCommand) Find(where string, args ...interface{}) ([]commandv1.DbSchema, error) {
-	commands := make([]commandv1.DbSchema, 0)
-	if err := vault.ctx.Where(where, args...).Find(&commands); err != nil {
+func (vault TemplateCommand) Find(where string, args ...interface{}) ([]commandv1.TemplateCommand, error) {
+	models := make([]commandv1.TemplateCommand, 0)
+	if err := vault.ctx.Where(where, args...).Find(&models); err != nil {
 		return nil, errors.Wrapf(err, "database find%v",
 			logs.KVL(
 				"where", where,
@@ -57,10 +56,10 @@ func (vault TemplateCommand) Find(where string, args ...interface{}) ([]commandv
 			))
 	}
 
-	return commands, nil
+	return models, nil
 }
 
-func (vault TemplateCommand) Query(query map[string]string) ([]commandv1.DbSchema, error) {
+func (vault TemplateCommand) Query(query map[string]string) ([]commandv1.TemplateCommand, error) {
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
@@ -71,24 +70,23 @@ func (vault TemplateCommand) Query(query map[string]string) ([]commandv1.DbSchem
 	}
 
 	//find service
-	records := make([]commandv1.DbSchema, 0)
-	if err := vault.ctx.Prepared(preparer).Find(&records); err != nil {
+	models := make([]commandv1.TemplateCommand, 0)
+	if err := vault.ctx.Prepared(preparer).Find(&models); err != nil {
 		return nil, errors.Wrapf(err, "database find%v",
 			logs.KVL(
 				"query", query,
 			))
 	}
 
-	return records, nil
+	return models, nil
 }
 
-func (vault TemplateCommand) Update(model commandv1.TemplateCommand) (*commandv1.DbSchema, error) {
+func (vault TemplateCommand) Update(model commandv1.TemplateCommand) (*commandv1.TemplateCommand, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		model.Uuid,
 	}
-	record := &commandv1.DbSchema{TemplateCommand: model}
-	if err := vault.ctx.Where(where, args...).Update(record); err != nil {
+	if err := vault.ctx.Where(where, args...).Update(&model); err != nil {
 		return nil, errors.Wrapf(err, "database update%v",
 			logs.KVL(
 				"where", where,
@@ -96,7 +94,7 @@ func (vault TemplateCommand) Update(model commandv1.TemplateCommand) (*commandv1
 			))
 	}
 
-	return record, nil
+	return &model, nil
 }
 
 func (vault TemplateCommand) Delete(uuid string) error {
@@ -104,8 +102,25 @@ func (vault TemplateCommand) Delete(uuid string) error {
 	args := []interface{}{
 		uuid,
 	}
-	record := &commandv1.DbSchema{}
-	if err := vault.ctx.Where(where, args...).Delete(record); err != nil {
+	model := &commandv1.TemplateCommand{}
+	if err := vault.ctx.Where(where, args...).Delete(model); err != nil {
+		return errors.Wrapf(err, "database delete%v",
+			logs.KVL(
+				"where", where,
+				"args", args,
+			))
+	}
+
+	return nil
+}
+
+func (vault TemplateCommand) Delete_ByTemplate(template_uuid string) error {
+	where := "template_uuid = ?"
+	args := []interface{}{
+		template_uuid,
+	}
+	model := &commandv1.TemplateCommand{}
+	if err := vault.ctx.Where(where, args...).Delete(model); err != nil {
 		return errors.Wrapf(err, "database delete%v",
 			logs.KVL(
 				"where", where,

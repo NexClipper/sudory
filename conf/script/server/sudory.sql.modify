@@ -2,3 +2,15 @@ ALTER TABLE `service`
 	DROP COLUMN IF EXISTS `origin_kind`,
 	DROP COLUMN IF EXISTS `origin_uuid`;
 
+ALTER TABLE `template_command`
+	CHANGE COLUMN IF EXISTS `sequence` `sequence` INT(11) NOT NULL COMMENT 'sequence' AFTER `template_uuid`,
+	CHANGE COLUMN IF EXISTS `method` `method` VARCHAR(255) NOT NULL COMMENT 'method' COLLATE 'utf8mb4_bin' AFTER `sequence`;
+
+
+
+ALTER TABLE `template_recipe`
+	CHANGE COLUMN IF EXISTS `method` `method` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_unicode_ci' AFTER `summary`,
+	CHANGE COLUMN IF EXISTS `args` `args` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_unicode_ci' AFTER `method`;
+
+ALTER TABLE `template`
+	CHANGE COLUMN IF EXISTS `origin` `origin` VARCHAR(255) NOT NULL COMMENT 'origin' COLLATE 'utf8mb4_bin' AFTER `summary`;
