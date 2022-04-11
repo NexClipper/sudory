@@ -86,82 +86,118 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	//swago docs version
 	docs.SwaggerInfo.Version = version.Version
 
-	//route /client/service*
-	e.PUT("/client/service", controller.PollService, func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) (err error) {
-			if err := controller.VerifyClientSessionToken(c); err != nil {
-				return err
-			}
+	client_group := e.Group("/client")
+	{
+		//route /client/service*
+		client_group.PUT("/service", controller.PollService, func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) (err error) {
+				if err := controller.VerifyClientSessionToken(c); err != nil {
+					return err
+				}
 
-			if err := next(c); err != nil {
-				return err
-			}
+				if err := next(c); err != nil {
+					return err
+				}
 
-			return nil
+				return nil
+			}
+		})
+		//route /client/auth*
+		client_group.POST("/auth", controller.AuthClient)
+	}
+
+	server_group := e.Group("/server")
+	{
+		if strings.Compare(version.Version, "dev") != 0 {
+			server_group.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+				return func(c echo.Context) (err error) {
+					const key = "x_auth_token"
+					header := c.Request().Header.Get(key)
+
+					if len(header) == 0 {
+						return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
+							fmt.Errorf("not found request header%s",
+								logs.KVL(
+									"key", key,
+								)))
+					}
+
+					if strings.Compare(header, "SUDORY") != 0 {
+						return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
+							fmt.Errorf("not found request header%s",
+								logs.KVL(
+									"key", key,
+								)))
+					}
+
+					if err := next(c); err != nil {
+						return err
+					}
+
+					return nil
+				}
+			})
 		}
-	})
-	//route /client/auth*
-	e.POST("/client/auth", controller.AuthClient)
 
-	//route /server/client*
-	e.GET("/server/client", controller.FindClient)
-	e.GET("/server/client/:uuid", controller.GetClient)
-	e.DELETE("/server/client/:uuid", controller.DeleteClient)
-	//route /server/cluster*
-	e.GET("/server/cluster", controller.FindCluster)
-	e.GET("/server/cluster/:uuid", controller.GetCluster)
-	e.POST("/server/cluster", controller.CreateCluster)
-	e.PUT("/server/cluster/:uuid", controller.UpdateCluster)
-	e.PUT("/server/cluster/:uuid/polling/raguler", controller.UpdateClusterPollingRaguler)
-	e.PUT("/server/cluster/:uuid/polling/smart", controller.UpdateClusterPollingSmart)
-	e.DELETE("/server/cluster/:uuid", controller.DeleteCluster)
-	//route /server/template*
-	e.GET("/server/template", controller.FindTemplate)
-	e.GET("/server/template/:uuid", controller.GetTemplate)
-	e.POST("/server/template", controller.CreateTemplate)
-	e.PUT("/server/template/:uuid", controller.UpdateTemplate)
-	e.DELETE("/server/template/:uuid", controller.DeleteTemplate)
-	//route /server/template/:template_uuid/command*
-	e.GET("/server/template/:template_uuid/command", controller.FindTemplateCommand)
-	e.GET("/server/template/:template_uuid/command/:uuid", controller.GetTemplateCommand)
-	e.POST("/server/template/:template_uuid/command", controller.CreateTemplateCommand)
-	e.PUT("/server/template/:template_uuid/command/:uuid", controller.UpdateTemplateCommand)
-	e.DELETE("/server/template/:template_uuid/command/:uuid", controller.DeleteTemplateCommand)
-	//route /server/template_recipe*
-	e.GET("/server/template_recipe", controller.FindTemplateRecipe)
-	//route /server/service*
-	e.GET("/server/service", controller.FindService)
-	e.GET("/server/service/:uuid", controller.GetService)
-	e.GET("/server/service/:uuid/result", controller.GetServiceResult)
-	e.POST("/server/service", controller.CreateService)
-	// router.e.PUT("/server/service/:uuid", controller.UpdateService)
-	e.DELETE("/server/service/:uuid", controller.DeleteService)
-	//route /server/service_step*
-	e.GET("/server/service/:service_uuid/step", controller.FindServiceStep)
-	e.GET("/server/service/:service_uuid/step/:uuid", controller.GetServiceStep)
-	//route /server/environment*
-	e.GET("/server/environment", controller.FindEnvironment)
-	e.GET("/server/environment/:uuid", controller.GetEnvironment)
-	e.PUT("/server/environment/:uuid", controller.UpdateEnvironmentValue)
-	//route /server/session*
-	e.GET("/server/session", controller.FindSession)
-	e.GET("/server/session/:uuid", controller.GetSession)
-	e.DELETE("/server/session/:uuid", controller.DeleteSession)
-	//route /server/token*
-	e.GET("/server/token", controller.FindToken)
-	e.GET("/server/token/:uuid", controller.GetToken)
-	e.PUT("/server/token/:uuid/label", controller.UpdateTokenLabel)
-	e.DELETE("/server/token/:uuid", controller.DeleteToken)
-	//route /server/token/cluster/*
-	e.POST("/server/token/cluster", controller.CreateClusterToken)
-	e.PUT("/server/token/cluster/:uuid/refresh", controller.RefreshClusterTokenTime)
-	e.PUT("/server/token/cluster/:uuid/expire", controller.ExpireClusterToken)
-
+		//route /server/client*
+		server_group.GET("/client", controller.FindClient)
+		server_group.GET("/client/:uuid", controller.GetClient)
+		server_group.DELETE("/client/:uuid", controller.DeleteClient)
+		//route /server/cluster*
+		server_group.GET("/cluster", controller.FindCluster)
+		server_group.GET("/cluster/:uuid", controller.GetCluster)
+		server_group.POST("/cluster", controller.CreateCluster)
+		server_group.PUT("/cluster/:uuid", controller.UpdateCluster)
+		server_group.PUT("/cluster/:uuid/polling/raguler", controller.UpdateClusterPollingRaguler)
+		server_group.PUT("/cluster/:uuid/polling/smart", controller.UpdateClusterPollingSmart)
+		server_group.DELETE("/cluster/:uuid", controller.DeleteCluster)
+		//route /server/template*
+		server_group.GET("/template", controller.FindTemplate)
+		server_group.GET("/template/:uuid", controller.GetTemplate)
+		server_group.POST("/template", controller.CreateTemplate)
+		server_group.PUT("/template/:uuid", controller.UpdateTemplate)
+		server_group.DELETE("/template/:uuid", controller.DeleteTemplate)
+		//route /server/template/:template_uuid/command*
+		server_group.GET("/template/:template_uuid/command", controller.FindTemplateCommand)
+		server_group.GET("/template/:template_uuid/command/:uuid", controller.GetTemplateCommand)
+		server_group.POST("/template/:template_uuid/command", controller.CreateTemplateCommand)
+		server_group.PUT("/template/:template_uuid/command/:uuid", controller.UpdateTemplateCommand)
+		server_group.DELETE("/template/:template_uuid/command/:uuid", controller.DeleteTemplateCommand)
+		//route /server/template_recipe*
+		server_group.GET("/template_recipe", controller.FindTemplateRecipe)
+		//route /server/service*
+		server_group.GET("/service", controller.FindService)
+		server_group.GET("/service/:uuid", controller.GetService)
+		server_group.GET("/service/:uuid/result", controller.GetServiceResult)
+		server_group.POST("/service", controller.CreateService)
+		// router.e.PUT("/service/:uuid", controller.UpdateService)
+		server_group.DELETE("/service/:uuid", controller.DeleteService)
+		//route /server/service_step*
+		server_group.GET("/service/:service_uuid/step", controller.FindServiceStep)
+		server_group.GET("/service/:service_uuid/step/:uuid", controller.GetServiceStep)
+		//route /server/environment*
+		server_group.GET("/environment", controller.FindEnvironment)
+		server_group.GET("/environment/:uuid", controller.GetEnvironment)
+		server_group.PUT("/environment/:uuid", controller.UpdateEnvironmentValue)
+		//route /server/session*
+		server_group.GET("/session", controller.FindSession)
+		server_group.GET("/session/:uuid", controller.GetSession)
+		server_group.DELETE("/session/:uuid", controller.DeleteSession)
+		//route /server/token*
+		server_group.GET("/token", controller.FindToken)
+		server_group.GET("/token/:uuid", controller.GetToken)
+		server_group.PUT("/token/:uuid/label", controller.UpdateTokenLabel)
+		server_group.DELETE("/token/:uuid", controller.DeleteToken)
+		//route /server/token/cluster/*
+		server_group.POST("/token/cluster", controller.CreateClusterToken)
+		server_group.PUT("/token/cluster/:uuid/refresh", controller.RefreshClusterTokenTime)
+		server_group.PUT("/token/cluster/:uuid/expire", controller.ExpireClusterToken)
+	}
 	/*TODO: 라우트 연결 기능 구현
-	e.POST("/server/cluster/:id/token", controller.CreateToken)
+	e.POST("/cluster/:id/token", controller.CreateToken)
 
 	//route /server/catalogue
-	e.GET("/server/catalogue", controller.GetCatalogue)
+	e.GET("/catalogue", controller.GetCatalogue)
 
 	e.POST("/client/regist", controller.CreateClient)
 	*/
