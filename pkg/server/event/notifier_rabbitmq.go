@@ -164,7 +164,7 @@ func (rabbitMQNotifier) publish(opt RabbitMQNotifierConfig, ch *amqp.Channel, b 
 	if err := ch.Publish(opt.Exchange, opt.RoutingKey, opt.Mandatory, opt.Immediate, publishing); err != nil {
 		return errors.Wrapf(err, "publish to rabbitmq%s",
 			logs.KVL("exchange", opt.Exchange,
-				"pouting_key", opt.RoutingKey,
+				"routing_key", opt.RoutingKey,
 				"mandatory", opt.Mandatory,
 				"immediate", opt.Immediate,
 				"publishing", publishing,
