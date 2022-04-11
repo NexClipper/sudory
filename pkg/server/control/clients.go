@@ -21,6 +21,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	authv1 "github.com/NexClipper/sudory/pkg/server/model/auth/v1"
 	clientv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
+	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
@@ -361,40 +362,78 @@ func newClientSession(payload sessionv1.ClientSessionPayload, token string) sess
 func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 	token := ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
 	if len(token) == 0 {
-		return ErrorInvalidRequestParameter()
+		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
+			errors.Wrapf(ErrorInvalidRequestParameter(), "missing request header%s",
+				logs.KVL(
+					"header", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
+				)))
+
 	}
 
 	//verify
 	//jwt verify
 	if err := jwt.Verify(token, []byte(env.ClientSessionSignatureSecret())); err != nil {
-		return errors.Wrapf(err, "%s verify", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
+		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
+			errors.Wrapf(err, "jwt verify%s",
+				logs.KVL(
+					"header", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
+					"token", token,
+				)))
 	}
 
 	payload := new(sessionv1.ClientSessionPayload)
 	if err := jwt.BindPayload(token, payload); err != nil {
-		return errors.Wrapf(err, "%s bind payload", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
+		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
+			errors.Wrapf(err, "jwt bind payload%s",
+				logs.KVL(
+					"header", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
+					"token", token,
+				)))
 	}
 
 	//만료시간 비교
 	if time.Until(payload.Exp) < 0 {
-		return fmt.Errorf("%s expierd", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
+		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
+			fmt.Errorf("token expierd%s",
+				logs.KVL(
+					"header", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
+					"exp", payload.Exp.String(),
+				)))
 	}
 
 	_, err := ctl.Scope(func(db database.Context) (interface{}, error) {
 		//smart polling
-		cluster, err := vault.NewCluster(db).Get(payload.ClusterUuid)
+		where := "uuid = ?"
+		clusters, err := vault.NewCluster(db).Find(where, payload.ClusterUuid)
 		if err != nil {
-			return nil, errors.Wrapf(err, "get cluster%s",
-				logs.KVL(
-					"uuid", payload.ClusterUuid,
-				))
+			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+				errors.Wrapf(err, "find cluster%s",
+					logs.KVL(
+						"uuid", payload.ClusterUuid,
+					)))
 		}
+
+		if len(clusters) == 0 {
+			return nil, echo.NewHTTPError(http.StatusBadRequest).SetInternal(
+				errors.Wrapf(err, "not found cluster%s",
+					logs.KVL(
+						"uuid", payload.ClusterUuid,
+					)))
+		}
+
 		service_count, err := countGatherClusterService(db, payload.ClusterUuid)
 		if err != nil {
-			return nil, errors.Wrapf(err, "count undone service%s",
-				logs.KVL(
-					"cluster_uuid", payload.ClusterUuid,
-				))
+			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+				errors.Wrapf(err, "count undone service%s",
+					logs.KVL(
+						"cluster_uuid", payload.ClusterUuid,
+					)))
+		}
+
+		var cluster clusterv1.Cluster
+		for _, iter := range clusters {
+			cluster = iter
+			break
 		}
 
 		//reflesh payload
@@ -406,7 +445,8 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 		//new jwt-new_token
 		new_token, err := jwt.New(payload, []byte(env.ClientSessionSignatureSecret()))
 		if err != nil {
-			return nil, errors.Wrapf(err, "new jwt")
+			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+				errors.Wrapf(err, "new jwt"))
 		}
 
 		//udpate session
