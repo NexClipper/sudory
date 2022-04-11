@@ -22,6 +22,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/version"
+	"github.com/pkg/errors"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -116,7 +117,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 
 					if len(header) == 0 {
 						return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-							fmt.Errorf("not found request header%s",
+							errors.Errorf("not found request header%s",
 								logs.KVL(
 									"key", key,
 								)))
@@ -124,7 +125,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 
 					if strings.Compare(header, "SUDORY") != 0 {
 						return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-							fmt.Errorf("not found request header%s",
+							errors.Errorf("not found request header%s",
 								logs.KVL(
 									"key", key,
 								)))

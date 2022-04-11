@@ -11,6 +11,7 @@ import (
 	"github.com/NexClipper/logger"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/jinzhu/configor"
+	"github.com/pkg/errors"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -30,7 +31,7 @@ type LoggerConfig struct {
 }
 
 var lazyinitlogger func(string) = func(string) {
-	panic(fmt.Errorf("call me after func init()"))
+	panic(errors.Errorf("call me after func init()"))
 }
 
 var onceinitlogger sync.Once

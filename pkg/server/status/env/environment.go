@@ -1,7 +1,6 @@
 package env
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -69,7 +68,7 @@ func (worker *EnvironmentUpdate) WhiteListCheck() error {
 		}
 	}
 	if 0 < count {
-		return fmt.Errorf("not exists environment keys=['%s']", pop("', '"))
+		return errors.Errorf("not exists environment keys=['%s']", pop("', '"))
 	}
 
 	return nil
@@ -101,7 +100,7 @@ func (worker *EnvironmentUpdate) Merge() error {
 
 			value, ok := DefaultEnvironmanets[env]
 			if !ok {
-				return fmt.Errorf("not found default environment%s",
+				return errors.Errorf("not found default environment%s",
 					logs.KVL(
 						"key", key,
 					))

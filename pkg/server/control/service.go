@@ -1,7 +1,6 @@
 package control
 
 import (
-	"fmt"
 	"net/http"
 	"sort"
 
@@ -81,7 +80,7 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 	//valid steps
 	if len(body.Steps) != len(commands) {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			fmt.Errorf("diff length of steps and commands expect=%d actual=%d", len(commands), len(body.Steps)))
+			errors.Errorf("diff length of steps and commands expect=%d actual=%d", len(commands), len(body.Steps)))
 	}
 	for _, step := range body.Steps {
 		if step.Args == nil {

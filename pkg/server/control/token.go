@@ -1,7 +1,6 @@
 package control
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -310,7 +309,7 @@ func validTokenUser(ctx database.Context, user_kind tokenv1.TokenUserKind, user_
 			return errors.Wrapf(err, "found cluster token user")
 		}
 	default:
-		return fmt.Errorf("invalid token user kind")
+		return errors.Errorf("invalid token user kind")
 	}
 
 	return nil

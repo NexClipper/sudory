@@ -251,13 +251,13 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 
 	if token == nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			fmt.Errorf("record was not found: token"))
+			errors.Errorf("record was not found: token"))
 	}
 
 	//만료 시간 검증
 	if time.Until(token.ExpirationTime) < 0 {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			fmt.Errorf("token was expierd"))
+			errors.Errorf("token was expierd"))
 	}
 
 	//new session
@@ -394,7 +394,7 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 	//만료시간 비교
 	if time.Until(payload.Exp) < 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			fmt.Errorf("token expierd%s",
+			errors.Errorf("token expierd%s",
 				logs.KVL(
 					"header", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
 					"exp", payload.Exp.String(),
@@ -471,7 +471,7 @@ func clientTokenPayload(ctx echo.Context) (*sessionv1.ClientSessionPayload, erro
 	//get token
 	token := ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
 	if len(token) == 0 {
-		return nil, fmt.Errorf("missing request header%s",
+		return nil, errors.Errorf("missing request header%s",
 			logs.KVL(
 				"key", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
 			))
