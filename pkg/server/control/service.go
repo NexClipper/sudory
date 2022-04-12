@@ -101,6 +101,7 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 	service.TemplateUuid = body.TemplateUuid
 	service.Status = newist.Int32(int32(servicev1.StatusRegist)) //init service Status(Regist)
 	service.StepCount = newist.Int32(int32(len(body.Steps)))
+	service.SubscribeEvent = body.SubscribeEvent
 
 	//property step
 	steps := map_step_create(body.Steps, func(i int, sse stepv1.HttpReqServiceStep_Create_ByService) stepv1.ServiceStep {

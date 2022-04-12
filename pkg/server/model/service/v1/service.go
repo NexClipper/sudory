@@ -20,16 +20,17 @@ const (
 
 //ServiceProperty Property
 type ServiceProperty struct {
-	TemplateUuid       string  `json:"template_uuid,omitempty"        xorm:"'template_uuid'        char(32) notnull index comment('template_uuid')"`        //
-	ClusterUuid        string  `json:"cluster_uuid,omitempty"         xorm:"'cluster_uuid'         char(32) notnull index comment('cluster_uuid')"`         //
-	AssignedClientUuid string  `json:"assigned_client_uuid,omitempty" xorm:"'assigned_client_uuid' char(32) notnull index comment('assigned client_uuid')"` //
-	StepCount          *int32  `json:"step_count,omitempty"           xorm:"'step_count'           int      notnull       comment('step_count')"`           //
-	StepPosition       *int32  `json:"step_position,omitempty"        xorm:"'step_position'        int      notnull       comment('step_position')"`        //
-	Type               *int32  `json:"type,omitempty"                 xorm:"'type'                 int      notnull       comment('type')"`                 //0: once, 1: repeat(epoch, interval)
-	Epoch              *int32  `json:"epoch,omitempty"                xorm:"'epoch'                int      notnull       comment('epoch (times)')"`        //-1: infinite
-	Interval           *int32  `json:"interval,omitempty"             xorm:"'interval'             int      notnull       comment('interval (sec)')"`       //
-	Status             *int32  `json:"status,omitempty"               xorm:"'status'               int      notnull index comment('status')"`               //
-	Result             *string `json:"result,omitempty"               xorm:"'result'               longtext null          comment('result')"`               //실행 결과(정상:'결과', 오류:'오류 메시지')
+	TemplateUuid       string  `json:"template_uuid,omitempty"        xorm:"'template_uuid'        char(32)     notnull index comment('template_uuid')"`        //
+	ClusterUuid        string  `json:"cluster_uuid,omitempty"         xorm:"'cluster_uuid'         char(32)     notnull index comment('cluster_uuid')"`         //
+	AssignedClientUuid string  `json:"assigned_client_uuid,omitempty" xorm:"'assigned_client_uuid' char(32)     notnull index comment('assigned client_uuid')"` //
+	StepCount          *int32  `json:"step_count,omitempty"           xorm:"'step_count'           int          notnull       comment('step_count')"`           //
+	StepPosition       *int32  `json:"step_position,omitempty"        xorm:"'step_position'        int          notnull       comment('step_position')"`        //
+	Type               *int32  `json:"type,omitempty"                 xorm:"'type'                 int          notnull       comment('type')"`                 //0: once, 1: repeat(epoch, interval)
+	Epoch              *int32  `json:"epoch,omitempty"                xorm:"'epoch'                int          notnull       comment('epoch (times)')"`        //-1: infinite
+	Interval           *int32  `json:"interval,omitempty"             xorm:"'interval'             int          notnull       comment('interval (sec)')"`       //
+	Status             *int32  `json:"status,omitempty"               xorm:"'status'               int          notnull index comment('status')"`               //
+	Result             *string `json:"result,omitempty"               xorm:"'result'               longtext     null          comment('result')"`               //실행 결과(정상:'결과', 오류:'오류 메시지')
+	SubscribeEvent     string  `json:"subscribe_event,omitempty"      xorm:"'subscribe_event'      varchar(255) null          comment('subscribe event')"`      //서비스 POLL 결과 전달 이벤트 이름
 	//  필드 타입에 포인터를 사용하는 이유:
 	//    xorm을 사용하면서 초기값을 갖는 타입들은
 	//    레코드를 수정할 때 해당 컬럼을 무시하기 때문에
@@ -93,17 +94,11 @@ func (Service) TableName() string {
 	return "service"
 }
 
-type ServiceCreateProperty struct {
-	//TEMPLATE UUID
-	TemplateUuid string `json:"template_uuid"`
-	//클러스터 UUID
-	ClusterUuid string `json:"cluster_uuid"`
-}
-
 type HttpReqService_Create struct {
 	metav1.LabelMeta `json:",inline"`                             //inline labelmeta
 	TemplateUuid     string                                       `json:"template_uuid"`
 	ClusterUuid      string                                       `json:"cluster_uuid"`
+	SubscribeEvent   string                                       `json:"subscribe_event,omitempty"`
 	Steps            []stepv1.HttpReqServiceStep_Create_ByService `json:"steps"`
 }
 

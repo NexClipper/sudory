@@ -120,7 +120,7 @@ func (ctl Control) PollService(ctx echo.Context) error {
 			"step_count":           nullable.Int32(request.StepCount).Value(),
 			"step_position":        nullable.Int32(request.StepPosition).Value(),
 		}
-		event.Invoke("service-poll-in", m)
+		event.Invoke(request.SubscribeEvent, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
 	}
 
 	//make response
