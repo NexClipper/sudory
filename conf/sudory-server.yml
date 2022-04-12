@@ -68,6 +68,11 @@ events:
     request-headers: 
       Content-Type: "application/json" 
     request-timeout: 30s
+  #- notifier:
+  #  type: 'rabbitmq'
+  #  url: 'amqp://sudory:sudory@localhost:5672/sudory'
+  #  exchange: ''
+  #  routing-key: 'event'
 - event:
   name: 'service-poll-out'
   update-interval: 5s
@@ -87,6 +92,13 @@ events:
   notifiers:
   - notifier:
     type: console
+  #- notifier:
+  #  type: 'rabbitmq'
+  #  url: 'amqp://sudory:sudory@localhost:5672/sudory'
+  #  exchange: ''
+  #  routing-key: 'event'
+  #  mandatory: false
+  #  immediate: false
   # - notifier:
   #   type: 'webhook'
   #   method: post
