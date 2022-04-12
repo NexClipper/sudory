@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"encoding/json"
 	"math"
 	"sort"
 
@@ -58,16 +57,24 @@ func (property ServiceProperty) ChaniningStep(steps []stepv1.ServiceStep) Servic
 		return a < b
 	})
 
+	step_status := int32(StatusRegist)
 	for i, step := range steps {
-		//get step status
-		step_status := StatusRegist
-		if step.Status != nil {
-			step_status = Status(*step.Status)
+
+		if step.Status == nil {
+			step.Status = ptrInt32(int32(StatusRegist))
 		}
 
-		if StatusSuccess <= step_status {
+		if step_status <= *step.Status {
+			step_status = *step.Status
+
+			//step이 성공 상태이지만 마지막이 아니면
+			//service의 상태를 진행중으로 표시
+			if i+1 < len(steps) && int32(StatusSuccess) == step_status {
+				step_status = int32(StatusProcessing)
+			}
+
 			*property.StepPosition = int32(i) + 1 //step position
-			*property.Status = int32(step_status)
+			*property.Status = step_status        //step status
 		}
 	}
 
@@ -105,18 +112,18 @@ type HttpRspService struct {
 	Steps   []stepv1.ServiceStep `json:",inline"`
 }
 
-func (object HttpRspService) MarshalJSON() ([]byte, error) {
-	object.ServiceProperty = object.ServiceProperty.ChaniningStep(object.Steps)
-	v := struct {
-		Service `json:",inline"`
-		Steps   []stepv1.ServiceStep `json:",inline"`
-	}{
-		Service: object.Service,
-		Steps:   object.Steps,
-	}
+// func (object HttpRspService) MarshalJSON() ([]byte, error) {
+// 	object.ServiceProperty = object.ChaniningStep(object.Steps)
+// 	v := struct {
+// 		Service `json:",inline"`
+// 		Steps   []stepv1.ServiceStep `json:",inline"`
+// 	}{
+// 		Service: object.Service,
+// 		Steps:   object.Steps,
+// 	}
 
-	return json.Marshal(v)
-}
+// 	return json.Marshal(v)
+// }
 
 type HttpReqService_ClientSide HttpRspService
 
