@@ -87,7 +87,7 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 				errors.Wrapf(ErrorBindRequestObject(), "valid%s",
 					logs.KVL(
-						"pram", TypeName(step.Args),
+						"param", TypeName(step.Args),
 					)))
 		}
 	}

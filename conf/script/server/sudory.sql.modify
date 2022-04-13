@@ -18,3 +18,9 @@ ALTER TABLE `template`
 
 ALTER TABLE `service`
 	ADD COLUMN IF NOT EXISTS `subscribe_event` VARCHAR(255) NULL COMMENT 'subscribe event' AFTER `result`;
+
+
+ALTER TABLE `template_recipe`
+	CHANGE COLUMN IF EXISTS `args` `args` TEXT NOT NULL COLLATE 'utf8mb4_unicode_ci' AFTER `method`,
+	DROP INDEX IF EXISTS `method`,
+	ADD INDEX `method` (`method`);
