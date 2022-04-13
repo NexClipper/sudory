@@ -99,12 +99,12 @@ type HttpReqService_Create struct {
 	TemplateUuid     string                                       `json:"template_uuid"`
 	ClusterUuid      string                                       `json:"cluster_uuid"`
 	SubscribeEvent   string                                       `json:"subscribe_event,omitempty"`
-	Steps            []stepv1.HttpReqServiceStep_Create_ByService `json:"steps"`
+	Steps            []stepv1.HttpReqServiceStep_Create_ByService `json:"steps,omitempty"`
 }
 
 type HttpRspService struct {
 	Service `json:",inline"`
-	Steps   []stepv1.ServiceStep `json:",inline"`
+	Steps   []stepv1.ServiceStep `json:"steps,omitempty"`
 }
 
 // func (object HttpRspService) MarshalJSON() ([]byte, error) {

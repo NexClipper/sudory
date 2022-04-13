@@ -28,7 +28,7 @@ func (Template) TableName() string {
 type HttpReqTemplate_Create struct {
 	metav1.LabelMeta `json:",inline" xorm:"extends"`                      //inline labelmeta
 	Origin           string                                               `json:"origin,omitempty"`
-	Commands         []commandv1.HttpReqTemplateCommand_Create_ByTemplate `json:",inline" xorm:"extends"`
+	Commands         []commandv1.HttpReqTemplateCommand_Create_ByTemplate `json:"commands,omitempty"`
 }
 
 type HttpReqTemplate_Update struct {
@@ -38,7 +38,7 @@ type HttpReqTemplate_Update struct {
 
 type HttpRspTemplate struct {
 	Template `json:",inline"`
-	Commands []commandv1.TemplateCommand `json:",inline"`
+	Commands []commandv1.TemplateCommand `json:"commands,omitempty"`
 }
 
 func (object HttpRspTemplate) MarshalJSON() ([]byte, error) {

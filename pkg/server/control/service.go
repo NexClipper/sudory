@@ -1,8 +1,11 @@
 package control
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
 	"sort"
+	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/database"
@@ -13,6 +16,7 @@ import (
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
+	"github.com/qri-io/jsonschema"
 )
 
 // Create Service
@@ -83,13 +87,46 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Errorf("diff length of steps and commands expect=%d actual=%d", len(commands), len(body.Steps)))
 	}
-	for _, step := range body.Steps {
-		if step.Args == nil {
+	for i := range body.Steps {
+		step_args := body.Steps[i].Args
+		if step_args == nil {
 			return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 				errors.Wrapf(ErrorBindRequestObject(), "valid%s",
 					logs.KVL(
-						"param", TypeName(step.Args),
+						"param", TypeName(body.Steps[i].Args),
 					)))
+		}
+		//JSON SCHEMA 유효 검사
+		args_data, err := json.Marshal(step_args)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+				errors.Wrapf(err, "json marshal template_command args"))
+		}
+
+		command_args := commands[i].Args
+		args_schema, err := json.Marshal(command_args)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+				errors.Wrapf(err, "json marshal template_command args"))
+		}
+		//스키마 검사 객체 생성
+		validator := &jsonschema.Schema{}
+		if err := json.Unmarshal([]byte(args_schema), validator); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+				errors.Wrapf(err, "convert template_command args to jsonschema schema"))
+		}
+
+		timeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		//스키마로 유효성 검사
+		valid_errors, err := validator.ValidateBytes(timeout, args_data)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+				errors.Wrapf(err, "validate json schema service_step args"))
+		}
+		for _, valid_error := range valid_errors {
+			return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+				errors.Wrapf(valid_error, "validate json schema service_step args"))
 		}
 	}
 
