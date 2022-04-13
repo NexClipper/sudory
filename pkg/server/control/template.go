@@ -21,7 +21,8 @@ import (
 // @Produce     json
 // @Tags        server/template
 // @Router      /server/template [post]
-// @Param       template body v1.HttpReqTemplate_Create true "HttpReqTemplate_Create"
+// @Param       x_auth_token header string                    false "client session token"
+// @Param       template     body   v1.HttpReqTemplate_Create true  "HttpReqTemplate_Create"
 // @Success 200 {object} v1.HttpRspTemplate
 func (ctl Control) CreateTemplate(ctx echo.Context) error {
 	map_command := func(elems []commandv1.HttpReqTemplateCommand_Create_ByTemplate, mapper func(int, commandv1.HttpReqTemplateCommand_Create_ByTemplate) commandv1.TemplateCommand) []commandv1.TemplateCommand {
@@ -145,7 +146,8 @@ func (ctl Control) CreateTemplate(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/template
 // @Router      /server/template/{uuid} [get]
-// @Param       uuid path string true "Template 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Template 의 Uuid"
 // @Success 200 {object} v1.HttpRspTemplate
 func (ctl Control) GetTemplate(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
@@ -191,9 +193,10 @@ func (ctl Control) GetTemplate(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/template
 // @Router      /server/template [get]
-// @Param       q query string false "query  pkg/server/database/prepared/README.md"
-// @Param       o query string false "order  pkg/server/database/prepared/README.md"
-// @Param       p query string false "paging pkg/server/database/prepared/README.md"
+// @Param       x_auth_token header string false "client session token"
+// @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
+// @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
+// @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
 // @Success 200 {array} v1.HttpRspTemplate
 func (ctl Control) FindTemplate(ctx echo.Context) error {
 	foreach_template := func(elems []templatev1.Template, mapper func(int, templatev1.Template) error) error {
@@ -250,8 +253,9 @@ func (ctl Control) FindTemplate(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/template
 // @Router      /server/template/{uuid} [put]
-// @Param       uuid     path string false "Template 의 Uuid"
-// @Param       template body v1.HttpReqTemplate_Update true "HttpReqTemplate_Update"
+// @Param       x_auth_token header string                    false "client session token"
+// @Param       uuid         path   string                    true  "Template 의 Uuid"
+// @Param       template     body   v1.HttpReqTemplate_Update true  "HttpReqTemplate_Update"
 // @Success 200 {object} v1.Template
 func (ctl Control) UpdateTemplate(ctx echo.Context) error {
 	body := new(templatev1.HttpReqTemplate_Update)
@@ -303,7 +307,8 @@ func (ctl Control) UpdateTemplate(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/template
 // @Router      /server/template/{uuid} [delete]
-// @Param       uuid path string true "Template 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Template 의 Uuid"
 // @Success 200
 func (ctl Control) DeleteTemplate(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {

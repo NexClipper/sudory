@@ -21,7 +21,8 @@ import (
 // @Produce     json
 // @Tags        server/service
 // @Router      /server/service [post]
-// @Param       service body v1.HttpReqService_Create true "HttpReqService_Create"
+// @Param       x_auth_token header string                   false "client session token"
+// @Param       service      body   v1.HttpReqService_Create true  "HttpReqService_Create"
 // @Success     200 {object} v1.HttpRspService
 func (ctl Control) CreateService(ctx echo.Context) error {
 	map_step_create := func(elems []stepv1.HttpReqServiceStep_Create_ByService, mapper func(int, stepv1.HttpReqServiceStep_Create_ByService) stepv1.ServiceStep) []stepv1.ServiceStep {
@@ -159,9 +160,10 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/service
 // @Router      /server/service [get]
-// @Param       q query string false "query  pkg/server/database/prepared/README.md"
-// @Param       o query string false "order  pkg/server/database/prepared/README.md"
-// @Param       p query string false "paging pkg/server/database/prepared/README.md"
+// @Param       x_auth_token header string false "client session token"
+// @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
+// @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
+// @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.HttpRspService
 func (ctl Control) FindService(ctx echo.Context) error {
 	tx := ctl.NewSession()
@@ -212,7 +214,8 @@ func (ctl Control) FindService(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/service
 // @Router      /server/service/{uuid} [get]
-// @Param       uuid path string true "Service 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Service 의 Uuid"
 // @Success     200 {object} v1.HttpRspService
 func (ctl Control) GetService(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
@@ -260,7 +263,8 @@ func (ctl Control) GetService(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/service
 // @Router      /server/service/{uuid}/result [get]
-// @Param       uuid path string true "Service 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Service 의 Uuid"
 // @Success     200 {object} v1.HttpRspService
 func (ctl Control) GetServiceResult(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
@@ -297,7 +301,8 @@ func (ctl Control) GetServiceResult(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/service
 // @Router      /server/service/{uuid} [delete]
-// @Param       uuid path string true "Service 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Service 의 Uuid"
 // @Success     200
 func (ctl Control) DeleteService(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {

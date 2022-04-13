@@ -19,7 +19,8 @@ import (
 // @Produce     json
 // @Tags        server/template_recipe
 // @Router      /server/template_recipe [get]
-// @Param       method query string false "Template Command 의 Method"
+// @Param       x_auth_token header string false "client session token"
+// @Param       method       query  string false "Template Command 의 Method"
 // @Success     200 {array} v1.TemplateRecipe
 func (ctl Control) FindTemplateRecipe(ctx echo.Context) error {
 	method := echoutil.QueryParam(ctx)["method"]

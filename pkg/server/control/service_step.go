@@ -16,7 +16,8 @@ import (
 // @Produce     json
 // @Tags        server/service_step
 // @Router      /server/service/{service_uuid}/step [get]
-// @Param       service_uuid path string true "ServiceStep 의 service_uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       service_uuid path   string true  "ServiceStep 의 service_uuid"
 // @Success     200 {array} v1.ServiceStep
 func (ctl Control) FindServiceStep(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__SERVICE_UUID__]) == 0 {
@@ -45,8 +46,9 @@ func (ctl Control) FindServiceStep(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/service_step
 // @Router      /server/service/{service_uuid}/step/{uuid} [get]
-// @Param       service_uuid path string true "ServiceStep 의 service_uuid"
-// @Param       uuid         path string true "ServiceStep 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       service_uuid path   string true  "ServiceStep 의 service_uuid"
+// @Param       uuid         path   string true  "ServiceStep 의 Uuid"
 // @Success     200 {object} v1.ServiceStep
 func (ctl Control) GetServiceStep(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__SERVICE_UUID__]) == 0 {

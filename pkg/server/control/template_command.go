@@ -22,8 +22,9 @@ import (
 // @Produce     json
 // @Tags        server/template_command
 // @Router      /server/template/{template_uuid}/command [post]
-// @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
-// @Param       command       body v1.HttpReqTemplateCommand_Create true "HttpReqTemplateCommand_Create"
+// @Param       x_auth_token  header string                           false "client session token"
+// @Param       template_uuid path   string                           true  "HttpReqTemplate 의 Uuid"
+// @Param       command       body   v1.HttpReqTemplateCommand_Create true  "HttpReqTemplateCommand_Create"
 // @Success 200 {object} v1.TemplateCommand
 func (ctl Control) CreateTemplateCommand(ctx echo.Context) error {
 	chaining_sequence := func(db database.Context, command commandv1.TemplateCommand) error {
@@ -161,7 +162,8 @@ func (ctl Control) CreateTemplateCommand(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/template_command
 // @Router      /server/template/{template_uuid}/command [get]
-// @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
+// @Param       x_auth_token  header string false "client session token"
+// @Param       template_uuid path   string true  "HttpReqTemplate 의 Uuid"
 // @Success 200 {array} v1.TemplateCommand
 func (ctl Control) FindTemplateCommand(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
@@ -194,8 +196,9 @@ func (ctl Control) FindTemplateCommand(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/template_command
 // @Router      /server/template/{template_uuid}/command/{uuid} [get]
-// @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
-// @Param       uuid          path string true "HttpReqTemplateCommand 의 Uuid"
+// @Param       x_auth_token  header string false "client session token"
+// @Param       template_uuid path   string true  "HttpReqTemplate 의 Uuid"
+// @Param       uuid          path   string true  "HttpReqTemplateCommand 의 Uuid"
 // @Success 200 {object} v1.TemplateCommand
 func (ctl Control) GetTemplateCommand(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
@@ -237,9 +240,10 @@ func (ctl Control) GetTemplateCommand(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/template_command
 // @Router      /server/template/{template_uuid}/command/{uuid} [put]
-// @Param       template_uuid path string true "HttpReqTemplateCommand 의 TemplateUuid"
-// @Param       uuid          path string true "HttpReqTemplateCommand 의 Uuid"
-// @Param       command       body v1.HttpReqTemplateCommand_Update true "HttpReqTemplateCommand_Update"
+// @Param       x_auth_token  header string                           false "client session token"
+// @Param       template_uuid path   string                           true  "HttpReqTemplateCommand 의 TemplateUuid"
+// @Param       uuid          path   string                           true  "HttpReqTemplateCommand 의 Uuid"
+// @Param       command       body   v1.HttpReqTemplateCommand_Update true  "HttpReqTemplateCommand_Update"
 // @Success 200 {object} v1.TemplateCommand
 func (ctl Control) UpdateTemplateCommand(ctx echo.Context) error {
 	chaining_sequence := func(db database.Context, command commandv1.TemplateCommand) error {
@@ -356,8 +360,9 @@ func (ctl Control) UpdateTemplateCommand(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/template_command
 // @Router      /server/template/{template_uuid}/command/{uuid} [delete]
-// @Param       template_uuid path string true "HttpReqTemplate 의 Uuid"
-// @Param       uuid          path string true "HttpReqTemplateCommand 의 Uuid"
+// @Param       x_auth_token  header string false "client session token"
+// @Param       template_uuid path   string true  "HttpReqTemplate 의 Uuid"
+// @Param       uuid          path   string true  "HttpReqTemplateCommand 의 Uuid"
 // @Success 200
 func (ctl Control) DeleteTemplateCommand(ctx echo.Context) error {
 	chaining_sequence := func(db database.Context, template_uuid, uuid string) error {

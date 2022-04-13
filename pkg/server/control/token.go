@@ -21,7 +21,8 @@ import (
 // @Produce     json
 // @Tags        server/token
 // @Router      /server/token/cluster [post]
-// @Param       object body v1.HttpReqToken_CreateClusterToken true "HttpReqToken_CreateClusterToken"
+// @Param       x_auth_token header string                             false "client session token"
+// @Param       object       body   v1.HttpReqToken_CreateClusterToken true  "HttpReqToken_CreateClusterToken"
 // @Success     200 {object} v1.Token
 func (ctl Control) CreateClusterToken(ctx echo.Context) error {
 	const user_kind = tokenv1.TokenUserKindCluster
@@ -92,9 +93,10 @@ func (ctl Control) CreateClusterToken(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/token
 // @Router      /server/token [get]
-// @Param       q query string false "query  pkg/server/database/prepared/README.md"
-// @Param       o query string false "order  pkg/server/database/prepared/README.md"
-// @Param       p query string false "paging pkg/server/database/prepared/README.md"
+// @Param       x_auth_token header string false "client session token"
+// @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
+// @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
+// @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.Token
 func (ctl Control) FindToken(ctx echo.Context) error {
 	r, err := vault.NewToken(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
@@ -112,7 +114,8 @@ func (ctl Control) FindToken(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/token
 // @Router      /server/token/{uuid} [get]
-// @Param       uuid path string true "Token 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Token 의 Uuid"
 // @Success     200 {object} v1.Token
 func (ctl Control) GetToken(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
@@ -140,8 +143,9 @@ func (ctl Control) GetToken(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/token
 // @Router		/server/token/{uuid}/label [put]
-// @Param       uuid   path string true "Token 의 Uuid"
-// @Param       object body v1.HttpReqToken_UpdateLabel true "Token 의 HttpReqToken_UpdateLabel"
+// @Param       x_auth_token header string                      false "client session token"
+// @Param       uuid         path   string                      true  "Token 의 Uuid"
+// @Param       object       body   v1.HttpReqToken_UpdateLabel true  "Token 의 HttpReqToken_UpdateLabel"
 // @Success 	200 {object} v1.Token
 func (ctl Control) UpdateTokenLabel(ctx echo.Context) error {
 	body := new(tokenv1.HttpReqToken_UpdateLabel)
@@ -191,7 +195,8 @@ func (ctl Control) UpdateTokenLabel(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/token
 // @Router      /server/token/cluster/{uuid}/refresh [put]
-// @Param       uuid    path string true "Token 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Token 의 Uuid"
 // @Success     200 {object} v1.Token
 func (ctl Control) RefreshClusterTokenTime(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
@@ -231,7 +236,8 @@ func (ctl Control) RefreshClusterTokenTime(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/token
 // @Router      /server/token/cluster/{uuid}/expire [put]
-// @Param       uuid    path string true "Token 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Token 의 Uuid"
 // @Success     200 {object} v1.Token
 func (ctl Control) ExpireClusterToken(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
@@ -271,7 +277,8 @@ func (ctl Control) ExpireClusterToken(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/token
 // @Router      /server/token/{uuid} [delete]
-// @Param       uuid path string true "Token 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Token 의 Uuid"
 // @Success     200
 func (ctl Control) DeleteToken(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {

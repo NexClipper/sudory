@@ -17,9 +17,10 @@ import (
 // @Produce     json
 // @Tags        server/session
 // @Router      /server/session [get]
-// @Param       q query string false "query  pkg/server/database/prepared/README.md"
-// @Param       o query string false "order  pkg/server/database/prepared/README.md"
-// @Param       p query string false "paging pkg/server/database/prepared/README.md"
+// @Param       x_auth_token header string false "client session token"
+// @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
+// @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
+// @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.Session
 func (ctl Control) FindSession(ctx echo.Context) error {
 	r, err := vault.NewSession(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
@@ -37,7 +38,8 @@ func (ctl Control) FindSession(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/session
 // @Router      /server/session/{uuid} [get]
-// @Param       uuid          path string true "Session 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Session 의 Uuid"
 // @Success     200 {object} v1.Session
 func (ctl Control) GetSession(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
@@ -65,7 +67,8 @@ func (ctl Control) GetSession(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/session
 // @Router      /server/session/{uuid} [delete]
-// @Param       uuid path string true "Session 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Session 의 Uuid"
 // @Success     200
 func (ctl Control) DeleteSession(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {

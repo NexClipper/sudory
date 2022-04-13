@@ -18,7 +18,8 @@ import (
 // @Produce     json
 // @Tags        server/cluster
 // @Router      /server/cluster [post]
-// @Param       client body v1.HttpReqCluster_Create true "HttpReqCluster_Create"
+// @Param       x_auth_token header string                   false "client session token"
+// @Param       client       body   v1.HttpReqCluster_Create true  "HttpReqCluster_Create"
 // @Success     200 {object} v1.Cluster
 func (ctl Control) CreateCluster(ctx echo.Context) error {
 	body := new(clusterv1.HttpReqCluster_Create)
@@ -69,9 +70,10 @@ func (ctl Control) CreateCluster(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/cluster
 // @Router      /server/cluster [get]
-// @Param       q query string false "query  pkg/server/database/prepared/README.md"
-// @Param       o query string false "order  pkg/server/database/prepared/README.md"
-// @Param       p query string false "paging pkg/server/database/prepared/README.md"
+// @Param       x_auth_token header string false "client session token"
+// @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
+// @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
+// @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.Cluster
 func (ctl Control) FindCluster(ctx echo.Context) error {
 	clusters, err := vault.NewCluster(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
@@ -89,7 +91,8 @@ func (ctl Control) FindCluster(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/cluster
 // @Router      /server/cluster/{uuid} [get]
-// @Param       uuid path string true "Cluster 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Cluster 의 Uuid"
 // @Success     200 {object} v1.Cluster
 func (ctl Control) GetCluster(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
@@ -117,8 +120,9 @@ func (ctl Control) GetCluster(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/cluster
 // @Router      /server/cluster/{uuid} [put]
-// @Param       uuid   path string true "Cluster 의 Uuid"
-// @Param       client body v1.HttpReqCluster_Update true "HttpReqCluster_Update"
+// @Param       x_auth_token header string                   false "client session token"
+// @Param       uuid         path   string                   true  "Cluster 의 Uuid"
+// @Param       client       body   v1.HttpReqCluster_Update true  "HttpReqCluster_Update"
 // @Success     200 {object} v1.Cluster
 func (ctl Control) UpdateCluster(ctx echo.Context) error {
 	body := new(clusterv1.HttpReqCluster_Update)
@@ -168,8 +172,9 @@ func (ctl Control) UpdateCluster(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/cluster
 // @Router      /server/cluster/{uuid}/polling/raguler [put]
-// @Param       uuid   path string true "Cluster 의 Uuid"
-// @Param       polling_option body v1.RagulerPollingOption true "RagulerPollingOption"
+// @Param       x_auth_token   header string                  false "client session token"
+// @Param       uuid           path   string                  true  "Cluster 의 Uuid"
+// @Param       polling_option body   v1.RagulerPollingOption true  "RagulerPollingOption"
 // @Success     200 {object} v1.Cluster
 func (ctl Control) UpdateClusterPollingRaguler(ctx echo.Context) error {
 	polling_option := new(clusterv1.RagulerPollingOption)
@@ -217,8 +222,9 @@ func (ctl Control) UpdateClusterPollingRaguler(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/cluster
 // @Router      /server/cluster/{uuid}/polling/smart [put]
-// @Param       uuid   path string true "Cluster 의 Uuid"
-// @Param       polling_option body v1.SmartPollingOption true "SmartPollingOption"
+// @Param       x_auth_token   header string                false "client session token"
+// @Param       uuid           path   string                true  "Cluster 의 Uuid"
+// @Param       polling_option body   v1.SmartPollingOption true  "SmartPollingOption"
 // @Success     200 {object} v1.Cluster
 func (ctl Control) UpdateClusterPollingSmart(ctx echo.Context) error {
 	polling_option := new(clusterv1.SmartPollingOption)
@@ -267,7 +273,8 @@ func (ctl Control) UpdateClusterPollingSmart(ctx echo.Context) error {
 // @Produce json
 // @Tags server/cluster
 // @Router /server/cluster/{uuid} [delete]
-// @Param uuid path string true "Cluster 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Cluster 의 Uuid"
 // @Success 200
 func (ctl Control) DeleteCluster(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {

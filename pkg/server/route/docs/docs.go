@@ -132,6 +132,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "query  pkg/server/database/prepared/README.md",
                         "name": "q",
                         "in": "query"
@@ -177,6 +183,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Client 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -206,6 +218,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Client 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -232,6 +250,12 @@ var doc = `{
                     "server/cluster"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "query  pkg/server/database/prepared/README.md",
@@ -276,6 +300,12 @@ var doc = `{
                 ],
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
                         "description": "HttpReqCluster_Create",
                         "name": "client",
                         "in": "body",
@@ -310,6 +340,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Cluster 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -337,6 +373,12 @@ var doc = `{
                     "server/cluster"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Cluster 의 Uuid",
@@ -377,6 +419,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Cluster 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -403,6 +451,12 @@ var doc = `{
                     "server/cluster"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Cluster 의 Uuid",
@@ -445,6 +499,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Cluster 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -483,6 +543,12 @@ var doc = `{
                     "server/environment"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "query  pkg/server/database/prepared/README.md",
@@ -530,6 +596,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Environment 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -557,6 +629,12 @@ var doc = `{
                     "server/environment"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Environment 의 Uuid",
@@ -596,6 +674,12 @@ var doc = `{
                     "server/service"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "query  pkg/server/database/prepared/README.md",
@@ -640,6 +724,12 @@ var doc = `{
                 ],
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
                         "description": "HttpReqService_Create",
                         "name": "service",
                         "in": "body",
@@ -674,6 +764,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "ServiceStep 의 service_uuid",
                         "name": "service_uuid",
                         "in": "path",
@@ -706,6 +802,12 @@ var doc = `{
                     "server/service_step"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "ServiceStep 의 service_uuid",
@@ -746,6 +848,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Service 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -775,6 +883,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Service 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -801,6 +915,12 @@ var doc = `{
                     "server/service"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Service 의 Uuid",
@@ -832,6 +952,12 @@ var doc = `{
                     "server/session"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "query  pkg/server/database/prepared/README.md",
@@ -879,6 +1005,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Session 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -908,6 +1040,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Session 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -934,6 +1072,12 @@ var doc = `{
                     "server/template"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "query  pkg/server/database/prepared/README.md",
@@ -978,6 +1122,12 @@ var doc = `{
                 ],
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
                         "description": "HttpReqTemplate_Create",
                         "name": "template",
                         "in": "body",
@@ -1012,6 +1162,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "HttpReqTemplate 의 Uuid",
                         "name": "template_uuid",
                         "in": "path",
@@ -1042,6 +1198,12 @@ var doc = `{
                     "server/template_command"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "HttpReqTemplate 의 Uuid",
@@ -1084,6 +1246,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "HttpReqTemplate 의 Uuid",
                         "name": "template_uuid",
                         "in": "path",
@@ -1118,6 +1286,12 @@ var doc = `{
                     "server/template_command"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "HttpReqTemplateCommand 의 TemplateUuid",
@@ -1165,6 +1339,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "HttpReqTemplate 의 Uuid",
                         "name": "template_uuid",
                         "in": "path",
@@ -1200,6 +1380,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Template 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -1229,9 +1415,16 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Template 의 Uuid",
                         "name": "uuid",
-                        "in": "path"
+                        "in": "path",
+                        "required": true
                     },
                     {
                         "description": "HttpReqTemplate_Update",
@@ -1266,6 +1459,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Template 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -1289,6 +1488,12 @@ var doc = `{
                     "server/template_recipe"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Template Command 의 Method",
@@ -1322,6 +1527,12 @@ var doc = `{
                     "server/token"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "query  pkg/server/database/prepared/README.md",
@@ -1368,6 +1579,12 @@ var doc = `{
                 ],
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
                         "description": "HttpReqToken_CreateClusterToken",
                         "name": "object",
                         "in": "body",
@@ -1402,6 +1619,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Token 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -1431,6 +1654,12 @@ var doc = `{
                     "server/token"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Token 의 Uuid",
@@ -1464,6 +1693,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Token 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -1493,6 +1728,12 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "Token 의 Uuid",
                         "name": "uuid",
                         "in": "path",
@@ -1519,6 +1760,12 @@ var doc = `{
                     "server/token"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Token 의 Uuid",
@@ -1751,6 +1998,10 @@ var doc = `{
                         "$ref": "#/definitions/v1.ServiceStep"
                     }
                 },
+                "subscribe_event": {
+                    "description": "서비스 POLL 결과 전달 이벤트 이름",
+                    "type": "string"
+                },
                 "summary": {
                     "type": "string"
                 },
@@ -1783,6 +2034,9 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/v1.HttpReqServiceStep_Create_ByService"
                     }
+                },
+                "subscribe_event": {
+                    "type": "string"
                 },
                 "summary": {
                     "type": "string"
@@ -1970,6 +2224,10 @@ var doc = `{
                         "$ref": "#/definitions/v1.ServiceStep"
                     }
                 },
+                "subscribe_event": {
+                    "description": "서비스 POLL 결과 전달 이벤트 이름",
+                    "type": "string"
+                },
                 "summary": {
                     "type": "string"
                 },
@@ -2034,6 +2292,10 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/v1.ServiceStep"
                     }
+                },
+                "subscribe_event": {
+                    "description": "서비스 POLL 결과 전달 이벤트 이름",
+                    "type": "string"
                 },
                 "summary": {
                     "type": "string"

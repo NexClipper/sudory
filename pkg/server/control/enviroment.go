@@ -18,9 +18,10 @@ import (
 // @Produce     json
 // @Tags        server/environment
 // @Router      /server/environment [get]
-// @Param       q query string false "query  pkg/server/database/prepared/README.md"
-// @Param       o query string false "order  pkg/server/database/prepared/README.md"
-// @Param       p query string false "paging pkg/server/database/prepared/README.md"
+// @Param       x_auth_token header string false "client session token"
+// @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
+// @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
+// @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
 // @Success 200 {array} v1.Environment
 func (ctl Control) FindEnvironment(ctx echo.Context) error {
 	env, err := vault.NewEnvironment(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
@@ -38,7 +39,8 @@ func (ctl Control) FindEnvironment(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/environment
 // @Router      /server/environment/{uuid} [get]
-// @Param       uuid path string true "Environment 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Environment 의 Uuid"
 // @Success 200 {object} v1.Environment
 func (ctl Control) GetEnvironment(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
@@ -66,8 +68,9 @@ func (ctl Control) GetEnvironment(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/environment
 // @Router      /server/environment/{uuid} [put]
-// @Param       uuid       path string                       true  "Environment 의 Uuid"
-// @Param       enviroment body v1.HttpReqEnvironment_Update false "HttpReqEnvironment_Update"
+// @Param       x_auth_token header string                       false "client session token"
+// @Param       uuid         path   string                       true  "Environment 의 Uuid"
+// @Param       enviroment   body   v1.HttpReqEnvironment_Update false "HttpReqEnvironment_Update"
 // @Success 200 {object} v1.Environment
 func (ctl Control) UpdateEnvironmentValue(ctx echo.Context) error {
 	update_env := new(envv1.HttpReqEnvironment_Update)

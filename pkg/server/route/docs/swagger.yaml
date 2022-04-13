@@ -129,6 +129,9 @@ definitions:
         items:
           $ref: '#/definitions/v1.ServiceStep'
         type: array
+      subscribe_event:
+        description: 서비스 POLL 결과 전달 이벤트 이름
+        type: string
       summary:
         type: string
       template_uuid:
@@ -151,6 +154,8 @@ definitions:
         items:
           $ref: '#/definitions/v1.HttpReqServiceStep_Create_ByService'
         type: array
+      subscribe_event:
+        type: string
       summary:
         type: string
       template_uuid:
@@ -280,6 +285,9 @@ definitions:
         items:
           $ref: '#/definitions/v1.ServiceStep'
         type: array
+      subscribe_event:
+        description: 서비스 POLL 결과 전달 이벤트 이름
+        type: string
       summary:
         type: string
       template_uuid:
@@ -324,6 +332,9 @@ definitions:
         items:
           $ref: '#/definitions/v1.ServiceStep'
         type: array
+      subscribe_event:
+        description: 서비스 POLL 결과 전달 이벤트 이름
+        type: string
       summary:
         type: string
       template_uuid:
@@ -595,6 +606,10 @@ paths:
       - application/json
       description: Find client
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: query  pkg/server/database/prepared/README.md
         in: query
         name: q
@@ -624,6 +639,10 @@ paths:
       - application/json
       description: Delete a client
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Client 의 Uuid
         in: path
         name: uuid
@@ -641,6 +660,10 @@ paths:
       - application/json
       description: Get a client
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Client 의 Uuid
         in: path
         name: uuid
@@ -661,6 +684,10 @@ paths:
       - application/json
       description: Find cluster
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: query  pkg/server/database/prepared/README.md
         in: query
         name: q
@@ -689,6 +716,10 @@ paths:
       - application/json
       description: Create a cluster
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: HttpReqCluster_Create
         in: body
         name: client
@@ -710,6 +741,10 @@ paths:
       - application/json
       description: Delete a cluster
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Cluster 의 Uuid
         in: path
         name: uuid
@@ -727,6 +762,10 @@ paths:
       - application/json
       description: Get a cluster
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Cluster 의 Uuid
         in: path
         name: uuid
@@ -746,6 +785,10 @@ paths:
       - application/json
       description: Update a cluster
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Cluster 의 Uuid
         in: path
         name: uuid
@@ -772,6 +815,10 @@ paths:
       - application/json
       description: Update a cluster Polling Reguar
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Cluster 의 Uuid
         in: path
         name: uuid
@@ -798,6 +845,10 @@ paths:
       - application/json
       description: Update a cluster Polling Smart
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Cluster 의 Uuid
         in: path
         name: uuid
@@ -824,6 +875,10 @@ paths:
       - application/json
       description: Find Environment
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: query  pkg/server/database/prepared/README.md
         in: query
         name: q
@@ -853,6 +908,10 @@ paths:
       - application/json
       description: Get a Environment
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Environment 의 Uuid
         in: path
         name: uuid
@@ -872,6 +931,10 @@ paths:
       - application/json
       description: Update Environment Value
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Environment 의 Uuid
         in: path
         name: uuid
@@ -897,6 +960,10 @@ paths:
       - application/json
       description: Find []Service
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: query  pkg/server/database/prepared/README.md
         in: query
         name: q
@@ -925,6 +992,10 @@ paths:
       - application/json
       description: Create a Service
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: HttpReqService_Create
         in: body
         name: service
@@ -946,6 +1017,10 @@ paths:
       - application/json
       description: Find Service Steps
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: ServiceStep 의 service_uuid
         in: path
         name: service_uuid
@@ -968,6 +1043,10 @@ paths:
       - application/json
       description: Get a Service Step
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: ServiceStep 의 service_uuid
         in: path
         name: service_uuid
@@ -993,6 +1072,10 @@ paths:
       - application/json
       description: Delete a Service
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Service 의 Uuid
         in: path
         name: uuid
@@ -1010,6 +1093,10 @@ paths:
       - application/json
       description: Get a Service
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Service 의 Uuid
         in: path
         name: uuid
@@ -1030,6 +1117,10 @@ paths:
       - application/json
       description: Get a Service with Result
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Service 의 Uuid
         in: path
         name: uuid
@@ -1050,6 +1141,10 @@ paths:
       - application/json
       description: Find Session
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: query  pkg/server/database/prepared/README.md
         in: query
         name: q
@@ -1079,6 +1174,10 @@ paths:
       - application/json
       description: Delete a Session
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Session 의 Uuid
         in: path
         name: uuid
@@ -1096,6 +1195,10 @@ paths:
       - application/json
       description: Get a Session
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Session 의 Uuid
         in: path
         name: uuid
@@ -1116,6 +1219,10 @@ paths:
       - application/json
       description: Find []template
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: query  pkg/server/database/prepared/README.md
         in: query
         name: q
@@ -1144,6 +1251,10 @@ paths:
       - application/json
       description: Create a template
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: HttpReqTemplate_Create
         in: body
         name: template
@@ -1165,6 +1276,10 @@ paths:
       - application/json
       description: Find template command
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: HttpReqTemplate 의 Uuid
         in: path
         name: template_uuid
@@ -1186,6 +1301,10 @@ paths:
       - application/json
       description: Create a template command
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: HttpReqTemplate 의 Uuid
         in: path
         name: template_uuid
@@ -1212,6 +1331,10 @@ paths:
       - application/json
       description: Delete a template command
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: HttpReqTemplate 의 Uuid
         in: path
         name: template_uuid
@@ -1234,6 +1357,10 @@ paths:
       - application/json
       description: Get a template command
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: HttpReqTemplate 의 Uuid
         in: path
         name: template_uuid
@@ -1258,6 +1385,10 @@ paths:
       - application/json
       description: Update a template command
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: HttpReqTemplateCommand 의 TemplateUuid
         in: path
         name: template_uuid
@@ -1289,6 +1420,10 @@ paths:
       - application/json
       description: Delete a template
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Template 의 Uuid
         in: path
         name: uuid
@@ -1306,6 +1441,10 @@ paths:
       - application/json
       description: Get a template
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Template 의 Uuid
         in: path
         name: uuid
@@ -1325,9 +1464,14 @@ paths:
       - application/json
       description: Update a template
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Template 의 Uuid
         in: path
         name: uuid
+        required: true
         type: string
       - description: HttpReqTemplate_Update
         in: body
@@ -1348,6 +1492,10 @@ paths:
     get:
       description: Find TemplateRecipe
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Template Command 의 Method
         in: query
         name: method
@@ -1369,6 +1517,10 @@ paths:
       - application/json
       description: Find Token
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: query  pkg/server/database/prepared/README.md
         in: query
         name: q
@@ -1398,6 +1550,10 @@ paths:
       - application/json
       description: Delete a Token
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Token 의 Uuid
         in: path
         name: uuid
@@ -1415,6 +1571,10 @@ paths:
       - application/json
       description: Get a Token
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Token 의 Uuid
         in: path
         name: uuid
@@ -1435,6 +1595,10 @@ paths:
       - application/json
       description: Update Token Label
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Token 의 Uuid
         in: path
         name: uuid
@@ -1461,6 +1625,10 @@ paths:
       - application/json
       description: Create a Cluster Token
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: HttpReqToken_CreateClusterToken
         in: body
         name: object
@@ -1482,6 +1650,10 @@ paths:
       - application/json
       description: Expire Cluster Token
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Token 의 Uuid
         in: path
         name: uuid
@@ -1502,6 +1674,10 @@ paths:
       - application/json
       description: Refresh Cluster Token Time
       parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
       - description: Token 의 Uuid
         in: path
         name: uuid

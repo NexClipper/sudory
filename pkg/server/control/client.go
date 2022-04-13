@@ -17,9 +17,10 @@ import (
 // @Produce     json
 // @Tags        server/client
 // @Router      /server/client [get]
-// @Param       q query string false "query  pkg/server/database/prepared/README.md"
-// @Param       o query string false "order  pkg/server/database/prepared/README.md"
-// @Param       p query string false "paging pkg/server/database/prepared/README.md"
+// @Param       x_auth_token header string false "client session token"
+// @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
+// @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
+// @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
 // @Success 200 {array} v1.Client
 func (ctl Control) FindClient(ctx echo.Context) error {
 	r, err := vault.NewClient(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
@@ -37,7 +38,8 @@ func (ctl Control) FindClient(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/client
 // @Router      /server/client/{uuid} [get]
-// @Param       uuid          path string true "Client 의 Uuid"
+// @Param       x_auth_token  header string false "client session token"
+// @Param       uuid          path   string true  "Client 의 Uuid"
 // @Success 200 {object} v1.Client
 func (ctl Control) GetClient(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
@@ -64,7 +66,8 @@ func (ctl Control) GetClient(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/client
 // @Router      /server/client/{uuid} [delete]
-// @Param       uuid path string true "Client 의 Uuid"
+// @Param       x_auth_token header string false "client session token"
+// @Param       uuid         path   string true  "Client 의 Uuid"
 // @Success 200
 func (ctl Control) DeleteClient(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
