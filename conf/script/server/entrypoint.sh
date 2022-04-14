@@ -5,7 +5,7 @@ initdb() {
 }
 
 apprun() {
-	/app/sudory-server -config '/app/sudory-server.yml'
+	/app/sudory-server -config '/app/conf/sudory-server.yml'
 }
 
 initdb

@@ -3,7 +3,8 @@ LABEL version=0.1.0
 
 RUN apk update && apk add bash mariadb-client
 
-RUN mkdir /app
+RUN mkdir -p /app/conf
+
 
 COPY /bin/server/sudory-server /app/
 COPY /conf/script/server/sudory.sql.create /app/
@@ -13,7 +14,7 @@ COPY /conf/script/server/sudory.sql.template.insert /app/
 COPY /conf/script/server/sudory.sql.truncate /app/
 COPY /conf/script/server/entrypoint.sh /app/
 COPY /conf/script/server/init-db.sh /app/
-COPY /conf/sudory-server.yml /app/
+COPY /conf/sudory-server.yml /app/conf/
 
 RUN chmod +x /app/init-db.sh
 
