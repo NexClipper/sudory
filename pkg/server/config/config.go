@@ -3,25 +3,25 @@ package config
 import "github.com/jinzhu/configor"
 
 type Config struct {
-	APPName string
+	APPName string `default:"sudory-server"`
 
 	Host struct {
-		Port int32
+		Port int32 `default:"8099"`
 	}
 
 	Database struct {
-		Type            string
+		Type            string `default:"mysql"`
 		Protocol        string `default:"tcp"`
 		Host            string `env:"SUDORY_DB_HOST"`
 		Port            string `env:"SUDORY_DB_PORT"`
 		DBName          string `env:"SUDORY_DB_SCHEME"`
 		Username        string `env:"SUDORY_DB_SERVER_USERNAME"`
 		Password        string `env:"SUDORY_DB_SERVER_PASSWORD"`
-		MaxOpenConns    int
-		MaxIdleConns    int
-		MaxConnLifeTime int
-		ShowSQL         bool
-		LogLevel        string
+		MaxOpenConns    int    `default:"15"`
+		MaxIdleConns    int    `default:"5"`
+		MaxConnLifeTime int    `default:"1"`
+		ShowSQL         bool   `default:"false"`
+		LogLevel        string `default:"warn"`
 	}
 
 	CORSConfig struct {
