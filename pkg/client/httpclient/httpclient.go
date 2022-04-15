@@ -9,8 +9,9 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 
 	"github.com/NexClipper/sudory/pkg/client/log"
-	"github.com/NexClipper/sudory/pkg/server/macro/jwt"
+	// "github.com/NexClipper/sudory/pkg/server/macro/jwt"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 const CustomHeaderClientToken = "x-sudory-client-token"
@@ -43,16 +44,17 @@ func (hc *HttpClient) GetToken() string {
 
 func (hc *HttpClient) IsTokenExpired() bool {
 	claims := new(sessionv1.ClientSessionPayload)
-	if err := jwt.BindPayload(hc.token, &claims); err != nil {
-		log.Warnf("jwt.BindPayload error : %v\n", err)
+	jwt_token, _, err := jwt.NewParser().ParseUnverified(hc.token, claims)
+	if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok {
+		log.Warnf("jwt.ParseUnverified error : %v\n", err)
 		return false
 	}
 
-	if time.Until(claims.Exp) < 0 {
-		return true
+	if !claims.VerifyExpiresAt(time.Now().Unix(), true) {
+		return false
 	}
 
-	return false
+	return true
 }
 
 func (hc *HttpClient) Request(method, path string, params map[string]string, bodyType string, rawBody []byte) ([]byte, error) {

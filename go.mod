@@ -6,6 +6,7 @@ require (
 	github.com/NexClipper/logger v1.1.6
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gofrs/flock v0.8.1
+	github.com/golang-jwt/jwt/v4 v4.4.1
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-retryablehttp v0.7.0
 	github.com/itchyny/gojq v0.12.6
@@ -16,6 +17,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.55.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/common v0.28.0
+	github.com/qri-io/jsonschema v0.2.1
 	github.com/streadway/amqp v1.0.0
 	github.com/swaggo/echo-swagger v1.1.4
 	github.com/swaggo/swag v1.7.0
@@ -113,7 +115,6 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/qri-io/jsonpointer v0.1.1 // indirect
-	github.com/qri-io/jsonschema v0.2.1 // indirect
 	github.com/rubenv/sql-migrate v0.0.0-20210614095031-55d5740dbbcc // indirect
 	github.com/russross/blackfriday v1.5.2 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect

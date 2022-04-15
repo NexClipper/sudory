@@ -12,8 +12,9 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/client/scheduler"
-	"github.com/NexClipper/sudory/pkg/server/macro/jwt"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
+	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 const (
@@ -138,34 +139,23 @@ func (f *Fetcher) poll() {
 }
 
 func (f *Fetcher) ChangeClientConfigFromToken() {
-	cfgM := make(map[string]interface{})
-
-	if err := jwt.BindPayload(f.client.GetToken(), &cfgM); err != nil {
+	claims := new(sessionv1.ClientSessionPayload)
+	jwt_token, _, err := jwt.NewParser().ParseUnverified(f.client.GetToken(), claims)
+	if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok {
 		log.Warnf("Failed to bind payload : %v\n", err)
 		return
 	}
 
-	if v, b := cfgM["poll-interval"]; b {
-		if pollInterval, ok := v.(float64); !ok {
-			log.Warnf("Failed to assert type for poll-interval(%v).", v)
-		} else {
-			if err := f.ChangePollingInterval(int(pollInterval)); err != nil {
-				log.Warnf("Failed to change polling interval : %v\n", err)
-			} else {
-				log.Debugf("Change polling interval to %v\n", pollInterval)
-			}
-		}
+	if err := f.ChangePollingInterval(claims.PollInterval); err != nil {
+		log.Warnf("Failed to change polling interval : %v\n", err)
+	} else {
+		log.Debugf("Change polling interval to %v\n", claims.PollInterval)
 	}
 
-	if v, b := cfgM["Loglevel"]; b {
-		if logLevel, ok := v.(string); !ok {
-			log.Warnf("Failed to assert type for Loglevel(%v).\n", v)
-		} else {
-			if err := log.GetLogger().SetLevel(logLevel); err != nil {
-				log.Warnf("Failed to change logger level : %v.\n", err)
-			} else {
-				log.Debugf("Changed logger level to %s\n", logLevel)
-			}
-		}
+	if err := log.GetLogger().SetLevel(claims.Loglevel); err != nil {
+		log.Warnf("Failed to change logger level : %v.\n", err)
+	} else {
+		log.Debugf("Changed logger level to %s\n", claims.Loglevel)
 	}
+
 }

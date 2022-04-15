@@ -15,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
-	"github.com/NexClipper/sudory/pkg/server/macro/jwt"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
@@ -26,6 +25,7 @@ import (
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
+	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/labstack/echo/v4"
 )
@@ -43,15 +43,35 @@ import (
 func (ctl Control) PollService(ctx echo.Context) error {
 	clientTokenPayload_once := func(ctx echo.Context) func() (*sessionv1.ClientSessionPayload, error) {
 		var (
-			err  error
-			inst *sessionv1.ClientSessionPayload
-			once sync.Once
+			once      sync.Once
+			jwt_token *jwt.Token
+			claims    *sessionv1.ClientSessionPayload
+			err       error
 		)
 		return func() (*sessionv1.ClientSessionPayload, error) {
 			once.Do(func() {
-				inst, err = clientTokenPayload(ctx) //read client token
+				token := ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
+				if len(token) == 0 {
+					err = errors.Errorf("missing request header%s",
+						logs.KVL(
+							"key", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
+						))
+				}
+
+				claims = new(sessionv1.ClientSessionPayload)
+				jwt_token, err = jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+					return []byte(env.ClientSessionSignatureSecret()), nil
+				})
+				var ok bool
+				if claims, ok = jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok || !jwt_token.Valid {
+					err = errors.Wrapf(err, "jwt bind payload%s",
+						logs.KVL(
+							"token", token,
+						))
+				}
+
 			})
-			return inst, err
+			return claims, err
 		}
 	}(ctx)
 
@@ -267,8 +287,8 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 	exp := env.ClientSessionExpirationTime(iat)
 
 	payload := &sessionv1.ClientSessionPayload{
-		Exp:          exp,
-		Iat:          iat,
+		ExpiresAt:    exp.Unix(),
+		IssuedAt:     iat.Unix(),
 		Uuid:         token_uuid,
 		ClusterUuid:  auth.ClusterUuid,
 		ClientUuid:   auth.ClientUuid,
@@ -291,8 +311,8 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 		println("payload=", string(json_mashal(payload)))
 	}
 
-	//new jwt
-	new_token, err := jwt.New(payload, []byte(env.ClientSessionSignatureSecret()))
+	token_string, err := jwt.NewWithClaims(jwt.SigningMethodHS256, payload).
+		SignedString([]byte(env.ClientSessionSignatureSecret()))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "jwt New payload=%+v", payload))
@@ -323,7 +343,7 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 		}
 
 		//save session
-		session := newClientSession(*payload, new_token)
+		session := newClientSession(*payload, token_string)
 		if _, err := vault.NewSession(db).Create(session); err != nil {
 			return nil, errors.Wrapf(err, "NewSession Create")
 		}
@@ -335,7 +355,7 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 	}
 
 	//save token to header
-	ctx.Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, new_token)
+	ctx.Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, token_string)
 
 	//invoke event (client-auth-accept)
 	m := map[string]interface{}{
@@ -354,8 +374,8 @@ func newClientSession(payload sessionv1.ClientSessionPayload, token string) sess
 	session.UserUuid = payload.ClientUuid
 	session.UserKind = "client"
 	session.Token = token
-	session.IssuedAtTime = payload.Iat
-	session.ExpirationTime = payload.Exp
+	session.IssuedAtTime = time.Unix(payload.IssuedAt, 0)
+	session.ExpirationTime = time.Unix(payload.ExpiresAt, 0)
 	return session
 }
 
@@ -370,9 +390,12 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 
 	}
 
-	//verify
-	//jwt verify
-	if err := jwt.Verify(token, []byte(env.ClientSessionSignatureSecret())); err != nil {
+	claims := new(sessionv1.ClientSessionPayload)
+	jwt_token, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(env.ClientSessionSignatureSecret()), nil
+	})
+
+	if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok || !jwt_token.Valid {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(err, "jwt verify%s",
 				logs.KVL(
@@ -381,35 +404,15 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 				)))
 	}
 
-	payload := new(sessionv1.ClientSessionPayload)
-	if err := jwt.BindPayload(token, payload); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(err, "jwt bind payload%s",
-				logs.KVL(
-					"header", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
-					"token", token,
-				)))
-	}
-
-	//만료시간 비교
-	if time.Until(payload.Exp) < 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Errorf("token expierd%s",
-				logs.KVL(
-					"header", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
-					"exp", payload.Exp.String(),
-				)))
-	}
-
-	_, err := ctl.Scope(func(db database.Context) (interface{}, error) {
+	if _, err := ctl.Scope(func(db database.Context) (interface{}, error) {
 		//smart polling
 		where := "uuid = ?"
-		clusters, err := vault.NewCluster(db).Find(where, payload.ClusterUuid)
+		clusters, err := vault.NewCluster(db).Find(where, claims.ClusterUuid)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "find cluster%s",
 					logs.KVL(
-						"uuid", payload.ClusterUuid,
+						"uuid", claims.ClusterUuid,
 					)))
 		}
 
@@ -417,16 +420,16 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 			return nil, echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 				errors.Wrapf(err, "not found cluster%s",
 					logs.KVL(
-						"uuid", payload.ClusterUuid,
+						"uuid", claims.ClusterUuid,
 					)))
 		}
 
-		service_count, err := countGatherClusterService(db, payload.ClusterUuid)
+		service_count, err := countGatherClusterService(db, claims.ClusterUuid)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "count undone service%s",
 					logs.KVL(
-						"cluster_uuid", payload.ClusterUuid,
+						"cluster_uuid", claims.ClusterUuid,
 					)))
 		}
 
@@ -437,54 +440,39 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 		}
 
 		//reflesh payload
-		payload.Exp = env.ClientSessionExpirationTime(time.Now())
+		claims.ExpiresAt = env.ClientSessionExpirationTime(time.Now()).Unix()
 		// payload.PollInterval = env.ClientConfigPollInterval()
-		payload.PollInterval = int(cluster.GetPollingOption().Interval(time.Duration(int64(env.ClientConfigPollInterval())*int64(time.Second)), int(service_count)) / time.Second)
-		payload.Loglevel = env.ClientConfigLoglevel()
+		claims.PollInterval = int(cluster.GetPollingOption().Interval(time.Duration(int64(env.ClientConfigPollInterval())*int64(time.Second)), int(service_count)) / time.Second)
+		claims.Loglevel = env.ClientConfigLoglevel()
 
 		//new jwt-new_token
-		new_token, err := jwt.New(payload, []byte(env.ClientSessionSignatureSecret()))
+		// new_token, err := jwt.New(claims, []byte(env.ClientSessionSignatureSecret()))
+		// if err != nil {
+		// 	return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+		// 		errors.Wrapf(err, "new jwt"))
+		// }
+
+		token_string, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).
+			SignedString([]byte(env.ClientSessionSignatureSecret()))
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "new jwt"))
 		}
-
 		//udpate session
-		session := newClientSession(*payload, new_token)
+		session := newClientSession(*claims, token_string)
 		if _, err := vault.NewSession(db).Update(session); err != nil {
 			return nil, errors.Wrapf(err, "update session-token")
 		}
 
 		//save client session-token to header
-		ctx.Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, new_token)
+		ctx.Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, token_string)
 
 		return nil, nil
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func clientTokenPayload(ctx echo.Context) (*sessionv1.ClientSessionPayload, error) {
-	//get token
-	token := ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
-	if len(token) == 0 {
-		return nil, errors.Errorf("missing request header%s",
-			logs.KVL(
-				"key", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
-			))
-	}
-
-	payload := new(sessionv1.ClientSessionPayload)
-	if err := jwt.BindPayload(token, payload); err != nil {
-		return nil, errors.Wrapf(err, "jwt bind payload%s",
-			logs.KVL(
-				"token", token,
-			))
-	}
-	return payload, nil
 }
 
 func gatherClusterService(db database.Context, cluster_uuid string, fn func(servicev1.Service, []stepv1.ServiceStep)) error {
