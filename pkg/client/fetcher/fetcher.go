@@ -141,7 +141,7 @@ func (f *Fetcher) poll() {
 func (f *Fetcher) ChangeClientConfigFromToken() {
 	claims := new(sessionv1.ClientSessionPayload)
 	jwt_token, _, err := jwt.NewParser().ParseUnverified(f.client.GetToken(), claims)
-	if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok {
+	if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok || err != nil {
 		log.Warnf("Failed to bind payload : %v\n", err)
 		return
 	}

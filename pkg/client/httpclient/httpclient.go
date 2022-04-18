@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 
 	"github.com/NexClipper/sudory/pkg/client/log"
-	// "github.com/NexClipper/sudory/pkg/server/macro/jwt"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -45,7 +44,7 @@ func (hc *HttpClient) GetToken() string {
 func (hc *HttpClient) IsTokenExpired() bool {
 	claims := new(sessionv1.ClientSessionPayload)
 	jwt_token, _, err := jwt.NewParser().ParseUnverified(hc.token, claims)
-	if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok {
+	if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok || err != nil {
 		log.Warnf("jwt.ParseUnverified error : %v\n", err)
 		return false
 	}
