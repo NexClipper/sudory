@@ -452,7 +452,8 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 		// 		errors.Wrapf(err, "new jwt"))
 		// }
 
-		token_string, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).
+		//client auth 에서 사용된 알고리즘 그대로 사용
+		token_string, err := jwt.NewWithClaims(usedJwtSigningMethod(*jwt_token, jwt.SigningMethodHS256), claims).
 			SignedString([]byte(env.ClientSessionSignatureSecret()))
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
@@ -473,6 +474,15 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 	}
 
 	return nil
+}
+func usedJwtSigningMethod(token jwt.Token, init jwt.SigningMethod) jwt.SigningMethod {
+	alg, _ := token.Header["alg"].(string)
+
+	if jwt.GetSigningMethod(alg) != nil {
+		init = jwt.GetSigningMethod(alg)
+	}
+
+	return init
 }
 
 func gatherClusterService(db database.Context, cluster_uuid string, fn func(servicev1.Service, []stepv1.ServiceStep)) error {
