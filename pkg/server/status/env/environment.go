@@ -98,7 +98,7 @@ func (worker *EnvironmentUpdate) Merge() error {
 					))
 			}
 
-			value, ok := DefaultEnvironmanets[env]
+			value, ok := DefaultEnvironments[env]
 			if !ok {
 				return errors.Errorf("not found default environment%s",
 					logs.KVL(

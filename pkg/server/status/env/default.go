@@ -13,7 +13,7 @@ type Default struct {
 	Summary string
 }
 
-var DefaultEnvironmanets = map[Env]Default{
+var DefaultEnvironments = map[Env]Default{
 	// EnvClusterTokenSignatureSecret: {Uuid: "cc6eeb942b9a4a9ca34dc4dfabc54275", Value: "", Summary: "클러스터 토큰 시그니처 생성 시크릿"},
 
 	EnvBearerTokenSignatureSecret: {Uuid: "e2db6f6b08e94cb58bc6a35e244aaa29", Value: "", Summary: "bearer-토큰 시그니처 생성 시크릿"}, //(사용안함)
