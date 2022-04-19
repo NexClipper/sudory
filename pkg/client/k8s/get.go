@@ -134,6 +134,21 @@ func (c *Client) ResourceGet(gv schema.GroupVersion, resource, namespace, name s
 		default:
 			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
 		}
+	case "batch/v1":
+		switch resource {
+		case "cronjobs":
+			result, err = c.client.BatchV1().CronJobs(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "jobs":
+			result, err = c.client.BatchV1().Jobs(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
 	default:
 		err = fmt.Errorf("unsupported group version(%s)", gv.Identifier())
 	}
