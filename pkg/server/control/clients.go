@@ -130,9 +130,10 @@ func (ctl Control) PollService(ctx echo.Context) error {
 	//invoke event (service-poll-in)
 	for _, request := range body {
 		m := map[string]interface{}{
-			"event-name":           "service-poll-in",
+			"event_name":           "service-poll-in",
 			"service_uuid":         request.Uuid,
-			"service-name":         request.Name,
+			"service_name":         request.Name,
+			"template_uuid":        request.TemplateUuid,
 			"cluster_uuid":         request.ClusterUuid,
 			"assigned_client_uuid": request.AssignedClientUuid,
 			"status":               nullable.Int32(request.Status).Value(),
@@ -205,9 +206,10 @@ func (ctl Control) PollService(ctx echo.Context) error {
 	//invoke event (service-poll-out)
 	for _, response := range cluster_service {
 		m := map[string]interface{}{
-			"event-name":           "service-poll-out",
+			"event_name":           "service-poll-out",
 			"service_uuid":         response.Uuid,
-			"service-name":         response.Name,
+			"service_name":         response.Name,
+			"template_uuid":        response.TemplateUuid,
 			"cluster_uuid":         response.ClusterUuid,
 			"assigned_client_uuid": response.AssignedClientUuid,
 			"status":               nullable.Int32(response.Status).Value(),
@@ -359,7 +361,7 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 
 	//invoke event (client-auth-accept)
 	m := map[string]interface{}{
-		"event-name":   "client-auth-accept",
+		"event_name":   "client-auth-accept",
 		"cluster_uuid": auth.ClusterUuid,
 		"client_uuid":  auth.ClientUuid,
 	}
