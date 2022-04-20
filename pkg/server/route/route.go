@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	"strings"
 	"sync/atomic"
+	"text/tabwriter"
 	"time"
 
 	"github.com/NexClipper/logger"
@@ -232,9 +233,29 @@ func echoCORSConfig(_config *config.Config) echo.MiddlewareFunc {
 	}
 
 	fmt.Fprintf(os.Stdout, "ECHO CORS Config:\n")
-	fmt.Fprintf(os.Stdout, "- allow-origins: %v\n", strings.Join(CORSConfig.AllowOrigins, ", "))
-	fmt.Fprintf(os.Stdout, "- allow-methods: %v\n", strings.Join(CORSConfig.AllowMethods, ", "))
-	fmt.Fprintf(os.Stdout, "%s\n", strings.Repeat("_", 40))
+
+	tabwrite := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+
+	tabwrite.Write([]byte(strings.Join([]string{
+		"", "allow-origins",
+	}, "\t") + "\n"))
+	tabwrite.Write([]byte(strings.Join([]string{
+		"-", strings.Join(CORSConfig.AllowOrigins, ", "),
+	}, "\t") + "\n"))
+	tabwrite.Write([]byte(strings.Join([]string{
+		"", "allow-methods",
+	}, "\t") + "\n"))
+	tabwrite.Write([]byte(strings.Join([]string{
+		"-", strings.Join(CORSConfig.AllowMethods, ", "),
+	}, "\t") + "\n"))
+
+	tabwrite.Flush()
+
+	fmt.Fprintln(os.Stdout, strings.Repeat("_", 40))
+
+	// fmt.Fprintf(os.Stdout, "-   allow-origins: %v\n", strings.Join(CORSConfig.AllowOrigins, ", "))
+	// fmt.Fprintf(os.Stdout, "-   allow-methods: %v\n", strings.Join(CORSConfig.AllowMethods, ", "))
+	// fmt.Fprintf(os.Stdout, "%s\n", strings.Repeat("_", 40))
 
 	return middleware.CORSWithConfig(CORSConfig)
 

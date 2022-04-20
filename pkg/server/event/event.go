@@ -74,12 +74,12 @@ func PrintEventConfiguation(w io.Writer, pub EventPublisher) {
 			tabwrite := tabwriters.NewWriter(w, 0, 0, 3, ' ', 0)
 			defer tabwrite.Flush()
 
-			fmt.Fprintln(w, "- subscriber:")
+			fmt.Fprintln(w, "subscriber:")
 
 			// var seq int = 0
 			for sub := range pub.Subscribers() {
 				tabwrite.PrintKeyValue(
-					" ", " ", //empty line
+					" ", "-", //empty line
 					"event-name", sub.Config().Name,
 					"update-interval", sub.Config().UpdateInterval.String(),
 				)
@@ -91,13 +91,13 @@ func PrintEventConfiguation(w io.Writer, pub EventPublisher) {
 			tabwrite := tabwriters.NewWriter(w, 0, 0, 3, ' ', 0)
 			defer tabwrite.Flush()
 
-			fmt.Fprintln(w, "- notifier:")
+			fmt.Fprintln(w, "notifier:")
 
 			// var seq int = 0
 			for sub := range pub.Subscribers() {
 				for notifier := range sub.Notifiers() {
 					tabwrite.PrintKeyValue(
-						" ", " ", //empty line
+						" ", "-", //empty line
 						"event-name", sub.Config().Name,
 						"notifier-type", notifier.Type(),
 						"notifier-property", notifier.PropertyString(),
