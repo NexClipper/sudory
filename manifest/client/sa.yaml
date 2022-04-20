@@ -10,8 +10,8 @@ metadata:
   name: sudory-controller
   namespace: sudory 
 rules:
-- apiGroups: [""]
-  resources: ["namespaces", "pods"]
+- apiGroups: ["*"]
+  resources: ["*"]
   verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
