@@ -27,3 +27,8 @@ spec:
                 configMapKeyRef:
                   name: sudory-configmap
                   key: clusterid
+            - name: S_TOKEN
+              valueFrom:
+                configMapKeyRef:
+                  name: sudory-configmap
+                  key: token
