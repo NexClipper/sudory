@@ -6,23 +6,20 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	"github.com/NexClipper/sudory/pkg/server/macro/reflected"
 	"github.com/NexClipper/sudory/pkg/version"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 )
 
 // Config
-// service-result:
-//   method: aes   # NONE, AES, DES
-//   size: 128     # NONE: default(1), AES: 128|192|256, DES: 64
-//   key: secret   # (base64 string)
-//   mode: gcm     # NONE: NONE|AES|DES , GCM: AES, CBC: NONE|AES|DES
-//   salt: null    # NULL, (base64 string)
-//   padding: PKCS # NONE: AES+NONE default(PKCS)|AES+GCM|DES+NONE default(PKCS)|DES+CBC, PKCS: ALL
+//  config-name:
+//    method: aes   # NONE, AES, DES
+//    size: 128     # NONE: default(1), AES: 128|192|256, DES: 64
+//    key: secret   # (base64 string)
+//    mode: gcm     # NONE: NONE|AES|DES , GCM: AES, CBC: NONE|AES|DES
+//    salt: null    # NULL, (base64 string)
+//    padding: PKCS # NONE: AES+NONE default(PKCS)|AES+GCM|DES+NONE default(PKCS)|DES+CBC, PKCS: ALL
 type Config struct {
-	CryptoAlgorithms map[string]ConfigCryptoAlgorithm `yaml:"enigma"`
+	CryptoAlgorithmSet map[string]ConfigCryptoAlgorithm `yaml:"enigma"`
 }
 type ConfigCryptoAlgorithm struct {
 	ConfigBlock  `yaml:",inline"`
@@ -40,13 +37,6 @@ type ConfigCipher struct {
 	CipherSalt    *string `yaml:"salt"`    // nil: auto-generate (base64 string)
 	CipherPadding string  `yaml:"padding"` // [none|PKCS], [PKCS], [none|PKCS]
 }
-
-/*
-CipherConfig {
-	Cipher: "aes"
-
-}
-*/
 
 type EncriptMethodAesCbcConfig struct {
 	Cipher string `yaml:"cipher"`
@@ -136,26 +126,4 @@ func PrintConfig(w io.Writer, cfg map[string]ConfigCryptoAlgorithm) {
 	tabwrite.Flush()
 
 	fmt.Fprintln(w, strings.Repeat("_", 40))
-}
-
-// deepcopy
-//  by yaml package
-func deepcopy(dest, src interface{}) error {
-	data, err := yaml.Marshal(src)
-	if err != nil {
-		return errors.Wrapf(err, "failed to marshal yaml%s",
-			logs.KVL(
-				"src-type-name", reflected.TypeName(src),
-				"src", src,
-			))
-	}
-
-	if err := yaml.Unmarshal(data, dest); err != nil {
-		return errors.Wrapf(err, "failed to unmarshal yaml%s",
-			logs.KVL(
-				"dest-type-name", reflected.TypeName(dest),
-				"yaml", data,
-			))
-	}
-	return nil
 }

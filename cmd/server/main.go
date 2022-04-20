@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/NexClipper/logger"
@@ -188,7 +189,7 @@ func newEnigma(configFilename string) error {
 				"filename", configFilename,
 			))
 	}
-	if err := enigma.LoadConfig(config.CryptoAlgorithms); err != nil {
+	if err := enigma.LoadConfig(config.CryptoAlgorithmSet); err != nil {
 		b, _ := ioutil.ReadFile(configFilename)
 
 		return errors.Wrapf(err, "load enigma config %v",
@@ -198,7 +199,26 @@ func newEnigma(configFilename string) error {
 			))
 	}
 
-	enigma.PrintConfig(os.Stdout, config.CryptoAlgorithms)
+	enigma.PrintConfig(os.Stdout, config.CryptoAlgorithmSet)
+
+	for key := range config.CryptoAlgorithmSet {
+		const quickbrownfox = `the quick brown fox jumps over the lazy dog`
+		encripted, err := enigma.GetMachine(key).Encode([]byte(quickbrownfox))
+		if err != nil {
+			return errors.Wrapf(err, "enigma test: encode %v",
+				logs.KVL("config-name", key))
+		}
+		plain, err := enigma.GetMachine(key).Decode(encripted)
+		if err != nil {
+			return errors.Wrapf(err, "enigma test: decode %v",
+				logs.KVL("config-name", key))
+		}
+
+		if strings.Compare(quickbrownfox, string(plain)) != 0 {
+			return errors.Errorf("enigma test: diff result %v",
+				logs.KVL("config-name", key))
+		}
+	}
 
 	return nil
 }

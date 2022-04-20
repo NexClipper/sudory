@@ -8,7 +8,7 @@ import (
 )
 
 func TestEnigma_101(t *testing.T) {
-	//AES 128 CBC PKCS SALT
+	//AES 128 CBC PKCS SALTY
 	var crypto_alg enigma.ConfigCryptoAlgorithm
 	crypto_alg.EncryptionMethod = "AES"
 	crypto_alg.BlockSize = 128
@@ -19,17 +19,17 @@ func TestEnigma_101(t *testing.T) {
 
 	EnigmaMachine(t, crypto_alg)
 
-	//AES 192 CBC PKCS SALT
+	//AES 192 CBC PKCS SALTY
 	crypto_alg.BlockSize = 192
 	EnigmaMachine(t, crypto_alg)
 
-	//AES 256 CBC PKCS SALT
+	//AES 256 CBC PKCS SALTY
 	crypto_alg.BlockSize = 256
 	EnigmaMachine(t, crypto_alg)
 }
 
 func TestEnigma_111(t *testing.T) {
-	//AES 128 GCM PKCS SALT
+	//AES 128 GCM PKCS SALTY
 	var crypto_alg enigma.ConfigCryptoAlgorithm
 	crypto_alg.EncryptionMethod = "AES"
 	crypto_alg.BlockSize = 128
@@ -40,17 +40,17 @@ func TestEnigma_111(t *testing.T) {
 
 	EnigmaMachine(t, crypto_alg)
 
-	//AES 192 GCM PKCS SALT
+	//AES 192 GCM PKCS SALTY
 	crypto_alg.BlockSize = 192
 	EnigmaMachine(t, crypto_alg)
 
-	//AES 256 GCM PKCS SALT
+	//AES 256 GCM PKCS SALTY
 	crypto_alg.BlockSize = 256
 	EnigmaMachine(t, crypto_alg)
 }
 
 func TestEnigma_121(t *testing.T) {
-	//AES 128 NONE PKCS SALT
+	//AES 128 NONE PKCS SALTY
 	var crypto_alg enigma.ConfigCryptoAlgorithm
 	crypto_alg.EncryptionMethod = "AES"
 	crypto_alg.BlockSize = 128
@@ -61,17 +61,17 @@ func TestEnigma_121(t *testing.T) {
 
 	EnigmaMachine(t, crypto_alg)
 
-	//AES 192 GCM PKCS SALT
+	//AES 192 GCM PKCS SALTY
 	crypto_alg.BlockSize = 192
 	EnigmaMachine(t, crypto_alg)
 
-	//AES 256 GCM PKCS SALT
+	//AES 256 GCM PKCS SALTY
 	crypto_alg.BlockSize = 256
 	EnigmaMachine(t, crypto_alg)
 }
 
 func TestEnigma_131(t *testing.T) {
-	//AES 128 GCM NONE SALT
+	//AES 128 GCM NONE SALTY
 	var crypto_alg enigma.ConfigCryptoAlgorithm
 	crypto_alg.EncryptionMethod = "AES"
 	crypto_alg.BlockSize = 128
@@ -82,11 +82,11 @@ func TestEnigma_131(t *testing.T) {
 
 	EnigmaMachine(t, crypto_alg)
 
-	//AES 192 GCM NONE SALT
+	//AES 192 GCM NONE SALTY
 	crypto_alg.BlockSize = 192
 	EnigmaMachine(t, crypto_alg)
 
-	//AES 256 GCM NONE SALT
+	//AES 256 GCM NONE SALTY
 	crypto_alg.BlockSize = 256
 	EnigmaMachine(t, crypto_alg)
 }
@@ -103,11 +103,11 @@ func TestEnigma_141(t *testing.T) {
 
 	EnigmaMachine(t, crypto_alg)
 
-	//AES 192 GCM NONE SALT
+	//AES 192 GCM NONE NULL
 	crypto_alg.BlockSize = 192
 	EnigmaMachine(t, crypto_alg)
 
-	//AES 256 GCM NONE SALT
+	//AES 256 GCM NONE NULL
 	crypto_alg.BlockSize = 256
 	EnigmaMachine(t, crypto_alg)
 }
@@ -124,17 +124,17 @@ func TestEnigma_151(t *testing.T) {
 
 	EnigmaMachine(t, crypto_alg)
 
-	//AES 192 GCM NONE SALT
+	//AES 192 GCM NONE SALTY
 	crypto_alg.BlockSize = 192
 	EnigmaMachine(t, crypto_alg)
 
-	//AES 256 GCM NONE SALT
+	//AES 256 GCM NONE SALTY
 	crypto_alg.BlockSize = 256
 	EnigmaMachine(t, crypto_alg)
 }
 
 func TestEnigma_102(t *testing.T) {
-	//DES 64 CBC PKCS SALT
+	//DES 64 CBC PKCS SALTY
 	var crypto_alg enigma.ConfigCryptoAlgorithm
 	crypto_alg.EncryptionMethod = "DES"
 	crypto_alg.BlockSize = 64
@@ -147,7 +147,7 @@ func TestEnigma_102(t *testing.T) {
 }
 
 func TestEnigma_112(t *testing.T) {
-	//DES 64 CBC PKCS SALT
+	//DES 64 CBC PKCS SALTY
 	var crypto_alg enigma.ConfigCryptoAlgorithm
 	crypto_alg.EncryptionMethod = "DES"
 	crypto_alg.BlockSize = 64
@@ -160,7 +160,7 @@ func TestEnigma_112(t *testing.T) {
 }
 
 func TestEnigma_103(t *testing.T) {
-	//DES 64 NONE PKCS SALT
+	//DES 64 NONE PKCS SALTY
 	var crypto_alg enigma.ConfigCryptoAlgorithm
 	crypto_alg.EncryptionMethod = "DES"
 	crypto_alg.BlockSize = 64
@@ -174,7 +174,7 @@ func TestEnigma_103(t *testing.T) {
 }
 
 func TestEnigma_1(t *testing.T) {
-	//AES 128 CBC PKCS SALT
+	//AES 128 CBC PKCS SALTY
 	var crypto_alg enigma.ConfigCryptoAlgorithm
 	crypto_alg.EncryptionMethod = "AES"
 	crypto_alg.BlockSize = 128
@@ -187,10 +187,10 @@ func TestEnigma_1(t *testing.T) {
 }
 
 func TestEnigma_12(t *testing.T) {
-	//NONE 128 NONE PKCS NONE
+	//NONE 128 NONE PKCS SALTY
 	var crypto_alg enigma.ConfigCryptoAlgorithm
 	crypto_alg.EncryptionMethod = "NONE"
-	crypto_alg.BlockSize = 64
+	crypto_alg.BlockSize = 128
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "NONE"
 	crypto_alg.CipherPadding = "PKCS"
@@ -202,10 +202,15 @@ func TestEnigma_12(t *testing.T) {
 	crypto_alg.CipherMode = "CBC"
 	EnigmaMachine(t, crypto_alg)
 
+	//NONE 128 GCM PKCS NONE
+	crypto_alg.CipherMode = "GCM"
+	if false {
+		EnigmaMachine(t, crypto_alg)
+	}
 }
 
 func TestEnigma_13(t *testing.T) {
-	//NONE 128 CBC PKCS NONE
+	//AES 128 CBC PKCS SALTY
 	var crypto_alg enigma.ConfigCryptoAlgorithm
 	crypto_alg.EncryptionMethod = "AES"
 	crypto_alg.BlockSize = 64
@@ -218,7 +223,7 @@ func TestEnigma_13(t *testing.T) {
 }
 
 func TestEnigma_14(t *testing.T) {
-	//NONE 128 CBC PKCS NONE
+	//AES 128 NONE PKCS SALTY
 	var crypto_alg enigma.ConfigCryptoAlgorithm
 	crypto_alg.EncryptionMethod = "AES"
 	crypto_alg.BlockSize = 128
@@ -237,7 +242,7 @@ func TestEnigma_14(t *testing.T) {
 }
 
 func TestEnigma_15(t *testing.T) {
-	//NONE 128 CBC PKCS NONE
+	//DES 128 NONE PKCS SALTY
 	var crypto_alg enigma.ConfigCryptoAlgorithm
 	crypto_alg.EncryptionMethod = "DES"
 	crypto_alg.BlockSize = 64

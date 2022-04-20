@@ -132,39 +132,47 @@ func NewMachine(cfg ConfigCryptoAlgorithm) (m *Machine, err error) {
 		}
 	}()
 
-	buf, err := base64.StdEncoding.DecodeString(cfg.BlockKey)
-	if err != nil {
-		return nil, errors.Wrapf(err, "decode key %v",
-			logs.KVL(
-				"key", cfg.BlockKey,
-			))
-	}
-	key := make([]byte, cfg.BlockSize/8)
-	copy(key, buf)
-
 	method, err := ParseEncryptionMethod(cfg.EncryptionMethod)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parse encryption method %v",
 			logs.KVL(
-				"name", cfg.EncryptionMethod,
+				"encryption-method", cfg.EncryptionMethod,
 			))
 	}
 
 	newCipher, err := BlockFactory(method)
 	if err != nil {
-		return
+		return nil, errors.Wrapf(err, "block factory %v",
+			logs.KVL(
+				"encryption-method", method,
+			))
 	}
+
+	buf, err := base64.StdEncoding.DecodeString(cfg.BlockKey)
+	if err != nil {
+		return nil, errors.Wrapf(err, "decode key %v",
+			logs.KVL(
+				"block-key", cfg.BlockKey,
+			))
+	}
+	key := make([]byte, cfg.BlockSize/8)
+	copy(key, buf)
 
 	block, err := newCipher(key)
 	if err != nil {
-		return
+		return nil, errors.Wrapf(err, "block factory %v",
+			logs.KVL(
+				"encryption-method", method,
+				"block-key", cfg.BlockKey,
+			))
 	}
 
 	cipherMode, err := ParseCipherMode(cfg.CipherMode)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parse cipher mode %v",
 			logs.KVL(
-				"name", cfg.EncryptionMethod,
+				"encryption-method", cfg.EncryptionMethod,
+				"cipher-mode", cfg.CipherMode,
 			))
 	}
 
@@ -175,9 +183,11 @@ func NewMachine(cfg ConfigCryptoAlgorithm) (m *Machine, err error) {
 		saltMaker_decode(cfg.CipherSalt),
 	)
 	if err != nil {
-		return nil, errors.Errorf("cipher factory %v ",
+		return nil, errors.Wrapf(err, "cipher factory %v ",
 			logs.KVL(
-				"key", base64.StdEncoding.EncodeToString(key),
+				"encryption-method", cfg.EncryptionMethod,
+				"cipher-mode", cfg.CipherMode,
+				"block-key", cfg.BlockKey,
 			))
 	}
 
@@ -302,7 +312,7 @@ func CipherFactory(block cipher.Block, mode CipherMode,
 	default:
 		return nil, nil, errors.Errorf("invalid cipher mode %v",
 			logs.KVL(
-				"mode", mode.String(),
+				"cipher-mode", mode.String(),
 			))
 	}
 
@@ -368,7 +378,7 @@ func getSaltSize(cipherMode interface{}) (n int, err error) {
 	case cipher.BlockMode:
 		n = cipherMode.BlockSize()
 	default:
-		err = errors.Errorf("invalid cipher mode")
+		err = errors.Errorf("invalid cipher-mode")
 	}
 
 	return
