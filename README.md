@@ -99,7 +99,7 @@ data:
 
 ```
 
-Then, run the following commands to install the server. 
+Run the following commands to install the server. 
 
 
 ```
@@ -107,7 +107,7 @@ kubectl apply -f application.yaml
 kubectl apply -f environment.yaml
 ```
 
-Then, check your installed sudoRy server in sudory namespace. 
+Check your installed sudoRy server in sudory namespace. 
 ```
 kubectl get pods -n sudory
 kubectl get service -n sudory
