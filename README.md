@@ -71,7 +71,7 @@ helm_upgrade
 
 Use manifest files in this github to install Server & Client. 
 
-# Server
+### Server
 
 You need to have MariaDB 10.0 and above to install sudoRy server. Recommand using bitnami Mariadb helm chart to install Mariadb in your Kubernetes cluster. Once you install Mariadb and get host/port/root/user informatin to configre in "environment.yaml". 
 
@@ -114,7 +114,7 @@ kubectl get service -n sudory
 kubectl get deployment -n sudory
 ```
 
-# Client 
+### Client 
 
 To install sudoRy client, you need to get cluster uuid and bear's token from sudoRy server. 
 
