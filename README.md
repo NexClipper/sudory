@@ -12,6 +12,7 @@ sudoRy maintains standard templates to use Kubernetes & Prometheus APIs and user
 
 The list below is the template list sudoRy is supporting as of today and "create", "delete", "apply" will be added soon. 
 
+```
 kubernetes_pods_get
 kubernetes_pods_list
 kubernetes_namespaces_get
@@ -64,6 +65,7 @@ prometheus_targets/metadata
 helm_install
 helm_uninstall
 helm_upgrade
+```
 
 ## How to install?
 
