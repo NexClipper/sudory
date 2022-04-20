@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 
@@ -10,11 +11,13 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/config"
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/event"
+	"github.com/NexClipper/sudory/pkg/server/macro/enigma"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/route"
 	"github.com/NexClipper/sudory/pkg/server/status"
 	"github.com/NexClipper/sudory/pkg/server/status/env"
 	"github.com/NexClipper/sudory/pkg/version"
+	"github.com/jinzhu/configor"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
 )
@@ -37,6 +40,7 @@ func main() {
 	flag.StringVar(&cfg.Database.DBName, "db-dbname", "", "Database's dbname")
 
 	configPath := flag.String("config", "../../conf/sudory-server.yml", "Path to sudory-server's config file")
+	enigmaConfigPath := flag.String("enigma", "../../conf/enigma.yml", "Path to enigma's config file")
 	flag.Parse()
 
 	if *versionFlag {
@@ -48,6 +52,10 @@ func main() {
 
 	cfg, err := config.New(cfg, *configPath)
 	if err != nil {
+		panic(err)
+	}
+
+	if err := newEnigma(*enigmaConfigPath); err != nil {
 		panic(err)
 	}
 
@@ -170,4 +178,27 @@ func newEnvironmentUpdate(engine *xorm.Engine) (*env.EnvironmentUpdate, error) {
 	}
 
 	return updator, nil
+}
+
+func newEnigma(configFilename string) error {
+	config := enigma.Config{}
+	if err := configor.Load(&config, configFilename); err != nil {
+		return errors.Wrapf(err, "read enigma config file %v",
+			logs.KVL(
+				"filename", configFilename,
+			))
+	}
+	if err := enigma.LoadConfig(config.CryptoAlgorithms); err != nil {
+		b, _ := ioutil.ReadFile(configFilename)
+
+		return errors.Wrapf(err, "load enigma config %v",
+			logs.KVL(
+				"filename", configFilename,
+				"config", string(b),
+			))
+	}
+
+	enigma.PrintConfig(os.Stdout, config.CryptoAlgorithms)
+
+	return nil
 }

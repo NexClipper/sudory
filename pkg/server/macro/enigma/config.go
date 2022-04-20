@@ -1,55 +1,44 @@
 package enigma
 
 import (
+	"fmt"
+	"io"
+	"strings"
+	"text/tabwriter"
+
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/reflected"
+	"github.com/NexClipper/sudory/pkg/version"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
-/*
-cryptos:
-- crypto:
-  name: aes-cbc-gen
-  cipher: aes
-  block-size: 128
-  variable:
-- crypto:
-  name: aes-cbc-salt
-  cipher: aes
-  block-size: 192
-  variable:
-  salt:
-- crypto:
-  name: aes-gcm-gen
-  cipher: aes
-  block-size: 256
-  variable:
-- crypto:
-  name: aes-gcm-salt
-  cipher: aes
-  block-size: 128
-  variable:
-*/
-
+// Config
+// service-result:
+//   method: aes   # NONE, AES, DES
+//   size: 128     # NONE: default(1), AES: 128|192|256, DES: 64
+//   key: secret   # (base64 string)
+//   mode: gcm     # NONE: NONE|AES|DES , GCM: AES, CBC: NONE|AES|DES
+//   salt: null    # NULL, (base64 string)
+//   padding: PKCS # NONE: AES+NONE default(PKCS)|AES+GCM|DES+NONE default(PKCS)|DES+CBC, PKCS: ALL
 type Config struct {
-	CryptoAlgorithms map[string]CryptoAlgorithm `yaml:"enigma"`
+	CryptoAlgorithms map[string]ConfigCryptoAlgorithm `yaml:"enigma"`
 }
-type CryptoAlgorithm struct {
-	Block  `yaml:",inline"`
-	Cipher `yaml:",inline"`
+type ConfigCryptoAlgorithm struct {
+	ConfigBlock  `yaml:",inline"`
+	ConfigCipher `yaml:",inline"`
 }
 
-type Block struct {
-	EncryptionMethod string `yaml:"method"`             // aes, des
-	BlockSize        int    `yaml:"size" default:"128"` // [128|192|256], [64]
+type ConfigBlock struct {
+	EncryptionMethod string `yaml:"method"`             // NONE, AES, DES
+	BlockSize        int    `yaml:"size" default:"128"` // default(1), [128|192|256], [64]
 	BlockKey         string `yaml:"key"`                // (base64 string)
 }
 
-type Cipher struct {
-	CipherMode    string  `yaml:"mode"`    // CBC, GCM
+type ConfigCipher struct {
+	CipherMode    string  `yaml:"mode"`    // NONE, CBC, GCM
 	CipherSalt    *string `yaml:"salt"`    // nil: auto-generate (base64 string)
-	CipherPadding *string `yaml:"padding"` // PKCS5,
+	CipherPadding string  `yaml:"padding"` // [none|PKCS], [PKCS], [none|PKCS]
 }
 
 /*
@@ -61,6 +50,92 @@ CipherConfig {
 
 type EncriptMethodAesCbcConfig struct {
 	Cipher string `yaml:"cipher"`
+}
+
+var (
+	Machines map[string]Cipher
+)
+
+func init() {
+	if Machines == nil {
+		Machines = make(map[string]Cipher)
+	}
+}
+
+func LoadConfig(cfg map[string]ConfigCryptoAlgorithm) error {
+	for k, v := range cfg {
+		machine, err := NewMachine(v)
+		if err != nil {
+			return errors.Wrapf(err, "new machine")
+		}
+		Machines[k] = machine
+	}
+
+	return nil
+}
+
+func GetMachine(k string) Cipher {
+	return Machines[k]
+}
+
+func PrintConfig(w io.Writer, cfg map[string]ConfigCryptoAlgorithm) {
+	fmt.Fprintln(w, "enigma configuration:")
+
+	tabwrite := tabwriter.NewWriter(w, 0, 0, 3, ' ', 0)
+
+	if strings.Compare(version.Version, "dev") == 0 {
+		tabwrite.Write([]byte(strings.Join([]string{
+			"",
+			"name",
+			"encryption-method",
+			"block-size",
+			"block-key",
+			"cipher-mode",
+			"cipher-salt",
+			"cipher-padding",
+		}, "\t") + "\n"))
+
+		for name, cfg := range cfg {
+			tabwrite.Write([]byte(strings.Join([]string{
+				"-",
+				name,
+				cfg.EncryptionMethod,
+				fmt.Sprintf("%v", cfg.BlockSize),
+				cfg.BlockKey,
+				cfg.CipherMode,
+				fmt.Sprintf("%v", cfg.CipherSalt),
+				cfg.CipherPadding,
+			}, "\t") + "\n"))
+		}
+	} else {
+
+		tabwrite.Write([]byte(strings.Join([]string{
+			"",
+			"name",
+			"encryption-method",
+			"block-size",
+			// "block-key",
+			"cipher-mode",
+			// "cipher-salt",
+			"cipher-padding",
+		}, "\t") + "\n"))
+
+		for name, cfg := range cfg {
+			tabwrite.Write([]byte(strings.Join([]string{
+				"-",
+				name,
+				cfg.EncryptionMethod,
+				fmt.Sprintf("%v", cfg.BlockSize),
+				// cfg.BlockKey,
+				cfg.CipherMode,
+				// fmt.Sprintf("%v", cfg.CipherSalt),
+				cfg.CipherPadding,
+			}, "\t") + "\n"))
+		}
+	}
+	tabwrite.Flush()
+
+	fmt.Fprintln(w, strings.Repeat("_", 40))
 }
 
 // deepcopy

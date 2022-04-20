@@ -1,58 +1,263 @@
 package enigma_test
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/enigma"
 )
 
-func TestEnigmaMachineAesCbc(t *testing.T) {
+func TestEnigma_101(t *testing.T) {
+	//AES 128 CBC PKCS SALT
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "AES"
+	crypto_alg.BlockSize = 128
+	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
+	crypto_alg.CipherMode = "CBC"
+	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
-	var crypto_1 enigma.CryptoAlgorithm
-	crypto_1.EncryptionMethod = "aes"
-	crypto_1.BlockSize = 128
-	crypto_1.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
-	crypto_1.CipherMode = "cbc"
-	crypto_1.CipherPadding = NewString("PKCS5")
-	crypto_1.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	EnigmaMachine(t, crypto_alg)
 
-	EnigmaMachine(t, crypto_1)
+	//AES 192 CBC PKCS SALT
+	crypto_alg.BlockSize = 192
+	EnigmaMachine(t, crypto_alg)
 
-	var crypto_2 enigma.CryptoAlgorithm
-	crypto_2.EncryptionMethod = "aes"
-	crypto_2.BlockSize = 256
-	crypto_2.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
-	crypto_2.CipherMode = "gcm"
-	crypto_2.CipherSalt = nil
-
-	EnigmaMachine(t, crypto_2)
-
-	var crypto_3 enigma.CryptoAlgorithm
-	crypto_3.EncryptionMethod = "des"
-	crypto_3.BlockSize = 64
-	crypto_3.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
-	crypto_3.CipherMode = "cbc"
-	crypto_3.CipherPadding = NewString("PKCS5")
-	crypto_3.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
-
-	EnigmaMachine(t, crypto_3)
-
-	var crypto_4 enigma.CryptoAlgorithm
-	crypto_4.EncryptionMethod = "des"
-	crypto_4.BlockSize = 64
-	crypto_4.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
-	crypto_4.CipherMode = "gcm"
-	crypto_2.CipherSalt = nil
-
-	if false {
-		EnigmaMachine(t, crypto_4)
-	}
+	//AES 256 CBC PKCS SALT
+	crypto_alg.BlockSize = 256
+	EnigmaMachine(t, crypto_alg)
 }
 
-func EnigmaMachine(t *testing.T, alg enigma.CryptoAlgorithm) {
+func TestEnigma_111(t *testing.T) {
+	//AES 128 GCM PKCS SALT
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "AES"
+	crypto_alg.BlockSize = 128
+	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
+	crypto_alg.CipherMode = "GCM"
+	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+
+	EnigmaMachine(t, crypto_alg)
+
+	//AES 192 GCM PKCS SALT
+	crypto_alg.BlockSize = 192
+	EnigmaMachine(t, crypto_alg)
+
+	//AES 256 GCM PKCS SALT
+	crypto_alg.BlockSize = 256
+	EnigmaMachine(t, crypto_alg)
+}
+
+func TestEnigma_121(t *testing.T) {
+	//AES 128 NONE PKCS SALT
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "AES"
+	crypto_alg.BlockSize = 128
+	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
+	crypto_alg.CipherMode = "NONE"
+	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+
+	EnigmaMachine(t, crypto_alg)
+
+	//AES 192 GCM PKCS SALT
+	crypto_alg.BlockSize = 192
+	EnigmaMachine(t, crypto_alg)
+
+	//AES 256 GCM PKCS SALT
+	crypto_alg.BlockSize = 256
+	EnigmaMachine(t, crypto_alg)
+}
+
+func TestEnigma_131(t *testing.T) {
+	//AES 128 GCM NONE SALT
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "AES"
+	crypto_alg.BlockSize = 128
+	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
+	crypto_alg.CipherMode = "NONE"
+	crypto_alg.CipherPadding = "NONE"
+	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+
+	EnigmaMachine(t, crypto_alg)
+
+	//AES 192 GCM NONE SALT
+	crypto_alg.BlockSize = 192
+	EnigmaMachine(t, crypto_alg)
+
+	//AES 256 GCM NONE SALT
+	crypto_alg.BlockSize = 256
+	EnigmaMachine(t, crypto_alg)
+}
+
+func TestEnigma_141(t *testing.T) {
+	//AES 128 GCM PKCS NULL
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "AES"
+	crypto_alg.BlockSize = 128
+	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
+	crypto_alg.CipherMode = "NONE"
+	crypto_alg.CipherPadding = "PKCS"
+	// crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+
+	EnigmaMachine(t, crypto_alg)
+
+	//AES 192 GCM NONE SALT
+	crypto_alg.BlockSize = 192
+	EnigmaMachine(t, crypto_alg)
+
+	//AES 256 GCM NONE SALT
+	crypto_alg.BlockSize = 256
+	EnigmaMachine(t, crypto_alg)
+}
+
+func TestEnigma_151(t *testing.T) {
+	//AES 128 GCM NONE NONE
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "AES"
+	crypto_alg.BlockSize = 128
+	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
+	crypto_alg.CipherMode = "NONE"
+	crypto_alg.CipherPadding = "NONE"
+	// crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+
+	EnigmaMachine(t, crypto_alg)
+
+	//AES 192 GCM NONE SALT
+	crypto_alg.BlockSize = 192
+	EnigmaMachine(t, crypto_alg)
+
+	//AES 256 GCM NONE SALT
+	crypto_alg.BlockSize = 256
+	EnigmaMachine(t, crypto_alg)
+}
+
+func TestEnigma_102(t *testing.T) {
+	//DES 64 CBC PKCS SALT
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "DES"
+	crypto_alg.BlockSize = 64
+	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
+	crypto_alg.CipherMode = "CBC"
+	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+
+	EnigmaMachine(t, crypto_alg)
+}
+
+func TestEnigma_112(t *testing.T) {
+	//DES 64 CBC PKCS SALT
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "DES"
+	crypto_alg.BlockSize = 64
+	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
+	crypto_alg.CipherMode = "NONE"
+	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+
+	EnigmaMachine(t, crypto_alg)
+}
+
+func TestEnigma_103(t *testing.T) {
+	//DES 64 NONE PKCS SALT
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "DES"
+	crypto_alg.BlockSize = 64
+	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
+	crypto_alg.CipherMode = "NONE"
+	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+
+	EnigmaMachine(t, crypto_alg)
+
+}
+
+func TestEnigma_1(t *testing.T) {
+	//AES 128 CBC PKCS SALT
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "AES"
+	crypto_alg.BlockSize = 128
+	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
+	crypto_alg.CipherMode = "cbc"
+	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+
+	EnigmaMachine(t, crypto_alg)
+}
+
+func TestEnigma_12(t *testing.T) {
+	//NONE 128 NONE PKCS NONE
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "NONE"
+	crypto_alg.BlockSize = 64
+	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
+	crypto_alg.CipherMode = "NONE"
+	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+
+	EnigmaMachine(t, crypto_alg)
+
+	//NONE 128 CBC PKCS NONE
+	crypto_alg.CipherMode = "CBC"
+	EnigmaMachine(t, crypto_alg)
+
+}
+
+func TestEnigma_13(t *testing.T) {
+	//NONE 128 CBC PKCS NONE
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "AES"
+	crypto_alg.BlockSize = 64
+	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
+	crypto_alg.CipherMode = "CBC"
+	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+
+	EnigmaMachine(t, crypto_alg)
+}
+
+func TestEnigma_14(t *testing.T) {
+	//NONE 128 CBC PKCS NONE
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "AES"
+	crypto_alg.BlockSize = 128
+	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
+	crypto_alg.CipherMode = "NONE"
+	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+
+	EnigmaMachine(t, crypto_alg)
+
+	crypto_alg.CipherMode = "CBC"
+	EnigmaMachine(t, crypto_alg)
+
+	crypto_alg.CipherMode = "GCM"
+	EnigmaMachine(t, crypto_alg)
+}
+
+func TestEnigma_15(t *testing.T) {
+	//NONE 128 CBC PKCS NONE
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "DES"
+	crypto_alg.BlockSize = 64
+	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
+	crypto_alg.CipherMode = "NONE"
+	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+
+	EnigmaMachine(t, crypto_alg)
+
+	crypto_alg.CipherMode = "CBC"
+	EnigmaMachine(t, crypto_alg)
+}
+
+func EnigmaMachine(t *testing.T, alg enigma.ConfigCryptoAlgorithm) {
 
 	crypto, err := enigma.NewMachine(alg)
-	t.Error(err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	s := `
 	세종어제 훈민정음
@@ -65,25 +270,39 @@ func EnigmaMachine(t *testing.T, alg enigma.CryptoAlgorithm) {
 	새로 스물여덟 글자를 만드니
 	사람마다 하여금 쉬이 익혀 날마다 씀에 편안케 하고자 할 따름이다.`
 
-	var salt, encripttext, plaintext []byte
-	if err := crypto.Encode([]byte(s), func(key, salt_, encript_text []byte) {
+	var encripttext, plaintext []byte
+
+	var salt_a, salt_b []byte
+
+	encripttext, err = crypto.Encode([]byte(s), func(key, salt_, encript_text []byte) {
 		t.Log("encode key:", string(key))
 		t.Log("encode salt:", string(salt_))
-		salt = salt_
-		encripttext = encript_text
-	}); err != nil {
-		t.Error(err)
+		salt_a = salt_
+		// encripttext = encript_text
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	if err := crypto.Decode(encripttext, salt, func(key, salt_, plain_text []byte) {
+	plaintext, err = crypto.Decode(encripttext, func(key, salt_, plain_text []byte) {
 		t.Log("decode key:", string(key))
 		t.Log("decode salt:", string(salt_))
+		salt_b = salt_
 
-		plaintext = plain_text
-	}); err != nil {
-		t.Error(err)
+		// plaintext = plain_text
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	t.Log(string(plaintext))
+	// t.Log(string(plaintext))
+
+	if bytes.Compare(salt_a, salt_b) != 0 {
+		t.Error("diff salt")
+	}
+
+	if s != string(plaintext) {
+		t.Error("diff text", string(plaintext))
+	}
 
 }

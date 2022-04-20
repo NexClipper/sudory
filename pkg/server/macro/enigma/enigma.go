@@ -1,7 +1,6 @@
 package enigma
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/des"
@@ -11,28 +10,30 @@ import (
 	"io"
 	"reflect"
 	"runtime"
-	"strings"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/pkg/errors"
 )
 
-type Converter interface {
-	Encode(src []byte, fn func(key, salt, encripttext []byte)) error
-	Decode(src, salt []byte, fn func(key, salt, plaintext []byte)) error
+type Cipher interface {
+	Encode(src []byte, callback ...func(key, salt, encripttext []byte)) ([]byte, error)
+	Decode(src []byte, callback ...func(key, salt, plaintext []byte)) ([]byte, error)
 }
 
-type Encoder func(salt []byte, src []byte) (dst []byte, err error)
-type Decoder func(salt []byte, src []byte) (dst []byte, err error)
+type Encoder func(src []byte) (dst, salt []byte, err error)
+type Decoder func(src []byte) (dst, salt []byte, err error)
 
 type Machine struct {
-	config    CryptoAlgorithm
-	key, salt func() []byte
+	config             ConfigCryptoAlgorithm
+	key                func() []byte
+	block              cipher.Block
+	FuncSaltRuleEncode //인코드 후 SALT 설정에 따라 인코드된 값에 SALT를 추 유무
+	// FuncSaltRuleDecode //인코드 전 SALT 설정에 따라 인코드된 값에서 SALT를 추출 하는지 유무
 	Encoder
 	Decoder
 }
 
-func (machine Machine) Encode(src []byte, fn func(key, salt, encripttext []byte)) (err error) {
+func (machine Machine) Encode(src []byte, callback ...func(key, salt, encripttext []byte)) (dst []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch r := r.(type) {
@@ -51,27 +52,33 @@ func (machine Machine) Encode(src []byte, fn func(key, salt, encripttext []byte)
 		}
 	}()
 
-	salt := machine.salt()
 	//padding
-	switch strings.ToUpper(NullString(machine.config.CipherPadding)) {
-	case "PKCS5":
-		src = PKCS5Padding(src, len(salt))
-	}
+	padding, _ := ParsePadding(machine.config.CipherPadding)
+	src = padding.Pad(src, machine.block.BlockSize())
+	// switch strings.ToUpper(machine.config.CipherPadding) {
+	// case "PKCS5":
+	// 	src = PKCS7Pad(src, len(salt))
+	// }
 
-	dst, err := machine.Encoder(salt, src)
+	dst, salt, err := machine.Encoder(src)
 	if err != nil {
-		return errors.Wrapf(err, "enigma encode %v",
+		return nil, errors.Wrapf(err, "enigma encode %v",
 			logs.KVL(
 				"src", src,
 				"salt", base64.StdEncoding.EncodeToString(salt),
 			))
 	}
 
-	fn(machine.key(), salt, dst)
-	return nil
+	for _, callback := range callback {
+		callback(machine.key(), salt, dst)
+	}
+
+	dst = machine.FuncSaltRuleEncode(dst, salt)
+
+	return
 }
 
-func (machine Machine) Decode(src, salt []byte, fn func(key, salt, plaintext []byte)) (err error) {
+func (machine Machine) Decode(src []byte, callback ...func(key, salt, plaintext []byte)) (dst []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch r := r.(type) {
@@ -90,9 +97,9 @@ func (machine Machine) Decode(src, salt []byte, fn func(key, salt, plaintext []b
 		}
 	}()
 
-	dst, err := machine.Decoder(salt, src)
+	dst, salt, err := machine.Decoder(src)
 	if err != nil {
-		return errors.Wrapf(err, "enigma decode %v",
+		return nil, errors.Wrapf(err, "enigma decode %v",
 			logs.KVL(
 				"src", src,
 				"salt", base64.StdEncoding.EncodeToString(salt),
@@ -100,42 +107,20 @@ func (machine Machine) Decode(src, salt []byte, fn func(key, salt, plaintext []b
 	}
 
 	//padding
-	switch strings.ToUpper(NullString(machine.config.CipherPadding)) {
-	case "PKCS5":
-		dst = PKCS5UnPadding(dst)
+	padding, _ := ParsePadding(machine.config.CipherPadding)
+	dst = padding.Unpad(dst)
+	// switch strings.ToUpper(NullString(machine.config.CipherPadding)) {
+	// case "PKCS5":
+	// 	dst = PKCS7Unpad(dst)
+	// }
+
+	for _, callback := range callback {
+		callback(machine.key(), salt, dst)
 	}
-
-	fn(machine.key(), salt, dst)
-	return nil
+	return
 }
 
-var (
-	Machines map[string]Converter
-)
-
-func init() {
-	if Machines == nil {
-		Machines = make(map[string]Converter)
-	}
-}
-
-func LoadConfig(cfg map[string]CryptoAlgorithm) error {
-	for k, v := range cfg {
-		m, err := NewMachine(v)
-		if err != nil {
-			return errors.Wrapf(err, "new machine")
-		}
-		Machines[k] = m
-	}
-
-	return nil
-}
-
-func GetMachine(k string) Converter {
-	return Machines[k]
-}
-
-func NewMachine(cfg CryptoAlgorithm) (m *Machine, err error) {
+func NewMachine(cfg ConfigCryptoAlgorithm) (m *Machine, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch r := r.(type) {
@@ -157,7 +142,15 @@ func NewMachine(cfg CryptoAlgorithm) (m *Machine, err error) {
 	key := make([]byte, cfg.BlockSize/8)
 	copy(key, buf)
 
-	newCipher, err := BlockFactory(cfg.EncryptionMethod)
+	method, err := ParseEncryptionMethod(cfg.EncryptionMethod)
+	if err != nil {
+		return nil, errors.Wrapf(err, "parse encryption method %v",
+			logs.KVL(
+				"name", cfg.EncryptionMethod,
+			))
+	}
+
+	newCipher, err := BlockFactory(method)
 	if err != nil {
 		return
 	}
@@ -167,7 +160,20 @@ func NewMachine(cfg CryptoAlgorithm) (m *Machine, err error) {
 		return
 	}
 
-	e, d, salt, err := CipherFactory(block, cfg.CipherMode, cfg.CipherSalt)
+	cipherMode, err := ParseCipherMode(cfg.CipherMode)
+	if err != nil {
+		return nil, errors.Wrapf(err, "parse cipher mode %v",
+			logs.KVL(
+				"name", cfg.EncryptionMethod,
+			))
+	}
+
+	encoder, decoder, err := CipherFactory(
+		block,
+		cipherMode,
+		saltMaker_encode(cfg.CipherSalt),
+		saltMaker_decode(cfg.CipherSalt),
+	)
 	if err != nil {
 		return nil, errors.Errorf("cipher factory %v ",
 			logs.KVL(
@@ -176,132 +182,128 @@ func NewMachine(cfg CryptoAlgorithm) (m *Machine, err error) {
 	}
 
 	m = &Machine{
-		config:  cfg,
-		key:     func() []byte { return key },
-		salt:    salt,
-		Encoder: e,
-		Decoder: d,
+		config:             cfg,
+		key:                func() []byte { return key },
+		block:              block,
+		FuncSaltRuleEncode: saltRule_encode(cfg.CipherSalt),
+		// FuncSaltRuleDecode: saltRule_decode(cfg.CipherSalt),
+		Encoder: encoder,
+		Decoder: decoder,
 	}
 
 	return
 }
 
-func BlockFactory(method string) (fn func(key []byte) (cipher.Block, error), err error) {
-	switch strings.ToUpper(method) {
-	case "AES":
+func BlockFactory(method EncryptionMethod) (fn func(key []byte) (cipher.Block, error), err error) {
+	switch method {
+	case EncryptionMethodNONE:
+		// fn = func(key []byte) (cipher.Block, error) { return &NoneEncripter{key: key}, nil }
+		fn = func(key []byte) (cipher.Block, error) { return &NoneEncripter{}, nil }
+	case EncryptionMethodAES:
 		fn = aes.NewCipher // invalid key size [16,24,32]
-	case "DES":
+	case EncryptionMethodDES:
 		fn = des.NewCipher // invalid key size [8]
 	default:
 		return nil, errors.Errorf("invalid encryption method %v",
 			logs.KVL(
-				"method", strings.ToUpper(method),
+				"method", method.String(),
 			))
 	}
 
 	return
 }
 
-func CipherFactory(block cipher.Block, mode string, salt_ *string) (encoder Encoder, decoder Decoder, salt func() []byte, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch r := r.(type) {
-			case error:
-				err = errors.Wrapf(r, "recovered")
-			default:
-				err = fmt.Errorf("recovered %v", r)
-			}
-		}
-	}()
+type FuncSaltMakerEncode func(n int) (dst []byte)
+type FuncSaltMakerDecode func(src []byte, n int) (dst, salt []byte)
 
-	switch strings.ToUpper(mode) {
-	case "CBC":
+type FuncSaltRuleEncode func(src, salt []byte) (dst []byte)
+type FuncSaltRuleDecode func(src, salt []byte) (dst, salt_ []byte)
 
-		salt = func() (b []byte) {
-			if salt_ == nil {
-				b, err = RandBytes(block.BlockSize())
-				if err != nil {
-					panic(errors.Wrapf(err, "new salt by randbytes block_size=%d",
-						block.BlockSize(),
-					))
-				}
-			} else {
-				b, err = NewSalt(*salt_, block.BlockSize())
-				if err != nil {
-					panic(errors.Wrapf(err, "new salt by base64 string salt='%s' block_size=%d",
-						*salt_,
-						block.BlockSize(),
-					))
-				}
+func CipherFactory(block cipher.Block, mode CipherMode,
+	saltMaker_encode FuncSaltMakerEncode, saltMaker_decode FuncSaltMakerDecode) (encoder Encoder, decoder Decoder /*, salt func() []byte*/, err error) {
+	// defer func() {
+	// 	if r := recover(); r != nil {
+	// 		switch r := r.(type) {
+	// 		case error:
+	// 			err = errors.Wrapf(r, "recovered")
+	// 		default:
+	// 			err = fmt.Errorf("recovered %v", r)
+	// 		}
+	// 	}
+	// }()
+
+	switch mode {
+	case CipherModeNONE:
+		encoder = func(src []byte) (dst, iv []byte, err error) {
+			src = PKCS7Pad(src, block.BlockSize())
+
+			dst = make([]byte, len(src))
+
+			var i int = 0
+			for i = 0; i < len(src); i += block.BlockSize() {
+				block.Encrypt(dst[i:i+block.BlockSize()], src[i:i+block.BlockSize()])
 			}
 
 			return
 		}
-
-		encoder = func(iv, src []byte) (dst []byte, err error) {
+		decoder = func(src []byte) (dst, iv []byte, err error) {
 			dst = make([]byte, len(src))
 
+			for i := 0; i < len(src); i += block.BlockSize() {
+				block.Decrypt(dst[i:i+block.BlockSize()], src[i:i+block.BlockSize()])
+			}
+
+			dst = PKCS7Unpad(dst)
+			return
+		}
+	case CipherModeCBC:
+		encoder = func(src []byte) (dst, iv []byte, err error) {
+			iv = saltMaker_encode(block.BlockSize())
 			en := cipher.NewCBCEncrypter(block, iv)
+
+			dst = make([]byte, len(src))
 			en.CryptBlocks(dst, src)
 			return
 		}
-		decoder = func(iv, src []byte) (dst []byte, err error) {
-			dst = make([]byte, len(src))
+		decoder = func(src []byte) (dst, iv []byte, err error) {
+			src, iv = saltMaker_decode(src, block.BlockSize())
 
 			de := cipher.NewCBCDecrypter(block, iv)
+
+			dst = make([]byte, len(src))
 			de.CryptBlocks(dst, src)
 			return
 		}
 
-	case "GCM":
+	case CipherModeGCM:
 		var c cipher.AEAD
 		c, err = cipher.NewGCM(block)
 		if err != nil {
-			err = errors.Wrapf(err, "new gcm cipher %v",
+			return nil, nil, errors.Wrapf(err, "new gcm cipher %v",
 				logs.KVL(
 					"type", TypeName(block),
 				))
-
-			return
-		}
-		salt = func() (b []byte) {
-			if salt_ == nil {
-				b, err = RandBytes(c.NonceSize())
-				if err != nil {
-					panic(errors.Wrapf(err, "new salt by randbytes nonce_size=%d ",
-						c.NonceSize(),
-					))
-				}
-			} else {
-				b, err = NewSalt(*salt_, c.NonceSize())
-				if err != nil {
-					panic(errors.Wrapf(err, "new salt by base64 string salt='%s' nonce_size=%d",
-						*salt_,
-						c.NonceSize(),
-					))
-				}
-			}
-			return
 		}
 
-		encoder = func(nonce, src []byte) (dst []byte, err error) {
+		encoder = func(src []byte) (dst, nonce []byte, err error) {
+			nonce = saltMaker_encode(c.NonceSize()) //make nonce
+
 			dst = c.Seal(nonce, nonce, src, nil)
 			dst = dst[len(nonce):]
 			return
 		}
+		decoder = func(src []byte) (dst, nonce []byte, err error) {
+			src, nonce = saltMaker_decode(src, c.NonceSize()) //make nonce
 
-		decoder = func(nonce, src []byte) (dst []byte, err error) {
 			dst, err = c.Open(nil, nonce, src, nil)
 			return
 		}
 
 	default:
-		err = errors.Errorf("invalid cipher mode %v",
+		return nil, nil, errors.Errorf("invalid cipher mode %v",
 			logs.KVL(
-				"mode", strings.ToUpper(mode),
+				"mode", mode.String(),
 			))
-
-		return
 	}
 
 	return
@@ -337,25 +339,13 @@ func safeDes(key []byte, blockSize BlockSize_DES) cipher.Block {
 	return c
 }
 
-func PKCS5Padding(src []byte, blockSize int) []byte {
-	padding := blockSize - len(src)%blockSize
-	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
-	return append(src, padtext...)
-}
-
-func PKCS5UnPadding(src []byte) []byte {
-	length := len(src)
-	unpadding := int(src[length-1])
-	return src[:(length - unpadding)]
-}
-
 func RandBytes(n int) (b []byte, err error) {
 	b = make([]byte, n)
 	_, err = io.ReadFull(rand.Reader, b)
 	return
 }
 
-func NewSalt(salt string, n int) (b []byte, err error) {
+func safeSalt(salt string, n int) (b []byte, err error) {
 	salt_, err := base64.StdEncoding.DecodeString(salt)
 	if err != nil {
 		return nil, errors.Wrapf(err, "decode salt %v",
@@ -371,30 +361,91 @@ func NewSalt(salt string, n int) (b []byte, err error) {
 	return
 }
 
-func RemoveBase64Padding(s string, sep ...string) string {
-	sep_ := "="
-	for _, sep := range sep {
-		sep_ = sep
-		break
+func getSaltSize(cipherMode interface{}) (n int, err error) {
+	switch cipherMode := cipherMode.(type) {
+	case cipher.AEAD:
+		n = cipherMode.NonceSize()
+	case cipher.BlockMode:
+		n = cipherMode.BlockSize()
+	default:
+		err = errors.Errorf("invalid cipher mode")
 	}
 
-	return strings.ReplaceAll(s, sep_, "")
+	return
 }
 
-func RecoverBase64Padding(s string, sep ...string) string {
-	sep_ := "="
-	for _, sep := range sep {
-		sep_ = sep
-		break
+func saltRule_encode(salt *string) FuncSaltRuleEncode {
+	if salt == nil {
+		return func(src, salt []byte) (dst []byte) {
+			dst = make([]byte, len(src)+len(salt))
+
+			copy(dst, append(salt, src...))
+			return
+		}
+	} else {
+		return func(src, salt []byte) (dst []byte) {
+			dst = make([]byte, len(src))
+
+			copy(dst, src)
+			return
+		}
 	}
 
-	paddlen := 3 - (len(s) % 3)
+}
 
-	buf := bytes.Buffer{}
-	buf.WriteString(s)
-	buf.WriteString(strings.Repeat(sep_, paddlen))
+func saltMaker_encode(salt *string) FuncSaltMakerEncode {
+	var err error
+	if salt == nil {
+		return func(n int) (salt_ []byte) {
+			salt_, err = RandBytes(n)
+			if err != nil {
+				panic(errors.Wrapf(err, "new salt by randbytes %v",
+					logs.KVL(
+						"salt_size", n,
+					)))
+			}
+			return
+		}
+	} else {
+		return func(n int) (salt_ []byte) {
+			salt_, err = safeSalt(NullString(salt), n)
+			if err != nil {
+				panic(errors.Wrapf(err, "new salt by base64 string %v",
+					logs.KVL(
+						"salt", NullString(salt),
+						"salt_size", n,
+					)))
+			}
+			return
+		}
+	}
+}
 
-	return buf.String()
+func saltMaker_decode(salt *string) FuncSaltMakerDecode {
+	if salt == nil {
+		return func(src []byte, n int) (dst, salt_ []byte) {
+			dst, salt_ = src[n:], src[:n]
+
+			return
+		}
+	} else {
+		var err error
+		return func(src []byte, n int) (dst, salt_ []byte) {
+			dst = make([]byte, len(src))
+			copy(dst, src)
+
+			salt_, err = safeSalt(NullString(salt), n)
+			if err != nil {
+				panic(errors.Wrapf(err, "new salt by base64 string %v",
+					logs.KVL(
+						"salt", NullString(salt),
+						"salt_size", n,
+					)))
+			}
+
+			return
+		}
+	}
 }
 
 func TypeName(i interface{}) string {
@@ -413,3 +464,7 @@ func NullString(s *string) (r string) {
 
 	return
 }
+
+// func reflectValueOfPointer(i interface{}) uintptr {
+// 	return reflect.ValueOf(i).Pointer()
+// }

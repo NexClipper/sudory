@@ -1,0 +1,22 @@
+enigma:
+  service.result:
+    method: AES
+    size: 128
+    key: YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n
+    mode: GCM
+    salt: null
+    padding: NONE
+  service_step.args:
+    method: AES
+    size: 128
+    key: YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n
+    mode: GCM
+    salt: null
+    padding: NONE
+  token.token:
+    method: AES
+    size: 128
+    key: YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n
+    mode: GCM
+    salt: null
+    padding: NONE
