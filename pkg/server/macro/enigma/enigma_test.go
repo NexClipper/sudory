@@ -14,7 +14,7 @@ func TestEnigma_101(t *testing.T) {
 	crypto_alg.BlockSize = 128
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "CBC"
-	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
 	EnigmaMachine(t, crypto_alg)
@@ -35,7 +35,7 @@ func TestEnigma_111(t *testing.T) {
 	crypto_alg.BlockSize = 128
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "GCM"
-	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
 	EnigmaMachine(t, crypto_alg)
@@ -56,7 +56,7 @@ func TestEnigma_121(t *testing.T) {
 	crypto_alg.BlockSize = 128
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "NONE"
-	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
 	EnigmaMachine(t, crypto_alg)
@@ -77,7 +77,7 @@ func TestEnigma_131(t *testing.T) {
 	crypto_alg.BlockSize = 128
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "NONE"
-	crypto_alg.CipherPadding = "NONE"
+	crypto_alg.Padding = "NONE"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
 	EnigmaMachine(t, crypto_alg)
@@ -98,7 +98,7 @@ func TestEnigma_141(t *testing.T) {
 	crypto_alg.BlockSize = 128
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "NONE"
-	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.Padding = "PKCS"
 	// crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
 	EnigmaMachine(t, crypto_alg)
@@ -119,7 +119,7 @@ func TestEnigma_151(t *testing.T) {
 	crypto_alg.BlockSize = 128
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "NONE"
-	crypto_alg.CipherPadding = "NONE"
+	crypto_alg.Padding = "NONE"
 	// crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
 	EnigmaMachine(t, crypto_alg)
@@ -140,7 +140,7 @@ func TestEnigma_102(t *testing.T) {
 	crypto_alg.BlockSize = 64
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "CBC"
-	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
 	EnigmaMachine(t, crypto_alg)
@@ -153,7 +153,7 @@ func TestEnigma_112(t *testing.T) {
 	crypto_alg.BlockSize = 64
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "NONE"
-	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
 	EnigmaMachine(t, crypto_alg)
@@ -166,7 +166,7 @@ func TestEnigma_103(t *testing.T) {
 	crypto_alg.BlockSize = 64
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "NONE"
-	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
 	EnigmaMachine(t, crypto_alg)
@@ -180,7 +180,7 @@ func TestEnigma_1(t *testing.T) {
 	crypto_alg.BlockSize = 128
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "cbc"
-	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
 	EnigmaMachine(t, crypto_alg)
@@ -193,7 +193,7 @@ func TestEnigma_12(t *testing.T) {
 	crypto_alg.BlockSize = 128
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "NONE"
-	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
 	EnigmaMachine(t, crypto_alg)
@@ -213,10 +213,10 @@ func TestEnigma_13(t *testing.T) {
 	//AES 128 CBC PKCS SALTY
 	var crypto_alg enigma.ConfigCryptoAlgorithm
 	crypto_alg.EncryptionMethod = "AES"
-	crypto_alg.BlockSize = 64
+	crypto_alg.BlockSize = 128
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "CBC"
-	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
 	EnigmaMachine(t, crypto_alg)
@@ -229,7 +229,7 @@ func TestEnigma_14(t *testing.T) {
 	crypto_alg.BlockSize = 128
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "NONE"
-	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
 	EnigmaMachine(t, crypto_alg)
@@ -248,7 +248,7 @@ func TestEnigma_15(t *testing.T) {
 	crypto_alg.BlockSize = 64
 	crypto_alg.BlockKey = "YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n"
 	crypto_alg.CipherMode = "NONE"
-	crypto_alg.CipherPadding = "PKCS"
+	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
 
 	EnigmaMachine(t, crypto_alg)
@@ -279,35 +279,22 @@ func EnigmaMachine(t *testing.T, alg enigma.ConfigCryptoAlgorithm) {
 
 	var salt_a, salt_b []byte
 
-	encripttext, err = crypto.Encode([]byte(s), func(key, salt_, encript_text []byte) {
-		t.Log("encode key:", string(key))
-		t.Log("encode salt:", string(salt_))
-		salt_a = salt_
-		// encripttext = encript_text
-	})
+	encripttext, err = crypto.Encode([]byte(s))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	plaintext, err = crypto.Decode(encripttext, func(key, salt_, plain_text []byte) {
-		t.Log("decode key:", string(key))
-		t.Log("decode salt:", string(salt_))
-		salt_b = salt_
-
-		// plaintext = plain_text
-	})
+	plaintext, err = crypto.Decode(encripttext)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// t.Log(string(plaintext))
-
-	if bytes.Compare(salt_a, salt_b) != 0 {
-		t.Error("diff salt")
+	if !bytes.Equal(salt_a, salt_b) {
+		t.Fatal("diff salt")
 	}
 
 	if s != string(plaintext) {
-		t.Error("diff text", string(plaintext))
+		t.Fatal("diff text", string(plaintext))
 	}
 
 }

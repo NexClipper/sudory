@@ -22,24 +22,24 @@ type Config struct {
 	CryptoAlgorithmSet map[string]ConfigCryptoAlgorithm `yaml:"enigma"`
 }
 type ConfigCryptoAlgorithm struct {
-	ConfigBlock  `yaml:",inline"`
-	ConfigCipher `yaml:",inline"`
+	ConfigBlock   `yaml:",inline"`
+	ConfigCipher  `yaml:",inline"`
+	ConfigPadding `yaml:",inline"`
 }
 
 type ConfigBlock struct {
-	EncryptionMethod string `yaml:"method"`             // NONE, AES, DES
-	BlockSize        int    `yaml:"size" default:"128"` // default(1), [128|192|256], [64]
-	BlockKey         string `yaml:"key"`                // (base64 string)
+	EncryptionMethod string `yaml:"method"`                   // NONE,       AES,           DES
+	BlockSize        int    `yaml:"block-size" default:"128"` // default(1), [128|192|256], [64]
+	BlockKey         string `yaml:"block-key"`                // (base64 string)
 }
 
 type ConfigCipher struct {
-	CipherMode    string  `yaml:"mode"`    // NONE, CBC, GCM
-	CipherSalt    *string `yaml:"salt"`    // nil: auto-generate (base64 string)
-	CipherPadding string  `yaml:"padding"` // [none|PKCS], [PKCS], [none|PKCS]
+	CipherMode string  `yaml:"cipher-mode"` // NONE, CBC, GCM
+	CipherSalt *string `yaml:"cipher-salt"` // nil: auto-generate (base64 string)
 }
 
-type EncriptMethodAesCbcConfig struct {
-	Cipher string `yaml:"cipher"`
+type ConfigPadding struct {
+	Padding string `yaml:"padding"` // none, PKCS
 }
 
 var (
@@ -82,7 +82,7 @@ func PrintConfig(w io.Writer, cfg map[string]ConfigCryptoAlgorithm) {
 			"block-key",
 			"cipher-mode",
 			"cipher-salt",
-			"cipher-padding",
+			"padding",
 		}, "\t") + "\n"))
 
 		for name, cfg := range cfg {
@@ -94,7 +94,7 @@ func PrintConfig(w io.Writer, cfg map[string]ConfigCryptoAlgorithm) {
 				cfg.BlockKey,
 				cfg.CipherMode,
 				fmt.Sprintf("%v", cfg.CipherSalt),
-				cfg.CipherPadding,
+				cfg.Padding,
 			}, "\t") + "\n"))
 		}
 	} else {
@@ -107,7 +107,7 @@ func PrintConfig(w io.Writer, cfg map[string]ConfigCryptoAlgorithm) {
 			// "block-key",
 			"cipher-mode",
 			// "cipher-salt",
-			"cipher-padding",
+			"padding",
 		}, "\t") + "\n"))
 
 		for name, cfg := range cfg {
@@ -119,7 +119,7 @@ func PrintConfig(w io.Writer, cfg map[string]ConfigCryptoAlgorithm) {
 				// cfg.BlockKey,
 				cfg.CipherMode,
 				// fmt.Sprintf("%v", cfg.CipherSalt),
-				cfg.CipherPadding,
+				cfg.Padding,
 			}, "\t") + "\n"))
 		}
 	}

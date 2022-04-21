@@ -1,22 +1,15 @@
 enigma:
-  service.result:
+  # sudory.default.crypto:
+  #   method: NONE
+  #   block-size: 0
+  #   block-key: 
+  #   cipher-mode: NONE
+  #   cipher-salt: null
+  #   padding: NONE
+  sudory.default.crypto:
     method: AES
-    size: 128
-    key: YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n
-    mode: GCM
-    salt: null
-    padding: NONE
-  service_step.args:
-    method: AES
-    size: 128
-    key: YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n
-    mode: GCM
-    salt: null
-    padding: NONE
-  token.token:
-    method: AES
-    size: 128
-    key: YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n
-    mode: GCM
-    salt: null
+    block-size: 128
+    block-key: YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n # brown fox jumps over the lazy dog
+    cipher-mode: GCM
+    cipher-salt: null
     padding: NONE

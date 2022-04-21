@@ -137,9 +137,14 @@ func (ctl Control) PollService(ctx echo.Context) error {
 			"cluster_uuid":         request.ClusterUuid,
 			"assigned_client_uuid": request.AssignedClientUuid,
 			"status":               nullable.Int32(request.Status).Value(),
-			"result":               nullable.String(request.Result).Value(),
-			"step_count":           nullable.Int32(request.StepCount).Value(),
-			"step_position":        nullable.Int32(request.StepPosition).Value(),
+			"result": func() string {
+				if request.Result != nil {
+					return string(*request.Result)
+				}
+				return ""
+			}(),
+			"step_count":    nullable.Int32(request.StepCount).Value(),
+			"step_position": nullable.Int32(request.StepPosition).Value(),
 		}
 		event.Invoke(request.SubscribeEvent, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
 	}
@@ -213,9 +218,14 @@ func (ctl Control) PollService(ctx echo.Context) error {
 			"cluster_uuid":         response.ClusterUuid,
 			"assigned_client_uuid": response.AssignedClientUuid,
 			"status":               nullable.Int32(response.Status).Value(),
-			"result":               nullable.String(response.Result).Value(),
-			"step_count":           nullable.Int32(response.StepCount).Value(),
-			"step_position":        nullable.Int32(response.StepPosition).Value(),
+			"result": func() string {
+				if response.Result != nil {
+					return string(*response.Result)
+				}
+				return ""
+			}(),
+			"step_count":    nullable.Int32(response.StepCount).Value(),
+			"step_position": nullable.Int32(response.StepPosition).Value(),
 		}
 		event.Invoke("service-poll-out", m)
 	}

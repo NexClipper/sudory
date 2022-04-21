@@ -1,6 +1,8 @@
 package config
 
-import "github.com/jinzhu/configor"
+import (
+	"github.com/jinzhu/configor"
+)
 
 type Config struct {
 	APPName string `default:"sudory-server"`
@@ -28,6 +30,8 @@ type Config struct {
 		AllowOrigins string `env:"SUDORY_CORSCONFIG_ALLOW_ORIGINS" yaml:"allow-origins,omitempty"`
 		AllowMethods string `env:"SUDORY_CORSCONFIG_ALLOW_METHODS" yaml:"allow-methods,omitempty"`
 	} `yaml:"cors-config,omitempty"`
+
+	Encryption string `yaml:"encryption" default:"enigma.yml"`
 }
 
 func New(c *Config, configPath string) (*Config, error) {

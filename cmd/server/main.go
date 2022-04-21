@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -41,7 +42,6 @@ func main() {
 	flag.StringVar(&cfg.Database.DBName, "db-dbname", "", "Database's dbname")
 
 	configPath := flag.String("config", "../../conf/sudory-server.yml", "Path to sudory-server's config file")
-	enigmaConfigPath := flag.String("enigma", "../../conf/enigma.yml", "Path to enigma's config file")
 	flag.Parse()
 
 	if *versionFlag {
@@ -56,7 +56,11 @@ func main() {
 		panic(err)
 	}
 
-	if err := newEnigma(*enigmaConfigPath); err != nil {
+	enigmaConfigFilename := cfg.Encryption
+	if !path.IsAbs(cfg.Encryption) {
+		enigmaConfigFilename = path.Join(path.Dir(*configPath), cfg.Encryption)
+	}
+	if err := newEnigma(enigmaConfigFilename); err != nil {
 		panic(err)
 	}
 

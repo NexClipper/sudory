@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
+	cryptov1 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v1"
 )
 
 func TestServiceJson(t *testing.T) {
@@ -102,7 +103,7 @@ func NewService() Service {
 	out.Epoch = newist.Int32(0)
 	out.Interval = newist.Int32(0)
 	out.Status = newist.Int32(0)
-	out.Result = newist.String("success")
+	out.Result = func(s string) *cryptov1.String { return (*cryptov1.String)(&s) }("success")
 
 	return out
 }

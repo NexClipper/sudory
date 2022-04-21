@@ -29,6 +29,8 @@ logger:
   max-backups: 20
   compress: false
 
+encryption: enigma.yml
+
 # cors-config:
 #   allow-origins:  google.com, example.com
 #   allow-methods:  get, put, delete

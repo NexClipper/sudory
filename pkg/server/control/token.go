@@ -9,6 +9,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
+	cryptov1 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v1"
 	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
 	"github.com/NexClipper/sudory/pkg/server/status/env"
 	"github.com/labstack/echo/v4"
@@ -69,7 +70,7 @@ func (ctl Control) CreateClusterToken(ctx echo.Context) error {
 	token.UserKind = user_kind.String()
 	token.UserUuid = body.UserUuid
 	token.IssuedAtTime, token.ExpirationTime = bearerTokenTimeIssueNow()
-	token.Token = macro.NewUuidString()
+	token.Token = cryptov1.String(macro.NewUuidString())
 
 	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
 		token_, err := vault.NewToken(db).CreateToken(token)

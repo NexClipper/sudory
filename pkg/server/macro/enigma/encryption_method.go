@@ -4,6 +4,15 @@
 //go:generate go-enum --file=encryption_method.go --names --nocase
 package enigma
 
+import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/des"
+
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
+	"github.com/pkg/errors"
+)
+
 /* ENUM(
 	NONE
 	AES
@@ -12,12 +21,27 @@ package enigma
 */
 type EncryptionMethod int
 
-type NoneEncripter struct {
-	// key []byte
+func (method EncryptionMethod) BlockFactory() (fn func(key []byte) (cipher.Block, error), err error) {
+	switch method {
+	case EncryptionMethodNONE:
+		fn = func(key []byte) (cipher.Block, error) { return &NoneEncripter{}, nil }
+	case EncryptionMethodAES:
+		fn = aes.NewCipher // invalid key size [16,24,32]
+	case EncryptionMethodDES:
+		fn = des.NewCipher // invalid key size [8]
+	default:
+		return nil, errors.Errorf("invalid encryption method %v",
+			logs.KVL(
+				"method", method.String(),
+			))
+	}
+
+	return
 }
 
+type NoneEncripter struct{}
+
 func (encripter NoneEncripter) BlockSize() int {
-	// return len(encripter.key)
 	return 1
 }
 
