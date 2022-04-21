@@ -1,15 +1,15 @@
 enigma:
-  # sudory.default.crypto:
-  #   method: NONE
-  #   block-size: 0
-  #   block-key: 
-  #   cipher-mode: NONE
-  #   cipher-salt: null
-  #   padding: NONE
   sudory.default.crypto:
-    method: AES
-    block-size: 128
-    block-key: YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n # brown fox jumps over the lazy dog
-    cipher-mode: GCM
+    method: NONE
+    block-size: 0
+    block-key: 
+    cipher-mode: NONE
     cipher-salt: null
     padding: NONE
+  # sudory.default.crypto:
+  #   method: AES
+  #   block-size: 128
+  #   block-key: YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n # brown fox jumps over the lazy dog
+  #   cipher-mode: GCM
+  #   cipher-salt: null
+  #   padding: NONE
