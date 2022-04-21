@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sudoryclient
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: $APP_IMAGE_NAME-configmap
+  namespace: sudoryclient
+  labels:
+    sudory: client
+data:
+  S_CLUSTER_ID: d9d52f1c77b14ccca7c75ea5b61da75b
+  S_SERVER_URL: http://137.184.247.104:8099
+  S_TOKEN: 93f1722ecd784a42bd362cc686442c9f
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $APP_IMAGE_NAME
+  namespace: sudoryclient
+  labels:
+    sudory: client
+spec:
+  selector:
+    matchLabels:
+      sudory: client
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        sudory: client
+    spec:
+      containers:
+        - name: $APP_IMAGE_NAME
+          image: ${IMG_TAG_TO_DEPLOY}
+          resources: {}
+          envFrom:
+            - configMapRef:
+                name: ${APP_IMAGE_NAME}-configmap

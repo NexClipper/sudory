@@ -1,0 +1,106 @@
+variables:
+  DOCKER_DRIVER: overlay
+  APP_DOCKERFILE_LOCATION: "Dockerfile"
+  APP_IMAGE_NAME: "nexclipper-sudory"
+
+default:
+  services:
+    - docker:dind
+  tags:
+    - nexclipper
+  retry: 2
+  image: docker:latest
+
+# cache:
+#   key: ${CI_COMMIT_REF_SLUG}
+#   paths:
+#     - node_modules/
+
+stages:
+  - build
+  - package
+  - deploy-dev
+
+code-build-server:
+  image: golang:1.18.1-alpine3.15
+  stage: build
+  script:
+    - apk add --no-cache make git
+    - make go-build target=server
+  artifacts:
+    paths:
+      - bin/
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+
+code-build-client:
+  image: golang:1.18.1-alpine3.15
+  stage: build
+  script:
+    - apk add --no-cache make git
+    - make go-build target=client
+  artifacts:
+    paths:
+      - bin/
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+  allow_failure: true
+
+
+
+docker-build-sudory-server:
+  stage: package
+  before_script:
+    - "apk add --no-cache git"
+  variables:
+    APP_DOCKERFILE_LOCATION: "Dockerfile.server"
+    APP_IMAGE_NAME: "nexclipper-sudory-server"
+  script:
+    - echo "building docker image for $APP_IMAGE_NAME "
+    - "source /data/scripts/build_v2.sh $APP_IMAGE_NAME"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+
+docker-build-sudory-client:
+  stage: package
+  before_script:
+    - "apk add --no-cache git"
+  variables:
+    APP_DOCKERFILE_LOCATION: "Dockerfile.client"
+    APP_IMAGE_NAME: "nexclipper-sudory-client"
+  script:
+    - echo "building docker image for $APP_IMAGE_NAME "
+    - "source /data/scripts/build_v2.sh $APP_IMAGE_NAME"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+  allow_failure: true
+
+deploy-nexclipper-sudory-server:
+  stage: deploy-dev
+  image: dtzar/helm-kubectl:latest
+  variables:
+    APP_IMAGE_NAME: "nexclipper-sudory-server"
+  before_script:
+    - echo -e "\nLogin to Kubernetes"
+    - source /data/scripts/login-cluster.sh dev
+  script:
+    - "source /data/scripts/deploy_v2.sh dev sudory"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+    - if: $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+      when: manual
+
+deploy-nexclipper-sudory-client:
+  stage: deploy-dev
+  image: dtzar/helm-kubectl:latest
+  variables:
+    APP_IMAGE_NAME: "nexclipper-sudory-client"
+  before_script:
+    - echo -e "\nLogin to Kubernetes"
+    - source /data/scripts/login-cluster.sh dev
+  script:
+    - "source /data/scripts/deploy_v2.sh dev sudoryclient"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+    - if: $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+      when: manual
