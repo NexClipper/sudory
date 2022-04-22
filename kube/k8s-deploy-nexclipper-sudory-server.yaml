@@ -1,0 +1,160 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sudory
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${APP_IMAGE_NAME}-configmap
+  namespace: sudory
+data:
+  SUDORY_DB_HOST: "mysql-primary.mysql.svc.cluster.local"
+  SUDORY_DB_PORT: "3306"
+  SUDORY_DB_SCHEME: "nc_sudory"
+  SUDORY_DB_EXPORT_PATH: "."
+  SUDORY_DB_ROOT_USERNAME: "root"
+  SUDORY_DB_SERVER_USERNAME: "user"
+  SUDORY_LOG_SEVERITY: "info"
+  SUDORY_LOG_SYSTEM_EVENT: "false"
+  SUDORY_LOG_VERBOSE: "true"
+  SUDORY_LOG_VERBOSELEVEL: "9"
+  SUDORY_LOG_FILENAME: "./sudory.log"
+  SUDORY_LOG_MAXSIZE: "10"
+  SUDORY_LOG_MAXAGE: "5"
+  SUDORY_LOG_MAXBACKUPS: "10"
+  SUDORY_LOG_COMPRESS: "false"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${APP_IMAGE_NAME}-yaml-configmap
+  labels:
+    sudory: server
+data:
+  sudory-server.yml: |
+    events:
+    - event:
+      name: 'lari_metric'
+      update-interval: 5s
+      notifiers:
+      - notifier:
+        type: console
+      - notifier:
+        type: 'rabbitmq'
+        url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
+        exchange: ''
+        routing-key: 'lari_metric'
+    - event:
+      name: 'lari_metric_received'
+      update-interval: 5s
+      notifiers:
+      - notifier:
+        type: console
+      - notifier:
+        type: 'rabbitmq'
+        url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
+        exchange: ''
+        routing-key: 'lari_metric_received'
+    - event:
+      name: 'lari_resource'
+      update-interval: 5s
+      notifiers:
+      - notifier:
+        type: console
+      - notifier:
+        type: 'rabbitmq'
+        url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
+        exchange: ''
+        routing-key: 'lari_resource'
+    - event:
+      name: 'lari_alert'
+      update-interval: 5s
+      notifiers:
+      - notifier:
+        type: console
+      - notifier:
+        type: 'rabbitmq'
+        url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
+        exchange: ''
+        routing-key: 'lari_alert'
+    - event:
+      name: 'service-poll-out'
+      update-interval: 5s
+      notifiers:
+      - notifier:
+        type: console
+      - notifier:
+        type: 'rabbitmq'
+        url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
+        exchange: ''
+        routing-key: 'lari_etc'
+    - event:
+      name: 'client-auth-accept'
+      update-interval: 5s
+      notifiers:
+      - notifier:
+        type: console
+      - notifier:
+        type: 'rabbitmq'
+        url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
+        exchange: ''
+        routing-key: 'lari_etc'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${APP_IMAGE_NAME}
+  namespace: sudory
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8099
+      targetPort: 8099
+  selector:
+    sudory: server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${APP_IMAGE_NAME}
+  namespace: sudory
+spec:
+  selector:
+    matchLabels:
+      sudory: server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        sudory: server
+    spec:
+      containers:
+        - name: ${APP_IMAGE_NAME}
+          image: ${IMG_TAG_TO_DEPLOY}
+          ports:
+            - containerPort: 8099
+          resources: {}
+          envFrom:
+            - configMapRef:
+                name: ${APP_IMAGE_NAME}-configmap
+          env:
+            - name: SUDORY_DB_SERVER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql
+                  key: mysql-password
+            - name: SUDORY_DB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql
+                  key: mysql-root-password
+          volumeMounts:
+            - mountPath: /app/conf
+              name: server-yaml-config
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: ${APP_IMAGE_NAME}-yaml-configmap
+          name: server-yaml-config
