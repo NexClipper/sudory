@@ -7,6 +7,28 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/enigma"
 )
 
+func TestEnigma_10(t *testing.T) {
+	//AES 128 CBC PKCS SALTY
+	var crypto_alg enigma.ConfigCryptoAlgorithm
+	crypto_alg.EncryptionMethod = "AES"
+	crypto_alg.BlockSize = 128
+	crypto_alg.BlockKey = ""
+	crypto_alg.CipherMode = "CBC"
+	crypto_alg.Padding = "PKCS"
+	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
+
+	EnigmaMachine(t, crypto_alg)
+
+	//AES 192 CBC PKCS SALTY
+	crypto_alg.BlockSize = 192
+	EnigmaMachine(t, crypto_alg)
+
+	//AES 256 CBC PKCS SALTY
+	crypto_alg.BlockSize = 256
+	EnigmaMachine(t, crypto_alg)
+}
+
 func TestEnigma_101(t *testing.T) {
 	//AES 128 CBC PKCS SALTY
 	var crypto_alg enigma.ConfigCryptoAlgorithm
@@ -16,6 +38,7 @@ func TestEnigma_101(t *testing.T) {
 	crypto_alg.CipherMode = "CBC"
 	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
 
 	EnigmaMachine(t, crypto_alg)
 
@@ -37,6 +60,7 @@ func TestEnigma_111(t *testing.T) {
 	crypto_alg.CipherMode = "GCM"
 	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
 
 	EnigmaMachine(t, crypto_alg)
 
@@ -58,6 +82,7 @@ func TestEnigma_121(t *testing.T) {
 	crypto_alg.CipherMode = "NONE"
 	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
 
 	EnigmaMachine(t, crypto_alg)
 
@@ -79,6 +104,7 @@ func TestEnigma_131(t *testing.T) {
 	crypto_alg.CipherMode = "NONE"
 	crypto_alg.Padding = "NONE"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
 
 	EnigmaMachine(t, crypto_alg)
 
@@ -100,6 +126,7 @@ func TestEnigma_141(t *testing.T) {
 	crypto_alg.CipherMode = "NONE"
 	crypto_alg.Padding = "PKCS"
 	// crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
 
 	EnigmaMachine(t, crypto_alg)
 
@@ -121,6 +148,7 @@ func TestEnigma_151(t *testing.T) {
 	crypto_alg.CipherMode = "NONE"
 	crypto_alg.Padding = "NONE"
 	// crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
 
 	EnigmaMachine(t, crypto_alg)
 
@@ -142,6 +170,7 @@ func TestEnigma_102(t *testing.T) {
 	crypto_alg.CipherMode = "CBC"
 	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
 
 	EnigmaMachine(t, crypto_alg)
 }
@@ -155,6 +184,7 @@ func TestEnigma_112(t *testing.T) {
 	crypto_alg.CipherMode = "NONE"
 	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
 
 	EnigmaMachine(t, crypto_alg)
 }
@@ -168,6 +198,7 @@ func TestEnigma_103(t *testing.T) {
 	crypto_alg.CipherMode = "NONE"
 	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
 
 	EnigmaMachine(t, crypto_alg)
 
@@ -182,6 +213,7 @@ func TestEnigma_1(t *testing.T) {
 	crypto_alg.CipherMode = "cbc"
 	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
 
 	EnigmaMachine(t, crypto_alg)
 }
@@ -195,6 +227,7 @@ func TestEnigma_12(t *testing.T) {
 	crypto_alg.CipherMode = "NONE"
 	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
 
 	EnigmaMachine(t, crypto_alg)
 
@@ -218,6 +251,7 @@ func TestEnigma_13(t *testing.T) {
 	crypto_alg.CipherMode = "CBC"
 	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
 
 	EnigmaMachine(t, crypto_alg)
 }
@@ -231,6 +265,7 @@ func TestEnigma_14(t *testing.T) {
 	crypto_alg.CipherMode = "NONE"
 	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
 
 	EnigmaMachine(t, crypto_alg)
 
@@ -250,6 +285,7 @@ func TestEnigma_15(t *testing.T) {
 	crypto_alg.CipherMode = "NONE"
 	crypto_alg.Padding = "PKCS"
 	crypto_alg.CipherSalt = NewString("64uk656M7KWQIO2XjCDss4frsJTtgLTsl5Ag7YOA6rOg7YyM")
+	crypto_alg.StrConv = "base64"
 
 	EnigmaMachine(t, crypto_alg)
 

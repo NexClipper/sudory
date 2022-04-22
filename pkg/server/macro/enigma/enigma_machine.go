@@ -77,8 +77,8 @@ func (machine *Machine) EncodeDetail(src []byte, callback ...func(map[string]int
 			})
 		}
 
-		//encode rule
-		dst = EncodeRule(dst, ss.GenSalt(), ss.Has())
+		//salt encode rule
+		dst = SaltEncodeRule(dst, ss.GenSalt(), ss.Has())
 		//string converter encode
 		dst = []byte(machine.strconv().Encoder()(dst))
 
@@ -115,8 +115,8 @@ func (machine *Machine) DecodeDetail(src []byte, callback ...func(map[string]int
 	err = machine.salt().Scope(func(ss *ScopeSalt) error {
 		//string converter decode
 		src, err = machine.strconv().Decoder()(string(src))
-		//decode rule
-		src, salt_ := DecodeRule(src, ss.GenSalt(), ss.Has())
+		//salt decode rule
+		src, salt_ := SaltDecodeRule(src, ss.GenSalt(), ss.Has())
 		//decode
 		dst, err = machine.Decoder(src, salt_)
 		if err != nil {
