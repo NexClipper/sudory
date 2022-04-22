@@ -143,12 +143,12 @@ spec:
             - name: SUDORY_DB_SERVER_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: mysql
+                  name: ncdb-mariadb
                   key: mariadb-password
             - name: SUDORY_DB_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: mysql
+                  name: ncdb-mariadb
                   key: mariadb-root-password
           livenessProbe:
             tcpSocket:
