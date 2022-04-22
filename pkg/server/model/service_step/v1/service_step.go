@@ -14,7 +14,6 @@ type ServiceStepProperty struct {
 	Args         cryptov1.Hashset `json:"args,omitempty"          xorm:"'args'          text          null          comment('args')"`
 	ResultFilter *string          `json:"result_filter,omitempty" xorm:"'result_filter' varchar(4096) null          comment('result_filter')"`
 	Status       *int32           `json:"status,omitempty"        xorm:"'status'        int           notnull index comment('status')"`
-	Result       *string          `json:"result,omitempty"        xorm:"'result'        longtext      null          comment('result')"`
 	Started      *time.Time       `json:"started,omitempty"       xorm:"'started'       datetime      null          comment('step start time')"`
 	Ended        *time.Time       `json:"ended,omitempty"         xorm:"'ended'         datetime      null          comment('step end time)'"`
 }

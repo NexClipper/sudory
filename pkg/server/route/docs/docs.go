@@ -1970,14 +1970,7 @@ var doc = `{
                 "deleted": {
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "-1: infinite",
-                    "type": "integer"
-                },
                 "id": {
-                    "type": "integer"
-                },
-                "interval": {
                     "type": "integer"
                 },
                 "name": {
@@ -2011,10 +2004,6 @@ var doc = `{
                 },
                 "template_uuid": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "0: once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "type": "string"
@@ -2196,14 +2185,7 @@ var doc = `{
                 "deleted": {
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "-1: infinite",
-                    "type": "integer"
-                },
                 "id": {
-                    "type": "integer"
-                },
-                "interval": {
                     "type": "integer"
                 },
                 "name": {
@@ -2237,10 +2219,6 @@ var doc = `{
                 },
                 "template_uuid": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "0: once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "type": "string"
@@ -2265,14 +2243,7 @@ var doc = `{
                 "deleted": {
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "-1: infinite",
-                    "type": "integer"
-                },
                 "id": {
-                    "type": "integer"
-                },
-                "interval": {
                     "type": "integer"
                 },
                 "name": {
@@ -2306,10 +2277,6 @@ var doc = `{
                 },
                 "template_uuid": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "0: once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "type": "string"
@@ -2379,9 +2346,6 @@ var doc = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
-                },
-                "result": {
                     "type": "string"
                 },
                 "result_filter": {

@@ -1954,14 +1954,7 @@
                 "deleted": {
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "-1: infinite",
-                    "type": "integer"
-                },
                 "id": {
-                    "type": "integer"
-                },
-                "interval": {
                     "type": "integer"
                 },
                 "name": {
@@ -1995,10 +1988,6 @@
                 },
                 "template_uuid": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "0: once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "type": "string"
@@ -2180,14 +2169,7 @@
                 "deleted": {
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "-1: infinite",
-                    "type": "integer"
-                },
                 "id": {
-                    "type": "integer"
-                },
-                "interval": {
                     "type": "integer"
                 },
                 "name": {
@@ -2221,10 +2203,6 @@
                 },
                 "template_uuid": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "0: once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "type": "string"
@@ -2249,14 +2227,7 @@
                 "deleted": {
                     "type": "string"
                 },
-                "epoch": {
-                    "description": "-1: infinite",
-                    "type": "integer"
-                },
                 "id": {
-                    "type": "integer"
-                },
-                "interval": {
                     "type": "integer"
                 },
                 "name": {
@@ -2290,10 +2261,6 @@
                 },
                 "template_uuid": {
                     "type": "string"
-                },
-                "type": {
-                    "description": "0: once, 1: repeat(epoch, interval)",
-                    "type": "integer"
                 },
                 "updated": {
                     "type": "string"
@@ -2363,9 +2330,6 @@
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
-                },
-                "result": {
                     "type": "string"
                 },
                 "result_filter": {
