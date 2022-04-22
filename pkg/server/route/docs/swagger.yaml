@@ -57,6 +57,9 @@ definitions:
       value:
         type: string
     type: object
+  v1.Hashset:
+    additionalProperties: true
+    type: object
   v1.HttpReqAuth:
     properties:
       assertion:
@@ -375,8 +378,7 @@ definitions:
   v1.ServiceStep:
     properties:
       args:
-        additionalProperties: true
-        type: object
+        $ref: '#/definitions/v1.Hashset'
       created:
         type: string
       deleted:

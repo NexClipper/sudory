@@ -1883,6 +1883,10 @@ var doc = `{
                 }
             }
         },
+        "v1.Hashset": {
+            "type": "object",
+            "additionalProperties": true
+        },
         "v1.HttpReqAuth": {
             "type": "object",
             "properties": {
@@ -2357,8 +2361,7 @@ var doc = `{
             "type": "object",
             "properties": {
                 "args": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "$ref": "#/definitions/v1.Hashset"
                 },
                 "created": {
                     "type": "string"
