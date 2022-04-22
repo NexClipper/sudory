@@ -52,10 +52,10 @@ func ServiceListClientToServer2(client map[string]ServiceChecked) []servicev1.Ht
 		// }
 
 		if v.service.Result.Body != "" {
-			serv.Service.Result = newist.String(v.service.Result.Body)
+			serv.Service.Result = newist.Cryptov1String(v.service.Result.Body)
 		}
 		if v.service.Result.Err != nil {
-			serv.Service.Result = newist.String(v.service.Result.Err.Error())
+			serv.Service.Result = newist.Cryptov1String(v.service.Result.Err.Error())
 		}
 
 		for i, s := range v.service.Steps {

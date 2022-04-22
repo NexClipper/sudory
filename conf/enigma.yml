@@ -1,15 +1,17 @@
 enigma:
   sudory.default.crypto:
-    method: NONE
+    method: none
     block-size: 0
     block-key: 
-    cipher-mode: NONE
+    cipher-mode: none
     cipher-salt: null
-    padding: NONE
+    padding: none
+    strconv: plain
   # sudory.default.crypto:
-  #   method: AES
+  #   method: aes
   #   block-size: 128
   #   block-key: YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n # brown fox jumps over the lazy dog
-  #   cipher-mode: GCM
+  #   cipher-mode: gcm
   #   cipher-salt: null
-  #   padding: NONE
+  #   padding: none
+  #   strconv: base64

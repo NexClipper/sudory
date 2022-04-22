@@ -259,7 +259,7 @@ func TestEnigma_15(t *testing.T) {
 
 func EnigmaMachine(t *testing.T, alg enigma.ConfigCryptoAlgorithm) {
 
-	crypto, err := enigma.NewMachine(alg)
+	crypto, err := enigma.NewMachine(alg.ToOption())
 	if err != nil {
 		t.Fatal(err)
 	}

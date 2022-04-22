@@ -8,35 +8,43 @@ import (
 	"bytes"
 )
 
-/* ENUM(
+/* ENUM (
 	NONE
 	PKCS
 )
 */
 type Padding int
 
-func (padding Padding) Pad(src []byte, blockSize int) (dst []byte) {
+func (padding Padding) Pader() func([]byte, int) []byte {
 	switch padding {
 	case PaddingPKCS:
-		dst = PKCS7Pad(src, blockSize)
+		return func(src []byte, blockSize int) []byte {
+			return PKCS7Pad(src, blockSize)
+		}
 	default:
-		dst = make([]byte, len(src))
-		copy(dst, src)
+		return func(src []byte, blockSize int) []byte {
+			dst := make([]byte, len(src))
+			copy(dst, src)
+			return dst
+		}
+
 	}
 
-	return
 }
 
-func (padding Padding) Unpad(src []byte) (dst []byte) {
+func (padding Padding) Unpader() func(src []byte) (dst []byte) {
 	switch padding {
 	case PaddingPKCS:
-		dst = PKCS7Unpad(src)
+		return func(src []byte) []byte {
+			return PKCS7Unpad(src)
+		}
 	default:
-		dst = make([]byte, len(src))
-		copy(dst, src)
+		return func(src []byte) []byte {
+			dst := make([]byte, len(src))
+			copy(dst, src)
+			return dst
+		}
 	}
-
-	return
 }
 
 func PKCS7Pad(src []byte, blockSize int) []byte {
