@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-/* ENUM(
+/* ENUM (
 	NONE
 	AES
 	DES
@@ -51,4 +51,34 @@ func (encripter NoneEncripter) Encrypt(dst, src []byte) {
 
 func (encripter NoneEncripter) Decrypt(dst, src []byte) {
 	copy(dst, src)
+}
+
+type BlockSize_AES int
+
+const (
+	BlockSize_AES128 BlockSize_AES = 128 / 8
+	BlockSize_AES192               = 192 / 8
+	BlockSize_AES256               = 256 / 8
+)
+
+func safeAes(key []byte, blockSize BlockSize_AES) cipher.Block {
+	b := make([]byte, blockSize)
+	copy(b, key)
+	c, _ := aes.NewCipher(b)
+
+	return c
+}
+
+type BlockSize_DES int
+
+const (
+	BlockSize_DES64 BlockSize_DES = 64 / 8
+)
+
+func safeDes(key []byte, blockSize BlockSize_DES) cipher.Block {
+	b := make([]byte, blockSize)
+	copy(b, key)
+	c, _ := des.NewCipher(b)
+
+	return c
 }

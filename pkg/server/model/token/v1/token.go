@@ -8,8 +8,8 @@ import (
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 )
 
-/* ENUM(
-cluster
+/* ENUM (
+	cluster
 )
 */
 type TokenUserKind int32

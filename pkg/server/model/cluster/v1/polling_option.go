@@ -9,9 +9,9 @@ import (
 	"time"
 )
 
-/* ENUM(
-regular
-smart
+/* ENUM (
+	regular
+	smart
 )
 */
 type PollingType int32

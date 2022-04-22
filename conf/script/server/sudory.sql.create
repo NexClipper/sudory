@@ -56,7 +56,7 @@ CREATE TABLE `cluster` (
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='cluster 관리 테이블';
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='cluster 관리 테이블';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -77,7 +77,7 @@ CREATE TABLE `environment` (
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -97,9 +97,6 @@ CREATE TABLE `service` (
   `assigned_client_uuid` char(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `step_count` int(11) DEFAULT NULL,
   `step_position` int(11) DEFAULT NULL,
-  `type` int(11) DEFAULT NULL,
-  `epoch` int(11) DEFAULT NULL,
-  `interval` int(11) DEFAULT NULL,
   `status` int(11) DEFAULT NULL COMMENT 'status',
   `result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `subscribe_event` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'subscribe event',
@@ -112,7 +109,7 @@ CREATE TABLE `service` (
   KEY `IDX_service_status` (`status`),
   KEY `IDX_service_template_uuid` (`template_uuid`),
   KEY `IDX_service_assigned_client_uuid` (`assigned_client_uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -133,7 +130,6 @@ CREATE TABLE `service_step` (
   `args` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'args',
   `result_filter` varchar(4096) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'result_filter',
   `status` int(11) NOT NULL COMMENT 'status',
-  `result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'result',
   `started` datetime DEFAULT NULL,
   `ended` datetime DEFAULT NULL,
   `created` datetime DEFAULT NULL,
@@ -143,7 +139,7 @@ CREATE TABLE `service_step` (
   UNIQUE KEY `UQE_service_step_uuid` (`uuid`),
   KEY `IDX_service_step_service_uuid` (`service_uuid`),
   KEY `status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168,7 +164,7 @@ CREATE TABLE `session` (
   UNIQUE KEY `uuid` (`uuid`) USING BTREE,
   KEY `user_uuid` (`user_uuid`),
   KEY `user_type` (`user_kind`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=142 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=141 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -189,7 +185,7 @@ CREATE TABLE `template` (
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='table template';
+) ENGINE=InnoDB AUTO_INCREMENT=98 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='table template';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -215,7 +211,7 @@ CREATE TABLE `template_command` (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uuid` (`uuid`) USING BTREE,
   KEY `template_uuid` (`template_uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='table template command';
+) ENGINE=InnoDB AUTO_INCREMENT=98 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='table template command';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -264,7 +260,7 @@ CREATE TABLE `token` (
   UNIQUE KEY `token` (`token`),
   KEY `user_kind` (`user_kind`),
   KEY `IDX_token_user_uuid` (`user_uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -276,4 +272,4 @@ CREATE TABLE `token` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-04-13  7:58:31
+-- Dump completed on 2022-04-22  8:40:56

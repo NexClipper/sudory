@@ -193,7 +193,7 @@ func newEnigma(configFilename string) error {
 				"filename", configFilename,
 			))
 	}
-	if err := enigma.LoadConfig(config.CryptoAlgorithmSet); err != nil {
+	if err := enigma.LoadConfig(config); err != nil {
 		b, _ := ioutil.ReadFile(configFilename)
 
 		return errors.Wrapf(err, "load enigma config %v",
@@ -203,7 +203,7 @@ func newEnigma(configFilename string) error {
 			))
 	}
 
-	enigma.PrintConfig(os.Stdout, config.CryptoAlgorithmSet)
+	enigma.PrintConfig(os.Stdout, config)
 
 	for key := range config.CryptoAlgorithmSet {
 		const quickbrownfox = `the quick brown fox jumps over the lazy dog`

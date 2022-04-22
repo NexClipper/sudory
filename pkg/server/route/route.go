@@ -100,7 +100,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	{
 		group := e.Group("/server")
 
-		if strings.Compare(version.Version, "dev") != 0 {
+		if cfg.Host.XAuthToken {
 			group.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 				return func(c echo.Context) (err error) {
 					const key = "x_auth_token"

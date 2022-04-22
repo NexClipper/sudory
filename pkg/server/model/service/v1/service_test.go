@@ -99,9 +99,9 @@ func NewService() Service {
 	out.ClusterUuid = ClusterUuid
 	out.StepCount = newist.Int32(0)
 	out.StepPosition = newist.Int32(0)
-	out.Type = newist.Int32(0)
-	out.Epoch = newist.Int32(0)
-	out.Interval = newist.Int32(0)
+	// out.Type = newist.Int32(0)
+	// out.Epoch = newist.Int32(0)
+	// out.Interval = newist.Int32(0)
 	out.Status = newist.Int32(0)
 	out.Result = func(s string) *cryptov1.String { return (*cryptov1.String)(&s) }("success")
 

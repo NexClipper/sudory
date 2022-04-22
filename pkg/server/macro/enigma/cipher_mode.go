@@ -6,12 +6,14 @@ package enigma
 
 import (
 	"crypto/cipher"
+	"reflect"
+	"runtime"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/pkg/errors"
 )
 
-/* ENUM(
+/* ENUM (
 	NONE
 	CBC
 	GCM
@@ -122,4 +124,12 @@ func (mode CipherMode) CipherFactory(block cipher.Block, salt *Salt) (encoder En
 	}
 
 	return
+}
+
+func typeName(i interface{}) string {
+	t := reflect.ValueOf(i).Type()
+	if t.Kind() == reflect.Func {
+		return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+	}
+	return t.String()
 }

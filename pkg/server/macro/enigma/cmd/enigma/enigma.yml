@@ -1,0 +1,7 @@
+block-method: AES
+block-size: 128
+block-key: YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n # base64("brown fox jumps over the lazy dog")
+cipher-mode: GCM
+cipher-salt: c2FsdHk= # base64("salty")
+padding: NONE
+strconv: base64

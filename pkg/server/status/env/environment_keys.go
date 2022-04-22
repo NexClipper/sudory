@@ -13,15 +13,15 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 )
 
-/* ENUM(
-bearer-token-signature-secret
-bearer-token-expiration-time
+/* ENUM (
+	bearer-token-signature-secret
+	bearer-token-expiration-time
 
-client-session-signature-secret
-client-session-expiration-time
+	client-session-signature-secret
+	client-session-expiration-time
 
-client-config-poll-interval
-client-config-loglevel
+	client-config-poll-interval
+	client-config-loglevel
 )
 */
 type Env int

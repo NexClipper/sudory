@@ -2,6 +2,7 @@ appname: sudory-server
 
 host:
   port: 8099
+  # xauthtoken: true
 
 database:
   type: mysql

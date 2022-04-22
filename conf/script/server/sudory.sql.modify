@@ -22,3 +22,15 @@ ALTER TABLE `template_recipe`
 	CHANGE COLUMN IF EXISTS `args` `args` TEXT NOT NULL COLLATE 'utf8mb4_unicode_ci' AFTER `method`,
 	DROP INDEX IF EXISTS `method`,
 	ADD INDEX `method` (`method`);
+
+-- OSS-253
+
+ALTER TABLE `service`
+	DROP COLUMN IF EXISTS `type`,
+	DROP COLUMN IF EXISTS `epoch`,
+	DROP COLUMN IF EXISTS `interval`;
+
+ALTER TABLE `service_step`
+	DROP COLUMN IF EXISTS `result`;
+
+-- !OSS-253

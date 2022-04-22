@@ -83,7 +83,7 @@ func safeSalt(salt []byte, n int) (salt_ []byte) {
 	return
 }
 
-func EncodeRule(src []byte, salt []byte, has bool) (src_ []byte) {
+func SaltEncodeRule(src []byte, salt []byte, has bool) (src_ []byte) {
 	switch has {
 	case false:
 		src_ = make([]byte, len(src)+len(salt))
@@ -98,7 +98,7 @@ func EncodeRule(src []byte, salt []byte, has bool) (src_ []byte) {
 	return
 }
 
-func DecodeRule(src []byte, salt []byte, has bool) (src_, salt_ []byte) {
+func SaltDecodeRule(src []byte, salt []byte, has bool) (src_, salt_ []byte) {
 	switch has {
 	case false:
 		src_ = make([]byte, len(src)-len(salt))
