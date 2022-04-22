@@ -8,7 +8,8 @@ type Config struct {
 	APPName string `default:"sudory-server"`
 
 	Host struct {
-		Port int32 `default:"8099"`
+		Port       int32 `default:"8099"`
+		XAuthToken bool  `default:"false"`
 	}
 
 	Database struct {
