@@ -11,9 +11,11 @@ metadata:
   labels:
     sudory: client
 data:
+
   S_SERVER_URL: '$S_SERVER_URL'
   S_CLUSTER_ID: '$S_CLUSTER_ID'
   S_TOKEN: '$S_TOKEN'
+
 
 
 ---
