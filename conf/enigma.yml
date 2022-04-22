@@ -1,6 +1,6 @@
 enigma:
   sudory.default.crypto:
-    method: none
+    block-method: none
     block-size: 0
     block-key: 
     cipher-mode: none
@@ -8,7 +8,7 @@ enigma:
     padding: none
     strconv: plain
   # sudory.default.crypto:
-  #   method: aes
+  #   block-method: aes
   #   block-size: 128
   #   block-key: YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n # brown fox jumps over the lazy dog
   #   cipher-mode: gcm

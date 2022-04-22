@@ -17,7 +17,7 @@ import (
 //    mode: gcm       # NONE: NONE|AES|DES , GCM: AES, CBC: NONE|AES|DES
 //    salt: null      # NULL, (base64 string)
 //    padding: PKCS   # NONE: AES+NONE default(PKCS)|AES+GCM|DES+NONE default(PKCS)|DES+CBC, PKCS: ALL
-//    strconv: base64 # none, base64, hex
+//    strconv: base64 # plain|base64|hex
 type Config struct {
 	CryptoAlgorithmSet map[string]ConfigCryptoAlgorithm `yaml:"enigma"`
 }
@@ -45,22 +45,22 @@ func configToOption(cfg ConfigCryptoAlgorithm) (opt MachineOption) {
 }
 
 type ConfigBlock struct {
-	EncryptionMethod string `yaml:"method"`     // NONE,       AES,           DES
-	BlockSize        int    `yaml:"block-size"` // default(1), [128|192|256], [64]
-	BlockKey         string `yaml:"block-key"`  // (base64 string)
+	EncryptionMethod string `env:"ENIGMA_BLOCK_METHOD" yaml:"block-method"` // NONE|AES|DES
+	BlockSize        int    `env:"ENIGMA_BLOCK_SIZE"   yaml:"block-size"`   // NONE: default(1), AES: [128|192|256], DES: [64]
+	BlockKey         string `env:"ENIGMA_BLOCK_KEY"    yaml:"block-key"`    // (base64 string)
 }
 
 type ConfigCipher struct {
-	CipherMode string  `yaml:"cipher-mode"` // NONE, CBC, GCM
-	CipherSalt *string `yaml:"cipher-salt"` // nil: auto-generate (base64 string)
+	CipherMode string  `env:"ENIGMA_CIPHER_MODE" yaml:"cipher-mode"` // NONE|CBC|GCM
+	CipherSalt *string `env:"ENIGMA_CIPHER_SALT" yaml:"cipher-salt"` // nil: auto-generate (base64 string)
 }
 
 type ConfigPadding struct {
-	Padding string `yaml:"padding"` // none, PKCS
+	Padding string `env:"ENIGMA_PADDING" yaml:"padding"` // none|PKCS
 }
 
 type ConfigStrConv struct {
-	StrConv string `yaml:"strconv"` // none, base64, hex
+	StrConv string `env:"ENIGMA_STRCONV" yaml:"strconv"` // plain|base64|hex
 }
 
 func PrintConfig(w io.Writer, cfg Config) {
