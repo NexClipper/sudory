@@ -6,7 +6,7 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: $APP_IMAGE_NAME-configmap
+  name: ${APP_IMAGE_NAME}-configmap
   namespace: sudoryclient
   labels:
     sudory: client
@@ -15,12 +15,11 @@ data:
   S_CLUSTER_ID: '$S_CLUSTER_ID'
   S_TOKEN: '$S_TOKEN'
 
-
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: $APP_IMAGE_NAME
+  name: ${APP_IMAGE_NAME}
   namespace: sudoryclient
   labels:
     sudory: client
@@ -35,7 +34,7 @@ spec:
         sudory: client
     spec:
       containers:
-        - name: $APP_IMAGE_NAME
+        - name: ${APP_IMAGE_NAME}
           image: ${IMG_TAG_TO_DEPLOY}
           resources: {}
           envFrom:

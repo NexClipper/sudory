@@ -9,7 +9,7 @@ metadata:
   name: ${APP_IMAGE_NAME}-configmap
   namespace: sudory
 data:
-  SUDORY_DB_HOST: "mysql-primary.mysql.svc.cluster.local"
+  SUDORY_DB_HOST: "ncdb-mariadb-primary.mariadb.svc.cluster.local"
   SUDORY_DB_PORT: "3306"
   SUDORY_DB_SCHEME: "nc_sudory"
   SUDORY_DB_EXPORT_PATH: "."
@@ -144,12 +144,17 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: mysql
-                  key: mysql-password
+                  key: mariadb-password
             - name: SUDORY_DB_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mysql
-                  key: mysql-root-password
+                  key: mariadb-root-password
+          livenessProbe:
+            tcpSocket:
+              port: 8099
+            initialDelaySeconds: 15
+            timeoutSeconds: 15
           volumeMounts:
             - mountPath: /app/conf
               name: server-yaml-config
