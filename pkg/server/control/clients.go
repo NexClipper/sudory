@@ -277,7 +277,7 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 	tokens := []tokenv1.Token{}
 	err = ctl.db.Engine().
 		Where(where, tokenv1.TokenUserKindCluster.String(), auth.ClusterUuid).
-		Desc("created").
+		Desc("updated").
 		Limit(1).
 		Find(&tokens)
 	if err != nil {
