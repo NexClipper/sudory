@@ -65,6 +65,48 @@ func (context XormContext) Where(where string, args ...interface{}) Context {
 	return context
 }
 
+// Limit
+func (context XormContext) Limit(limit int, start ...int) Context {
+	if context.codinator == nil {
+		context.codinator = make([]func() XormContext, 0)
+	}
+
+	context.codinator = append(context.codinator, func() XormContext {
+		context.tx = context.tx.Limit(limit, start...)
+		return context
+	})
+
+	return context
+}
+
+// Asc
+func (context XormContext) Asc(colNames ...string) Context {
+	if context.codinator == nil {
+		context.codinator = make([]func() XormContext, 0)
+	}
+
+	context.codinator = append(context.codinator, func() XormContext {
+		context.tx = context.tx.Asc(colNames...)
+		return context
+	})
+
+	return context
+}
+
+// Desc
+func (context XormContext) Desc(colNames ...string) Context {
+	if context.codinator == nil {
+		context.codinator = make([]func() XormContext, 0)
+	}
+
+	context.codinator = append(context.codinator, func() XormContext {
+		context.tx = context.tx.Desc(colNames...)
+		return context
+	})
+
+	return context
+}
+
 // Create
 func (context XormContext) Create(record interface{}) error {
 	affect, err := context.tx.Insert(record)

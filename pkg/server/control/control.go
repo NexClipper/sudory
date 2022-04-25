@@ -34,6 +34,25 @@ func (ctl Control) Scope(fn func(database.Context) (interface{}, error)) (v inte
 	return
 }
 
+func (ctl Control) ScopeSession(fn func(tx *xorm.Session) (interface{}, error)) (v interface{}, err error) {
+	block.Block{
+		Try: func() {
+			_, lockerr := ctl.db.Engine().Transaction(func(s *xorm.Session) (interface{}, error) {
+				v, err = fn(s)
+				return nil, err
+			})
+			if err == nil && lockerr != nil {
+				err = errors.Wrapf(lockerr, "xorm commit")
+			}
+		},
+		Catch: func(ex error) {
+			err = errors.Wrapf(ex, "catch")
+		},
+	}.Do()
+
+	return
+}
+
 func (ctl Control) NewSession() database.Context {
 	return database.NewXormContext(ctl.db.Engine().NewSession())
 }

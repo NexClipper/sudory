@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/status/env"
 	"github.com/pkg/errors"
+	"xorm.io/xorm"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
@@ -252,30 +254,46 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 				)))
 	}
 
-	// auth := body
-	cluster_uuid := auth.ClusterUuid
-
 	//valid cluster
-	if _, err := vault.NewCluster(ctl.NewSession()).Get(cluster_uuid); err != nil {
+	cluster := clusterv1.Cluster{}
+	has, err := ctl.db.Engine().NewSession().Where("uuid = ?", auth.ClusterUuid).Get(&cluster)
+	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "valid%s",
 				logs.KVL(
-					"cluster", cluster_uuid,
+					"cluster_uuid", auth.ClusterUuid,
+				)))
+	}
+	if !has {
+		echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+			errors.Wrapf(database.ErrorRecordWasNotFound(), "valid%s",
+				logs.KVL(
+					"cluster_uuid", auth.ClusterUuid,
 				)))
 	}
 
 	//valid token
-	where := "user_kind = ? AND user_uuid = ? AND token = ?"
-	tokens, err := vault.NewToken(ctl.NewSession()).
-		Find(where, tokenv1.TokenUserKindCluster.String(), auth.ClusterUuid, auth.Assertion)
+	where := "user_kind = ? AND user_uuid = ?"
+	tokens := []tokenv1.Token{}
+	err = ctl.db.Engine().
+		Where(where, tokenv1.TokenUserKindCluster.String(), auth.ClusterUuid).
+		Desc("created").
+		Limit(1).
+		Find(&tokens)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "NewToken Find"))
+			errors.Wrapf(err, "find token%v",
+				logs.KVL(
+					"user_kind", tokenv1.TokenUserKindCluster.String(),
+					"user_uuid", auth.ClusterUuid,
+				)))
 	}
 
 	first := func() *tokenv1.Token {
 		for _, it := range tokens {
-			return &it
+			if strings.EqualFold(string(it.Token), auth.Assertion) {
+				return &it
+			}
 		}
 		return nil
 	}
@@ -330,18 +348,19 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 			errors.Wrapf(err, "jwt New payload=%+v", payload))
 	}
 
-	_, err = ctl.Scope(func(db database.Context) (interface{}, error) {
+	_, err = ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
 		//클라이언트를 조회 하여
 		//레코드에 없으면 추가
-		clients, err := vault.NewClient(db).
-			Find("cluster_uuid = ? AND uuid = ?", auth.ClusterUuid, auth.ClientUuid)
+
+		client := clientv1.Client{}
+		clientcnt, err := tx.Where("cluster_uuid = ? AND uuid = ?", auth.ClusterUuid, auth.ClientUuid).Count(&client)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-				errors.Wrapf(err, "NewClient Find"))
+				errors.Wrapf(err, "client count"))
 		}
 
 		//없으면 추가
-		if len(clients) == 0 {
+		if clientcnt == 0 {
 			name := fmt.Sprintf("client:%s", auth.ClientUuid)
 			summary := fmt.Sprintf("client: %s, cluster: %s", auth.ClientUuid, auth.ClusterUuid)
 			client := clientv1.Client{}
@@ -349,15 +368,15 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 			client.LabelMeta = NewLabelMeta(name, newist.String(summary))
 			client.ClusterUuid = auth.ClusterUuid
 
-			if _, err := vault.NewClient(ctl.NewSession()).Create(client); err != nil {
-				return nil, errors.Wrapf(err, "NewClient Create")
+			if _, err := tx.Insert(&client); err != nil {
+				return nil, errors.Wrapf(err, "client insert")
 			}
 		}
 
 		//save session
 		session := newClientSession(*payload, token_string)
-		if _, err := vault.NewSession(db).Create(session); err != nil {
-			return nil, errors.Wrapf(err, "NewSession Create")
+		if _, err := tx.Insert(&session); err != nil {
+			return nil, errors.Wrapf(err, "session insert")
 		}
 
 		return nil, nil

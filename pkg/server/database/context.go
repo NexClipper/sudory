@@ -14,6 +14,9 @@ type Context interface {
 	//coordinator
 	Prepared(preparer prepare.Preparer) Context
 	Where(where string, args ...interface{}) Context
+	Limit(limit int, start ...int) Context
+	Asc(colNames ...string) Context
+	Desc(colNames ...string) Context
 	//operator
 	Create(record interface{}) error
 	Count(records interface{}) (int64, error)
