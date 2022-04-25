@@ -10,8 +10,6 @@ func NewEventPublish() *EventPublish {
 	pub := &EventPublish{}
 	pub.subs = HashsetEventSubscribers{}
 
-	//init invoke functor
-	Invoke = pub.Publish
 	return pub
 }
 

@@ -33,6 +33,8 @@ type Config struct {
 	} `yaml:"cors-config,omitempty"`
 
 	Encryption string `yaml:"encryption" default:"enigma.yml"`
+
+	Events string `yaml:"events" default:"events.yml"`
 }
 
 func New(c *Config, configPath string) (*Config, error) {

@@ -45,27 +45,27 @@ func NewEventConfig(configfile string) (*EventConfig, error) {
 	return cfgevent, nil
 }
 
-// RegistNotifier
-func RegistNotifier(sub EventSubscriber) error {
-	for i := range sub.Config().NotifierConfigs {
-		cfgnotifier := sub.Config().NotifierConfigs[i]
+// // RegistNotifier
+// func RegistNotifier(sub EventSubscriber) error {
+// 	for i := range sub.Config().NotifierConfigs {
+// 		cfgnotifier := sub.Config().NotifierConfigs[i]
 
-		//new notifier
-		notifier, err := NotifierFactory(cfgnotifier)
-		if err != nil {
-			return errors.Wrapf(err, "notifier factory%s",
-				logs.KVL(
-					"config-event", sub.Config(),
-					"config-notifier", cfgnotifier,
-				))
-		}
+// 		//new notifier
+// 		notifier, err := NotifierFactory(cfgnotifier)
+// 		if err != nil {
+// 			return errors.Wrapf(err, "notifier factory%s",
+// 				logs.KVL(
+// 					"config-event", sub.Config(),
+// 					"config-notifier", cfgnotifier,
+// 				))
+// 		}
 
-		//등록
-		notifier.Regist(sub)
-	}
+// 		//등록
+// 		notifier.Regist(sub)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func PrintEventConfiguation(w io.Writer, pub EventPublisher) {
 	lst := []func(){

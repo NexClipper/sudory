@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"hash/crc32"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -19,6 +21,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/status"
 	"github.com/NexClipper/sudory/pkg/server/status/env"
 	"github.com/NexClipper/sudory/pkg/version"
+	"github.com/fsnotify/fsnotify"
 	"github.com/jinzhu/configor"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
@@ -42,6 +45,7 @@ func main() {
 	flag.StringVar(&cfg.Database.DBName, "db-dbname", "", "Database's dbname")
 
 	configPath := flag.String("config", "../../conf/sudory-server.yml", "Path to sudory-server's config file")
+
 	flag.Parse()
 
 	if *versionFlag {
@@ -71,10 +75,15 @@ func main() {
 	defer db.Close()
 
 	//init event
-	eventClose, err := newEvent(*configPath)
+	eventsConfigYaml := cfg.Events
+	if !path.IsAbs(cfg.Events) {
+		eventsConfigYaml = path.Join(path.Dir(*configPath), cfg.Events)
+	}
+	eventClose, err := newEvent(eventsConfigYaml)
 	if err != nil {
 		panic(err)
 	}
+
 	defer eventClose() //이벤트 종료
 
 	//init cron
@@ -89,7 +98,7 @@ func main() {
 	r.Start(cfg.Host.Port)
 }
 
-func newEvent(filename string) (func(), error) {
+func newEvent(filename string) (closer func(), err error) {
 	//에러 핸들러 등록
 	errorHandlers := event.HashsetErrorHandlers{}
 	errorHandlers.Add(func(err error) {
@@ -106,29 +115,142 @@ func newEvent(filename string) (func(), error) {
 		logger.Error(fmt.Errorf("event notify: %w%s", err, stack))
 	})
 
-	cfgevent, err := event.NewEventConfig(filename)
-	if err != nil {
-		return nil, errors.Wrapf(err, "make new event config")
-	}
+	hasing := func(filename string) (uint32, error) {
 
-	pub := event.NewEventPublish()
+		var (
+			buf = make([]byte, 1<<12) //4k
+			h   = crc32.NewIEEE()
+			// h = sha1.New()
+		)
 
-	for i := range cfgevent.EventSubscribeConfigs {
-		cfgsub := cfgevent.EventSubscribeConfigs[i]
+		fd, err := os.Open(filename)
+		if err != nil {
+			return 0, err
+		}
+		defer fd.Close()
 
-		sub := event.NewEventSubscribe(cfgsub, errorHandlers)
-
-		if err := event.RegistNotifier(sub); err != nil {
-			return nil, errors.Wrapf(err, "regist notifier")
+		if _, err := io.CopyBuffer(h, fd, buf); err != nil {
+			return 0, err
 		}
 
-		sub.Regist(pub)
-
+		return h.Sum32(), nil
 	}
-	event.PrintEventConfiguation(os.Stdout, pub)
+
+	var (
+		oldhash uint32
+		oldpub  event.EventPublisher
+	)
+
+	setEvent := func() error {
+		//read config file
+		cfgevent, err := event.NewEventConfig(filename)
+		if err != nil {
+			return errors.Wrapf(err, "make new event config")
+		}
+		//new event publisher
+		newpub := event.NewEventPublish()
+		//regist subscriber
+		for _, cfgsub := range cfgevent.EventSubscribeConfigs {
+			sub := event.NewEventSubscribe(cfgsub, errorHandlers)
+
+			for _, cfgnotifier := range cfgsub.NotifierConfigs {
+
+				//new notifier
+				notifier, err := event.NotifierFactory(cfgnotifier)
+				if err != nil {
+					return errors.Wrapf(err, "notifier factory%s",
+						logs.KVL(
+							"config-event", cfgsub,
+							"config-notifier", cfgnotifier,
+						))
+				}
+
+				notifier.Regist(sub)
+			}
+
+			sub.Regist(newpub)
+		}
+
+		//새로운 publisher invoker 지정
+		event.Invoke = newpub.Publish
+
+		//전에있던 이벤트 Pub 종료
+		//아래 붙어 있는
+		if oldpub != nil {
+			oldpub.Close()
+		}
+		//swap new->old
+		oldpub = newpub
+
+		event.PrintEventConfiguation(os.Stdout, newpub)
+
+		return nil
+	}
+	resetEvent := func() error {
+		//file compare
+		newhash, err := hasing(filename)
+		if err != nil {
+			errorHandlers.OnError(errors.Wrapf(err, "event config file hasing"))
+		}
+		if oldhash == newhash {
+			return nil //same hash
+		}
+		oldhash = newhash //swap hash
+
+		return setEvent()
+	}
+
+	// 첫 등록
+	if err := setEvent(); err != nil {
+		return nil, err
+	}
+	oldhash, _ = hasing(filename)
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		defer watcher.Close()
+
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					<-time.After(time.Second * 1)
+
+					if err := resetEvent(); err != nil {
+						errorHandlers.OnError(errors.Wrapf(err, "event file watcher: file was changed: event set"))
+					}
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+
+				errorHandlers.OnError(errors.Wrapf(err, "event file watcher: error"))
+			}
+		}
+	}()
+
+	if watcher.Add(filename); err != nil {
+		return nil, err
+	}
 
 	//return closer
-	return pub.Close, nil
+	return func() {
+		if watcher != nil {
+			watcher.Close()
+		}
+		if oldpub != nil {
+			oldpub.Close()
+		}
+	}, nil
 }
 
 func newCron(engine *xorm.Engine) (func(), error) {

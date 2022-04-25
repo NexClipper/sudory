@@ -32,80 +32,8 @@ logger:
 
 encryption: enigma.yml
 
+events: events.yml
+
 # cors-config:
 #   allow-origins:  google.com, example.com
 #   allow-methods:  get, put, delete
-
-events:
-# - event:
-#   name: 'client poll'
-#   update-interval: 5s
-#   notifiers:
-#   - notifier:
-#     type: console
-#   - notifier: 
-#     type: 'file'
-#     path: ./log/server.log
-#   - notifier:
-#     type: 'webhook'
-#     method: post
-#     url: 'http://localhost:8000/'
-#     request-headers: 
-#       Content-Type: "application/json" 
-#     timeout: 30s
-#   - notifier:
-#     type: rabbitmq
-#     url: amqp://localhost:5672/
-#     routing-key: 'client poll'
-#     message-content-type: 'application/json'
-- event:
-  name: 'service-poll-in'
-  update-interval: 5s
-  notifiers:
-  - notifier:
-    type: console
-  - notifier:
-    type: 'webhook'
-    method: post
-    url: 'http://localhost:8081/hook'
-    request-headers: 
-      Content-Type: "application/json" 
-    request-timeout: 30s
-  #- notifier:
-  #  type: 'rabbitmq'
-  #  url: 'amqp://sudory:sudory@localhost:5672/sudory'
-  #  exchange: ''
-  #  routing-key: 'event'
-- event:
-  name: 'service-poll-out'
-  update-interval: 5s
-  notifiers:
-  - notifier:
-    type: console
-  # - notifier:
-  #   type: 'webhook'
-  #   method: post
-  #   url: 'http://localhost:8000/'
-  #   request-headers: 
-  #     Content-Type: "application/json" 
-  #   request-timeout: 30s
-- event:
-  name: 'client-auth-accept'
-  update-interval: 5s
-  notifiers:
-  - notifier:
-    type: console
-  #- notifier:
-  #  type: 'rabbitmq'
-  #  url: 'amqp://sudory:sudory@localhost:5672/sudory'
-  #  exchange: ''
-  #  routing-key: 'event'
-  #  mandatory: false
-  #  immediate: false
-  # - notifier:
-  #   type: 'webhook'
-  #   method: post
-  #   url: 'http://localhost:8000/'
-  #   request-headers: 
-  #     Content-Type: "application/json" 
-  #   request-timeout: 30s

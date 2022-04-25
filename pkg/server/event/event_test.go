@@ -62,13 +62,16 @@ func TestNewConfig(t *testing.T) {
 
 	pub := event.NewEventPublish()
 
-	for i := range cfgevent.EventSubscribeConfigs {
-		cfgsub := cfgevent.EventSubscribeConfigs[i]
-
+	for _, cfgsub := range cfgevent.EventSubscribeConfigs {
 		sub := event.NewEventSubscribe(cfgsub, errorHandlers)
 
-		if err := event.RegistNotifier(sub); err != nil {
-			t.Fatal(err)
+		for _, cfgnotifier := range cfgsub.NotifierConfigs {
+			notifier, err := event.NotifierFactory(cfgnotifier)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			notifier.Regist(sub)
 		}
 
 		sub.Regist(pub)
@@ -76,6 +79,8 @@ func TestNewConfig(t *testing.T) {
 		// print(sub)
 	}
 	event.PrintEventConfiguation(os.Stdout, pub)
+
+	event.Invoke = pub.Publish
 
 	for i := 0; i < 10; i++ {
 		for j := 0; j < 10; j++ {
