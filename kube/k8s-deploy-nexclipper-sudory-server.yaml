@@ -28,14 +28,14 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ${APP_IMAGE_NAME}-yaml-configmap
+  name: ${APP_IMAGE_NAME}-rules-configmap
   labels:
     sudory: server
 data:
-  sudory-server.yml: |
+  events.yml: |
     events:
     - event:
-      name: 'lari_metric'
+      name: 'service-poll-in'
       update-interval: 5s
       notifiers:
       - notifier:
@@ -44,40 +44,7 @@ data:
         type: 'rabbitmq'
         url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
         exchange: ''
-        routing-key: 'lari_metric'
-    - event:
-      name: 'lari_metric_received'
-      update-interval: 5s
-      notifiers:
-      - notifier:
-        type: console
-      - notifier:
-        type: 'rabbitmq'
-        url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
-        exchange: ''
-        routing-key: 'lari_metric_received'
-    - event:
-      name: 'lari_resource'
-      update-interval: 5s
-      notifiers:
-      - notifier:
-        type: console
-      - notifier:
-        type: 'rabbitmq'
-        url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
-        exchange: ''
-        routing-key: 'lari_resource'
-    - event:
-      name: 'lari_alert'
-      update-interval: 5s
-      notifiers:
-      - notifier:
-        type: console
-      - notifier:
-        type: 'rabbitmq'
-        url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
-        exchange: ''
-        routing-key: 'lari_alert'
+        routing-key: 'event'
     - event:
       name: 'service-poll-out'
       update-interval: 5s
@@ -88,7 +55,7 @@ data:
         type: 'rabbitmq'
         url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
         exchange: ''
-        routing-key: 'lari_etc'
+        routing-key: 'event'
     - event:
       name: 'client-auth-accept'
       update-interval: 5s
@@ -99,7 +66,61 @@ data:
         type: 'rabbitmq'
         url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
         exchange: ''
-        routing-key: 'lari_etc'
+        routing-key: 'client'   
+    - event:
+      name: 'nc_metric'
+      update-interval: 5s
+      notifiers:
+      - notifier:
+        type: console
+      - notifier:
+        type: 'rabbitmq'
+        url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
+        exchange: ''
+        routing-key: 'nc_metric'
+    - event:
+      name: 'nc_metric_received'
+      update-interval: 5s
+      notifiers:
+      - notifier:
+        type: console
+      - notifier:
+        type: 'rabbitmq'
+        url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
+        exchange: ''
+        routing-key: 'nc_metric_received'
+    - event:
+      name: 'nc_resource'
+      update-interval: 5s
+      notifiers:
+      - notifier:
+        type: console
+      - notifier:
+        type: 'rabbitmq'
+        url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
+        exchange: ''
+        routing-key: 'nc_resource'
+    - event:
+      name: 'nc_alert'
+      update-interval: 5s
+      notifiers:
+      - notifier:
+        type: console
+      - notifier:
+        type: 'rabbitmq'
+        url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
+        exchange: ''
+        routing-key: 'nc_alert'
+  enigma.yml: |
+    enigma:
+      sudory.default.crypto:
+        block-method: none
+        block-size: 0
+        block-key: 
+        cipher-mode: none
+        cipher-salt: null
+        padding: none
+        strconv: plain
 
 ---
 apiVersion: v1
@@ -156,10 +177,10 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 15
           volumeMounts:
-            - mountPath: /app/conf
-              name: server-yaml-config
+            - mountPath: /app/conf/rules
+              name: server-rules-configmap
       volumes:
         - configMap:
             defaultMode: 420
-            name: ${APP_IMAGE_NAME}-yaml-configmap
-          name: server-yaml-config
+            name: ${APP_IMAGE_NAME}-rules-configmap
+          name: server-rules-configmap
