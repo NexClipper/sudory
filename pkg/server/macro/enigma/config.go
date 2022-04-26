@@ -64,6 +64,14 @@ type ConfigStrConv struct {
 }
 
 func PrintConfig(w io.Writer, cfg Config) {
+	nullstring := func(p *string) (s string) {
+		s = fmt.Sprintf("%v", p)
+		if p != nil {
+			s = *p
+		}
+		return
+	}
+
 	fmt.Fprintln(w, "enigma configuration:")
 
 	tabwrite := tabwriter.NewWriter(w, 0, 0, 3, ' ', 0)
@@ -99,7 +107,7 @@ func PrintConfig(w io.Writer, cfg Config) {
 		}
 		row = append(row, cfg.CipherMode)
 		if insecure {
-			row = append(row, fmt.Sprintf("%v", cfg.CipherSalt))
+			row = append(row, nullstring(cfg.CipherSalt))
 		}
 		row = append(row, cfg.Padding)
 		row = append(row, cfg.StrConv)
