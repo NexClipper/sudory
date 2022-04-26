@@ -7,14 +7,20 @@ SUDORY_SERVER_URL=$1
 CLUSTER_NAME="new-node-cluster"
 CLUSTER_DESCRIPTION='TEST-CLUSTER'
 
+echo "Retrieve user_uuid!"
 user_uuid=$(curl --silent -X POST $SUDORY_SERVER_URL/server/cluster \
             -H "Content-Type: application/json"  \
             --data '{ "name": "'$CLUSTER_NAME'", "polling_option": { "additionalProp1": {} }, "summary": "'$CLUSTER_DESCRIPTION'" }' | jq -r '.uuid')
 
+if [[ -z user_uuid ]]
+then
+  echo "error on retrieving user_uuid"
+fi
 
+echo "Retrieve token!"
 token=$(curl --silent -X POST $SUDORY_SERVER_URL/server/token/cluster \
             -H "Content-Type: application/json"  \
-            --data '{ "name": "'$CLUSTER_NAME'", "uuid": "'$uuid'" }' | jq -r '.token')
+            --data '{ "name": "'$CLUSTER_NAME'", "user_uuid": "'$user_uuid'" }' | jq -r '.token')
 
 
 export S_SERVER_URL=$SUDORY_SERVER_URL
