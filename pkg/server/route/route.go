@@ -68,6 +68,8 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		echoErrorHandlerResponse(err, ctx)
 		echoErrorHandlerLogger(err, ctx)
 	}
+	//echo recover
+	e.Use(echoRecover())
 
 	//swago
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
@@ -278,16 +280,29 @@ func echoErrorHandlerResponse(err error, ctx echo.Context) {
 }
 
 func echoErrorHandlerLogger(err error, ctx echo.Context) {
+	nullstring := func(p *string) (s string) {
+		s = fmt.Sprintf("%v", p)
+		if p != nil {
+			s = *p
+		}
+		return
+	}
+
 	code := -1
 	if he, ok := err.(*echo.HTTPError); ok {
 		code = he.Code
 		err = he.Internal
 	}
 
-	var stack string = "none"
+	var stack *string
+	//stack for surface
+	logs.StackIter(err, func(s string) {
+		stack = &s
+	})
+	//stack for internal
 	logs.CauseIter(err, func(err error) {
 		logs.StackIter(err, func(s string) {
-			stack = s
+			stack = &s
 		})
 	})
 
@@ -299,7 +314,7 @@ func echoErrorHandlerLogger(err error, ctx echo.Context) {
 		"id", id,
 		"code", code,
 		"reqbody", reqbody,
-		"stack", stack,
+		"stack", nullstring(stack),
 	)))
 }
 
@@ -314,4 +329,34 @@ func echoLogger(w io.Writer) echo.MiddlewareFunc {
 	logconfig.Format = format
 
 	return middleware.LoggerWithConfig(logconfig)
+}
+
+func echoRecover(skipper ...middleware.Skipper) func(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			for _, skipper := range skipper {
+				if skipper(c) {
+					return next(c)
+				}
+			}
+
+			defer func() {
+				if r := recover(); r != nil {
+					if r == http.ErrAbortHandler {
+						panic(r)
+					}
+
+					err, ok := r.(error)
+					if !ok {
+						err = fmt.Errorf("%v", r)
+					}
+
+					err = errors.Wrapf(err, "echo recovered")
+
+					c.Error(err)
+				}
+			}()
+			return next(c)
+		}
+	}
 }
