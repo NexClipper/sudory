@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -66,22 +68,36 @@ func fnCipher(f string) {
 		return nil
 	}(yml))
 
-	var input []byte = []byte(flag.Arg(1))
-	if flag.Arg(1) == "" {
-		input = right(ioutil.ReadAll(os.Stdin)).([]byte)
-	}
+	do := func(input []byte) {
+		var output []byte
+		switch strings.ToLower(flag.Arg(0)) {
+		case "encode":
+			output = right(right(enigma.NewMachine(cfg.ToOption())).(*enigma.Machine).Encode(input)).([]byte)
+		case "decode":
+			output = right(right(enigma.NewMachine(cfg.ToOption())).(*enigma.Machine).Decode(input)).([]byte)
+		default:
+			fmt.Fprintln(os.Stderr, "invalid function")
+			return
+		}
 
-	var output []byte
-	switch strings.ToLower(flag.Arg(0)) {
-	case "encode":
-		output = right(right(enigma.NewMachine(cfg.ToOption())).(*enigma.Machine).Encode(input)).([]byte)
-	case "decode":
-		output = right(right(enigma.NewMachine(cfg.ToOption())).(*enigma.Machine).Decode(input)).([]byte)
-	default:
-		fmt.Fprintln(os.Stderr, "invalid function")
+		fmt.Fprintln(os.Stdout, string(output))
 	}
+	if 0 < len(flag.Arg(1)) {
+		do([]byte(flag.Arg(1)))
+	} else {
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			line, err := reader.ReadString('\n')
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				panicking(err)
+			}
 
-	fmt.Fprintln(os.Stdout, string(output))
+			do([]byte(line))
+		}
+	}
 }
 
 func fnConfig(args []string) {
