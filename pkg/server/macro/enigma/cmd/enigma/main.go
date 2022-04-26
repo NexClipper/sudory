@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -18,7 +20,7 @@ const default_config_filename = "enigma.yml"
 
 func main() {
 	flag.Usage = flagUsageBuilder(func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "%s [encode|decode|yaml]\n", procName())
+		fmt.Fprintf(flag.CommandLine.Output(), "%s [encode|decode|config]\n", procName())
 	})
 
 	if len(os.Args) == 1 {
@@ -35,7 +37,7 @@ func main() {
 			fnCipher(strings.ToLower(arg))
 			return
 		case "config":
-			fnYaml(os.Args[i:])
+			fnConfig(os.Args[i:])
 			return
 		}
 	}
@@ -45,25 +47,17 @@ func main() {
 }
 
 func fnCipher(f string) {
-	cfg := enigma.ConfigCryptoAlgorithm{}
-	//load config
-	panicking(func(s string) error {
-		if exists(s) {
-			return configor.Load(&cfg, s)
-		}
-		return nil
-	}(default_config_filename))
-
-	flagEnigmaConfig(&cfg)
+	flag.Usage = flagUsageBuilder(func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "%s [options] %s [string|stdin]\n", procName(), f)
+	})
 
 	var (
 		yml string
+		cfg enigma.ConfigCryptoAlgorithm
 	)
-	flag.StringVar(&yml, "yaml", "", "*.yml")
+	flag.StringVar(&yml, "yaml", default_config_filename, "*.yml")
+	flagEnigmaConfig(&cfg)
 
-	flag.Usage = flagUsageBuilder(func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "%s %s [string|stdin]\n", procName(), f)
-	})
 	flag.Parse()
 
 	//load config; custom config file name\
@@ -74,25 +68,39 @@ func fnCipher(f string) {
 		return nil
 	}(yml))
 
-	var input []byte = []byte(flag.Arg(1))
-	if flag.Arg(1) == "" {
-		input = right(ioutil.ReadAll(os.Stdin)).([]byte)
-	}
+	do := func(input []byte) {
+		var output []byte
+		switch strings.ToLower(flag.Arg(0)) {
+		case "encode":
+			output = right(right(enigma.NewMachine(cfg.ToOption())).(*enigma.Machine).Encode(input)).([]byte)
+		case "decode":
+			output = right(right(enigma.NewMachine(cfg.ToOption())).(*enigma.Machine).Decode(input)).([]byte)
+		default:
+			fmt.Fprintln(os.Stderr, "invalid function")
+			return
+		}
 
-	var output []byte
-	switch strings.ToLower(flag.Arg(0)) {
-	case "encode":
-		output = right(right(enigma.NewMachine(cfg.ToOption())).(*enigma.Machine).Encode(input)).([]byte)
-	case "decode":
-		output = right(right(enigma.NewMachine(cfg.ToOption())).(*enigma.Machine).Decode(input)).([]byte)
-	default:
-		fmt.Fprintln(os.Stderr, "invalid function")
+		fmt.Fprintln(os.Stdout, string(output))
 	}
+	if 0 < len(flag.Arg(1)) {
+		do([]byte(flag.Arg(1)))
+	} else {
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			line, err := reader.ReadString('\n')
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				panicking(err)
+			}
 
-	fmt.Fprintln(os.Stdout, string(output))
+			do([]byte(line))
+		}
+	}
 }
 
-func fnYaml(args []string) {
+func fnConfig(args []string) {
 	for _, arg := range args {
 		switch strings.ToLower(arg) {
 		case "write":
@@ -108,13 +116,16 @@ func fnYaml(args []string) {
 }
 
 func fnYamlFileRead() {
-
-	var cfg enigma.ConfigCryptoAlgorithm
-	flagEnigmaConfig(&cfg)
+	flag.Usage = flagUsageBuilder(func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "%s [options] config read\n", procName())
+	})
 
 	var (
+		cfg enigma.ConfigCryptoAlgorithm
 		yml string
 	)
+
+	flagEnigmaConfig(&cfg)
 	flag.StringVar(&yml, "yaml", default_config_filename, "*.yml")
 
 	flag.Parse()
@@ -133,13 +144,16 @@ func fnYamlFileRead() {
 	}
 }
 func fnYamlFileWrite() {
-
-	var cfg enigma.ConfigCryptoAlgorithm
-	flagEnigmaConfig(&cfg)
+	flag.Usage = flagUsageBuilder(func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "%s [options] config write\n", procName())
+	})
 
 	var (
+		cfg enigma.ConfigCryptoAlgorithm
 		yml string
 	)
+
+	flagEnigmaConfig(&cfg)
 	flag.StringVar(&yml, "yaml", default_config_filename, "*.yml")
 
 	flag.Parse()
