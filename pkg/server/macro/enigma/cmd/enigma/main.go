@@ -18,7 +18,7 @@ const default_config_filename = "enigma.yml"
 
 func main() {
 	flag.Usage = flagUsageBuilder(func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "%s [encode|decode|yaml]\n", procName())
+		fmt.Fprintf(flag.CommandLine.Output(), "%s [encode|decode|config]\n", procName())
 	})
 
 	if len(os.Args) == 1 {
@@ -35,7 +35,7 @@ func main() {
 			fnCipher(strings.ToLower(arg))
 			return
 		case "config":
-			fnYaml(os.Args[i:])
+			fnConfig(os.Args[i:])
 			return
 		}
 	}
@@ -45,25 +45,17 @@ func main() {
 }
 
 func fnCipher(f string) {
-	cfg := enigma.ConfigCryptoAlgorithm{}
-	//load config
-	panicking(func(s string) error {
-		if exists(s) {
-			return configor.Load(&cfg, s)
-		}
-		return nil
-	}(default_config_filename))
-
-	flagEnigmaConfig(&cfg)
+	flag.Usage = flagUsageBuilder(func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "%s [options] %s [string|stdin]\n", procName(), f)
+	})
 
 	var (
 		yml string
+		cfg enigma.ConfigCryptoAlgorithm
 	)
-	flag.StringVar(&yml, "yaml", "", "*.yml")
+	flag.StringVar(&yml, "yaml", default_config_filename, "*.yml")
+	flagEnigmaConfig(&cfg)
 
-	flag.Usage = flagUsageBuilder(func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "%s %s [string|stdin]\n", procName(), f)
-	})
 	flag.Parse()
 
 	//load config; custom config file name\
@@ -92,7 +84,7 @@ func fnCipher(f string) {
 	fmt.Fprintln(os.Stdout, string(output))
 }
 
-func fnYaml(args []string) {
+func fnConfig(args []string) {
 	for _, arg := range args {
 		switch strings.ToLower(arg) {
 		case "write":
@@ -108,13 +100,16 @@ func fnYaml(args []string) {
 }
 
 func fnYamlFileRead() {
-
-	var cfg enigma.ConfigCryptoAlgorithm
-	flagEnigmaConfig(&cfg)
+	flag.Usage = flagUsageBuilder(func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "%s [options] config read\n", procName())
+	})
 
 	var (
+		cfg enigma.ConfigCryptoAlgorithm
 		yml string
 	)
+
+	flagEnigmaConfig(&cfg)
 	flag.StringVar(&yml, "yaml", default_config_filename, "*.yml")
 
 	flag.Parse()
@@ -133,13 +128,16 @@ func fnYamlFileRead() {
 	}
 }
 func fnYamlFileWrite() {
-
-	var cfg enigma.ConfigCryptoAlgorithm
-	flagEnigmaConfig(&cfg)
+	flag.Usage = flagUsageBuilder(func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "%s [options] config write\n", procName())
+	})
 
 	var (
+		cfg enigma.ConfigCryptoAlgorithm
 		yml string
 	)
+
+	flagEnigmaConfig(&cfg)
 	flag.StringVar(&yml, "yaml", default_config_filename, "*.yml")
 
 	flag.Parse()
