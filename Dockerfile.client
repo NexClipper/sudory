@@ -10,4 +10,6 @@ ENV S_SERVER_URL ""
 ENV S_CLUSTER_ID ""
 ENV S_TOKEN ""
 
+RUN dbus-uuidgen --ensure=/etc/machine-id
+
 ENTRYPOINT ["sh", "/entrypoint.sh"]
