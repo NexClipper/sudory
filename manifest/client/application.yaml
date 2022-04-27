@@ -13,6 +13,7 @@ spec:
       labels:
         sudory: client
     spec:
+      serviceAccountName: sudory-controller
       containers:
         - name: sudory-client
           image: p8s.me/nexclipper/sudory-client:0.1.5
