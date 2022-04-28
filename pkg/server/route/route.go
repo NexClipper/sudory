@@ -133,10 +133,6 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 			})
 		}
 
-		//route /server/client*
-		group.GET("/client", controller.FindClient)
-		group.GET("/client/:uuid", controller.GetClient)
-		group.DELETE("/client/:uuid", controller.DeleteClient)
 		//route /server/cluster*
 		group.GET("/cluster", controller.FindCluster)
 		group.GET("/cluster/:uuid", controller.GetCluster)

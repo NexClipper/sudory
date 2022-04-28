@@ -1,6 +1,7 @@
 package control
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
@@ -35,7 +36,7 @@ func (ctl Control) CreateCluster(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", TypeName(body.Name),
+					ParamLog(fmt.Sprintf("%s.Name", TypeName(body)), body.Name)...,
 				)))
 	}
 
@@ -97,9 +98,9 @@ func (ctl Control) FindCluster(ctx echo.Context) error {
 func (ctl Control) GetCluster(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 
@@ -136,9 +137,9 @@ func (ctl Control) UpdateCluster(ctx echo.Context) error {
 
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 
@@ -188,9 +189,9 @@ func (ctl Control) UpdateClusterPollingRaguler(ctx echo.Context) error {
 
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 
@@ -238,9 +239,9 @@ func (ctl Control) UpdateClusterPollingSmart(ctx echo.Context) error {
 
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 
@@ -279,9 +280,9 @@ func (ctl Control) UpdateClusterPollingSmart(ctx echo.Context) error {
 func (ctl Control) DeleteCluster(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 

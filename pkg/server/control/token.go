@@ -1,6 +1,7 @@
 package control
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -41,7 +42,7 @@ func (ctl Control) CreateClusterToken(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", TypeName(body.Name),
+					ParamLog(fmt.Sprintf("%s.Name", TypeName(body)), body.Name)...,
 				)))
 	}
 
@@ -49,7 +50,7 @@ func (ctl Control) CreateClusterToken(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", TypeName(body.UserUuid),
+					ParamLog(fmt.Sprintf("%s.UserUuid", TypeName(body)), body.UserUuid)...,
 				)))
 	}
 
@@ -121,9 +122,9 @@ func (ctl Control) FindToken(ctx echo.Context) error {
 func (ctl Control) GetToken(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 
@@ -160,9 +161,9 @@ func (ctl Control) UpdateTokenLabel(ctx echo.Context) error {
 
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 
@@ -202,9 +203,9 @@ func (ctl Control) UpdateTokenLabel(ctx echo.Context) error {
 func (ctl Control) RefreshClusterTokenTime(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 
@@ -243,9 +244,9 @@ func (ctl Control) RefreshClusterTokenTime(ctx echo.Context) error {
 func (ctl Control) ExpireClusterToken(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 
@@ -284,9 +285,9 @@ func (ctl Control) ExpireClusterToken(ctx echo.Context) error {
 func (ctl Control) DeleteToken(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 

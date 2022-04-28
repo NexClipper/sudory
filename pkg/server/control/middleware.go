@@ -284,6 +284,10 @@ func TypeName(i interface{}) string {
 	return t.String()
 }
 
+func ParamLog(s string, i interface{}) []interface{} {
+	return []interface{}{"name", s, "type", TypeName(i), "value", i}
+}
+
 // func Param(echo_ echo.Context) map[string]string {
 // 	m := map[string]string{}
 // 	for _, name := range echo_.ParamNames() {

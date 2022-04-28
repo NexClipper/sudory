@@ -1,7 +1,4 @@
-// go-enum 을 사용해서 열거형 데이터를 만들자
-// - go-enum 설치 go-enum.install.sh 파일 실행
-// - go generate 실행
-//go:generate go-enum --file=encryption_method.go --names --nocase
+//go:generate go run github.com/abice/go-enum --file=encryption_method.go --names --nocase
 package enigma
 
 import (
@@ -13,10 +10,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-/* ENUM (
-	NONE
-	AES
-	DES
+/* ENUM(
+NONE
+AES
+DES
 )
 */
 type EncryptionMethod int

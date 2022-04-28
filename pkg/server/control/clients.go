@@ -2,7 +2,6 @@ package control
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -21,7 +20,6 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	authv1 "github.com/NexClipper/sudory/pkg/server/model/auth/v1"
-	clientv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
@@ -88,7 +86,7 @@ func (ctl Control) PollService(ctx echo.Context) error {
 	mapper_response_assign_client_info := func(service servicev1.Service) servicev1.Service {
 		//할당된 클라이언트 정보 추가
 		payload, _ := clientTokenPayload_once()
-		service.AssignedClientUuid = payload.ClientUuid
+		service.AssignedClientUuid = payload.Uuid
 
 		return service
 	}
@@ -321,7 +319,6 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 		IssuedAt:     iat.Unix(),
 		Uuid:         token_uuid,
 		ClusterUuid:  auth.ClusterUuid,
-		ClientUuid:   auth.ClientUuid,
 		PollInterval: env.ClientConfigPollInterval(),
 		Loglevel:     env.ClientConfigLoglevel(),
 	}
@@ -348,33 +345,10 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 			errors.Wrapf(err, "jwt New payload=%+v", payload))
 	}
 
+	session := newClientSession(*payload, token_string)
+
 	_, err = ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
-		//클라이언트를 조회 하여
-		//레코드에 없으면 추가
-
-		client := clientv1.Client{}
-		clientcnt, err := tx.Where("cluster_uuid = ? AND uuid = ?", auth.ClusterUuid, auth.ClientUuid).Count(&client)
-		if err != nil {
-			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-				errors.Wrapf(err, "client count"))
-		}
-
-		//없으면 추가
-		if clientcnt == 0 {
-			name := fmt.Sprintf("client:%s", auth.ClientUuid)
-			summary := fmt.Sprintf("client: %s, cluster: %s", auth.ClientUuid, auth.ClusterUuid)
-			client := clientv1.Client{}
-			client.Uuid = auth.ClientUuid
-			client.LabelMeta = NewLabelMeta(name, newist.String(summary))
-			client.ClusterUuid = auth.ClusterUuid
-
-			if _, err := tx.Insert(&client); err != nil {
-				return nil, errors.Wrapf(err, "client insert")
-			}
-		}
-
 		//save session
-		session := newClientSession(*payload, token_string)
 		if _, err := tx.Insert(&session); err != nil {
 			return nil, errors.Wrapf(err, "session insert")
 		}
@@ -391,8 +365,8 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 	//invoke event (client-auth-accept)
 	m := map[string]interface{}{
 		"event_name":   "client-auth-accept",
-		"cluster_uuid": auth.ClusterUuid,
-		"client_uuid":  auth.ClientUuid,
+		"cluster_uuid": payload.ClusterUuid,
+		"session_uuid": payload.Uuid,
 	}
 	event.Invoke("client-auth-accept", m)
 
@@ -402,8 +376,8 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 func newClientSession(payload sessionv1.ClientSessionPayload, token string) sessionv1.Session {
 	session := sessionv1.Session{}
 	session.Uuid = payload.Uuid
-	session.UserUuid = payload.ClientUuid
-	session.UserKind = "client"
+	session.UserKind = "cluster"
+	session.UserUuid = payload.ClusterUuid
 	session.Token = token
 	session.IssuedAtTime = time.Unix(payload.IssuedAt, 0)
 	session.ExpirationTime = time.Unix(payload.ExpiresAt, 0)

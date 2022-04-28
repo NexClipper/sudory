@@ -22,9 +22,9 @@ import (
 func (ctl Control) FindServiceStep(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__SERVICE_UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __SERVICE_UUID__,
+					ParamLog(__SERVICE_UUID__, echoutil.Param(ctx)[__SERVICE_UUID__])...,
 				)))
 	}
 
@@ -53,17 +53,17 @@ func (ctl Control) FindServiceStep(ctx echo.Context) error {
 func (ctl Control) GetServiceStep(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__SERVICE_UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __SERVICE_UUID__,
+					ParamLog(__SERVICE_UUID__, echoutil.Param(ctx)[__SERVICE_UUID__])...,
 				)))
 	}
 
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sudory-client
-  namespace: sudory
+  namespace: sudoryclient
 spec:
   selector:
     matchLabels:
@@ -16,7 +16,7 @@ spec:
       serviceAccountName: sudory-controller
       containers:
         - name: sudory-client
-          image: p8s.me/nexclipper/sudory-client:0.1.5
+          image: repo.nexclipper.io/nexclipper/sudory-client:0.2.1
           env:
             - name: S_SERVER_URL
               valueFrom:

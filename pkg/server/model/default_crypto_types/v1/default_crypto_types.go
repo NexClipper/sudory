@@ -7,17 +7,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-const sudory_default_crypto = "sudory.default.crypto"
+const DefaultCryptoName = "sudory.default.crypto"
 
 func EnigmaEncode(bytes []byte) (out []byte, err error) {
-	if out, err = enigma.GetMachine(sudory_default_crypto).Encode(bytes); err != nil {
+	if out, err = enigma.GetMachine(DefaultCryptoName).Encode(bytes); err != nil {
 		return nil, errors.Wrapf(err, "enigma encode")
 	}
 	return
 }
 
 func EnigmaDecode(bytes []byte) (out []byte, err error) {
-	if out, err = enigma.GetMachine(sudory_default_crypto).Decode(bytes); err != nil {
+	if out, err = enigma.GetMachine(DefaultCryptoName).Decode(bytes); err != nil {
 		return out, errors.Wrapf(err, "enigma decode")
 	}
 	return

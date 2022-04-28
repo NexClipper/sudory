@@ -117,126 +117,6 @@ var doc = `{
                 }
             }
         },
-        "/server/client": {
-            "get": {
-                "description": "Find client",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/client"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "query  pkg/server/database/prepared/README.md",
-                        "name": "q",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "order  pkg/server/database/prepared/README.md",
-                        "name": "o",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "paging pkg/server/database/prepared/README.md",
-                        "name": "p",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.Client"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/server/client/{uuid}": {
-            "get": {
-                "description": "Get a client",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/client"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Client 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.Client"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a client",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/client"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Client 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
         "/server/cluster": {
             "get": {
                 "description": "Find cluster",
@@ -1795,35 +1675,6 @@ var doc = `{
         }
     },
     "definitions": {
-        "v1.Client": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
         "v1.Cluster": {
             "type": "object",
             "properties": {
@@ -1892,10 +1743,6 @@ var doc = `{
             "properties": {
                 "assertion": {
                     "description": "\u003cbearer-token\u003e",
-                    "type": "string"
-                },
-                "client_uuid": {
-                    "description": "client uuid",
                     "type": "string"
                 },
                 "client_version": {
