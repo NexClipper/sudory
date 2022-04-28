@@ -3,6 +3,7 @@ package control
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"time"
@@ -47,23 +48,23 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 	}
 	if len(body.Name) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", TypeName(body.Name),
+					ParamLog(fmt.Sprintf("%s.Name", TypeName(body)), body.Name)...,
 				)))
 	}
 	if len(body.TemplateUuid) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", TypeName(body.TemplateUuid),
+					ParamLog(fmt.Sprintf("%s.TemplateUuid", TypeName(body)), body.TemplateUuid)...,
 				)))
 	}
 	if len(body.ClusterUuid) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", TypeName(body.ClusterUuid),
+					ParamLog(fmt.Sprintf("%s.ClusterUuid", TypeName(body)), body.ClusterUuid)...,
 				)))
 	}
 	//valid cluster
@@ -93,7 +94,7 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 				errors.Wrapf(ErrorBindRequestObject(), "valid%s",
 					logs.KVL(
-						"param", TypeName(body.Steps[i].Args),
+						ParamLog(fmt.Sprintf("%s.Args", TypeName(body.Steps[i])), body.Steps[i].Args)...,
 					)))
 		}
 		//JSON SCHEMA 유효 검사
@@ -257,9 +258,9 @@ func (ctl Control) FindService(ctx echo.Context) error {
 func (ctl Control) GetService(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 
@@ -306,9 +307,9 @@ func (ctl Control) GetService(ctx echo.Context) error {
 func (ctl Control) GetServiceResult(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 
@@ -344,9 +345,9 @@ func (ctl Control) GetServiceResult(ctx echo.Context) error {
 func (ctl Control) DeleteService(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 

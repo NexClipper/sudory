@@ -1,6 +1,7 @@
 package control
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 
@@ -88,23 +89,23 @@ func (ctl Control) CreateTemplateCommand(ctx echo.Context) error {
 	}
 	if len(body.Name) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", TypeName(body.Name),
+					ParamLog(fmt.Sprintf("%s.Name", TypeName(body)), body.Name)...,
 				)))
 	}
 	if len(body.Method) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", TypeName(body.Method),
+					ParamLog(fmt.Sprintf("%s.Method", TypeName(body)), body.Method)...,
 				)))
 	}
 	if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __TEMPLATE_UUID__,
+					ParamLog(__TEMPLATE_UUID__, echoutil.Param(ctx)[__TEMPLATE_UUID__])...,
 				)))
 	}
 
@@ -168,9 +169,9 @@ func (ctl Control) CreateTemplateCommand(ctx echo.Context) error {
 func (ctl Control) FindTemplateCommand(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __TEMPLATE_UUID__,
+					ParamLog(__TEMPLATE_UUID__, echoutil.Param(ctx)[__TEMPLATE_UUID__])...,
 				)))
 	}
 
@@ -203,16 +204,16 @@ func (ctl Control) FindTemplateCommand(ctx echo.Context) error {
 func (ctl Control) GetTemplateCommand(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __TEMPLATE_UUID__,
+					ParamLog(__TEMPLATE_UUID__, echoutil.Param(ctx)[__TEMPLATE_UUID__])...,
 				)))
 	}
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 
@@ -313,16 +314,16 @@ func (ctl Control) UpdateTemplateCommand(ctx echo.Context) error {
 
 	if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __TEMPLATE_UUID__,
+					ParamLog(__TEMPLATE_UUID__, echoutil.Param(ctx)[__TEMPLATE_UUID__])...,
 				)))
 	}
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 
@@ -401,16 +402,16 @@ func (ctl Control) DeleteTemplateCommand(ctx echo.Context) error {
 
 	if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __TEMPLATE_UUID__,
+					ParamLog(__TEMPLATE_UUID__, echoutil.Param(ctx)[__TEMPLATE_UUID__])...,
 				)))
 	}
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid%s",
+			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					"param", __UUID__,
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
 	}
 
