@@ -12,7 +12,6 @@ import (
 func (f *Fetcher) HandShake() error {
 	body := &authv1.HttpReqAuth{AuthProperty: authv1.AuthProperty{
 		ClusterUuid:   f.clusterId,
-		ClientUuid:    f.machineID,
 		Assertion:     f.bearerToken,
 		ClientVersion: version.Version,
 	}}
