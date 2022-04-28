@@ -25,6 +25,7 @@ metadata:
   labels:
     sudory: client
 spec:
+  serviceAccountName: sudory-controller
   selector:
     matchLabels:
       sudory: client
