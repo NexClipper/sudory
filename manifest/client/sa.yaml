@@ -8,11 +8,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: sudory-controller
-<<<<<<< HEAD
   namespace: sudoryclient 
-=======
-  # namespace: sudory
->>>>>>> a5eab9dd0f2a6c50b36072b9fc62d88395afaa05
 rules:
 - apiGroups:
   - ""
@@ -54,12 +50,8 @@ rules:
   verbs:
   - get
   - list
-- apiGroups:
-  - "monitoring.coreos.com"
-  resources:
-  - prometheuses
-  - prometheusrules
-  - servicemonitors
+- apiGroups: ["*"]
+  resources: ["*"]
   verbs:
   - get
   - list
