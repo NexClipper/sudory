@@ -21,7 +21,6 @@ type LoggerConfig struct {
 		SystemEvent     bool   `env:"SUDORY_LOG_SYSTEM_EVENT"      yaml:"system-event,omitempty"`
 		SystemEventName string `env:"SUDORY_LOG_SYSTEM_EVENT_NAME" yaml:"system-event-name,omitempty"`
 		Verbose         bool   `env:"SUDORY_LOG_VERBOSE"           yaml:"verbose,omitempty"`
-		VerboseLevel    int    `env:"SUDORY_LOG_VERBOSELEVEL"      yaml:"verbose-level,omitempty"`
 		Filename        string `env:"SUDORY_LOG_FILENAME"          yaml:"filename,omitempty"`
 		MaxSize         int    `env:"SUDORY_LOG_MAXSIZE"           yaml:"max-size,omitempty"`
 		MaxAge          int    `env:"SUDORY_LOG_MAXAGE"            yaml:"max-age,omitempty"`
@@ -56,7 +55,6 @@ func init() {
 	flag.BoolVar(&cfg.Logger.SystemEvent, "log-system-event", false, "enabled system event")
 	flag.StringVar(&cfg.Logger.SystemEventName, "log-system-eventname", "nexclipper.io/sudory", "system event name")
 	flag.BoolVar(&cfg.Logger.Verbose, "log-verbose", false, "enabled verbose")
-	flag.IntVar(&cfg.Logger.VerboseLevel, "log-verbose-level", 9, "verbose level higher more detail max=9")
 
 	//file rotator (for lumberjack)
 	flag.StringVar(&cfg.Logger.Filename, "log-filename", "sudory.log", "log file name")
@@ -90,12 +88,20 @@ func init() {
 
 		logger.SetLevel(logger.Level(severity(cfg.Logger.Severity)))
 
-		// logs.SetVerbose(cfg.Logger.VerboseLevel)
-
 		//first log
-		logger.Debugln(logs.WithName("init logger").WithValue(
-			"log-severity", cfg.Logger.Severity, "log-system-event", cfg.Logger.SystemEvent, "log-system-eventname", cfg.Logger.SystemEventName, "log-verbose", cfg.Logger.Verbose,
-			"log-filename", cfg.Logger.Filename, "log-max-size", cfg.Logger.MaxSize, "log-max-age", cfg.Logger.MaxAge, "log-max-backups", cfg.Logger.MaxBackups, "log-compress", cfg.Logger.Compress).String())
+		logger.Debugf("init logger%v",
+			logs.KVL(
+				"log-severity", cfg.Logger.Severity,
+				"log-system-event", cfg.Logger.SystemEvent,
+				"log-system-eventname", cfg.Logger.SystemEventName,
+				"log-verbose", cfg.Logger.Verbose,
+				"log-filename", cfg.Logger.Filename,
+				"log-max-size", cfg.Logger.MaxSize,
+				"log-max-age", cfg.Logger.MaxAge,
+				"log-max-backups", cfg.Logger.MaxBackups,
+				"log-compress", cfg.Logger.Compress,
+			))
+
 	}
 }
 

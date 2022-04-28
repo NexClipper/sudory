@@ -1,23 +1,4 @@
 definitions:
-  v1.Client:
-    properties:
-      cluster_uuid:
-        type: string
-      created:
-        type: string
-      deleted:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      summary:
-        type: string
-      updated:
-        type: string
-      uuid:
-        type: string
-    type: object
   v1.Cluster:
     properties:
       created:
@@ -64,9 +45,6 @@ definitions:
     properties:
       assertion:
         description: <bearer-token>
-        type: string
-      client_uuid:
-        description: client uuid
         type: string
       client_version:
         description: client version
@@ -576,84 +554,6 @@ paths:
             type: array
       tags:
       - client/service
-  /server/client:
-    get:
-      consumes:
-      - application/json
-      description: Find client
-      parameters:
-      - description: client session token
-        in: header
-        name: x_auth_token
-        type: string
-      - description: query  pkg/server/database/prepared/README.md
-        in: query
-        name: q
-        type: string
-      - description: order  pkg/server/database/prepared/README.md
-        in: query
-        name: o
-        type: string
-      - description: paging pkg/server/database/prepared/README.md
-        in: query
-        name: p
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/v1.Client'
-            type: array
-      tags:
-      - server/client
-  /server/client/{uuid}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a client
-      parameters:
-      - description: client session token
-        in: header
-        name: x_auth_token
-        type: string
-      - description: Client 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      tags:
-      - server/client
-    get:
-      consumes:
-      - application/json
-      description: Get a client
-      parameters:
-      - description: client session token
-        in: header
-        name: x_auth_token
-        type: string
-      - description: Client 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.Client'
-      tags:
-      - server/client
   /server/cluster:
     get:
       consumes:

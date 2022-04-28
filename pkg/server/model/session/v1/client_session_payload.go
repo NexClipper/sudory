@@ -12,7 +12,6 @@ type ClientSessionPayload struct {
 	IssuedAt     int64  `json:"iat,omitempty"`           //issued_at_time
 	Uuid         string `json:"uuid,omitempty"`          //token_uuid
 	ClusterUuid  string `json:"cluster-uuid,omitempty"`  //cluster_uuid
-	ClientUuid   string `json:"client-uuid,omitempty"`   //client_uuid
 	PollInterval int    `json:"poll-interval,omitempty"` //config_poll_interval
 	Loglevel     string `json:"log-level,omitempty"`     //config_log_level
 }
