@@ -1,4 +1,4 @@
-//go:generate go-enum --file=token.go --names --nocase=true
+//go:generate go run github.com/abice/go-enum --file=token.go --names --nocase=true
 package v1
 
 import (
@@ -8,8 +8,8 @@ import (
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 )
 
-/* ENUM (
-	cluster
+/* ENUM(
+cluster
 )
 */
 type TokenUserKind int32
