@@ -13,7 +13,7 @@ sudoRy maintains standard templates to use Kubernetes & Prometheus APIs and user
 
 The list below is the template list sudoRy is supporting as of today and "create", "delete", "apply" will be added soon. 
 
-```
+```console
 kubernetes_pods_get
 kubernetes_pods_list
 kubernetes_namespaces_get
@@ -76,7 +76,7 @@ Use manifest files in this github to install Server & Client.
 
 You need to have MariaDB 10.0 and above to install sudoRy server. Recommand using bitnami Mariadb helm chart to install Mariadb in your Kubernetes cluster. Once you install Mariadb and get host/port/root/user informatin to configre in "environment.yaml". 
 
-```
+```console
 data:
   db_host: "192.168.8.71"
   db_port: "3306"
@@ -87,7 +87,7 @@ data:
 ```
 
 Also use BASE64 to encrypt your password and populate in the Secret in the "environment.yaml" file. Also, configure "x_auth_token" value to use the token in the header of API request. 
-```
+```console
 apiVersion: v1
 kind: Secret
 metadata:
@@ -103,13 +103,13 @@ data:
 Run the following commands to install the server. 
 
 
-```
+```console
 kubectl apply -f application.yaml
 kubectl apply -f environment.yaml
 ```
 
 Check your installed sudoRy server in sudory namespace. 
-```
+```console
 kubectl get pods -n sudory
 kubectl get service -n sudory
 kubectl get deployment -n sudory
@@ -119,11 +119,11 @@ kubectl get deployment -n sudory
 
 To install sudoRy client, you need to get cluster uuid and bear's token from sudoRy server. 
 
-```
+```console
 POST http://<sudory_server_url/server/cluster
 ```
 with the follwoing body - 
-```
+```console
 {
   "name": "cluster name",
   "polling_option": {
@@ -135,7 +135,7 @@ with the follwoing body -
 
 Then, you will get uuid of your cluster. Here is the sample body of response - 
 
-```
+```console
     "id": 3,
     "uuid": "8a331d8d913d47e39946b32dc70e77f7",
     "name": "cluster name",
@@ -146,12 +146,12 @@ Then, you will get uuid of your cluster. Here is the sample body of response -
 
 Next step is to get a bearer' token with the following APIs. 
 
-```
+```console
 POST http://<sudory_server_url/server/token/cluster
 ```
 with the following request body - 
 
-```
+```console
 {
   "name": "cluster name",
   "user_uuid": "8a331d8d913d47e39946b32dc70e77f7"
@@ -159,7 +159,7 @@ with the following request body -
 ```
 Here is the sample response from the api. 
 
-```
+```c
 {
     "id": 2,
     "uuid": "2e11ec0976354bfdb593af4fa6120db4",
@@ -175,7 +175,7 @@ Here is the sample response from the api.
 Sudory client can be installed at the Kubernetes cluster that you want to manage. 
 Configure these in environment.yaml for uuid and token for client. You can limit sudoRy's roles by configuring cluster role in sa.yaml. With the following configuration, sudoRy will perform only for namespace and pods. You can configure "*" for all the resources for Sudory to access & execute the commands. 
 
-```
+```c
 rules:
 - apiGroups: ["*"]
   resources: ["namespaces", "pods"]
@@ -184,7 +184,7 @@ rules:
 
 Run these commands to install sudoRy client once the configuration is done.
 
-```
+```console
 kubectl apply -f environment.yaml
 kubectl apply -f application.yaml
 kubectl apply -f sa.yaml
@@ -195,17 +195,17 @@ kubectl apply -f sa.yaml
 ## Make Example
 
 source build
-```
+```console
 $ make go-build target=server
 ```
 
 docker login
-```
+```console
 $ make docker-login register=p8s.me user=blah
 ```
 
 image build(server / client)  
-```
+```console
 $ make docker-build image=p8s.me/nexclipper/sudory target=server version=0.1.0
 
 or
@@ -214,6 +214,6 @@ $ make docker-build image=p8s.me/nexclipper/sudory target=client version=0.1.0
 ```
 
 image push
-```
+```console
 $ make docker-push image=p8s.me/nexclipper/sudory target=server version=0.1.0
 ```
