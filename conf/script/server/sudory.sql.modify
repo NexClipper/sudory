@@ -40,7 +40,7 @@ ALTER TABLE `service_step`
 SELECT Count(*)
 INTO @exists
 FROM information_schema.tables 
-WHERE table_schema = 'sudory'
+WHERE table_schema = (SELECT DATABASE())
     AND table_type = 'BASE TABLE'
     AND table_name = 'environment';
 
@@ -68,7 +68,7 @@ ALTER TABLE `service`
 SELECT Count(*)
 INTO @exists
 FROM information_schema.columns 
-WHERE table_schema = 'sudory'
+WHERE table_schema = (SELECT DATABASE())
 	 AND TABLE_NAME = 'service'
     AND column_name = 'subscribe_event';
 
