@@ -59,3 +59,10 @@ EXECUTE stmt;
 DROP TABLE IF EXISTS `client`;
 
 -- !OSS-288
+
+-- OSS-288
+
+ALTER TABLE `service`
+	CHANGE COLUMN IF EXISTS `subscribe_event` `subscribe_channel` VARCHAR(255) NULL DEFAULT NULL COMMENT 'subscribe channel' COLLATE 'utf8mb4_unicode_ci' AFTER `result`;
+
+-- !OSS-288

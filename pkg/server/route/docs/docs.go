@@ -1842,8 +1842,8 @@ var doc = `{
                         "$ref": "#/definitions/v1.ServiceStep"
                     }
                 },
-                "subscribe_event": {
-                    "description": "서비스 POLL 결과 전달 이벤트 이름",
+                "subscribe_channel": {
+                    "description": "서비스 POLL 결과 전달 이벤트 채널 이름",
                     "type": "string"
                 },
                 "summary": {
@@ -1875,7 +1875,7 @@ var doc = `{
                         "$ref": "#/definitions/v1.HttpReqServiceStep_Create_ByService"
                     }
                 },
-                "subscribe_event": {
+                "subscribe_channel": {
                     "type": "string"
                 },
                 "summary": {
@@ -2057,8 +2057,8 @@ var doc = `{
                         "$ref": "#/definitions/v1.ServiceStep"
                     }
                 },
-                "subscribe_event": {
-                    "description": "서비스 POLL 결과 전달 이벤트 이름",
+                "subscribe_channel": {
+                    "description": "서비스 POLL 결과 전달 이벤트 채널 이름",
                     "type": "string"
                 },
                 "summary": {
@@ -2115,8 +2115,8 @@ var doc = `{
                         "$ref": "#/definitions/v1.ServiceStep"
                     }
                 },
-                "subscribe_event": {
-                    "description": "서비스 POLL 결과 전달 이벤트 이름",
+                "subscribe_channel": {
+                    "description": "서비스 POLL 결과 전달 이벤트 채널 이름",
                     "type": "string"
                 },
                 "summary": {
