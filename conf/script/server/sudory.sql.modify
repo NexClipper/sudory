@@ -63,6 +63,23 @@ DROP TABLE IF EXISTS `client`;
 -- OSS-288
 
 ALTER TABLE `service`
-	CHANGE COLUMN IF EXISTS `subscribe_event` `subscribe_channel` VARCHAR(255) NULL DEFAULT NULL COMMENT 'subscribe channel' COLLATE 'utf8mb4_unicode_ci' AFTER `result`;
+	ADD COLUMN IF NOT EXISTS `subscribe_channel` VARCHAR(255) NULL DEFAULT NULL COMMENT 'subscribe channel' COLLATE 'utf8mb4_unicode_ci' AFTER `result`;
+	
+SELECT Count(*)
+INTO @exists
+FROM information_schema.columns 
+WHERE table_schema = 'sudory'
+	 AND TABLE_NAME = 'service'
+    AND column_name = 'subscribe_event';
 
+SET @query = If(@exists>0,
+    'UPDATE service SET  subscribe_channel = subscribe_event WHERE id = (SELECT id FROM service)',
+    'SELECT \'nothing to rename\' status');
+
+PREPARE stmt FROM @QUERY;
+EXECUTE stmt;
+
+ALTER TABLE `service`
+	DROP COLUMN IF EXISTS `subscribe_event`;
+	
 -- !OSS-288
