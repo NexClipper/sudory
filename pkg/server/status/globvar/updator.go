@@ -1,7 +1,6 @@
-package env
+package globvar
 
 import (
-	"os"
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/database"
@@ -9,32 +8,47 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/pkg/errors"
 
-	envv1 "github.com/NexClipper/sudory/pkg/server/model/environment/v1"
+	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variant/v1"
 )
 
-type EnvironmentUpdate struct {
+type GlobalVariantUpdate struct {
 	ctx    database.Context
 	offset time.Time //updated column
 }
 
-func NewEnvironmentUpdate(ctx database.Context) *EnvironmentUpdate {
-	return &EnvironmentUpdate{ctx: ctx}
+func NewGlobalVariantUpdate(ctx database.Context) *GlobalVariantUpdate {
+	return &GlobalVariantUpdate{ctx: ctx}
 }
 
 // Update
 //  Update = read -> os.Setenv
-func (worker *EnvironmentUpdate) Update() error {
+func (worker *GlobalVariantUpdate) Update() error {
 	where := "updated > ?"
 	args := []interface{}{
 		worker.offset,
 	}
-	records := make([]envv1.Environment, 0)
+	records := make([]globvarv1.GlobalVariant, 0)
 	if err := worker.ctx.Where(where, args...).Find(&records); err != nil {
-		return errors.Wrapf(err, "Database Find")
+		return errors.Wrapf(err, "database Find")
 	}
 
 	for i := range records {
-		os.Setenv(records[i].Name, *records[i].Value)
+		gv, err := ParseKey(records[i].Name)
+		if err != nil {
+			return errors.Wrapf(err, "parse record name to key%v",
+				logs.KVL(
+					"key", records[i].Name,
+				))
+		}
+
+		if err := storeManager.Call(gv, *records[i].Value); err != nil {
+			return errors.Wrapf(err, "store globalVariant%v",
+				logs.KVL(
+					"key", records[i].Name,
+					"value", *records[i].Value,
+				))
+		}
+
 	}
 
 	//update offset
@@ -45,15 +59,15 @@ func (worker *EnvironmentUpdate) Update() error {
 
 // WhiteListCheck
 //  리스트 체크
-func (worker *EnvironmentUpdate) WhiteListCheck() error {
-	records := make([]envv1.Environment, 0)
+func (worker *GlobalVariantUpdate) WhiteListCheck() error {
+	records := make([]globvarv1.GlobalVariant, 0)
 	if err := worker.ctx.Find(&records); err != nil {
-		return errors.Wrapf(err, "Database Find")
+		return errors.Wrapf(err, "database Find")
 	}
 
 	count := 0
 	push, pop := macro.StringBuilder()
-	for _, key := range EnvNames() {
+	for _, key := range KeyNames() {
 		var found bool = false
 	LOOP:
 		for i := range records {
@@ -68,19 +82,19 @@ func (worker *EnvironmentUpdate) WhiteListCheck() error {
 		}
 	}
 	if 0 < count {
-		return errors.Errorf("not exists environment keys=['%s']", pop("', '"))
+		return errors.Errorf("not exists global_variant keys=['%s']", pop("', '"))
 	}
 
 	return nil
 }
 
-func (worker *EnvironmentUpdate) Merge() error {
-	records := make([]envv1.Environment, 0)
+func (worker *GlobalVariantUpdate) Merge() error {
+	records := make([]globvarv1.GlobalVariant, 0)
 	if err := worker.ctx.Find(&records); err != nil {
-		return errors.Wrapf(err, "Database Find")
+		return errors.Wrapf(err, "database Find")
 	}
 
-	for _, key := range EnvNames() {
+	for _, key := range KeyNames() {
 		var found bool = false
 	LOOP:
 		for i := range records {
@@ -90,17 +104,17 @@ func (worker *EnvironmentUpdate) Merge() error {
 			}
 		}
 		if !found {
-			env, err := ParseEnv(key)
+			env, err := ParseKey(key)
 			if err != nil {
-				return errors.Wrapf(err, "ParseEnv%s",
+				return errors.Wrapf(err, "ParseGlobVar%s",
 					logs.KVL(
 						"key", key,
 					))
 			}
 
-			value, ok := DefaultEnvironments[env]
+			value, ok := defaultValueSet[env]
 			if !ok {
-				return errors.Errorf("not found default environment%s",
+				return errors.Errorf("not found global_variant variant%s",
 					logs.KVL(
 						"key", key,
 					))
@@ -110,6 +124,7 @@ func (worker *EnvironmentUpdate) Merge() error {
 			if err = worker.ctx.Create(value_); err != nil {
 				return errors.Wrapf(err, "database create")
 			}
+
 		}
 	}
 

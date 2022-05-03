@@ -7,23 +7,23 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	envv1 "github.com/NexClipper/sudory/pkg/server/model/environment/v1"
+	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variant/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 )
 
-// Find Environment
-// @Description Find Environment
+// Find global_variant
+// @Description Find global_variant
 // @Accept      json
 // @Produce     json
-// @Tags        server/environment
-// @Router      /server/environment [get]
+// @Tags        server/global_variant
+// @Router      /server/global_variant [get]
 // @Param       x_auth_token header string false "client session token"
 // @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
 // @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
 // @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
-// @Success 200 {array} v1.Environment
-func (ctl Control) FindEnvironment(ctx echo.Context) error {
+// @Success 200 {array} v1.GlobalVariant
+func (ctl Control) FindGlobalVariant(ctx echo.Context) error {
 	env, err := vault.NewEnvironment(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
@@ -33,16 +33,16 @@ func (ctl Control) FindEnvironment(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, env)
 }
 
-// Get Environment
-// @Description Get a Environment
+// Get global_variant
+// @Description Get a global_variant
 // @Accept      json
 // @Produce     json
-// @Tags        server/environment
-// @Router      /server/environment/{uuid} [get]
+// @Tags        server/global_variant
+// @Router      /server/global_variant/{uuid} [get]
 // @Param       x_auth_token header string false "client session token"
-// @Param       uuid         path   string true  "Environment 의 Uuid"
-// @Success 200 {object} v1.Environment
-func (ctl Control) GetEnvironment(ctx echo.Context) error {
+// @Param       uuid         path   string true  "GlobalVariant 의 Uuid"
+// @Success 200 {object} v1.GlobalVariant
+func (ctl Control) GetGlobalVariant(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
@@ -62,18 +62,18 @@ func (ctl Control) GetEnvironment(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, env)
 }
 
-// UpdateEnvironment
-// @Description Update Environment Value
+// Update global_variant
+// @Description Update global_variant Value
 // @Accept      json
 // @Produce     json
-// @Tags        server/environment
-// @Router      /server/environment/{uuid} [put]
+// @Tags        server/global_variant
+// @Router      /server/global_variant/{uuid} [put]
 // @Param       x_auth_token header string                       false "client session token"
-// @Param       uuid         path   string                       true  "Environment 의 Uuid"
-// @Param       enviroment   body   v1.HttpReqEnvironment_Update false "HttpReqEnvironment_Update"
-// @Success 200 {object} v1.Environment
-func (ctl Control) UpdateEnvironmentValue(ctx echo.Context) error {
-	update_env := new(envv1.HttpReqEnvironment_Update)
+// @Param       uuid         path   string                       true  "GlobalVariant 의 Uuid"
+// @Param       enviroment   body   v1.HttpReqGlobalVariant_Update false "HttpReqGlobalVariant_Update"
+// @Success 200 {object} v1.GlobalVariant
+func (ctl Control) UpdateGlobalVariantValue(ctx echo.Context) error {
+	update_env := new(globvarv1.HttpReqGlobalVariant_Update)
 	if err := echoutil.Bind(ctx, update_env); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
@@ -93,7 +93,7 @@ func (ctl Control) UpdateEnvironmentValue(ctx echo.Context) error {
 	uuid := echoutil.Param(ctx)[__UUID__]
 
 	//property
-	env := envv1.Environment{}
+	env := globvarv1.GlobalVariant{}
 	env.Uuid = uuid
 	env.Value = update_env.Value
 

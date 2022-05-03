@@ -1,4 +1,4 @@
-package env_test
+package globvar_test
 
 import (
 	"testing"

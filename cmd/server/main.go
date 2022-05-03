@@ -19,7 +19,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/route"
 	"github.com/NexClipper/sudory/pkg/server/status"
-	"github.com/NexClipper/sudory/pkg/server/status/env"
+	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/NexClipper/sudory/pkg/version"
 	"github.com/fsnotify/fsnotify"
 	"github.com/jinzhu/configor"
@@ -290,8 +290,8 @@ func newCron(engine *xorm.Engine) (func(), error) {
 	return tickerClose, nil
 }
 
-func newEnvironmentUpdate(engine *xorm.Engine) (*env.EnvironmentUpdate, error) {
-	updator := env.NewEnvironmentUpdate(database.NewXormContext(engine.NewSession()))
+func newEnvironmentUpdate(engine *xorm.Engine) (*globvar.GlobalVariantUpdate, error) {
+	updator := globvar.NewGlobalVariantUpdate(database.NewXormContext(engine.NewSession()))
 	//환경변수 리스트 검사
 	if err := updator.WhiteListCheck(); err != nil {
 		//빠져있는 환경변수 추가

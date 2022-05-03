@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
-	envv1 "github.com/NexClipper/sudory/pkg/server/model/environment/v1"
+	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variant/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
@@ -23,7 +23,7 @@ func TestSync(t *testing.T) {
 		{name: "clusterv1",
 			args: new(clusterv1.Cluster), want: nil, wantErr: false},
 		{name: "envv1",
-			args: new(envv1.Environment), want: nil, wantErr: false},
+			args: new(globvarv1.GlobalVariant), want: nil, wantErr: false},
 		{name: "stepv1",
 			args: new(stepv1.ServiceStep), want: nil, wantErr: false},
 		{name: "servicev1",

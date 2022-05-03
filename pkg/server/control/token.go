@@ -12,7 +12,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	cryptov1 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v1"
 	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
-	"github.com/NexClipper/sudory/pkg/server/status/env"
+	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 )
@@ -326,6 +326,6 @@ func validTokenUser(ctx database.Context, user_kind tokenv1.TokenUserKind, user_
 
 func bearerTokenTimeIssueNow() (time.Time, time.Time) {
 	iat := time.Now()
-	exp := env.BearerTokenExpirationTime(iat)
+	exp := globvar.BearerTokenExpirationTime(iat)
 	return iat, exp
 }

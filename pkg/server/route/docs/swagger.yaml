@@ -19,7 +19,7 @@ definitions:
       uuid:
         type: string
     type: object
-  v1.Environment:
+  v1.GlobalVariant:
     properties:
       created:
         type: string
@@ -73,7 +73,7 @@ definitions:
       summary:
         type: string
     type: object
-  v1.HttpReqEnvironment_Update:
+  v1.HttpReqGlobalVariant_Update:
     properties:
       value:
         type: string
@@ -745,11 +745,11 @@ paths:
             $ref: '#/definitions/v1.Cluster'
       tags:
       - server/cluster
-  /server/environment:
+  /server/global_variant:
     get:
       consumes:
       - application/json
-      description: Find Environment
+      description: Find global_variant
       parameters:
       - description: client session token
         in: header
@@ -774,21 +774,21 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.Environment'
+              $ref: '#/definitions/v1.GlobalVariant'
             type: array
       tags:
-      - server/environment
-  /server/environment/{uuid}:
+      - server/global_variant
+  /server/global_variant/{uuid}:
     get:
       consumes:
       - application/json
-      description: Get a Environment
+      description: Get a global_variant
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: Environment 의 Uuid
+      - description: GlobalVariant 의 Uuid
         in: path
         name: uuid
         required: true
@@ -799,37 +799,37 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.Environment'
+            $ref: '#/definitions/v1.GlobalVariant'
       tags:
-      - server/environment
+      - server/global_variant
     put:
       consumes:
       - application/json
-      description: Update Environment Value
+      description: Update global_variant Value
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: Environment 의 Uuid
+      - description: GlobalVariant 의 Uuid
         in: path
         name: uuid
         required: true
         type: string
-      - description: HttpReqEnvironment_Update
+      - description: HttpReqGlobalVariant_Update
         in: body
         name: enviroment
         schema:
-          $ref: '#/definitions/v1.HttpReqEnvironment_Update'
+          $ref: '#/definitions/v1.HttpReqGlobalVariant_Update'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.Environment'
+            $ref: '#/definitions/v1.GlobalVariant'
       tags:
-      - server/environment
+      - server/global_variant
   /server/service:
     get:
       consumes:

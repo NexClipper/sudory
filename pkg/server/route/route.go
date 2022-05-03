@@ -165,10 +165,10 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		//route /server/service_step*
 		group.GET("/service/:service_uuid/step", controller.FindServiceStep)
 		group.GET("/service/:service_uuid/step/:uuid", controller.GetServiceStep)
-		//route /server/environment*
-		group.GET("/environment", controller.FindEnvironment)
-		group.GET("/environment/:uuid", controller.GetEnvironment)
-		group.PUT("/environment/:uuid", controller.UpdateEnvironmentValue)
+		//route /server/global_variant*
+		group.GET("/global_variant", controller.FindGlobalVariant)
+		group.GET("/global_variant/:uuid", controller.GetGlobalVariant)
+		group.PUT("/global_variant/:uuid", controller.UpdateGlobalVariantValue)
 		//route /server/session*
 		group.GET("/session", controller.FindSession)
 		group.GET("/session/:uuid", controller.GetSession)

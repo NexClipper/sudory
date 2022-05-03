@@ -11,7 +11,6 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/event"
 	"github.com/NexClipper/sudory/pkg/server/macro"
-	"github.com/NexClipper/sudory/pkg/server/status/env"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
 
@@ -25,6 +24,7 @@ import (
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
+	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/labstack/echo/v4"
@@ -60,7 +60,7 @@ func (ctl Control) PollService(ctx echo.Context) error {
 
 				claims = new(sessionv1.ClientSessionPayload)
 				jwt_token, err = jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-					return []byte(env.ClientSessionSignatureSecret()), nil
+					return []byte(globvar.ClientSessionSignatureSecret()), nil
 				})
 				var ok bool
 				if claims, ok = jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok || !jwt_token.Valid {
@@ -312,15 +312,15 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 	//make session payload
 	token_uuid := macro.NewUuidString()
 	iat := time.Now()
-	exp := env.ClientSessionExpirationTime(iat)
+	exp := globvar.ClientSessionExpirationTime(iat)
 
 	payload := &sessionv1.ClientSessionPayload{
 		ExpiresAt:    exp.Unix(),
 		IssuedAt:     iat.Unix(),
 		Uuid:         token_uuid,
 		ClusterUuid:  auth.ClusterUuid,
-		PollInterval: env.ClientConfigPollInterval(),
-		Loglevel:     env.ClientConfigLoglevel(),
+		PollInterval: globvar.ClientConfigPollInterval(),
+		Loglevel:     globvar.ClientConfigLoglevel(),
 	}
 
 	if false {
@@ -339,7 +339,7 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 	}
 
 	token_string, err := jwt.NewWithClaims(jwt.SigningMethodHS256, payload).
-		SignedString([]byte(env.ClientSessionSignatureSecret()))
+		SignedString([]byte(globvar.ClientSessionSignatureSecret()))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "jwt New payload=%+v", payload))
@@ -397,7 +397,7 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 
 	claims := new(sessionv1.ClientSessionPayload)
 	jwt_token, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(env.ClientSessionSignatureSecret()), nil
+		return []byte(globvar.ClientSessionSignatureSecret()), nil
 	})
 
 	if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok || !jwt_token.Valid {
@@ -445,13 +445,13 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 		}
 
 		//reflesh payload
-		claims.ExpiresAt = env.ClientSessionExpirationTime(time.Now()).Unix()
-		// payload.PollInterval = env.ClientConfigPollInterval()
-		claims.PollInterval = int(cluster.GetPollingOption().Interval(time.Duration(int64(env.ClientConfigPollInterval())*int64(time.Second)), int(service_count)) / time.Second)
-		claims.Loglevel = env.ClientConfigLoglevel()
+		claims.ExpiresAt = globvar.ClientSessionExpirationTime(time.Now()).Unix()
+		// payload.PollInterval = globvar.ClientConfigPollInterval()
+		claims.PollInterval = int(cluster.GetPollingOption().Interval(time.Duration(int64(globvar.ClientConfigPollInterval())*int64(time.Second)), int(service_count)) / time.Second)
+		claims.Loglevel = globvar.ClientConfigLoglevel()
 
 		//new jwt-new_token
-		// new_token, err := jwt.New(claims, []byte(env.ClientSessionSignatureSecret()))
+		// new_token, err := jwt.New(claims, []byte(globvar.ClientSessionSignatureSecret()))
 		// if err != nil {
 		// 	return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 		// 		errors.Wrapf(err, "new jwt"))
@@ -459,7 +459,7 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 
 		//client auth 에서 사용된 알고리즘 그대로 사용
 		token_string, err := jwt.NewWithClaims(usedJwtSigningMethod(*jwt_token, jwt.SigningMethodHS256), claims).
-			SignedString([]byte(env.ClientSessionSignatureSecret()))
+			SignedString([]byte(globvar.ClientSessionSignatureSecret()))
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "new jwt"))

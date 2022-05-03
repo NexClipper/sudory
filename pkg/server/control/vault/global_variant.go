@@ -4,19 +4,19 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/prepare"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	envv1 "github.com/NexClipper/sudory/pkg/server/model/environment/v1"
+	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variant/v1"
 	"github.com/pkg/errors"
 )
 
-type Environment struct {
+type GlobalVariant struct {
 	ctx database.Context
 }
 
-func NewEnvironment(ctx database.Context) *Environment {
-	return &Environment{ctx: ctx}
+func NewEnvironment(ctx database.Context) *GlobalVariant {
+	return &GlobalVariant{ctx: ctx}
 }
 
-func (vault Environment) Create(model envv1.Environment) (*envv1.Environment, error) {
+func (vault GlobalVariant) Create(model globvarv1.GlobalVariant) (*globvarv1.GlobalVariant, error) {
 	if err := vault.ctx.Create(&model); err != nil {
 		return nil, errors.Wrapf(err, "database create")
 	}
@@ -24,12 +24,12 @@ func (vault Environment) Create(model envv1.Environment) (*envv1.Environment, er
 	return &model, nil
 }
 
-func (vault Environment) Get(uuid string) (*envv1.Environment, error) {
+func (vault GlobalVariant) Get(uuid string) (*globvarv1.GlobalVariant, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		uuid,
 	}
-	model := &envv1.Environment{}
+	model := &globvarv1.GlobalVariant{}
 	if err := vault.ctx.Where(where, args...).Get(model); err != nil {
 		return nil, errors.Wrapf(err, "database get%v",
 			logs.KVL(
@@ -41,8 +41,8 @@ func (vault Environment) Get(uuid string) (*envv1.Environment, error) {
 	return model, nil
 }
 
-func (vault Environment) Find(where string, args ...interface{}) ([]envv1.Environment, error) {
-	models := make([]envv1.Environment, 0)
+func (vault GlobalVariant) Find(where string, args ...interface{}) ([]globvarv1.GlobalVariant, error) {
+	models := make([]globvarv1.GlobalVariant, 0)
 	if err := vault.ctx.Where(where, args...).Find(&models); err != nil {
 		return nil, errors.Wrapf(err, "database find%v",
 			logs.KVL(
@@ -54,7 +54,7 @@ func (vault Environment) Find(where string, args ...interface{}) ([]envv1.Enviro
 	return models, nil
 }
 
-func (vault Environment) Query(query map[string]string) ([]envv1.Environment, error) {
+func (vault GlobalVariant) Query(query map[string]string) ([]globvarv1.GlobalVariant, error) {
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
@@ -65,7 +65,7 @@ func (vault Environment) Query(query map[string]string) ([]envv1.Environment, er
 	}
 
 	//find service
-	models := make([]envv1.Environment, 0)
+	models := make([]globvarv1.GlobalVariant, 0)
 	if err := vault.ctx.Prepared(preparer).Find(&models); err != nil {
 		return nil, errors.Wrapf(err, "database find%v",
 			logs.KVL(
@@ -76,7 +76,7 @@ func (vault Environment) Query(query map[string]string) ([]envv1.Environment, er
 	return models, nil
 }
 
-func (vault Environment) Update(model envv1.Environment) (*envv1.Environment, error) {
+func (vault GlobalVariant) Update(model globvarv1.GlobalVariant) (*globvarv1.GlobalVariant, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		model.Uuid,
@@ -92,12 +92,12 @@ func (vault Environment) Update(model envv1.Environment) (*envv1.Environment, er
 	return &model, nil
 }
 
-func (vault Environment) Delete(uuid string) error {
+func (vault GlobalVariant) Delete(uuid string) error {
 	where := "uuid = ?"
 	args := []interface{}{
 		uuid,
 	}
-	model := &envv1.Environment{}
+	model := &globvarv1.GlobalVariant{}
 	if err := vault.ctx.Where(where, args...).Delete(model); err != nil {
 		return errors.Wrapf(err, "database delete%v",
 			logs.KVL(

@@ -34,3 +34,22 @@ ALTER TABLE `service_step`
 	DROP COLUMN IF EXISTS `result`;
 
 -- !OSS-253
+
+-- OSS-284
+
+SELECT Count(*)
+INTO @exists
+FROM information_schema.tables 
+WHERE table_schema = 'sudory'
+    AND table_type = 'BASE TABLE'
+    AND table_name = 'environment';
+
+SET @query = If(@exists>0,
+    'RENAME TABLE environment TO global_variant',
+    'SELECT \'nothing to rename\' status');
+
+PREPARE stmt FROM @query;
+
+EXECUTE stmt;
+
+-- !OSS-284
