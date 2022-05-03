@@ -31,6 +31,8 @@ func (f *Fetcher) HandShake() error {
 	}
 	log.Debugf("Successed to handshake: received token(%s) for polling.", f.client.GetToken())
 
+	f.ChangeClientConfigFromToken()
+
 	// save session_uuid from token
 	claims := new(sessionv1.ClientSessionPayload)
 	jwt_token, _, err := jwt.NewParser().ParseUnverified(f.client.GetToken(), claims)

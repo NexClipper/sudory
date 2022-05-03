@@ -51,15 +51,19 @@ func NewFetcher(bearerToken, server, clusterId string, scheduler *scheduler.Sche
 		done:            make(chan struct{})}, nil
 }
 
-func (f *Fetcher) ChangePollingInterval(interval int) error {
-	if f.pollingInterval == interval || interval < minPollingInterval {
-		return fmt.Errorf("interval(%d) you want to change is the same as the previous interval(%d) or less than the minimum interval(%d)", interval, f.pollingInterval, minPollingInterval)
+func (f *Fetcher) ChangePollingInterval(interval int) (int, error) {
+	if interval < minPollingInterval {
+		return 0, fmt.Errorf("interval(%d) you want to change is less than the minimum interval(%d)", interval, minPollingInterval)
+	}
+
+	if f.pollingInterval == interval {
+		return 0, nil
 	}
 
 	f.pollingInterval = interval
 	f.ticker.Reset(time.Second * time.Duration(interval))
 
-	return nil
+	return interval, nil
 }
 
 func (f *Fetcher) Done() <-chan struct{} {
@@ -146,16 +150,18 @@ func (f *Fetcher) ChangeClientConfigFromToken() {
 		return
 	}
 
-	if err := f.ChangePollingInterval(claims.PollInterval); err != nil {
+	if interval, err := f.ChangePollingInterval(claims.PollInterval); err != nil {
 		log.Warnf("Failed to change polling interval : %v\n", err)
 	} else {
-		log.Debugf("Change polling interval to %v\n", claims.PollInterval)
+		if interval != 0 {
+			log.Debugf("Change polling interval to %v\n", claims.PollInterval)
+		}
 	}
 
-	if err := log.GetLogger().SetLevel(claims.Loglevel); err != nil {
-		log.Warnf("Failed to change logger level : %v.\n", err)
-	} else {
-		log.Debugf("Changed logger level to %s\n", claims.Loglevel)
+	if log.GetLogger().GetLevel() != strings.ToLower(claims.Loglevel) {
+		if err := log.GetLogger().SetLevel(claims.Loglevel); err == nil {
+			log.Debugf("Changed logger level to %s\n", claims.Loglevel)
+		}
 	}
 
 }
