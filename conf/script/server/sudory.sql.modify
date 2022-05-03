@@ -53,3 +53,9 @@ PREPARE stmt FROM @query;
 EXECUTE stmt;
 
 -- !OSS-284
+
+-- OSS-288
+
+DROP TABLE IF EXISTS `client`;
+
+-- !OSS-288

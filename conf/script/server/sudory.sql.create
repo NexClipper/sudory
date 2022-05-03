@@ -16,29 +16,6 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `client`
---
-
-DROP TABLE IF EXISTS `client`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `client` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `uuid` char(32) COLLATE utf8_bin NOT NULL,
-  `name` varchar(255) COLLATE utf8_bin NOT NULL,
-  `summary` varchar(255) COLLATE utf8_bin DEFAULT NULL,
-  `cluster_uuid` char(32) COLLATE utf8_bin NOT NULL COMMENT 'clusters uuid',
-  `created` datetime DEFAULT NULL,
-  `updated` datetime DEFAULT NULL,
-  `deleted` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE KEY `uuid` (`uuid`),
-  KEY `IDX_client_cluster_uuid` (`cluster_uuid`),
-  KEY `cluster_uuid` (`cluster_uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='client 관리 테이블';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `cluster`
 --
 
