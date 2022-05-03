@@ -46,14 +46,10 @@ func (hc *HttpClient) IsTokenExpired() bool {
 	jwt_token, _, err := jwt.NewParser().ParseUnverified(hc.token, claims)
 	if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok || err != nil {
 		log.Warnf("jwt.ParseUnverified error : %v\n", err)
-		return false
+		return true
 	}
 
-	if !claims.VerifyExpiresAt(time.Now().Unix(), true) {
-		return false
-	}
-
-	return true
+	return !claims.VerifyExpiresAt(time.Now().Unix(), true)
 }
 
 func (hc *HttpClient) Request(method, path string, params map[string]string, bodyType string, rawBody []byte) ([]byte, error) {
