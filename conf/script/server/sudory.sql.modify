@@ -15,8 +15,8 @@ ALTER TABLE `template_recipe`
 ALTER TABLE `template`
 	CHANGE COLUMN IF EXISTS `origin` `origin` VARCHAR(255) NOT NULL COMMENT 'origin' COLLATE 'utf8mb4_bin' AFTER `summary`;
 
-ALTER TABLE `service`
-	ADD COLUMN IF NOT EXISTS `subscribe_event` VARCHAR(255) NULL COMMENT 'subscribe event' AFTER `result`;
+-- ALTER TABLE `service`
+-- 	ADD COLUMN IF NOT EXISTS `subscribe_event` VARCHAR(255) NULL COMMENT 'subscribe event' AFTER `result`;
 
 ALTER TABLE `template_recipe`
 	CHANGE COLUMN IF EXISTS `args` `args` TEXT NOT NULL COLLATE 'utf8mb4_unicode_ci' AFTER `method`,
