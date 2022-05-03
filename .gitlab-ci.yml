@@ -11,11 +11,11 @@ default:
   retry: 2
   image: docker:latest
 
-cache:
-  key: ${CI_COMMIT_REF_SLUG}
-  paths:
-    - bin/
-    - pkg/
+# cache:
+#   key: ${CI_COMMIT_REF_SLUG}
+#   paths:
+#     - bin/
+#     - pkg/
 
 stages:
   - build
