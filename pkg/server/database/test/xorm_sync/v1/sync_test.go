@@ -3,7 +3,6 @@ package v1
 import (
 	"testing"
 
-	clientv1 "github.com/NexClipper/sudory/pkg/server/model/client/v1"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	envv1 "github.com/NexClipper/sudory/pkg/server/model/environment/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
@@ -21,8 +20,6 @@ func TestSync(t *testing.T) {
 		want    error
 		wantErr bool
 	}{
-		{name: "clientv1",
-			args: new(clientv1.Client), want: nil, wantErr: false},
 		{name: "clusterv1",
 			args: new(clusterv1.Cluster), want: nil, wantErr: false},
 		{name: "envv1",
