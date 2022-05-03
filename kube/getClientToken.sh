@@ -1,8 +1,5 @@
 #! /usr/bin/env bash
 
-
-
-
 SUDORY_SERVER_URL=$1
 CLUSTER_NAME="new-node-cluster"
 CLUSTER_DESCRIPTION='TEST-CLUSTER'
@@ -21,7 +18,6 @@ echo "Retrieve token!"
 token=$(curl --silent -X POST $SUDORY_SERVER_URL/server/token/cluster \
             -H "Content-Type: application/json"  \
             --data '{ "name": "'$CLUSTER_NAME'", "user_uuid": "'$user_uuid'" }' | jq -r '.token')
-
 
 export S_SERVER_URL=$SUDORY_SERVER_URL
 export S_CLUSTER_ID=$user_uuid
