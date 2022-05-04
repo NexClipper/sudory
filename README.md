@@ -154,7 +154,8 @@ with the following request body -
 ```console
 {
   "name": "cluster name",
-  "user_uuid": "8a331d8d913d47e39946b32dc70e77f7"
+  "cluster_uuid": "8a331d8d913d47e39946b32dc70e77f7",
+  "summary": "cluster summary"
 }
 ```
 Here is the sample response from the api. 
