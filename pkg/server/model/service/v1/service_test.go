@@ -111,3 +111,36 @@ func NewService() Service {
 func EmptyServiceService() Service {
 	return Service{}
 }
+
+func TestJsonBind(t *testing.T) {
+
+	s := `
+	{
+		"cluster_uuid": "3161ff9142c54c96b274361d62fe6e21",
+		"name": "kps helm installation",
+		"template_uuid": "20000000000000000000000000000001",
+		"summary": "kps helm installation",
+		"subscribe_channel": "",
+		"steps": [
+			{
+				"args":{
+					"name": "kps",
+					"chart_name": "kube-prometheus-stack",
+					"repo_url": "https://prometheus-community.github.io/helm-charts",
+					"namespace": "monitor",
+					"chart_version": "35.0.3",
+					"values": {}
+				}
+			}
+		]
+	}
+	
+	`
+	service_create := HttpReqService_Create{}
+
+	if err := json.Unmarshal([]byte(s), &service_create); err != nil {
+
+		t.Fatal(err)
+	}
+
+}

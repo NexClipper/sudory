@@ -96,13 +96,13 @@ type HttpReqService_Create struct {
 	metav1.LabelMeta `json:",inline"`                             //inline labelmeta
 	TemplateUuid     string                                       `json:"template_uuid"`
 	ClusterUuid      string                                       `json:"cluster_uuid"`
-	SubscribeChannel string                                       `json:"subscribe_channel,omitempty"`
-	Steps            []stepv1.HttpReqServiceStep_Create_ByService `json:"steps,omitempty"`
+	SubscribeChannel *string                                      `json:"subscribe_channel,omitempty"`
+	Steps            []stepv1.HttpReqServiceStep_Create_ByService `json:"steps"`
 }
 
 type HttpRspService struct {
 	Service `json:",inline"`
-	Steps   []stepv1.ServiceStep `json:"steps,omitempty"`
+	Steps   []stepv1.ServiceStep `json:"steps"`
 }
 
 // func (object HttpRspService) MarshalJSON() ([]byte, error) {

@@ -3,7 +3,6 @@ package control
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
@@ -20,10 +19,10 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	authv1 "github.com/NexClipper/sudory/pkg/server/model/auth/v1"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
+	clustertokenv1 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
-	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/golang-jwt/jwt/v4"
 
@@ -254,70 +253,48 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 
 	//valid cluster
 	cluster := clusterv1.Cluster{}
-	has, err := ctl.db.Engine().NewSession().Where("uuid = ?", auth.ClusterUuid).Get(&cluster)
-	if err != nil {
+	if err := database.XormGet(
+		ctl.db.Engine().NewSession().
+			Where("uuid = ?", auth.ClusterUuid).Get,
+		&cluster); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "valid%s",
-				logs.KVL(
-					"cluster_uuid", auth.ClusterUuid,
-				)))
-	}
-	if !has {
-		echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(database.ErrorRecordWasNotFound(), "valid%s",
+			errors.Wrapf(err, "valid cluster%s",
 				logs.KVL(
 					"cluster_uuid", auth.ClusterUuid,
 				)))
 	}
 
 	//valid token
-	where := "user_kind = ? AND user_uuid = ?"
-	tokens := []tokenv1.Token{}
-	err = ctl.db.Engine().
-		Where(where, tokenv1.TokenUserKindCluster.String(), auth.ClusterUuid).
-		Desc("updated").
-		Limit(1).
-		Find(&tokens)
-	if err != nil {
+	cluster_token := clustertokenv1.ClusterToken{}
+	if err := database.XormGet(
+		ctl.db.Engine().NewSession().
+			Where("token = ? AND cluster_uuid = ?", auth.Assertion, auth.ClusterUuid).
+			Get,
+		&cluster_token); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "find token%v",
+			errors.Wrapf(err, "valid cluster token%s",
 				logs.KVL(
-					"user_kind", tokenv1.TokenUserKindCluster.String(),
-					"user_uuid", auth.ClusterUuid,
+					"cluster_uuid", auth.ClusterUuid,
+					"assertion", auth.Assertion,
 				)))
 	}
 
-	first := func() *tokenv1.Token {
-		for _, it := range tokens {
-			if strings.EqualFold(string(it.Token), auth.Assertion) {
-				return &it
-			}
-		}
-		return nil
-	}
-	token := first()
-
-	if token == nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Errorf("record was not found: token"))
-	}
-
 	//만료 시간 검증
-	if time.Until(token.ExpirationTime) < 0 {
+	if time.Until(cluster_token.ExpirationTime) < 0 {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Errorf("token was expierd"))
 	}
 
 	//new session
 	//make session payload
-	token_uuid := macro.NewUuidString()
+	session_token_uuid := macro.NewUuidString()
 	iat := time.Now()
 	exp := globvar.ClientSessionExpirationTime(iat)
 
 	payload := &sessionv1.ClientSessionPayload{
 		ExpiresAt:    exp.Unix(),
 		IssuedAt:     iat.Unix(),
-		Uuid:         token_uuid,
+		Uuid:         session_token_uuid,
 		ClusterUuid:  auth.ClusterUuid,
 		PollInterval: globvar.ClientConfigPollInterval(),
 		Loglevel:     globvar.ClientConfigLoglevel(),

@@ -147,7 +147,7 @@ Then, you will get uuid of your cluster. Here is the sample body of response -
 Next step is to get a bearer' token with the following APIs. 
 
 ```console
-POST http://<sudory_server_url/server/token/cluster
+POST http://<sudory_server_url/server/cluster_token
 ```
 with the following request body - 
 
@@ -164,8 +164,7 @@ Here is the sample response from the api.
     "id": 2,
     "uuid": "2e11ec0976354bfdb593af4fa6120db4",
     "name": "cluster name",
-    "user_kind": "cluster",
-    "user_uuid": "8a331d8d913d47e39946b32dc70e77f7",
+    "cluster_uuid": "8a331d8d913d47e39946b32dc70e77f7",
     "token": "8e3c93cedc0b4c57964836b4f065c84d",
     "issued_at_time": "2022-04-20T07:38:48.49479352Z",
     "expiration_time": "2022-10-21T00:00:00Z"

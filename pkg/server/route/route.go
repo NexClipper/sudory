@@ -173,15 +173,14 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.GET("/session", controller.FindSession)
 		group.GET("/session/:uuid", controller.GetSession)
 		group.DELETE("/session/:uuid", controller.DeleteSession)
-		//route /server/token*
-		group.GET("/token", controller.FindToken)
-		group.GET("/token/:uuid", controller.GetToken)
-		group.PUT("/token/:uuid/label", controller.UpdateTokenLabel)
-		group.DELETE("/token/:uuid", controller.DeleteToken)
-		//route /server/token/cluster/*
-		group.POST("/token/cluster", controller.CreateClusterToken)
-		group.PUT("/token/cluster/:uuid/refresh", controller.RefreshClusterTokenTime)
-		group.PUT("/token/cluster/:uuid/expire", controller.ExpireClusterToken)
+		//route /server/cluster_token*
+		group.GET("/cluster_token", controller.FindClusterToken)
+		group.GET("/cluster_token/:uuid", controller.GetClusterToken)
+		group.PUT("/cluster_token/:uuid/label", controller.UpdateClusterTokenLabel)
+		group.DELETE("/cluster_token/:uuid", controller.DeleteClusterToken)
+		group.POST("/cluster_token", controller.CreateClusterToken)
+		group.PUT("/cluster_token/:uuid/refresh", controller.RefreshClusterTokenTime)
+		group.PUT("/cluster_token/:uuid/expire", controller.ExpireClusterToken)
 	}
 
 	return &Route{e: e}

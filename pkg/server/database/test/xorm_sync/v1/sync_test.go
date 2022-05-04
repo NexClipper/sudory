@@ -4,13 +4,13 @@ import (
 	"testing"
 
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
+	clsttknv1 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v1"
 	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variant/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
-	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
 )
 
 func TestSync(t *testing.T) {
@@ -37,7 +37,7 @@ func TestSync(t *testing.T) {
 		{name: "templatev1",
 			args: new(templatev1.Template), want: nil, wantErr: false},
 		{name: "tokenv1",
-			args: new(tokenv1.Token), want: nil, wantErr: false},
+			args: new(clsttknv1.ClusterToken), want: nil, wantErr: false},
 
 		// TODO: Add test cases.
 	}

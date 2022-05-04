@@ -410,6 +410,283 @@ var doc = `{
                 }
             }
         },
+        "/server/cluster_token": {
+            "get": {
+                "description": "Find Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/cluster_token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.ClusterToken"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a Cluster Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/cluster_token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "description": "HttpReqClusterToken_Create",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpReqClusterToken_Create"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ClusterToken"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/cluster_token/{uuid}": {
+            "get": {
+                "description": "Get a Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/cluster_token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ClusterToken"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/cluster_token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/cluster_token/{uuid}/expire": {
+            "put": {
+                "description": "Expire Cluster Token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/cluster_token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ClusterToken"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/cluster_token/{uuid}/label": {
+            "put": {
+                "description": "Update Token Label",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/cluster_token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Token 의 HttpReqClusterToken_UpdateLabel",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.HttpReqClusterToken_UpdateLabel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ClusterToken"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/cluster_token/{uuid}/refresh": {
+            "put": {
+                "description": "Refresh Cluster Token Time",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/cluster_token"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.ClusterToken"
+                        }
+                    }
+                }
+            }
+        },
         "/server/global_variant": {
             "get": {
                 "description": "Find global_variant",
@@ -1393,285 +1670,6 @@ var doc = `{
                     }
                 }
             }
-        },
-        "/server/token": {
-            "get": {
-                "description": "Find Token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/token"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "query  pkg/server/database/prepared/README.md",
-                        "name": "q",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "order  pkg/server/database/prepared/README.md",
-                        "name": "o",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "paging pkg/server/database/prepared/README.md",
-                        "name": "p",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.Token"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/server/token/cluster": {
-            "post": {
-                "description": "Create a Cluster Token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/token"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "description": "HttpReqToken_CreateClusterToken",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpReqToken_CreateClusterToken"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.Token"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/token/cluster/{uuid}/expire": {
-            "put": {
-                "description": "Expire Cluster Token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/token"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.Token"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/token/cluster/{uuid}/refresh": {
-            "put": {
-                "description": "Refresh Cluster Token Time",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/token"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.Token"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/token/{uuid}": {
-            "get": {
-                "description": "Get a Token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/token"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.Token"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a Token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/token"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/server/token/{uuid}/label": {
-            "put": {
-                "description": "Update Token Label",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/token"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Token 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Token 의 HttpReqToken_UpdateLabel",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.HttpReqToken_UpdateLabel"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.Token"
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
@@ -1695,6 +1693,44 @@ var doc = `{
                     "additionalProperties": true
                 },
                 "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.ClusterToken": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "expiration_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "issued_at_time": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "token": {
                     "type": "string"
                 },
                 "updated": {
@@ -1751,6 +1787,31 @@ var doc = `{
                 },
                 "cluster_uuid": {
                     "description": "cluster uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpReqClusterToken_Create": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpReqClusterToken_UpdateLabel": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
                     "type": "string"
                 }
             }
@@ -1985,31 +2046,6 @@ var doc = `{
                     "type": "string"
                 },
                 "origin": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqToken_CreateClusterToken": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "user_uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqToken_UpdateLabel": {
-            "type": "object",
-            "properties": {
-                "name": {
                     "type": "string"
                 },
                 "summary": {
@@ -2365,47 +2401,6 @@ var doc = `{
                     "type": "string"
                 },
                 "updated": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.Token": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "expiration_time": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "issued_at_time": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "token": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "user_kind": {
-                    "type": "string"
-                },
-                "user_uuid": {
-                    "type": "string"
-                },
-                "uuid": {
                     "type": "string"
                 }
             }

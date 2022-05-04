@@ -10,8 +10,8 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
+	clustertokenv1 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v1"
 	cryptov1 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v1"
-	tokenv1 "github.com/NexClipper/sudory/pkg/server/model/token/v1"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -21,15 +21,13 @@ import (
 // @Description Create a Cluster Token
 // @Accept      json
 // @Produce     json
-// @Tags        server/token
-// @Router      /server/token/cluster [post]
+// @Tags        server/cluster_token
+// @Router      /server/cluster_token [post]
 // @Param       x_auth_token header string                             false "client session token"
-// @Param       object       body   v1.HttpReqToken_CreateClusterToken true  "HttpReqToken_CreateClusterToken"
-// @Success     200 {object} v1.Token
+// @Param       object       body   v1.HttpReqClusterToken_Create true  "HttpReqClusterToken_Create"
+// @Success     200 {object} v1.ClusterToken
 func (ctl Control) CreateClusterToken(ctx echo.Context) error {
-	const user_kind = tokenv1.TokenUserKindCluster
-
-	body := new(tokenv1.HttpReqToken_CreateClusterToken)
+	body := new(clustertokenv1.HttpReqClusterToken_Create)
 	if err := echoutil.Bind(ctx, body); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
@@ -46,35 +44,33 @@ func (ctl Control) CreateClusterToken(ctx echo.Context) error {
 				)))
 	}
 
-	if len(body.UserUuid) == 0 {
+	if len(body.ClusterUuid) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
 				logs.KVL(
-					ParamLog(fmt.Sprintf("%s.UserUuid", TypeName(body)), body.UserUuid)...,
+					ParamLog(fmt.Sprintf("%s.ClusterUuid", TypeName(body)), body.ClusterUuid)...,
 				)))
 	}
 
 	//valvalidied token user
-	if err := validTokenUser(ctl.NewSession(), user_kind, body.UserUuid); err != nil {
+	if _, err := vault.NewCluster(ctl.NewSession()).Get(body.ClusterUuid); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "valid token user%s",
+			errors.Wrapf(err, "valid cluster user%s",
 				logs.KVL(
-					"user_kind", user_kind,
-					"user_uuid", body.UserUuid,
+					ParamLog(fmt.Sprintf("%s.ClusterUuid", TypeName(body)), body.ClusterUuid)...,
 				)))
 	}
 
 	//property
-	token := tokenv1.Token{}
+	token := clustertokenv1.ClusterToken{}
 	token.UuidMeta = NewUuidMeta()
 	token.LabelMeta = NewLabelMeta(body.Name, body.Summary)
-	token.UserKind = user_kind.String()
-	token.UserUuid = body.UserUuid
+	token.ClusterUuid = body.ClusterUuid
 	token.IssuedAtTime, token.ExpirationTime = bearerTokenTimeIssueNow()
 	token.Token = cryptov1.String(macro.NewUuidString())
 
 	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		token_, err := vault.NewToken(db).CreateToken(token)
+		token_, err := vault.NewClusterToken(db).CreateToken(token)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "create cluster token"))
@@ -89,19 +85,19 @@ func (ctl Control) CreateClusterToken(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
-// FindToken
+// FindClusterToken
 // @Description Find Token
 // @Accept      json
 // @Produce     json
-// @Tags        server/token
-// @Router      /server/token [get]
+// @Tags        server/cluster_token
+// @Router      /server/cluster_token [get]
 // @Param       x_auth_token header string false "client session token"
 // @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
 // @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
 // @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
-// @Success     200 {array} v1.Token
-func (ctl Control) FindToken(ctx echo.Context) error {
-	r, err := vault.NewToken(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
+// @Success     200 {array} v1.ClusterToken
+func (ctl Control) FindClusterToken(ctx echo.Context) error {
+	r, err := vault.NewClusterToken(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "find token"))
@@ -110,16 +106,16 @@ func (ctl Control) FindToken(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
-// GetToken
+// GetClusterToken
 // @Description Get a Token
 // @Accept      json
 // @Produce     json
-// @Tags        server/token
-// @Router      /server/token/{uuid} [get]
+// @Tags        server/cluster_token
+// @Router      /server/cluster_token/{uuid} [get]
 // @Param       x_auth_token header string false "client session token"
 // @Param       uuid         path   string true  "Token 의 Uuid"
-// @Success     200 {object} v1.Token
-func (ctl Control) GetToken(ctx echo.Context) error {
+// @Success     200 {object} v1.ClusterToken
+func (ctl Control) GetClusterToken(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
@@ -130,7 +126,7 @@ func (ctl Control) GetToken(ctx echo.Context) error {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	r, err := vault.NewToken(ctl.NewSession()).Get(uuid)
+	r, err := vault.NewClusterToken(ctl.NewSession()).Get(uuid)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "get token"))
@@ -139,18 +135,18 @@ func (ctl Control) GetToken(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
-// UpdateTokenLabel
+// UpdateClusterTokenLabel
 // @Description Update Token Label
 // @Accept      json
 // @Produce     json
-// @Tags        server/token
-// @Router		/server/token/{uuid}/label [put]
+// @Tags        server/cluster_token
+// @Router		/server/cluster_token/{uuid}/label [put]
 // @Param       x_auth_token header string                      false "client session token"
 // @Param       uuid         path   string                      true  "Token 의 Uuid"
-// @Param       object       body   v1.HttpReqToken_UpdateLabel true  "Token 의 HttpReqToken_UpdateLabel"
-// @Success 	200 {object} v1.Token
-func (ctl Control) UpdateTokenLabel(ctx echo.Context) error {
-	body := new(tokenv1.HttpReqToken_UpdateLabel)
+// @Param       object       body   v1.HttpReqClusterToken_UpdateLabel true  "Token 의 HttpReqClusterToken_UpdateLabel"
+// @Success 	200 {object} v1.ClusterToken
+func (ctl Control) UpdateClusterTokenLabel(ctx echo.Context) error {
+	body := new(clustertokenv1.HttpReqClusterToken_UpdateLabel)
 	if err := echoutil.Bind(ctx, body); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
@@ -170,13 +166,13 @@ func (ctl Control) UpdateTokenLabel(ctx echo.Context) error {
 	uuid := echoutil.Param(ctx)[__UUID__]
 
 	//property
-	token := tokenv1.Token{}
+	token := clustertokenv1.ClusterToken{}
 	token.Uuid = uuid
 	token.LabelMeta = NewLabelMeta(body.Name, body.Summary)
 
 	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
 		//update record
-		token_, err := vault.NewToken(db).Update(token)
+		token_, err := vault.NewClusterToken(db).Update(token)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "update token"))
@@ -195,11 +191,11 @@ func (ctl Control) UpdateTokenLabel(ctx echo.Context) error {
 // @Description Refresh Cluster Token Time
 // @Accept      json
 // @Produce     json
-// @Tags        server/token
-// @Router      /server/token/cluster/{uuid}/refresh [put]
+// @Tags        server/cluster_token
+// @Router      /server/cluster_token/{uuid}/refresh [put]
 // @Param       x_auth_token header string false "client session token"
 // @Param       uuid         path   string true  "Token 의 Uuid"
-// @Success     200 {object} v1.Token
+// @Success     200 {object} v1.ClusterToken
 func (ctl Control) RefreshClusterTokenTime(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
@@ -212,12 +208,12 @@ func (ctl Control) RefreshClusterTokenTime(ctx echo.Context) error {
 	uuid := echoutil.Param(ctx)[__UUID__]
 
 	//property
-	token := tokenv1.Token{}
+	token := clustertokenv1.ClusterToken{}
 	token.Uuid = uuid
 	token.IssuedAtTime, token.ExpirationTime = bearerTokenTimeIssueNow() //만료시간 연장
 
 	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		token_, err := vault.NewToken(db).Update(token)
+		token_, err := vault.NewClusterToken(db).Update(token)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "update token"))
@@ -236,11 +232,11 @@ func (ctl Control) RefreshClusterTokenTime(ctx echo.Context) error {
 // @Description Expire Cluster Token
 // @Accept      json
 // @Produce     json
-// @Tags        server/token
-// @Router      /server/token/cluster/{uuid}/expire [put]
+// @Tags        server/cluster_token
+// @Router      /server/cluster_token/{uuid}/expire [put]
 // @Param       x_auth_token header string false "client session token"
 // @Param       uuid         path   string true  "Token 의 Uuid"
-// @Success     200 {object} v1.Token
+// @Success     200 {object} v1.ClusterToken
 func (ctl Control) ExpireClusterToken(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
@@ -253,12 +249,12 @@ func (ctl Control) ExpireClusterToken(ctx echo.Context) error {
 	uuid := echoutil.Param(ctx)[__UUID__]
 
 	//property
-	token := tokenv1.Token{}
+	token := clustertokenv1.ClusterToken{}
 	token.Uuid = uuid
 	token.IssuedAtTime, token.ExpirationTime = time.Now(), time.Now() //현재 시간으로 만료시간 설정
 
 	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		token_, err := vault.NewToken(db).Update(token)
+		token_, err := vault.NewClusterToken(db).Update(token)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "update token"))
@@ -273,16 +269,16 @@ func (ctl Control) ExpireClusterToken(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
-// DeleteToken
+// DeleteClusterToken
 // @Description Delete a Token
 // @Accept      json
 // @Produce     json
-// @Tags        server/token
-// @Router      /server/token/{uuid} [delete]
+// @Tags        server/cluster_token
+// @Router      /server/cluster_token/{uuid} [delete]
 // @Param       x_auth_token header string false "client session token"
 // @Param       uuid         path   string true  "Token 의 Uuid"
 // @Success     200
-func (ctl Control) DeleteToken(ctx echo.Context) error {
+func (ctl Control) DeleteClusterToken(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
@@ -294,7 +290,7 @@ func (ctl Control) DeleteToken(ctx echo.Context) error {
 	uuid := echoutil.Param(ctx)[__UUID__]
 
 	_, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		err := vault.NewToken(db).Delete(uuid)
+		err := vault.NewClusterToken(db).Delete(uuid)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "delete token"))
@@ -307,21 +303,6 @@ func (ctl Control) DeleteToken(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, OK())
-}
-
-// validTokenUser
-func validTokenUser(ctx database.Context, user_kind tokenv1.TokenUserKind, user_uuid string) error {
-	switch user_kind {
-	case tokenv1.TokenUserKindCluster:
-		//get cluster
-		if _, err := vault.NewCluster(ctx).Get(user_uuid); err != nil {
-			return errors.Wrapf(err, "found cluster token user")
-		}
-	default:
-		return errors.Errorf("invalid token user kind")
-	}
-
-	return nil
 }
 
 func bearerTokenTimeIssueNow() (time.Time, time.Time) {

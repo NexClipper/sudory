@@ -13,6 +13,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
+	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/labstack/echo/v4"
@@ -140,7 +141,7 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 	service.TemplateUuid = body.TemplateUuid
 	service.Status = newist.Int32(int32(servicev1.StatusRegist)) //init service Status(Regist)
 	service.StepCount = newist.Int32(int32(len(body.Steps)))
-	service.SubscribeChannel = body.SubscribeChannel
+	service.SubscribeChannel = nullable.String(body.SubscribeChannel).Value()
 
 	//property step
 	steps := map_step_create(body.Steps, func(i int, sse stepv1.HttpReqServiceStep_Create_ByService) stepv1.ServiceStep {

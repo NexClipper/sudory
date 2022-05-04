@@ -21,7 +21,7 @@ ALTER TABLE `template`
 ALTER TABLE `template_recipe`
 	CHANGE COLUMN IF EXISTS `args` `args` TEXT NOT NULL COLLATE 'utf8mb4_unicode_ci' AFTER `method`,
 	DROP INDEX IF EXISTS `method`,
-	ADD INDEX `method` (`method`);
+	ADD INDEX IF NOT EXISTS `method_v2` (`method`);
 
 -- OSS-253
 
@@ -37,20 +37,22 @@ ALTER TABLE `service_step`
 
 -- OSS-284
 
-SELECT Count(*)
-INTO @exists
-FROM information_schema.tables 
-WHERE table_schema = (SELECT DATABASE())
-    AND table_type = 'BASE TABLE'
-    AND table_name = 'environment';
+-- SELECT Count(*)
+-- INTO @exists
+-- FROM information_schema.tables 
+-- WHERE table_schema = (SELECT DATABASE())
+--     AND table_type = 'BASE TABLE'
+--     AND table_name = 'environment';
 
-SET @query = If(@exists>0,
-    'RENAME TABLE environment TO global_variant',
-    'SELECT \'nothing to rename\' status');
+-- SET @query = If(@exists>0,
+--     'RENAME TABLE environment TO global_variant',
+--     'SELECT \'nothing to rename\' status');
 
-PREPARE stmt FROM @query;
+-- PREPARE stmt FROM @query;
 
-EXECUTE stmt;
+-- EXECUTE stmt;
+
+ALTER TABLE IF EXISTS `environment` RENAME `global_variant`;
 
 -- !OSS-284
 
@@ -58,28 +60,57 @@ EXECUTE stmt;
 
 DROP TABLE IF EXISTS `client`;
 
+-- ALTER TABLE `service`
+-- 	ADD COLUMN IF NOT EXISTS `subscribe_channel` VARCHAR(255) NULL DEFAULT NULL COMMENT 'subscribe channel' COLLATE 'utf8mb4_unicode_ci' AFTER `result`;
+	
+-- SELECT Count(*)
+-- INTO @exists
+-- FROM information_schema.columns 
+-- WHERE table_schema = (SELECT DATABASE())
+-- 	 AND TABLE_NAME = 'service'
+--     AND column_name = 'subscribe_event';
+
+-- SET @query = If(@exists>0,
+--     'UPDATE service SET  subscribe_channel = subscribe_event WHERE id = (SELECT id FROM service)',
+--     'SELECT \'nothing to rename\' status');
+
+-- PREPARE stmt FROM @QUERY;
+-- EXECUTE stmt;
+
+-- ALTER TABLE `service`
+-- 	DROP COLUMN IF EXISTS `subscribe_event`;
+
+ALTER TABLE service 
+    RENAME COLUMN IF EXISTS `subscribe_event` TO `subscribe_channel`;
+
+	
 -- !OSS-288
 
--- OSS-288
+-- OSS-287
 
-ALTER TABLE `service`
-	ADD COLUMN IF NOT EXISTS `subscribe_channel` VARCHAR(255) NULL DEFAULT NULL COMMENT 'subscribe channel' COLLATE 'utf8mb4_unicode_ci' AFTER `result`;
-	
-SELECT Count(*)
-INTO @exists
-FROM information_schema.columns 
-WHERE table_schema = (SELECT DATABASE())
-	 AND TABLE_NAME = 'service'
-    AND column_name = 'subscribe_event';
+-- SELECT Count(*)
+-- INTO @exists
+-- FROM information_schema.tables 
+-- WHERE table_schema = (SELECT DATABASE())
+--     AND table_type = 'BASE TABLE'
+--     AND table_name = 'token';
 
-SET @query = If(@exists>0,
-    'UPDATE service SET  subscribe_channel = subscribe_event WHERE id = (SELECT id FROM service)',
-    'SELECT \'nothing to rename\' status');
+-- SET @query = If(@exists>0,
+--     'RENAME TABLE token TO cluster_token',
+--     'SELECT \'nothing to rename\' status');
 
-PREPARE stmt FROM @QUERY;
-EXECUTE stmt;
+-- PREPARE stmt FROM @QUERY;
 
-ALTER TABLE `service`
-	DROP COLUMN IF EXISTS `subscribe_event`;
-	
--- !OSS-288
+-- EXECUTE stmt;
+
+ALTER TABLE IF EXISTS `token` RENAME `cluster_token`;
+
+ALTER TABLE `cluster_token`	
+    DROP COLUMN IF EXISTS `user_kind`;
+
+ALTER TABLE `cluster_token`
+    RENAME COLUMN IF EXISTS user_uuid TO cluster_uuid,
+	DROP INDEX IF EXISTS `IDX_token_user_uuid`,
+	ADD INDEX IF NOT EXISTS `IDX_token_cluster_uuid` (`cluster_uuid`) USING BTREE;
+
+-- !OSS-287
