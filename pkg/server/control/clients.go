@@ -353,8 +353,7 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 func newClientSession(payload sessionv1.ClientSessionPayload, token string) sessionv1.Session {
 	session := sessionv1.Session{}
 	session.Uuid = payload.Uuid
-	session.UserKind = "cluster"
-	session.UserUuid = payload.ClusterUuid
+	session.ClusterUuid = payload.ClusterUuid
 	session.Token = token
 	session.IssuedAtTime = time.Unix(payload.IssuedAt, 0)
 	session.ExpirationTime = time.Unix(payload.ExpiresAt, 0)

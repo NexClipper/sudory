@@ -389,6 +389,8 @@ definitions:
     type: object
   v1.Session:
     properties:
+      cluster_uuid:
+        type: string
       created:
         type: string
       deleted:
@@ -402,10 +404,6 @@ definitions:
       token:
         type: string
       updated:
-        type: string
-      user_kind:
-        type: string
-      user_uuid:
         type: string
       uuid:
         type: string

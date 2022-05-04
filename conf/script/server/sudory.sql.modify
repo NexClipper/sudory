@@ -121,3 +121,15 @@ ALTER TABLE service
     RENAME COLUMN IF EXISTS `subscribe_channel` TO `subscribed_channel`;
 
 -- !OSS-290
+
+-- OSS-285
+
+ALTER TABLE `session`	
+    DROP COLUMN IF EXISTS `user_kind`;
+
+ALTER TABLE `session`
+    RENAME COLUMN IF EXISTS user_uuid TO cluster_uuid,
+	DROP INDEX IF EXISTS `user_uuid`,
+	ADD INDEX IF NOT EXISTS `cluster_uuid` (`cluster_uuid`) USING BTREE;
+
+-- !OSS-285

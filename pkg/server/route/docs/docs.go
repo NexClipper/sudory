@@ -2260,6 +2260,9 @@ var doc = `{
         "v1.Session": {
             "type": "object",
             "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
                 "created": {
                     "type": "string"
                 },
@@ -2279,12 +2282,6 @@ var doc = `{
                     "type": "string"
                 },
                 "updated": {
-                    "type": "string"
-                },
-                "user_kind": {
-                    "type": "string"
-                },
-                "user_uuid": {
                     "type": "string"
                 },
                 "uuid": {
