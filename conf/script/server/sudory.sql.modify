@@ -114,3 +114,10 @@ ALTER TABLE `cluster_token`
 	ADD INDEX IF NOT EXISTS `IDX_token_cluster_uuid` (`cluster_uuid`) USING BTREE;
 
 -- !OSS-287
+
+-- OSS-290
+
+ALTER TABLE service 
+    RENAME COLUMN IF EXISTS `subscribe_channel` TO `subscribed_channel`;
+
+-- !OSS-290

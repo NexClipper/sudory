@@ -1,9 +1,7 @@
-
-TRUNCATE TABLE `client`;
 	
 TRUNCATE TABLE `cluster`;
 
-TRUNCATE TABLE `environment`;
+TRUNCATE TABLE `global_variant`;
 
 TRUNCATE TABLE `service`;
 
@@ -17,4 +15,4 @@ TRUNCATE TABLE `template_command`;
 
 TRUNCATE TABLE `template_recipe`;
 	
-TRUNCATE TABLE `token`;
+TRUNCATE TABLE `cluster_token`;

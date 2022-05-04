@@ -28,7 +28,7 @@ type ServiceProperty struct {
 	StepPosition       *int32           `json:"step_position,omitempty"        xorm:"'step_position'        int          notnull       comment('step_position')"`        //
 	Status             *int32           `json:"status,omitempty"               xorm:"'status'               int          notnull index comment('status')"`               //
 	Result             *cryptov1.String `json:"result,omitempty"               xorm:"'result'               longtext     null          comment('result')"`               //실행 결과(정상:'결과', 오류:'오류 메시지')
-	SubscribeChannel   string           `json:"subscribe_channel,omitempty"    xorm:"'subscribe_channel'    varchar(255) null          comment('subscribe channel')"`    //서비스 POLL 결과 전달 이벤트 채널 이름
+	SubscribedChannel  string           `json:"subscribed_channel,omitempty"   xorm:"'subscribed_channel'   varchar(255) null          comment('subscribed channel')"`   //서비스 POLL 결과 전달 이벤트 채널 이름
 	//  필드 타입에 포인터를 사용하는 이유:
 	//    xorm을 사용하면서 초기값을 갖는 타입들은
 	//    레코드를 수정할 때 해당 컬럼을 무시하기 때문에
@@ -93,11 +93,11 @@ func (Service) TableName() string {
 }
 
 type HttpReqService_Create struct {
-	metav1.LabelMeta `json:",inline"`                             //inline labelmeta
-	TemplateUuid     string                                       `json:"template_uuid"`
-	ClusterUuid      string                                       `json:"cluster_uuid"`
-	SubscribeChannel *string                                      `json:"subscribe_channel,omitempty"`
-	Steps            []stepv1.HttpReqServiceStep_Create_ByService `json:"steps"`
+	metav1.LabelMeta  `json:",inline"`                             //inline labelmeta
+	TemplateUuid      string                                       `json:"template_uuid"`
+	ClusterUuid       string                                       `json:"cluster_uuid"`
+	SubscribedChannel *string                                      `json:"subscribed_channel,omitempty"`
+	Steps             []stepv1.HttpReqServiceStep_Create_ByService `json:"steps"`
 }
 
 type HttpRspService struct {

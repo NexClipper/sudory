@@ -120,7 +120,7 @@ func TestJsonBind(t *testing.T) {
 		"name": "kps helm installation",
 		"template_uuid": "20000000000000000000000000000001",
 		"summary": "kps helm installation",
-		"subscribe_channel": "",
+		"subscribed_channel": "",
 		"steps": [
 			{
 				"args":{
