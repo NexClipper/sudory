@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"text/tabwriter"
 	"time"
 
@@ -195,7 +196,7 @@ func (r *Route) Start(port int32) error {
 	}()
 
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

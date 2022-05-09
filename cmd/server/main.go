@@ -83,7 +83,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 	defer eventClose() //이벤트 종료
 
 	//init cron
@@ -96,6 +95,8 @@ func main() {
 	r := route.New(cfg, db)
 
 	r.Start(cfg.Host.Port)
+
+	logger.Debugf("%s is DONE", path.Base(strings.ReplaceAll(os.Args[0], "\\", "/")))
 }
 
 func newEvent(filename string) (closer func(), err error) {
