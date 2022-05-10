@@ -7,7 +7,7 @@ CLUSTER_DESCRIPTION='TEST-CLUSTER'
 echo "Retrieve cluster_uuid!"
 cluster_uuid=$(curl --silent -X POST $SUDORY_SERVER_URL/server/cluster \
             -H "Content-Type: application/json"  \
-            --data '{ "name": "'$CLUSTER_NAME'", "polling_option": { "additionalProp1": {} }, "summary": "'$CLUSTER_DESCRIPTION'" }' | jq -r '.uuid')
+            --data '{ "name": "'$CLUSTER_NAME'", "polling_option": { "additionalProp1": {} }, "summary": "'$CLUSTER_DESCRIPTION'", "polling_limit": 0 }' | jq -r '.uuid')
 
 if [[ -z cluster_uuid ]]
 then
