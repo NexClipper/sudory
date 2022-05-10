@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
+
+	"helm.sh/helm/v3/pkg/release"
 )
 
 func convertArgsToStruct(args map[string]interface{}, obj interface{}) error {
@@ -67,4 +70,32 @@ func camelCaseToSnakeCase(input string) string {
 	}
 
 	return res
+}
+
+func extractResultFrom(rel *release.Release) (map[string]interface{}, error) {
+	if rel == nil {
+		return nil, fmt.Errorf("release.Release is nil")
+	}
+
+	res := make(map[string]interface{})
+
+	res["name"] = rel.Name
+	res["namespace"] = rel.Namespace
+	res["status"] = rel.Info.Status.String()
+	res["revision"] = rel.Version
+
+	if rel.Info != nil {
+		if !rel.Info.LastDeployed.IsZero() {
+			res["last_deployed"] = rel.Info.LastDeployed.Format(time.ANSIC)
+		}
+		if len(rel.Info.Notes) > 0 {
+			res["notes"] = strings.TrimSpace(rel.Info.Notes)
+		}
+	}
+
+	if len(rel.Config) > 0 {
+		res["user_supplied_values"] = rel.Config
+	}
+
+	return res, nil
 }

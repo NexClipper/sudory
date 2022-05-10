@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/release"
 )
 
 func setDefaultUninstallSettings(client *action.Uninstall) {
@@ -43,10 +44,23 @@ func (c *Client) Uninstall(args map[string]interface{}) (string, error) {
 		return "", err
 	}
 
-	b, err := json.Marshal(resp)
+	b, err := transformUninstallResultToJson(resp)
 	if err != nil {
-		return fmt.Sprintf("chart(%s) uninstall is success, but failed to json.Marhsal : %s", params.Name, err.Error()), nil
+		return fmt.Sprintf("chart(%s) uninstall is success, but failed to transform result to json : %s", params.Name, err.Error()), nil
 	}
 
 	return string(b), nil
+}
+
+func transformUninstallResultToJson(unrelResp *release.UninstallReleaseResponse) ([]byte, error) {
+	if unrelResp == nil {
+		return nil, fmt.Errorf("release.UninstallReleaseResponse is nil")
+	}
+
+	m, err := extractResultFrom(unrelResp.Release)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(&m)
 }

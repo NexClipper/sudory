@@ -8,6 +8,7 @@ import (
 
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/release"
 
 	"github.com/NexClipper/sudory/pkg/client/log"
 )
@@ -89,10 +90,19 @@ func (c *Client) Install(args map[string]interface{}) (string, error) {
 		return "", err
 	}
 
-	b, err := json.Marshal(rel)
+	b, err := transformInstallResultToJson(rel)
 	if err != nil {
-		return fmt.Sprintf("chart(%s) install is success, but failed to json.Marhsal : %s", params.Name, err.Error()), nil
+		return fmt.Sprintf("chart(%s) install is success, but failed to transform result to json : %s", params.Name, err.Error()), nil
 	}
 
 	return string(b), nil
+}
+
+func transformInstallResultToJson(rel *release.Release) ([]byte, error) {
+	m, err := extractResultFrom(rel)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(&m)
 }
