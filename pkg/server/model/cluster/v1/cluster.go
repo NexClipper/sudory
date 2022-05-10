@@ -6,7 +6,8 @@ import (
 
 //Cluster Property
 type ClusterProperty struct {
-	PollingOption map[string]interface{} `json:"polling_option,omitempty" xorm:"text null 'polling_option' comment('polling option')"`
+	PollingOption map[string]interface{} `json:"polling_option,omitempty" xorm:"'polling_option' text     null comment('polling option')"`
+	PoliingLimit  *int16                 `json:"polling_limit,omitempty"  xorm:"'polling_limit'  SMALLINT null comment('polling limit')"`
 }
 
 //Cluster

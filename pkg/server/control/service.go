@@ -68,7 +68,7 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 				)))
 	}
 	//valid cluster
-	if _, err := vault.NewCluster(ctl.NewSession()).Get(body.ClusterUuid); err != nil {
+	if _, err := vault.NewCluster(ctl.db.Engine().NewSession()).Get(body.ClusterUuid); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(errors.Wrapf(err, "found cluster"))
 	}
 	//valid template
@@ -286,13 +286,6 @@ func (ctl Control) GetServiceResult(ctx echo.Context) error {
 				"uuid", uuid,
 			)))
 	}
-
-	// where := "service_uuid = ?"
-	// steps, err := vault.NewServiceStep(ctl.NewSession()).Find(where, uuid)
-	// if err != nil {
-	// 	return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-	// 		errors.Wrapf(err, "find service step"))
-	// }
 
 	return ctx.JSON(http.StatusOK, servicev1.HttpRspService{Service: *service, Steps: steps})
 }

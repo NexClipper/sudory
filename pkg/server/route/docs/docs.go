@@ -1688,6 +1688,9 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
+                "polling_limit": {
+                    "type": "integer"
+                },
                 "polling_option": {
                     "type": "object",
                     "additionalProperties": true
@@ -1822,6 +1825,9 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
+                "polling_limit": {
+                    "type": "integer"
+                },
                 "polling_option": {
                     "type": "object",
                     "additionalProperties": true
@@ -1836,6 +1842,9 @@ var doc = `{
             "properties": {
                 "name": {
                     "type": "string"
+                },
+                "polling_limit": {
+                    "type": "integer"
                 },
                 "polling_option": {
                     "type": "object",

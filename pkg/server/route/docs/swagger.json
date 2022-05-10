@@ -1672,6 +1672,9 @@
                 "name": {
                     "type": "string"
                 },
+                "polling_limit": {
+                    "type": "integer"
+                },
                 "polling_option": {
                     "type": "object",
                     "additionalProperties": true
@@ -1806,6 +1809,9 @@
                 "name": {
                     "type": "string"
                 },
+                "polling_limit": {
+                    "type": "integer"
+                },
                 "polling_option": {
                     "type": "object",
                     "additionalProperties": true
@@ -1820,6 +1826,9 @@
             "properties": {
                 "name": {
                     "type": "string"
+                },
+                "polling_limit": {
+                    "type": "integer"
                 },
                 "polling_option": {
                     "type": "object",

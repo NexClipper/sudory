@@ -164,7 +164,7 @@ func (ctl Control) PollService(ctx echo.Context) error {
 	}
 
 	//make response
-	cluster_service := make([]servicev1.HttpRspService, 0)
+	rsp_service := make([]servicev1.HttpRspService, 0)
 	response_callback := func(s servicev1.Service, ss []stepv1.ServiceStep) {
 		//service; chaining step
 		s.ServiceProperty = s.ChaniningStep(ss)
@@ -175,7 +175,7 @@ func (ctl Control) PollService(ctx echo.Context) error {
 			ss[i] = mapper_response_step_status(ss[i])
 		}
 
-		cluster_service = append(cluster_service, servicev1.HttpRspService{Service: s, Steps: ss})
+		rsp_service = append(rsp_service, servicev1.HttpRspService{Service: s, Steps: ss})
 	}
 	//get token payload
 	payload, err := clientTokenPayload_once()
@@ -193,9 +193,9 @@ func (ctl Control) PollService(ctx echo.Context) error {
 
 	//save response
 	if _, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
-		for i := range cluster_service {
-			service := cluster_service[i].Service
-			steps := cluster_service[i].Steps
+		for i := range rsp_service {
+			service := rsp_service[i].Service
+			steps := rsp_service[i].Steps
 
 			service_, err := vault.NewService(tx).Update(service)
 			if err != nil {
@@ -213,8 +213,8 @@ func (ctl Control) PollService(ctx echo.Context) error {
 				steps[i] = *step_
 			}
 
-			cluster_service[i].Service = *service_
-			cluster_service[i].Steps = steps
+			rsp_service[i].Service = *service_
+			rsp_service[i].Steps = steps
 		}
 
 		return nil, nil
@@ -223,7 +223,7 @@ func (ctl Control) PollService(ctx echo.Context) error {
 	}
 
 	//invoke event (service-poll-out)
-	for _, response := range cluster_service {
+	for _, response := range rsp_service {
 		m := map[string]interface{}{
 			"event_name":           "service-poll-out",
 			"service_uuid":         response.Uuid,
@@ -244,7 +244,7 @@ func (ctl Control) PollService(ctx echo.Context) error {
 		event.Invoke("service-poll-out", m)
 	}
 
-	return ctx.JSON(http.StatusOK, cluster_service)
+	return ctx.JSON(http.StatusOK, rsp_service)
 }
 
 // Auth Client
@@ -399,10 +399,10 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 				)))
 	}
 
-	if _, err := ctl.Scope(func(db database.Context) (interface{}, error) {
+	if _, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
 		//smart polling
 		where := "uuid = ?"
-		clusters, err := vault.NewCluster(db).Find(where, claims.ClusterUuid)
+		clusters, err := vault.NewCluster(tx).Find(where, claims.ClusterUuid)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "find cluster%s",
@@ -419,7 +419,7 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 					)))
 		}
 
-		service_count, err := countGatherClusterService(db, claims.ClusterUuid)
+		service_count, err := countGatherClusterService(tx, claims.ClusterUuid)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "count undone service%s",
@@ -456,7 +456,7 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 		}
 		//udpate session
 		session := newClientSession(*claims, token_string)
-		if _, err := vault.NewSession(db).Update(session); err != nil {
+		if _, err := vault.NewSession(tx).Update(session); err != nil {
 			return nil, errors.Wrapf(err, "update session-token")
 		}
 
@@ -481,6 +481,14 @@ func usedJwtSigningMethod(token jwt.Token, init jwt.SigningMethod) jwt.SigningMe
 }
 
 func gatherClusterService(tx *xorm.Session, cluster_uuid string, fn func(servicev1.Service, []stepv1.ServiceStep)) error {
+	cluster, err := vault.NewCluster(tx).Get(cluster_uuid)
+	if err != nil {
+		return errors.Wrapf(err, "gather service for cluster")
+	}
+	if nullable.Int16(cluster.PoliingLimit).Has() && 0 < nullable.Int16(cluster.PoliingLimit).Value() {
+		tx = tx.Limit(int(nullable.Int16(cluster.PoliingLimit).Value()))
+	}
+
 	where := "cluster_uuid = ? AND (status BETWEEN ? AND ?)"
 	args := []interface{}{
 		cluster_uuid,
@@ -489,32 +497,33 @@ func gatherClusterService(tx *xorm.Session, cluster_uuid string, fn func(service
 	}
 	service, steps, err := vault.NewService(tx).Find(where, args...)
 	if err != nil {
-		return errors.Wrapf(err, "find service")
+		return errors.Wrapf(err, "gather service for cluster")
 	}
 	for _, service := range service {
-		// where := "service_uuid = ?"
-		// steps, err := vault.NewServiceStepX(tx).Find(where, service.Uuid)
-		// if err != nil {
-		// 	return errors.Wrapf(err, "find service step")
-		// }
-
 		fn(service, steps[service.Uuid])
 	}
 
 	return nil
 }
 
-func countGatherClusterService(db database.Context, cluster_uuid string) (int64, error) {
+func countGatherClusterService(tx *xorm.Session, cluster_uuid string) (int64, error) {
+	cluster, err := vault.NewCluster(tx).Get(cluster_uuid)
+	if err != nil {
+		return 0, errors.Wrapf(err, "count service for cluster")
+	}
+	if nullable.Int16(cluster.PoliingLimit).Has() && 0 < nullable.Int16(cluster.PoliingLimit).Value() {
+		tx = tx.Limit(int(nullable.Int16(cluster.PoliingLimit).Value()))
+	}
+
 	where := "cluster_uuid = ? AND (status BETWEEN ? AND ?)"
 	args := []interface{}{
 		cluster_uuid,
 		servicev1.StatusRegist,
 		servicev1.StatusProcessing,
 	}
-
-	count, err := db.Where(where, args...).Count(new(servicev1.Service))
+	count, err := tx.Where(where, args...).Count(new(servicev1.Service))
 	if err != nil {
-		return 0, errors.Wrapf(err, "service count")
+		return 0, errors.Wrapf(err, "count service for cluster")
 	}
 
 	return count, nil

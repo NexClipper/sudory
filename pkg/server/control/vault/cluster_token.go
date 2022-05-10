@@ -6,20 +6,20 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	clustertokenv1 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v1"
 	"github.com/pkg/errors"
+	"xorm.io/xorm"
 )
 
 type ClusterToken struct {
-	ctx database.Context
+	tx *xorm.Session
 }
 
-func NewClusterToken(ctx database.Context) *ClusterToken {
-	return &ClusterToken{ctx: ctx}
+func NewClusterToken(tx *xorm.Session) *ClusterToken {
+	return &ClusterToken{tx: tx}
 }
 
 func (vault ClusterToken) CreateToken(model clustertokenv1.ClusterToken) (*clustertokenv1.ClusterToken, error) {
-	//create
-	if err := vault.ctx.Create(&model); err != nil {
-		return nil, errors.Wrapf(err, "database create")
+	if err := database.XormCreate(vault.tx, &model); err != nil {
+		return nil, errors.Wrapf(err, "create %v", model.TableName())
 	}
 	return &model, nil
 }
@@ -30,12 +30,9 @@ func (vault ClusterToken) Get(uuid string) (*clustertokenv1.ClusterToken, error)
 		uuid,
 	}
 	model := &clustertokenv1.ClusterToken{}
-	if err := vault.ctx.Where(where, args...).Get(model); err != nil {
-		return nil, errors.Wrapf(err, "database get%v",
-			logs.KVL(
-				"where", where,
-				"args", args,
-			))
+	if err := database.XormGet(
+		vault.tx.Where(where, args...), model); err != nil {
+		return nil, errors.Wrapf(err, "get %v", model.TableName())
 	}
 
 	return model, nil
@@ -43,12 +40,9 @@ func (vault ClusterToken) Get(uuid string) (*clustertokenv1.ClusterToken, error)
 
 func (vault ClusterToken) Find(where string, args ...interface{}) ([]clustertokenv1.ClusterToken, error) {
 	models := make([]clustertokenv1.ClusterToken, 0)
-	if err := vault.ctx.Where(where, args...).Find(&models); err != nil {
-		return nil, errors.Wrapf(err, "database find%v",
-			logs.KVL(
-				"where", where,
-				"args", args,
-			))
+	if err := database.XormFind(
+		vault.tx.Where(where, args...), &models); err != nil {
+		return nil, errors.Wrapf(err, "find %v", new(clustertokenv1.ClusterToken).TableName())
 	}
 
 	return models, nil
@@ -58,7 +52,7 @@ func (vault ClusterToken) Query(query map[string]string) ([]clustertokenv1.Clust
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
-		return nil, errors.Wrapf(err, "prepare newParser%v",
+		return nil, errors.Wrapf(err, "query %v%v", new(clustertokenv1.ClusterToken).TableName(),
 			logs.KVL(
 				"query", query,
 			))
@@ -66,8 +60,9 @@ func (vault ClusterToken) Query(query map[string]string) ([]clustertokenv1.Clust
 
 	//find service
 	models := make([]clustertokenv1.ClusterToken, 0)
-	if err := vault.ctx.Prepared(preparer).Find(&models); err != nil {
-		return nil, errors.Wrapf(err, "database find%v",
+	if err := database.XormFind(
+		preparer.Prepared(vault.tx), &models); err != nil {
+		return nil, errors.Wrapf(err, "query %v%v", new(clustertokenv1.ClusterToken).TableName(),
 			logs.KVL(
 				"query", query,
 			))
@@ -81,12 +76,9 @@ func (vault ClusterToken) Update(model clustertokenv1.ClusterToken) (*clustertok
 	args := []interface{}{
 		model.Uuid,
 	}
-	if err := vault.ctx.Where(where, args...).Update(&model); err != nil {
-		return nil, errors.Wrapf(err, "database update%v",
-			logs.KVL(
-				"where", where,
-				"args", args,
-			))
+	if err := database.XormUpdate(
+		vault.tx.Where(where, args...), &model); err != nil {
+		return nil, errors.Wrapf(err, "update %v", model.TableName())
 	}
 
 	return &model, nil
@@ -98,12 +90,9 @@ func (vault ClusterToken) Delete(uuid string) error {
 		uuid,
 	}
 	model := &clustertokenv1.ClusterToken{}
-	if err := vault.ctx.Where(where, args...).Delete(model); err != nil {
-		return errors.Wrapf(err, "database delete%v",
-			logs.KVL(
-				"where", where,
-				"args", args,
-			))
+	if err := database.XormDelete(
+		vault.tx.Where(where, args...), model); err != nil {
+		return errors.Wrapf(err, "delete %v", model.TableName())
 	}
 
 	return nil

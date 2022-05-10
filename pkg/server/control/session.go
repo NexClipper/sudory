@@ -4,11 +4,11 @@ import (
 	"net/http"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
-	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
+	"xorm.io/xorm"
 )
 
 // Find Session
@@ -23,7 +23,7 @@ import (
 // @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.Session
 func (ctl Control) FindSession(ctx echo.Context) error {
-	r, err := vault.NewSession(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
+	r, err := vault.NewSession(ctl.db.Engine().NewSession()).Query(echoutil.QueryParam(ctx))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "find session"))
@@ -52,7 +52,7 @@ func (ctl Control) GetSession(ctx echo.Context) error {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	r, err := vault.NewSession(ctl.NewSession()).Get(uuid)
+	r, err := vault.NewSession(ctl.db.Engine().NewSession()).Get(uuid)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "get session"))
@@ -81,8 +81,8 @@ func (ctl Control) DeleteSession(ctx echo.Context) error {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	_, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		err := vault.NewSession(db).Delete(uuid)
+	_, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
+		err := vault.NewSession(tx).Delete(uuid)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "delete session"))

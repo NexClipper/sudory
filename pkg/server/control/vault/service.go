@@ -24,7 +24,7 @@ func (vault Service) Create(record servicev1.Service) (*servicev1.Service, error
 	//create service
 	if err := database.XormCreate(
 		vault.tx, &record); err != nil {
-		return nil, errors.Wrapf(err, "create service")
+		return nil, errors.Wrapf(err, "create %v", record.TableName())
 	}
 
 	return &record, nil
@@ -38,14 +38,15 @@ func (vault Service) Get(uuid string) (*servicev1.Service, []stepv1.ServiceStep,
 		uuid,
 	}
 	service := &servicev1.Service{}
-	if err := database.XormGet(vault.tx.Where(where, args...), service); err != nil {
-		return nil, nil, errors.Wrapf(err, "get service")
+	if err := database.XormGet(
+		vault.tx.Where(where, args...), service); err != nil {
+		return nil, nil, errors.Wrapf(err, "get %v", service.TableName())
 	}
 
 	//find step
 	steps, err := NewServiceStep(vault.tx).Find("service_uuid = ?", service.Uuid)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "get service")
+		return nil, nil, errors.Wrapf(err, "get %v", service.TableName())
 	}
 
 	sort.Slice(steps, func(i, j int) bool {
@@ -104,7 +105,7 @@ func (vault Service) Query(query map[string]string) ([]servicev1.Service, map[st
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
-		return services, stepSet, errors.Wrapf(err, "prepare newParser%v",
+		return services, stepSet, errors.Wrapf(err, "query %v%v", new(servicev1.Service).TableName(),
 			logs.KVL(
 				"query", query,
 			))
@@ -113,7 +114,10 @@ func (vault Service) Query(query map[string]string) ([]servicev1.Service, map[st
 	//find service
 	if err := database.XormFind(
 		preparer.Prepared(vault.tx), &services); err != nil {
-		return services, stepSet, errors.Wrapf(err, "query %v", new(servicev1.Service).TableName())
+		return services, stepSet, errors.Wrapf(err, "query %v%v", new(servicev1.Service).TableName(),
+			logs.KVL(
+				"query", query,
+			))
 	}
 
 	for _, service := range services {

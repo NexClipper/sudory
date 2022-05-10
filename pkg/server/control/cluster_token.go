@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
-	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
@@ -15,6 +14,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
+	"xorm.io/xorm"
 )
 
 // CreateClusterToken
@@ -53,7 +53,7 @@ func (ctl Control) CreateClusterToken(ctx echo.Context) error {
 	}
 
 	//valvalidied token user
-	if _, err := vault.NewCluster(ctl.NewSession()).Get(body.ClusterUuid); err != nil {
+	if _, err := vault.NewCluster(ctl.db.Engine().NewSession()).Get(body.ClusterUuid); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "valid cluster user%s",
 				logs.KVL(
@@ -69,8 +69,8 @@ func (ctl Control) CreateClusterToken(ctx echo.Context) error {
 	token.IssuedAtTime, token.ExpirationTime = bearerTokenTimeIssueNow()
 	token.Token = cryptov1.String(macro.NewUuidString())
 
-	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		token_, err := vault.NewClusterToken(db).CreateToken(token)
+	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
+		token_, err := vault.NewClusterToken(tx).CreateToken(token)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "create cluster token"))
@@ -97,7 +97,7 @@ func (ctl Control) CreateClusterToken(ctx echo.Context) error {
 // @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.ClusterToken
 func (ctl Control) FindClusterToken(ctx echo.Context) error {
-	r, err := vault.NewClusterToken(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
+	r, err := vault.NewClusterToken(ctl.db.Engine().NewSession()).Query(echoutil.QueryParam(ctx))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "find token"))
@@ -126,7 +126,7 @@ func (ctl Control) GetClusterToken(ctx echo.Context) error {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	r, err := vault.NewClusterToken(ctl.NewSession()).Get(uuid)
+	r, err := vault.NewClusterToken(ctl.db.Engine().NewSession()).Get(uuid)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "get token"))
@@ -170,9 +170,9 @@ func (ctl Control) UpdateClusterTokenLabel(ctx echo.Context) error {
 	token.Uuid = uuid
 	token.LabelMeta = NewLabelMeta(body.Name, body.Summary)
 
-	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
+	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
 		//update record
-		token_, err := vault.NewClusterToken(db).Update(token)
+		token_, err := vault.NewClusterToken(tx).Update(token)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "update token"))
@@ -212,8 +212,8 @@ func (ctl Control) RefreshClusterTokenTime(ctx echo.Context) error {
 	token.Uuid = uuid
 	token.IssuedAtTime, token.ExpirationTime = bearerTokenTimeIssueNow() //만료시간 연장
 
-	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		token_, err := vault.NewClusterToken(db).Update(token)
+	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
+		token_, err := vault.NewClusterToken(tx).Update(token)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "update token"))
@@ -253,8 +253,8 @@ func (ctl Control) ExpireClusterToken(ctx echo.Context) error {
 	token.Uuid = uuid
 	token.IssuedAtTime, token.ExpirationTime = time.Now(), time.Now() //현재 시간으로 만료시간 설정
 
-	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		token_, err := vault.NewClusterToken(db).Update(token)
+	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
+		token_, err := vault.NewClusterToken(tx).Update(token)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "update token"))
@@ -289,8 +289,8 @@ func (ctl Control) DeleteClusterToken(ctx echo.Context) error {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	_, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		err := vault.NewClusterToken(db).Delete(uuid)
+	_, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
+		err := vault.NewClusterToken(tx).Delete(uuid)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "delete token"))

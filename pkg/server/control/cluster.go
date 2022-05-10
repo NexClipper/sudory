@@ -5,12 +5,12 @@ import (
 	"net/http"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
-	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
+	"xorm.io/xorm"
 )
 
 // Create Cluster
@@ -50,8 +50,8 @@ func (ctl Control) CreateCluster(ctx echo.Context) error {
 		cluster.PollingOption = new(clusterv1.RagulerPollingOption).ToMap()
 	}
 
-	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		cluster_, err := vault.NewCluster(db).Create(cluster)
+	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
+		cluster_, err := vault.NewCluster(tx).Create(cluster)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "create cluster"))
@@ -77,7 +77,7 @@ func (ctl Control) CreateCluster(ctx echo.Context) error {
 // @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v1.Cluster
 func (ctl Control) FindCluster(ctx echo.Context) error {
-	clusters, err := vault.NewCluster(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
+	clusters, err := vault.NewCluster(ctl.db.Engine().NewSession()).Query(echoutil.QueryParam(ctx))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "find cluster"))
@@ -106,7 +106,7 @@ func (ctl Control) GetCluster(ctx echo.Context) error {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	cluster, err := vault.NewCluster(ctl.NewSession()).Get(uuid)
+	cluster, err := vault.NewCluster(ctl.db.Engine().NewSession()).Get(uuid)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "get cluster"))
@@ -151,8 +151,8 @@ func (ctl Control) UpdateCluster(ctx echo.Context) error {
 	cluster.LabelMeta = NewLabelMeta(body.Name, body.Summary)
 	cluster.ClusterProperty = body.ClusterProperty
 
-	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		cluster_, err := vault.NewCluster(db).Update(cluster)
+	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
+		cluster_, err := vault.NewCluster(tx).Update(cluster)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "update cluster"))
@@ -201,8 +201,8 @@ func (ctl Control) UpdateClusterPollingRaguler(ctx echo.Context) error {
 	cluster.Uuid = uuid                      //set uuid from path
 	cluster.SetPollingOption(polling_option) //update polling option
 
-	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		cluster_, err := vault.NewCluster(db).Update(cluster)
+	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
+		cluster_, err := vault.NewCluster(tx).Update(cluster)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "update cluster"))
@@ -252,8 +252,8 @@ func (ctl Control) UpdateClusterPollingSmart(ctx echo.Context) error {
 	cluster.Uuid = uuid                      //set uuid from path
 	cluster.SetPollingOption(polling_option) //update polling option
 
-	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		cluster_, err := vault.NewCluster(db).Update(cluster)
+	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
+		cluster_, err := vault.NewCluster(tx).Update(cluster)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "update cluster"))
@@ -288,8 +288,8 @@ func (ctl Control) DeleteCluster(ctx echo.Context) error {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	_, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		if err := vault.NewCluster(db).Delete(uuid); err != nil {
+	_, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
+		if err := vault.NewCluster(tx).Delete(uuid); err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "delete cluster"))
 		}

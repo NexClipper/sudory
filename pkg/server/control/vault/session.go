@@ -6,19 +6,20 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	"github.com/pkg/errors"
+	"xorm.io/xorm"
 )
 
 type Session struct {
-	ctx database.Context
+	tx *xorm.Session
 }
 
-func NewSession(ctx database.Context) *Session {
-	return &Session{ctx: ctx}
+func NewSession(tx *xorm.Session) *Session {
+	return &Session{tx: tx}
 }
 
 func (vault Session) Create(model sessionv1.Session) (*sessionv1.Session, error) {
-	if err := vault.ctx.Create(&model); err != nil {
-		return nil, errors.Wrapf(err, "database create")
+	if err := database.XormCreate(vault.tx, &model); err != nil {
+		return nil, errors.Wrapf(err, "create %v", model.TableName())
 	}
 
 	return &model, nil
@@ -30,12 +31,9 @@ func (vault Session) Get(uuid string) (*sessionv1.Session, error) {
 		uuid,
 	}
 	model := &sessionv1.Session{}
-	if err := vault.ctx.Where(where, args...).Get(model); err != nil {
-		return nil, errors.Wrapf(err, "database get%v",
-			logs.KVL(
-				"where", where,
-				"args", args,
-			))
+	if err := database.XormGet(
+		vault.tx.Where(where, args...), model); err != nil {
+		return nil, errors.Wrapf(err, "get %v", model.TableName())
 	}
 
 	return model, nil
@@ -43,12 +41,9 @@ func (vault Session) Get(uuid string) (*sessionv1.Session, error) {
 
 func (vault Session) Find(where string, args ...interface{}) ([]sessionv1.Session, error) {
 	models := make([]sessionv1.Session, 0)
-	if err := vault.ctx.Where(where, args...).Find(&models); err != nil {
-		return nil, errors.Wrapf(err, "database find%v",
-			logs.KVL(
-				"where", where,
-				"args", args,
-			))
+	if err := database.XormFind(
+		vault.tx.Where(where, args...), &models); err != nil {
+		return nil, errors.Wrapf(err, "find %v", new(sessionv1.Session).TableName())
 	}
 
 	return models, nil
@@ -66,8 +61,9 @@ func (vault Session) Query(query map[string]string) ([]sessionv1.Session, error)
 
 	//find service
 	models := make([]sessionv1.Session, 0)
-	if err := vault.ctx.Prepared(preparer).Find(&models); err != nil {
-		return nil, errors.Wrapf(err, "database find%v",
+	if err := database.XormFind(
+		preparer.Prepared(vault.tx), &models); err != nil {
+		return nil, errors.Wrapf(err, "query %v%v", new(sessionv1.Session).TableName(),
 			logs.KVL(
 				"query", query,
 			))
@@ -81,12 +77,9 @@ func (vault Session) Update(model sessionv1.Session) (*sessionv1.Session, error)
 	args := []interface{}{
 		model.Uuid,
 	}
-	if err := vault.ctx.Where(where, args...).Update(&model); err != nil {
-		return nil, errors.Wrapf(err, "database update%v",
-			logs.KVL(
-				"where", where,
-				"args", args,
-			))
+	if err := database.XormUpdate(
+		vault.tx.Where(where, args...), &model); err != nil {
+		return nil, errors.Wrapf(err, "update %v", model.TableName())
 	}
 
 	return &model, nil
@@ -99,12 +92,9 @@ func (vault Session) Delete(uuid string) error {
 	}
 
 	model := &sessionv1.Session{}
-	if err := vault.ctx.Where(where, args...).Delete(model); err != nil {
-		return errors.Wrapf(err, "database delete%v",
-			logs.KVL(
-				"where", where,
-				"args", args,
-			))
+	if err := database.XormDelete(
+		vault.tx.Where(where, args...), model); err != nil {
+		return errors.Wrapf(err, "delete %v", model.TableName())
 	}
 
 	return nil

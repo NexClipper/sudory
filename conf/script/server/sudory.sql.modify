@@ -140,3 +140,10 @@ ALTER TABLE `service`
 	ADD COLUMN  IF NOT EXISTS `on_complition` TINYINT NOT NULL DEFAULT 0 COMMENT 'on complition' AFTER `subscribed_channel`;
 
 -- !OSS-297
+
+-- OSS-299
+
+ALTER TABLE `cluster`
+	ADD COLUMN IF NOT EXISTS `polling_limit` SMALLINT NOT NULL DEFAULT 0 AFTER `polling_option`;
+    
+-- !OSS-299
