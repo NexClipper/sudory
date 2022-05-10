@@ -104,7 +104,7 @@ CREATE TABLE `service` (
   `status` int(11) DEFAULT NULL COMMENT 'status',
   `result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `subscribed_channel` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'subscribe channel',
-  `on_complition` tinyint(4) NOT NULL DEFAULT 0 COMMENT 'on complition',
+  `on_completion` tinyint(4) NOT NULL DEFAULT 0 COMMENT 'on completion',
   `created` datetime DEFAULT NULL,
   `updated` datetime DEFAULT NULL,
   `deleted` datetime DEFAULT NULL,

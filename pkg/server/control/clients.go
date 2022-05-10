@@ -143,11 +143,11 @@ func (ctl Control) PollService(ctx echo.Context) error {
 				}
 			}
 
-			//OnComplition
+			//OnCompletion
 			if servicev1.StatusSuccess <= servicev1.Status(nullable.Int32(service.Status).Value()) {
-				switch servicev1.OnComplition(nullable.Int8(service.OnComplition).Value()) {
-				case servicev1.OnComplitionRemove:
-					//OnComplitionRemove
+				switch servicev1.OnCompletion(nullable.Int8(service.OnCompletion).Value()) {
+				case servicev1.OnCompletionRemove:
+					//OnCompletionRemove
 					if err := vault.NewService(tx).Delete(service.Uuid); err != nil {
 						return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 							errors.Wrapf(err, "fire and forbidden a service%v",

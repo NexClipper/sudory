@@ -137,7 +137,10 @@ ALTER TABLE `session`
 -- OSS-297
 
 ALTER TABLE `service`
-	ADD COLUMN  IF NOT EXISTS `on_complition` TINYINT NOT NULL DEFAULT 0 COMMENT 'on complition' AFTER `subscribed_channel`;
+	ADD COLUMN  IF NOT EXISTS `on_completion` TINYINT NOT NULL DEFAULT 0 COMMENT 'on completion' AFTER `subscribed_channel`;
+
+ALTER TABLE `service`	
+    DROP COLUMN IF EXISTS `on_complition`;
 
 -- !OSS-297
 
