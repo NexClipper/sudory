@@ -5,6 +5,7 @@ import (
 
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	clsttknv1 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v1"
+	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
 	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variant/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
@@ -30,14 +31,22 @@ func TestSync(t *testing.T) {
 			args: new(servicev1.Service), want: nil, wantErr: false},
 		{name: "sessionv1",
 			args: new(sessionv1.Session), want: nil, wantErr: false},
-		{name: "sessionv1",
-			args: new(sessionv1.Session), want: nil, wantErr: false},
 		{name: "commandv1",
 			args: new(commandv1.TemplateCommand), want: nil, wantErr: false},
 		{name: "templatev1",
 			args: new(templatev1.Template), want: nil, wantErr: false},
 		{name: "tokenv1",
 			args: new(clsttknv1.ClusterToken), want: nil, wantErr: false},
+		{name: "eventv1:event",
+			args: new(eventv1.Event), want: nil, wantErr: false},
+		{name: "eventv1::notifier_edge",
+			args: new(eventv1.EventNotifierEdge), want: nil, wantErr: false},
+		{name: "eventv1::console",
+			args: new(eventv1.EventNotifierConsole), want: nil, wantErr: false},
+		{name: "eventv1::webhook",
+			args: new(eventv1.EventNotifierWebhook), want: nil, wantErr: false},
+		{name: "eventv1::rabbitMq",
+			args: new(eventv1.EventNotifierRabbitMq), want: nil, wantErr: false},
 
 		// TODO: Add test cases.
 	}

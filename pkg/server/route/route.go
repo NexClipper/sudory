@@ -182,6 +182,24 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.POST("/cluster_token", controller.CreateClusterToken)
 		group.PUT("/cluster_token/:uuid/refresh", controller.RefreshClusterTokenTime)
 		group.PUT("/cluster_token/:uuid/expire", controller.ExpireClusterToken)
+		//server/event*
+		group.POST("/event", controller.CreateEvent)
+		group.GET("/event", controller.FindEvent)
+		group.GET("/event/:uuid", controller.GetEvent)
+		group.PUT("/event/:uuid", controller.UpdateEvent)
+		group.PUT("/event/:uuid/notifier/add", controller.UpdateEventAddtionNotifier)
+		group.PUT("/event/:uuid/notifier/sub", controller.UpdateEventSubtractionNotifier)
+		group.DELETE("/event/:uuid", controller.DeleteEvent)
+		//server/event_notifier*
+		group.POST("/event_notifier/console", controller.CreateEventNotifierConsole)
+		group.POST("/event_notifier/webhook", controller.CreateEventNotifierWebhook)
+		group.POST("/event_notifier/rabbitmq", controller.CreateEventNotifierRabbitMq)
+		group.GET("/event_notifier/:event_notifier_type", controller.FindEventNotifier)
+		group.GET("/event_notifier/:event_notifier_type/:uuid", controller.GetEventNotifier)
+		group.PUT("/event_notifier/console/:uuid", controller.UpdateEventNotifierConsole)
+		group.PUT("/event_notifier/webhook/:uuid", controller.UpdateEventNotifierWebhook)
+		group.PUT("/event_notifier/rabbitmq/:uuid", controller.UpdateEventNotifierRabbitMq)
+		group.DELETE("/event_notifier/:event_notifier_type/:uuid", controller.DeleteEventNotifier)
 	}
 
 	return &Route{e: e}

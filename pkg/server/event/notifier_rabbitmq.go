@@ -10,7 +10,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-type rabbitMQNotifier struct {
+type RabbitMQNotifier struct {
 	opt RabbitMQNotifierConfig
 	sub EventSubscriber
 
@@ -18,8 +18,8 @@ type rabbitMQNotifier struct {
 	channel    *amqp.Channel    //RabbitMQ //amqp.Channel
 }
 
-func NewRabbitMqNotifier(opt RabbitMQNotifierConfig) (*rabbitMQNotifier, error) {
-	conn, ch, err := new(rabbitMQNotifier).dial(opt.Url)
+func NewRabbitMqNotifier(opt RabbitMQNotifierConfig) (*RabbitMQNotifier, error) {
+	conn, ch, err := new(RabbitMQNotifier).Dial(opt.Url)
 	if err != nil {
 		return nil, errors.Wrapf(err, "dial to rabbimq%s",
 			logs.KVL(
@@ -27,18 +27,18 @@ func NewRabbitMqNotifier(opt RabbitMQNotifierConfig) (*rabbitMQNotifier, error) 
 			))
 	}
 
-	notifier := &rabbitMQNotifier{}
+	notifier := &RabbitMQNotifier{}
 	notifier.opt = opt
 	notifier.connection = conn
 	notifier.channel = ch
 
 	return notifier, nil
 }
-func (notifier rabbitMQNotifier) Type() string {
+func (notifier RabbitMQNotifier) Type() string {
 	return NotifierTypeRabbitMQ.String()
 }
 
-func (notifier rabbitMQNotifier) Property() map[string]string {
+func (notifier RabbitMQNotifier) Property() map[string]string {
 	return map[string]string{
 		"name":        notifier.sub.Config().Name,
 		"type":        notifier.Type(),
@@ -48,7 +48,7 @@ func (notifier rabbitMQNotifier) Property() map[string]string {
 	}
 }
 
-func (notifier rabbitMQNotifier) PropertyString() string {
+func (notifier RabbitMQNotifier) PropertyString() string {
 	buff := bytes.Buffer{}
 	for key, value := range notifier.Property() {
 		if 0 < buff.Len() {
@@ -61,7 +61,7 @@ func (notifier rabbitMQNotifier) PropertyString() string {
 	return buff.String()
 }
 
-func (notifier *rabbitMQNotifier) Regist(sub EventSubscriber) {
+func (notifier *RabbitMQNotifier) Regist(sub EventSubscriber) {
 	//Subscribe
 	if !(sub == nil && notifier.sub != nil) {
 		notifier.sub = sub
@@ -69,7 +69,7 @@ func (notifier *rabbitMQNotifier) Regist(sub EventSubscriber) {
 	}
 }
 
-func (notifier *rabbitMQNotifier) Close() {
+func (notifier *RabbitMQNotifier) Close() {
 	//Unsubscribe
 	if notifier.sub != nil {
 		notifier.sub.Notifiers().Remove(notifier)
@@ -83,10 +83,10 @@ func (notifier *rabbitMQNotifier) Close() {
 	}
 }
 
-func (notifier *rabbitMQNotifier) OnNotify(factory MarshalFactory) error {
+func (notifier *RabbitMQNotifier) OnNotify(factory MarshalFactory) error {
 	var established bool = !(notifier.connection == nil || notifier.connection.IsClosed())
 	if !established {
-		conn, ch, err := notifier.dial(notifier.opt.Url)
+		conn, ch, err := notifier.Dial(notifier.opt.Url)
 		if err != nil {
 			return errors.Wrapf(err, "dial to rabbimq%s",
 				logs.KVL(
@@ -106,7 +106,7 @@ func (notifier *rabbitMQNotifier) OnNotify(factory MarshalFactory) error {
 		return errors.Wrapf(err, "marshal factory")
 	}
 	for _, b := range b {
-		if err := notifier.publish(opt, ch, b); err != nil {
+		if err := notifier.Publish(opt, ch, b); err != nil {
 			return errors.Wrapf(err, "publish to rabbimq%s",
 				logs.KVL(
 					"opt", opt,
@@ -117,7 +117,7 @@ func (notifier *rabbitMQNotifier) OnNotify(factory MarshalFactory) error {
 	return nil
 }
 
-func (notifier rabbitMQNotifier) OnNotifyAsync(factory MarshalFactory) <-chan NotifierFuture {
+func (notifier RabbitMQNotifier) OnNotifyAsync(factory MarshalFactory) <-chan NotifierFuture {
 	future := make(chan NotifierFuture)
 	go func() {
 		defer close(future)
@@ -128,7 +128,7 @@ func (notifier rabbitMQNotifier) OnNotifyAsync(factory MarshalFactory) <-chan No
 	return future
 }
 
-func (rabbitMQNotifier) dial(url string) (*amqp.Connection, *amqp.Channel, error) {
+func (RabbitMQNotifier) Dial(url string) (*amqp.Connection, *amqp.Channel, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "dial to amqp url=%s", url)
@@ -142,7 +142,7 @@ func (rabbitMQNotifier) dial(url string) (*amqp.Connection, *amqp.Channel, error
 	return conn, ch, nil
 }
 
-func (rabbitMQNotifier) publish(opt RabbitMQNotifierConfig, ch *amqp.Channel, b []byte) error {
+func (RabbitMQNotifier) Publish(opt RabbitMQNotifierConfig, ch *amqp.Channel, b []byte) error {
 	publishing := amqp.Publishing{}
 	publishing.ContentType = opt.MessageContentType
 	publishing.ContentEncoding = opt.MessageContentEncoding

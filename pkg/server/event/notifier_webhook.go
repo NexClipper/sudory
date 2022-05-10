@@ -8,6 +8,7 @@ import (
 	"net/textproto"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/pkg/errors"
@@ -27,7 +28,7 @@ func NewWebhookNotifier(opt WebhookNotifierConfig) *webhookNotifier {
 	opt.Method = strings.ToUpper(opt.Method) //Method to upper
 
 	if opt.RequestTimeout == 0 {
-		opt.RequestTimeout = 15 //set default timeout
+		opt.RequestTimeout = 15 * time.Second //set default timeout
 	}
 
 	client := http.DefaultClient

@@ -8,4 +8,6 @@ const (
 	__UUID__          = "uuid"
 	__SERVICE_UUID__  = "service_uuid"
 	__TEMPLATE_UUID__ = "template_uuid"
+
+	__EVENT_NOTIFIER_TYPE__ = "event_notifier_type"
 )

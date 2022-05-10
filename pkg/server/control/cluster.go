@@ -20,7 +20,7 @@ import (
 // @Tags        server/cluster
 // @Router      /server/cluster [post]
 // @Param       x_auth_token header string                   false "client session token"
-// @Param       client       body   v1.HttpReqCluster_Create true  "HttpReqCluster_Create"
+// @Param       cluster      body   v1.HttpReqCluster_Create true  "HttpReqCluster_Create"
 // @Success     200 {object} v1.Cluster
 func (ctl Control) CreateCluster(ctx echo.Context) error {
 	body := new(clusterv1.HttpReqCluster_Create)
@@ -123,7 +123,7 @@ func (ctl Control) GetCluster(ctx echo.Context) error {
 // @Router      /server/cluster/{uuid} [put]
 // @Param       x_auth_token header string                   false "client session token"
 // @Param       uuid         path   string                   true  "Cluster 의 Uuid"
-// @Param       client       body   v1.HttpReqCluster_Update true  "HttpReqCluster_Update"
+// @Param       cluster      body   v1.HttpReqCluster_Update true  "HttpReqCluster_Update"
 // @Success     200 {object} v1.Cluster
 func (ctl Control) UpdateCluster(ctx echo.Context) error {
 	body := new(clusterv1.HttpReqCluster_Update)
