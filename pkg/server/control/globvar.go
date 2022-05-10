@@ -4,12 +4,12 @@ import (
 	"net/http"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
-	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variant/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
+	"xorm.io/xorm"
 )
 
 // Find global_variant
@@ -24,7 +24,7 @@ import (
 // @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
 // @Success 200 {array} v1.GlobalVariant
 func (ctl Control) FindGlobalVariant(ctx echo.Context) error {
-	env, err := vault.NewEnvironment(ctl.NewSession()).Query(echoutil.QueryParam(ctx))
+	env, err := vault.NewGlobalVariant(ctl.db.Engine().NewSession()).Query(echoutil.QueryParam(ctx))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "find environment"))
@@ -53,7 +53,7 @@ func (ctl Control) GetGlobalVariant(ctx echo.Context) error {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	env, err := vault.NewEnvironment(ctl.NewSession()).Get(uuid)
+	env, err := vault.NewGlobalVariant(ctl.db.Engine().NewSession()).Get(uuid)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "get environment"))
@@ -97,8 +97,8 @@ func (ctl Control) UpdateGlobalVariantValue(ctx echo.Context) error {
 	env.Uuid = uuid
 	env.Value = update_env.Value
 
-	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		env, err := vault.NewEnvironment(db).Update(env)
+	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
+		env, err := vault.NewGlobalVariant(tx).Update(env)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "update environment"))

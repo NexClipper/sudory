@@ -6,22 +6,24 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variant/v1"
 	"github.com/pkg/errors"
+	"xorm.io/xorm"
 )
 
 type GlobalVariant struct {
-	ctx database.Context
+	tx *xorm.Session
 }
 
-func NewEnvironment(ctx database.Context) *GlobalVariant {
-	return &GlobalVariant{ctx: ctx}
+func NewGlobalVariant(ctx *xorm.Session) *GlobalVariant {
+	return &GlobalVariant{tx: ctx}
 }
 
-func (vault GlobalVariant) Create(model globvarv1.GlobalVariant) (*globvarv1.GlobalVariant, error) {
-	if err := vault.ctx.Create(&model); err != nil {
-		return nil, errors.Wrapf(err, "database create")
+func (vault GlobalVariant) Create(record globvarv1.GlobalVariant) (*globvarv1.GlobalVariant, error) {
+	if err := database.XormCreate(
+		vault.tx, &record); err != nil {
+		return nil, errors.Wrapf(err, "create %v", record.TableName())
 	}
 
-	return &model, nil
+	return &record, nil
 }
 
 func (vault GlobalVariant) Get(uuid string) (*globvarv1.GlobalVariant, error) {
@@ -29,26 +31,20 @@ func (vault GlobalVariant) Get(uuid string) (*globvarv1.GlobalVariant, error) {
 	args := []interface{}{
 		uuid,
 	}
-	model := &globvarv1.GlobalVariant{}
-	if err := vault.ctx.Where(where, args...).Get(model); err != nil {
-		return nil, errors.Wrapf(err, "database get%v",
-			logs.KVL(
-				"where", where,
-				"args", args,
-			))
+	record := &globvarv1.GlobalVariant{}
+	if err := database.XormGet(
+		vault.tx.Where(where, args...), record); err != nil {
+		return nil, errors.Wrapf(err, "get %v", record.TableName())
 	}
 
-	return model, nil
+	return record, nil
 }
 
 func (vault GlobalVariant) Find(where string, args ...interface{}) ([]globvarv1.GlobalVariant, error) {
 	models := make([]globvarv1.GlobalVariant, 0)
-	if err := vault.ctx.Where(where, args...).Find(&models); err != nil {
-		return nil, errors.Wrapf(err, "database find%v",
-			logs.KVL(
-				"where", where,
-				"args", args,
-			))
+	if err := database.XormFind(
+		vault.tx.Where(where, args...), &models); err != nil {
+		return nil, errors.Wrapf(err, "find %v", new(globvarv1.GlobalVariant).TableName())
 	}
 
 	return models, nil
@@ -64,32 +60,27 @@ func (vault GlobalVariant) Query(query map[string]string) ([]globvarv1.GlobalVar
 			))
 	}
 
-	//find service
-	models := make([]globvarv1.GlobalVariant, 0)
-	if err := vault.ctx.Prepared(preparer).Find(&models); err != nil {
-		return nil, errors.Wrapf(err, "database find%v",
-			logs.KVL(
-				"query", query,
-			))
+	//find
+	records := make([]globvarv1.GlobalVariant, 0)
+	if err := database.XormFind(
+		preparer.Prepared(vault.tx), &records); err != nil {
+		return nil, errors.Wrapf(err, "query %v", new(globvarv1.GlobalVariant).TableName())
 	}
 
-	return models, nil
+	return records, nil
 }
 
-func (vault GlobalVariant) Update(model globvarv1.GlobalVariant) (*globvarv1.GlobalVariant, error) {
+func (vault GlobalVariant) Update(record globvarv1.GlobalVariant) (*globvarv1.GlobalVariant, error) {
 	where := "uuid = ?"
 	args := []interface{}{
-		model.Uuid,
+		record.Uuid,
 	}
-	if err := vault.ctx.Where(where, args...).Update(&model); err != nil {
-		return nil, errors.Wrapf(err, "database update%v",
-			logs.KVL(
-				"where", where,
-				"args", args,
-			))
+	if err := database.XormUpdate(
+		vault.tx.Where(where, args...), &record); err != nil {
+		return nil, errors.Wrapf(err, "update %v", record.TableName())
 	}
 
-	return &model, nil
+	return &record, nil
 }
 
 func (vault GlobalVariant) Delete(uuid string) error {
@@ -97,13 +88,10 @@ func (vault GlobalVariant) Delete(uuid string) error {
 	args := []interface{}{
 		uuid,
 	}
-	model := &globvarv1.GlobalVariant{}
-	if err := vault.ctx.Where(where, args...).Delete(model); err != nil {
-		return errors.Wrapf(err, "database delete%v",
-			logs.KVL(
-				"where", where,
-				"args", args,
-			))
+	record := &globvarv1.GlobalVariant{}
+	if err := database.XormDelete(
+		vault.tx.Where(where, args...), record); err != nil {
+		return errors.Wrapf(err, "delete %v", record.TableName())
 	}
 
 	return nil

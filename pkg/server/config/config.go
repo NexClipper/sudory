@@ -1,6 +1,8 @@
 package config
 
 import (
+	"time"
+
 	"github.com/jinzhu/configor"
 )
 
@@ -35,6 +37,8 @@ type Config struct {
 	Encryption string `yaml:"encryption" default:"enigma.yml"`
 
 	Events string `yaml:"events" default:"events.yml"`
+
+	RespitePeriod time.Duration `default:"60m" yaml:"respite-period"` //(minute) 0: no use
 }
 
 func New(c *Config, configPath string) (*Config, error) {

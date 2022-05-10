@@ -5,11 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
-	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
@@ -19,6 +17,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"github.com/qri-io/jsonschema"
+	"xorm.io/xorm"
 )
 
 // Create Service
@@ -142,6 +141,7 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 	service.Status = newist.Int32(int32(servicev1.StatusRegist)) //init service Status(Regist)
 	service.StepCount = newist.Int32(int32(len(body.Steps)))
 	service.SubscribedChannel = nullable.String(body.SubscribedChannel).Value()
+	service.OnComplition = nullable.Int8(body.OnComplition).Ptr()
 
 	//property step
 	steps := map_step_create(body.Steps, func(i int, sse stepv1.HttpReqServiceStep_Create_ByService) stepv1.ServiceStep {
@@ -163,15 +163,15 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 	//property service; chaining step
 	service.ServiceProperty = service.ChaniningStep(steps)
 
-	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		service, err := vault.NewService(db).Create(service)
+	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
+		service, err := vault.NewService(tx).Create(service)
 		if err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "database create"))
 		}
 
 		if err := foreach_step(steps, func(i int, step stepv1.ServiceStep) error {
-			step_, err := vault.NewServiceStep(db).Create(step)
+			step_, err := vault.NewServiceStep(tx).Create(step)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 					errors.Wrapf(err, "database create"))
@@ -208,7 +208,7 @@ func (ctl Control) FindService(ctx echo.Context) error {
 	tx := ctl.NewSession()
 	defer tx.Close()
 
-	services, err := vault.NewService(tx).Query(echoutil.QueryParam(ctx))
+	services, steps, err := vault.NewService(ctl.db.Engine().NewSession()).Query(echoutil.QueryParam(ctx))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "find service"))
@@ -219,26 +219,7 @@ func (ctl Control) FindService(ctx echo.Context) error {
 
 	rsp := make([]servicev1.HttpRspService, len(services))
 	if err := foreach_service(services, func(i int, s servicev1.Service) error {
-		where := "service_uuid = ?"
-		steps, err := vault.NewServiceStep(tx).Find(where, s.Uuid)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-				errors.Wrapf(err, "find service step"))
-		}
-
-		sort.Slice(steps, func(i, j int) bool {
-			var a, b int32 = 0, 0
-			if steps[i].Sequence != nil {
-				a = *steps[i].Sequence
-			}
-			if steps[j].Sequence != nil {
-				b = *steps[j].Sequence
-			}
-			return a < b
-		})
-
-		rsp[i] = servicev1.HttpRspService{Service: s, Steps: steps}
-
+		rsp[i] = servicev1.HttpRspService{Service: s, Steps: steps[s.Uuid]}
 		return nil
 	}); err != nil {
 		return err
@@ -267,31 +248,13 @@ func (ctl Control) GetService(ctx echo.Context) error {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	service, err := vault.NewService(ctl.NewSession()).Get(uuid)
+	service, steps, err := vault.NewService(ctl.db.Engine().NewSession()).Get(uuid)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "get service"))
 	}
 	//서비스 조회에 결과 필드는 제거
 	*service = service_exclude_result(*service)
-
-	where := "service_uuid = ?"
-	steps, err := vault.NewServiceStep(ctl.NewSession()).Find(where, uuid)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "find service step"))
-	}
-
-	sort.Slice(steps, func(i, j int) bool {
-		var a, b int32 = 0, 0
-		if steps[i].Sequence != nil {
-			a = *steps[i].Sequence
-		}
-		if steps[j].Sequence != nil {
-			b = *steps[j].Sequence
-		}
-		return a < b
-	})
 
 	return ctx.JSON(http.StatusOK, servicev1.HttpRspService{Service: *service, Steps: steps})
 }
@@ -316,7 +279,7 @@ func (ctl Control) GetServiceResult(ctx echo.Context) error {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	service, err := vault.NewService(ctl.NewSession()).Get(uuid)
+	service, steps, err := vault.NewService(ctl.db.Engine().NewSession()).Get(uuid)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(errors.Wrapf(err, "get service%s",
 			logs.KVL(
@@ -324,12 +287,12 @@ func (ctl Control) GetServiceResult(ctx echo.Context) error {
 			)))
 	}
 
-	where := "service_uuid = ?"
-	steps, err := vault.NewServiceStep(ctl.NewSession()).Find(where, uuid)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "find service step"))
-	}
+	// where := "service_uuid = ?"
+	// steps, err := vault.NewServiceStep(ctl.NewSession()).Find(where, uuid)
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+	// 		errors.Wrapf(err, "find service step"))
+	// }
 
 	return ctx.JSON(http.StatusOK, servicev1.HttpRspService{Service: *service, Steps: steps})
 }
@@ -354,14 +317,9 @@ func (ctl Control) DeleteService(ctx echo.Context) error {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	_, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-		if err := vault.NewServiceStep(db).Delete_ByService(uuid); err != nil {
-			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-				errors.Wrapf(err, "delete service step"))
-		}
-		if err := vault.NewService(db).Delete(uuid); err != nil {
-			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-				errors.Wrapf(err, "delete service"))
+	_, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
+		if err := vault.NewService(tx).Delete(uuid); err != nil {
+			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(err)
 		}
 
 		return nil, nil

@@ -37,3 +37,5 @@ events: /app/conf/rules/events.yml
 # cors-config:
 #   allow-origins:  google.com, example.com
 #   allow-methods:  get, put, delete
+
+respite-period: 60m

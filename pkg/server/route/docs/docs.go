@@ -1884,6 +1884,10 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
+                "on_complition": {
+                    "description": "서비스 완료 후",
+                    "type": "integer"
+                },
                 "result": {
                     "description": "실행 결과(정상:'결과', 오류:'오류 메시지')",
                     "type": "string"
@@ -1929,6 +1933,9 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "on_complition": {
+                    "type": "integer"
                 },
                 "steps": {
                     "type": "array",
@@ -2074,6 +2081,10 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
+                "on_complition": {
+                    "description": "서비스 완료 후",
+                    "type": "integer"
+                },
                 "result": {
                     "description": "실행 결과(정상:'결과', 오류:'오류 메시지')",
                     "type": "string"
@@ -2131,6 +2142,10 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "on_complition": {
+                    "description": "서비스 완료 후",
+                    "type": "integer"
                 },
                 "result": {
                     "description": "실행 결과(정상:'결과', 오류:'오류 메시지')",

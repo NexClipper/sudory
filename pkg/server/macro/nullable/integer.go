@@ -77,3 +77,38 @@ func (nullable *nullInt32) scan(v interface{}) *nullInt32 {
 
 	return nullable
 }
+
+type nullInt8 struct {
+	int8
+	bool
+}
+
+func Int8(v *int8) *nullInt8 {
+	return new(nullInt8).scan(v)
+}
+
+func (nullable nullInt8) Value() int8 {
+	return nullable.int8
+}
+func (nullable nullInt8) Ptr() *int8 {
+	return &nullable.int8
+}
+func (nullable nullInt8) Has() bool {
+	return nullable.bool
+}
+
+func (nullable *nullInt8) scan(v interface{}) *nullInt8 {
+	nullable.int8, nullable.bool = 0, false
+
+	switch value := v.(type) {
+	case int8:
+		nullable.int8, nullable.bool = int8(value), true
+	case *int8:
+		if value != nil {
+			nullable.int8, nullable.bool = int8(*value), true
+		}
+
+	}
+
+	return nullable
+}

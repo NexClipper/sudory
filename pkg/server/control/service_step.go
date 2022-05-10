@@ -31,7 +31,7 @@ func (ctl Control) FindServiceStep(ctx echo.Context) error {
 	where := "service_uuid = ?"
 	service_uuid := echoutil.Param(ctx)[__SERVICE_UUID__]
 
-	r, err := vault.NewServiceStep(ctl.NewSession()).Find(where, service_uuid)
+	r, err := vault.NewServiceStep(ctl.db.Engine().NewSession()).Find(where, service_uuid)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "find service step"))
@@ -70,7 +70,7 @@ func (ctl Control) GetServiceStep(ctx echo.Context) error {
 	_ = echoutil.Param(ctx)[__SERVICE_UUID__]
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	r, err := vault.NewServiceStep(ctl.NewSession()).Get(uuid)
+	r, err := vault.NewServiceStep(ctl.db.Engine().NewSession()).Get(uuid)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "get service step"))

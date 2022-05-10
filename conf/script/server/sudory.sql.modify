@@ -133,3 +133,10 @@ ALTER TABLE `session`
 	ADD INDEX IF NOT EXISTS `cluster_uuid` (`cluster_uuid`) USING BTREE;
 
 -- !OSS-285
+
+-- OSS-297
+
+ALTER TABLE `service`
+	ADD COLUMN  IF NOT EXISTS `on_complition` TINYINT NOT NULL DEFAULT 0 COMMENT 'on complition' AFTER `subscribed_channel`;
+
+-- !OSS-297

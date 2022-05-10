@@ -3,21 +3,20 @@ package globvar
 import (
 	"time"
 
-	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/pkg/errors"
-
-	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variant/v1"
+	"xorm.io/xorm"
 )
 
 type GlobalVariantUpdate struct {
-	ctx    database.Context
+	tx     *xorm.Session
 	offset time.Time //updated column
 }
 
-func NewGlobalVariantUpdate(ctx database.Context) *GlobalVariantUpdate {
-	return &GlobalVariantUpdate{ctx: ctx}
+func NewGlobalVariantUpdate(tx *xorm.Session) *GlobalVariantUpdate {
+	return &GlobalVariantUpdate{tx: tx}
 }
 
 // Update
@@ -27,9 +26,10 @@ func (worker *GlobalVariantUpdate) Update() error {
 	args := []interface{}{
 		worker.offset,
 	}
-	records := make([]globvarv1.GlobalVariant, 0)
-	if err := worker.ctx.Where(where, args...).Find(&records); err != nil {
-		return errors.Wrapf(err, "database Find")
+
+	records, err := vault.NewGlobalVariant(worker.tx).Find(where, args...)
+	if err != nil {
+		return errors.Wrapf(err, "find global variant")
 	}
 
 	for i := range records {
@@ -60,9 +60,9 @@ func (worker *GlobalVariantUpdate) Update() error {
 // WhiteListCheck
 //  리스트 체크
 func (worker *GlobalVariantUpdate) WhiteListCheck() error {
-	records := make([]globvarv1.GlobalVariant, 0)
-	if err := worker.ctx.Find(&records); err != nil {
-		return errors.Wrapf(err, "database Find")
+	records, err := vault.NewGlobalVariant(worker.tx).Query(map[string]string{})
+	if err != nil {
+		return errors.Wrapf(err, "find global variant")
 	}
 
 	count := 0
@@ -89,9 +89,9 @@ func (worker *GlobalVariantUpdate) WhiteListCheck() error {
 }
 
 func (worker *GlobalVariantUpdate) Merge() error {
-	records := make([]globvarv1.GlobalVariant, 0)
-	if err := worker.ctx.Find(&records); err != nil {
-		return errors.Wrapf(err, "database Find")
+	records, err := vault.NewGlobalVariant(worker.tx).Query(map[string]string{})
+	if err != nil {
+		return errors.Wrapf(err, "find global variant")
 	}
 
 	for _, key := range KeyNames() {
@@ -121,8 +121,8 @@ func (worker *GlobalVariantUpdate) Merge() error {
 			}
 
 			value_ := Convert(env, value)
-			if err = worker.ctx.Create(value_); err != nil {
-				return errors.Wrapf(err, "database create")
+			if _, err := vault.NewGlobalVariant(worker.tx).Create(value_); err != nil {
+				return errors.Wrapf(err, "create global variant")
 			}
 
 		}

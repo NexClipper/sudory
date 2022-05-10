@@ -102,50 +102,65 @@ func (ctl Control) PollService(ctx echo.Context) error {
 	for i := range body {
 		body[i].ServiceProperty = body[i].Service.ChaniningStep(body[i].Steps)
 	}
+	for i := range body {
+		service := body[i].Service
+		//invoke event (service-poll-in)
+		m := map[string]interface{}{
+			"event_name":           "service-poll-in",
+			"service_uuid":         service.Uuid,
+			"service_name":         service.Name,
+			"template_uuid":        service.TemplateUuid,
+			"cluster_uuid":         service.ClusterUuid,
+			"assigned_client_uuid": service.AssignedClientUuid,
+			"status":               nullable.Int32(service.Status).Value(),
+			"result": func() string {
+				if service.Result != nil {
+					return string(*service.Result)
+				}
+				return ""
+			}(),
+			"step_count":    nullable.Int32(service.StepCount).Value(),
+			"step_position": nullable.Int32(service.StepPosition).Value(),
+		}
+		event.Invoke(service.SubscribedChannel, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
+	}
 
-	if _, err := ctl.Scope(func(ctx database.Context) (interface{}, error) {
+	if _, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
 		for _, iter := range body {
 			service := iter.Service
 			steps := iter.Steps
 
-			if _, err := vault.NewService(ctx).Update(service); err != nil {
+			//save service
+			if _, err := vault.NewService(tx).Update(service); err != nil {
 				return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 					errors.Wrapf(err, "update request service"))
 			}
-
+			//save step
 			for _, step := range steps {
-				if _, err := vault.NewServiceStep(ctx).Update(step); err != nil {
+				if _, err := vault.NewServiceStep(tx).Update(step); err != nil {
 					return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 						errors.Wrapf(err, "update request service step"))
 				}
 			}
-		}
 
+			//OnComplition
+			if servicev1.StatusSuccess <= servicev1.Status(nullable.Int32(service.Status).Value()) {
+				switch servicev1.OnComplition(nullable.Int8(service.OnComplition).Value()) {
+				case servicev1.OnComplitionRemove:
+					//OnComplitionRemove
+					if err := vault.NewService(tx).Delete(service.Uuid); err != nil {
+						return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+							errors.Wrapf(err, "fire and forbidden a service%v",
+								logs.KVL(
+									"uuid", service.Uuid,
+								)))
+					}
+				}
+			}
+		}
 		return nil, nil
 	}); err != nil {
 		return err
-	}
-
-	//invoke event (service-poll-in)
-	for _, request := range body {
-		m := map[string]interface{}{
-			"event_name":           "service-poll-in",
-			"service_uuid":         request.Uuid,
-			"service_name":         request.Name,
-			"template_uuid":        request.TemplateUuid,
-			"cluster_uuid":         request.ClusterUuid,
-			"assigned_client_uuid": request.AssignedClientUuid,
-			"status":               nullable.Int32(request.Status).Value(),
-			"result": func() string {
-				if request.Result != nil {
-					return string(*request.Result)
-				}
-				return ""
-			}(),
-			"step_count":    nullable.Int32(request.StepCount).Value(),
-			"step_position": nullable.Int32(request.StepPosition).Value(),
-		}
-		event.Invoke(request.SubscribedChannel, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
 	}
 
 	//make response
@@ -168,7 +183,7 @@ func (ctl Control) PollService(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "client token payload"))
 	}
-	if err := gatherClusterService(ctl.NewSession(), payload.ClusterUuid, response_callback); err != nil {
+	if err := gatherClusterService(ctl.db.Engine().NewSession(), payload.ClusterUuid, response_callback); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "gather cluster service%s",
 				logs.KVL(
@@ -177,12 +192,12 @@ func (ctl Control) PollService(ctx echo.Context) error {
 	}
 
 	//save response
-	if _, err := ctl.Scope(func(ctx database.Context) (interface{}, error) {
+	if _, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
 		for i := range cluster_service {
 			service := cluster_service[i].Service
 			steps := cluster_service[i].Steps
 
-			service_, err := vault.NewService(ctx).Update(service)
+			service_, err := vault.NewService(tx).Update(service)
 			if err != nil {
 				return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 					errors.Wrapf(err, "update response service"))
@@ -190,7 +205,7 @@ func (ctl Control) PollService(ctx echo.Context) error {
 
 			for i := range steps {
 				step := steps[i]
-				step_, err := vault.NewServiceStep(ctx).Update(step)
+				step_, err := vault.NewServiceStep(tx).Update(step)
 				if err != nil {
 					return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 						errors.Wrapf(err, "update response service"))
@@ -255,7 +270,7 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 	cluster := clusterv1.Cluster{}
 	if err := database.XormGet(
 		ctl.db.Engine().NewSession().
-			Where("uuid = ?", auth.ClusterUuid).Get,
+			Where("uuid = ?", auth.ClusterUuid),
 		&cluster); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "valid cluster%s",
@@ -268,8 +283,7 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 	cluster_token := clustertokenv1.ClusterToken{}
 	if err := database.XormGet(
 		ctl.db.Engine().NewSession().
-			Where("token = ? AND cluster_uuid = ?", auth.Assertion, auth.ClusterUuid).
-			Get,
+			Where("token = ? AND cluster_uuid = ?", auth.Assertion, auth.ClusterUuid),
 		&cluster_token); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "valid cluster token%s",
@@ -466,25 +480,25 @@ func usedJwtSigningMethod(token jwt.Token, init jwt.SigningMethod) jwt.SigningMe
 	return init
 }
 
-func gatherClusterService(db database.Context, cluster_uuid string, fn func(servicev1.Service, []stepv1.ServiceStep)) error {
+func gatherClusterService(tx *xorm.Session, cluster_uuid string, fn func(servicev1.Service, []stepv1.ServiceStep)) error {
 	where := "cluster_uuid = ? AND (status BETWEEN ? AND ?)"
 	args := []interface{}{
 		cluster_uuid,
 		servicev1.StatusRegist,
 		servicev1.StatusProcessing,
 	}
-	service, err := vault.NewService(db).Find(where, args...)
+	service, steps, err := vault.NewService(tx).Find(where, args...)
 	if err != nil {
 		return errors.Wrapf(err, "find service")
 	}
 	for _, service := range service {
-		where := "service_uuid = ?"
-		steps, err := vault.NewServiceStep(db).Find(where, service.Uuid)
-		if err != nil {
-			return errors.Wrapf(err, "find service step")
-		}
+		// where := "service_uuid = ?"
+		// steps, err := vault.NewServiceStepX(tx).Find(where, service.Uuid)
+		// if err != nil {
+		// 	return errors.Wrapf(err, "find service step")
+		// }
 
-		fn(service, steps)
+		fn(service, steps[service.Uuid])
 	}
 
 	return nil

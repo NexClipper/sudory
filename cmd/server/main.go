@@ -17,6 +17,8 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/event"
 	"github.com/NexClipper/sudory/pkg/server/macro/enigma"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
+	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
+	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/NexClipper/sudory/pkg/server/route"
 	"github.com/NexClipper/sudory/pkg/server/status"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
@@ -24,6 +26,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/jinzhu/configor"
 	"github.com/pkg/errors"
+	"xorm.io/builder"
 	"xorm.io/xorm"
 )
 
@@ -85,12 +88,19 @@ func main() {
 	}
 	defer eventClose() //이벤트 종료
 
-	//init cron
-	cronClose, err := newCron(db.Engine())
+	//init global variant cron
+	cronGVClose, err := newGlobalVariantCron(db.Engine())
 	if err != nil {
 		panic(err)
 	}
-	defer cronClose() //크론잡 종료
+	defer cronGVClose() //크론잡 종료
+
+	//init purge deleted service
+	cronPurgeServiceClose, err := newPurgeDeletedDataCron(db.Engine(), cfg.RespitePeriod)
+	if err != nil {
+		panic(err)
+	}
+	defer cronPurgeServiceClose() //크론잡 종료
 
 	r := route.New(cfg, db)
 
@@ -254,13 +264,21 @@ func newEvent(filename string) (closer func(), err error) {
 	}, nil
 }
 
-func newCron(engine *xorm.Engine) (func(), error) {
+func newGlobalVariantCron(engine *xorm.Engine) (func(), error) {
 	const interval = 10 * time.Second
 
 	//환경설정 updater 생성
-	envUpdater, err := newEnvironmentUpdate(engine)
-	if err != nil {
-		return nil, errors.Wrapf(err, "create environment cron updater")
+	updator := globvar.NewGlobalVariantUpdate(engine.NewSession())
+	//환경변수 리스트 검사
+	if err := updator.WhiteListCheck(); err != nil {
+		//빠져있는 환경변수 추가
+		if err := updator.Merge(); err != nil {
+			return nil, errors.Wrapf(err, "global variant init merge")
+		}
+	}
+	//환경변수 업데이트
+	if err := updator.Update(); err != nil {
+		return nil, errors.Wrapf(err, "global variant init update")
 	}
 
 	//에러 핸들러 등록
@@ -280,10 +298,10 @@ func newCron(engine *xorm.Engine) (func(), error) {
 
 	//new ticker
 	tickerClose := status.NewTicker(interval,
-		//environment update
+		//global variant update
 		func() {
-			if err := envUpdater.Update(); err != nil {
-				errorHandlers.OnError(errors.Wrapf(err, "environment update"))
+			if err := updator.Update(); err != nil {
+				errorHandlers.OnError(errors.Wrapf(err, "global variant update"))
 			}
 		},
 	)
@@ -291,21 +309,60 @@ func newCron(engine *xorm.Engine) (func(), error) {
 	return tickerClose, nil
 }
 
-func newEnvironmentUpdate(engine *xorm.Engine) (*globvar.GlobalVariantUpdate, error) {
-	updator := globvar.NewGlobalVariantUpdate(database.NewXormContext(engine.NewSession()))
-	//환경변수 리스트 검사
-	if err := updator.WhiteListCheck(); err != nil {
-		//빠져있는 환경변수 추가
-		if err := updator.Merge(); err != nil {
-			return nil, errors.Wrapf(err, "merge")
-		}
-	}
-	//환경변수 업데이트
-	if err := updator.Update(); err != nil {
-		return nil, errors.Wrapf(err, "update")
+func newPurgeDeletedDataCron(engine *xorm.Engine, respitePeriod time.Duration) (func(), error) {
+	if respitePeriod == 0 {
+		return func() {}, nil //사용하지 않는다
 	}
 
-	return updator, nil
+	purgeServiceData := func() error {
+		_, err := engine.Transaction(func(tx *xorm.Session) (interface{}, error) {
+			cond := builder.Lt{"deleted": time.Now().Add(respitePeriod * -1)}
+			if err := database.XormDelete(
+				tx.Unscoped().Where(cond), new(stepv1.ServiceStep)); err != nil {
+				return nil, errors.Wrapf(err, "purge deleted service step data")
+			}
+			if err := database.XormDelete(
+				tx.Unscoped().Where(cond), new(servicev1.Service)); err != nil {
+				return nil, errors.Wrapf(err, "purge deleted service data")
+			}
+
+			return nil, nil
+		})
+
+		return err
+	}
+
+	//first call
+	if err := purgeServiceData(); err != nil {
+		return nil, errors.Wrapf(err, "init")
+	}
+
+	//에러 핸들러 등록
+	errorHandlers := status.HashsetErrorHandlers{}
+	errorHandlers.Add(func(err error) {
+		var stack string
+		logs.CauseIter(err, func(err error) {
+			logs.StackIter(err, func(s string) {
+				stack = logs.KVL(
+					"stack", s,
+				)
+			})
+		})
+
+		logger.Error(fmt.Errorf("cron jobs: %w%s", err, stack))
+	})
+
+	//new ticker
+	tickerClose := status.NewTicker(60*time.Minute,
+		//purge deleted service
+		func() {
+			if err := purgeServiceData(); err != nil {
+				errorHandlers.OnError(errors.Wrapf(err, "purge deleted service data"))
+			}
+		},
+	)
+
+	return tickerClose, nil
 }
 
 func newEnigma(configFilename string) error {

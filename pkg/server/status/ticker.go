@@ -25,11 +25,6 @@ func (hashset HashsetErrorHandlers) OnError(err error) {
 	}
 }
 
-type CronWorker interface {
-	Name() string
-	Update() error
-}
-
 func NewTicker(interval time.Duration, fn ...func()) func() {
 	tick := time.NewTicker(interval)
 
