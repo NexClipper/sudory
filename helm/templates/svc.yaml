@@ -1,0 +1,14 @@
+{{- if .Values.server.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-sudory-server
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: LoadBalancer
+  ports:
+    - port: {{ .Values.server.containerPort }}
+      targetPort: {{ .Values.server.containerPort }}
+  selector:
+    sudory: {{ .Release.Name }}-server
+  {{- end -}}

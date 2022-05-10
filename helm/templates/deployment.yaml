@@ -1,0 +1,95 @@
+---
+{{if .Values.client.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-sudory-client
+  namespace: {{ .Release.Namespace }}
+  labels:
+    sudory: client
+spec:
+  selector:
+    matchLabels:
+      sudory:  {{ .Release.Name }}-sudory-client
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        sudory: {{ .Release.Name }}-sudory-client
+    spec:
+      serviceAccountName: {{ .Release.Name }}-sudory-controller
+      containers:
+        - name: {{ .Release.Name }}-sudory-client
+          image: "{{ .Values.client.image }}"
+          env:
+            {{- range $key, $value := .Values.client.environment_variable.data }}
+            - name: {{ $key }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $.Release.Name }}-sudory-client-configmap
+                  key: {{ $key }}
+            {{- end -}}
+
+{{- end }}
+---
+{{if .Values.server.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-sudory-server
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      sudory: {{ .Release.Name }}-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        sudory: {{ .Release.Name }}-server
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-sudory-server
+          image: {{ .Values.server.image }}
+          ports:
+            - containerPort: {{ .Values.server.containerPort }}
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          env:
+            {{- range $key, $value := .Values.server.environment_variable.data }}
+            - name: {{ $key }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $.Release.Name }}-sudory-server-configmap
+                  key: {{ $key }}
+            {{- end -}}
+            {{- range $key, $value := .Values.server.secret_variable.data }}
+            - name: {{ $value }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Release.Name }}-sudory-secret
+                  key: {{ $value }}
+                {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: 8099
+            initialDelaySeconds: 15
+            timeoutSeconds: 15
+          {{ if .Values.server.serverrule.enabled}}
+          volumeMounts:
+            - mountPath: /app/conf/rules
+              name: {{ .Release.Name }}-sudory-server-rules-volume
+          {{- end }}
+          {{- if .Values.server.serverrule.enabled}}
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: {{ .Release.Name }}-sudory-server-rules-configmap
+          name: {{ .Release.Name }}-sudory-server-rules-volume
+          {{- end}}
+{{- end }}
