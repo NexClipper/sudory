@@ -129,6 +129,7 @@ with the follwoing body -
   "polling_option": {
     "additionalProp1": {}
   },
+  "polling_limit": 10
   "summary": "cluser description"
 }
 ```
@@ -142,6 +143,8 @@ Then, you will get uuid of your cluster. Here is the sample body of response -
     "summary": "cluster description",
     "polling_option": {
         "additionalProp1": {}
+    }
+    "polling_limit": 10 
 ```
 
 Next step is to get a bearer' token with the following APIs. 
