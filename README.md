@@ -142,6 +142,8 @@ Then, you will get uuid of your cluster. Here is the sample body of response -
     "summary": "cluster description",
     "polling_option": {
         "additionalProp1": {}
+     },
+    "polling_lumit: 10   
 ```
 
 Next step is to get a bearer' token with the following APIs. 
