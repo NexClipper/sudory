@@ -1893,7 +1893,7 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "on_complition": {
+                "on_completion": {
                     "description": "서비스 완료 후",
                     "type": "integer"
                 },
@@ -1943,7 +1943,7 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "on_complition": {
+                "on_completion": {
                     "type": "integer"
                 },
                 "steps": {
@@ -2090,7 +2090,7 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "on_complition": {
+                "on_completion": {
                     "description": "서비스 완료 후",
                     "type": "integer"
                 },
@@ -2152,7 +2152,7 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "on_complition": {
+                "on_completion": {
                     "description": "서비스 완료 후",
                     "type": "integer"
                 },
@@ -2316,7 +2316,7 @@ var doc = `{
         "v1.SmartPollingOption": {
             "type": "object",
             "properties": {
-                "buzy": {
+                "busy": {
                     "description": "(초)",
                     "type": "integer"
                 },

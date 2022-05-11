@@ -30,16 +30,16 @@ func (opt ClusterProperty) GetPollingOption() PollingHandler {
 	switch pollingType {
 	case PollingTypeSmart:
 		idle := 0
-		buzy := 0
+		busy := 0
 		if opt, ok := opt.PollingOption["idle"]; ok {
 			opt, _ := opt.(float64) //json 숫자타입은 부동소수
 			idle = int(opt)
 		}
-		if opt, ok := opt.PollingOption["buzy"]; ok {
+		if opt, ok := opt.PollingOption["busy"]; ok {
 			opt, _ := opt.(float64) //json 숫자타입은 부동소수
-			buzy = int(opt)
+			busy = int(opt)
 		}
-		return &SmartPollingOption{IdleInterval: idle, BuzyInterval: buzy}
+		return &SmartPollingOption{IdleInterval: idle, BusyInterval: busy}
 	case PollingTypeRegular:
 		fallthrough
 	default:
@@ -70,15 +70,15 @@ func (opt RagulerPollingOption) ToMap() map[string]interface{} {
 
 type SmartPollingOption struct {
 	IdleInterval int `json:"idle,omitempty"` //(초)
-	BuzyInterval int `json:"buzy,omitempty"` //(초)
+	BusyInterval int `json:"busy,omitempty"` //(초)
 }
 
 func (opt SmartPollingOption) Interval(_default time.Duration, service_count int) time.Duration {
-	buzy := func() time.Duration {
-		if opt.BuzyInterval == 0 {
+	busy := func() time.Duration {
+		if opt.BusyInterval == 0 {
 			return _default
 		}
-		return time.Duration(opt.BuzyInterval) * time.Second
+		return time.Duration(opt.BusyInterval) * time.Second
 	}
 	idle := func() time.Duration {
 		if opt.IdleInterval == 0 {
@@ -88,7 +88,7 @@ func (opt SmartPollingOption) Interval(_default time.Duration, service_count int
 	}
 
 	if 0 < service_count {
-		return buzy()
+		return busy()
 	} else {
 		return idle()
 	}
@@ -98,7 +98,7 @@ func (opt SmartPollingOption) ToMap() map[string]interface{} {
 	m := map[string]interface{}{
 		"type": PollingTypeSmart.String(),
 		"idle": opt.IdleInterval,
-		"buzy": opt.BuzyInterval,
+		"busy": opt.BusyInterval,
 	}
 	return m
 }

@@ -1877,7 +1877,7 @@
                 "name": {
                     "type": "string"
                 },
-                "on_complition": {
+                "on_completion": {
                     "description": "서비스 완료 후",
                     "type": "integer"
                 },
@@ -1927,7 +1927,7 @@
                 "name": {
                     "type": "string"
                 },
-                "on_complition": {
+                "on_completion": {
                     "type": "integer"
                 },
                 "steps": {
@@ -2074,7 +2074,7 @@
                 "name": {
                     "type": "string"
                 },
-                "on_complition": {
+                "on_completion": {
                     "description": "서비스 완료 후",
                     "type": "integer"
                 },
@@ -2136,7 +2136,7 @@
                 "name": {
                     "type": "string"
                 },
-                "on_complition": {
+                "on_completion": {
                     "description": "서비스 완료 후",
                     "type": "integer"
                 },
@@ -2300,7 +2300,7 @@
         "v1.SmartPollingOption": {
             "type": "object",
             "properties": {
-                "buzy": {
+                "busy": {
                     "description": "(초)",
                     "type": "integer"
                 },

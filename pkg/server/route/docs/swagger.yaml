@@ -139,7 +139,7 @@ definitions:
         type: integer
       name:
         type: string
-      on_complition:
+      on_completion:
         description: 서비스 완료 후
         type: integer
       result:
@@ -173,7 +173,7 @@ definitions:
         type: string
       name:
         type: string
-      on_complition:
+      on_completion:
         type: integer
       steps:
         items:
@@ -276,7 +276,7 @@ definitions:
         type: integer
       name:
         type: string
-      on_complition:
+      on_completion:
         description: 서비스 완료 후
         type: integer
       result:
@@ -318,7 +318,7 @@ definitions:
         type: integer
       name:
         type: string
-      on_complition:
+      on_completion:
         description: 서비스 완료 후
         type: integer
       result:
@@ -427,7 +427,7 @@ definitions:
     type: object
   v1.SmartPollingOption:
     properties:
-      buzy:
+      busy:
         description: (초)
         type: integer
       idle:
