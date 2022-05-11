@@ -8,7 +8,7 @@ metadata:
   labels:
     sudory: client
 data:
-{{ toYaml .Values.client.environment_variable.data | indent 4  }}
+{{ toYaml .Values.client.environment_variable.data | indent 2  }}
 {{- end}}
 ---
 {{if .Values.server.serverrule.enabled -}}
@@ -21,7 +21,7 @@ metadata:
     release: {{ .Release.Name }}
     sudory: server
 data:
-{{ toYaml .Values.server.serverrule.enabled.data | indent 4 }}
+{{ toYaml .Values.server.serverrule.data | indent 2 }}
 {{- end}}
 ---
 
@@ -32,6 +32,6 @@ metadata:
   name: {{ .Release.Name }}-sudory-server-configmap
   namespace: {{ .Release.Namespace }}
 data:
-{{ toYaml .Values.server.environment_variable.data | indent 4  }}
+{{ toYaml .Values.server.environment_variable.data | indent 2  }}
 {{- end}}
 ---
