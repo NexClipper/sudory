@@ -8,7 +8,7 @@ client:
       token: ""
 
 server:
-  enabled: true
+  enabled: false
   image: "repo.nexclipper.io/nexclipper-dev/nexclipper-sudory-server:latest"
   containerPort: 8099
   environment_variable:
@@ -34,7 +34,7 @@ server:
       db_server_password: ""
 
   serverrule:
-    enabled: true
+    enabled: false
     data:
       events.yml: |
          events:
