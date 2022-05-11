@@ -1,6 +1,6 @@
 client:
   enabled: true
-  image: "repo.nexclipper.io/nexclipper/sudory-client:0.2.1"
+  image: "repo.nexclipper.io/nexclipper-dev/nexclipper-sudory-client:latest"
   environment_variable:
     data:
       server: "" #http://<IP>:<PORT>
@@ -8,8 +8,8 @@ client:
       token: ""
 
 server:
-  enabled: true
-  image: "repo.nexclipper.io/nexclipper/sudory-server:0.2.23"
+  enabled: false
+  image: "repo.nexclipper.io/nexclipper-dev/nexclipper-sudory-server:latest"
   containerPort: 8099
   environment_variable:
     data:
