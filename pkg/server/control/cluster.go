@@ -7,6 +7,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
+	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -46,8 +47,17 @@ func (ctl Control) CreateCluster(ctx echo.Context) error {
 	cluster.LabelMeta = NewLabelMeta(body.Name, body.Summary)
 	cluster.ClusterProperty = body.ClusterProperty
 
+	//polling option; nil check
 	if cluster.PollingOption == nil {
 		cluster.PollingOption = new(clusterv1.RagulerPollingOption).ToMap()
+	}
+
+	//polling option; default(regular)
+	cluster.PollingOption = cluster.GetPollingOption().ToMap()
+
+	//polling limit; nil check
+	if cluster.PoliingLimit == nil {
+		cluster.PoliingLimit = newist.Int16(0)
 	}
 
 	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
