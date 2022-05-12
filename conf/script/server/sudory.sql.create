@@ -33,8 +33,9 @@ CREATE TABLE `cluster` (
   `updated` datetime DEFAULT NULL,
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='cluster 관리 테이블';
+  UNIQUE KEY `uuid` (`uuid`),
+  KEY `IDX_deleted` (`deleted`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='cluster 관리 테이블';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -59,8 +60,9 @@ CREATE TABLE `cluster_token` (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uuid` (`uuid`) USING BTREE,
   UNIQUE KEY `token` (`token`),
-  KEY `IDX_token_cluster_uuid` (`cluster_uuid`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `IDX_token_cluster_uuid` (`cluster_uuid`) USING BTREE,
+  KEY `IDX_deleted` (`deleted`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -83,8 +85,9 @@ CREATE TABLE `event` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `UQE_event_uuid` (`uuid`),
   KEY `IDX_event_cluster_uuid` (`cluster_uuid`),
-  KEY `IDX_event_pattern` (`pattern`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
+  KEY `IDX_event_pattern` (`pattern`),
+  KEY `IDX_deleted` (`deleted`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -103,8 +106,9 @@ CREATE TABLE `event_notifier_console` (
   `updated` datetime DEFAULT NULL COMMENT 'updated',
   `deleted` datetime DEFAULT NULL COMMENT 'deleted',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `UQE_event_notifier_console_uuid` (`uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
+  UNIQUE KEY `UQE_event_notifier_console_uuid` (`uuid`),
+  KEY `IDX_deleted` (`deleted`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -125,8 +129,9 @@ CREATE TABLE `event_notifier_edge` (
   PRIMARY KEY (`id`),
   KEY `IDX_notifier_edge_event_uuid` (`event_uuid`),
   KEY `IDX_notifier_edge_notifier_type` (`notifier_type`),
-  KEY `IDX_notifier_edge_notifier_uuid` (`notifier_uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4;
+  KEY `IDX_notifier_edge_notifier_uuid` (`notifier_uuid`),
+  KEY `IDX_deleted` (`deleted`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -163,8 +168,33 @@ CREATE TABLE `event_notifier_rabbitmq` (
   `updated` datetime DEFAULT NULL COMMENT 'updated',
   `deleted` datetime DEFAULT NULL COMMENT 'deleted',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `UQE_event_notifier_rabbitmq_uuid` (`uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
+  UNIQUE KEY `UQE_event_notifier_rabbitmq_uuid` (`uuid`),
+  KEY `IDX_deleted` (`deleted`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `event_notifier_status`
+--
+
+DROP TABLE IF EXISTS `event_notifier_status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `event_notifier_status` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` char(32) NOT NULL COMMENT 'uuid',
+  `notifier_type` varchar(255) NOT NULL,
+  `notifier_uuid` char(32) NOT NULL,
+  `error` text DEFAULT NULL,
+  `created` datetime DEFAULT NULL COMMENT 'created',
+  `updated` datetime DEFAULT NULL COMMENT 'updated',
+  `deleted` datetime DEFAULT NULL COMMENT 'deleted',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UQE_event_notifier_status_uuid` (`uuid`),
+  KEY `IDX_event_notifier_status_notifier_type` (`notifier_type`),
+  KEY `IDX_event_notifier_status_notifier_uuid` (`notifier_uuid`),
+  KEY `IDX_deleted` (`deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -187,7 +217,8 @@ CREATE TABLE `event_notifier_webhook` (
   `updated` datetime DEFAULT NULL COMMENT 'updated',
   `deleted` datetime DEFAULT NULL COMMENT 'deleted',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `UQE_event_notifier_webhook_uuid` (`uuid`)
+  UNIQUE KEY `UQE_event_notifier_webhook_uuid` (`uuid`),
+  KEY `IDX_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -208,8 +239,9 @@ CREATE TABLE `global_variant` (
   `updated` datetime DEFAULT NULL,
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `uuid` (`uuid`),
+  KEY `IDX_deleted` (`deleted`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -241,8 +273,9 @@ CREATE TABLE `service` (
   KEY `IDX_service_cluster_uuid` (`cluster_uuid`),
   KEY `IDX_service_status` (`status`),
   KEY `IDX_service_template_uuid` (`template_uuid`),
-  KEY `IDX_service_assigned_client_uuid` (`assigned_client_uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `IDX_service_assigned_client_uuid` (`assigned_client_uuid`),
+  KEY `IDX_deleted` (`deleted`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -271,8 +304,9 @@ CREATE TABLE `service_step` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `UQE_service_step_uuid` (`uuid`),
   KEY `IDX_service_step_service_uuid` (`service_uuid`),
-  KEY `status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+  KEY `status` (`status`),
+  KEY `IDX_deleted` (`deleted`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -294,8 +328,9 @@ CREATE TABLE `session` (
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uuid` (`uuid`) USING BTREE,
-  KEY `cluster_uuid` (`cluster_uuid`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `cluster_uuid` (`cluster_uuid`) USING BTREE,
+  KEY `IDX_deleted` (`deleted`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -315,8 +350,9 @@ CREATE TABLE `template` (
   `updated` datetime DEFAULT NULL,
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='table template';
+  UNIQUE KEY `uuid` (`uuid`),
+  KEY `IDX_deleted` (`deleted`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='table template';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -341,8 +377,9 @@ CREATE TABLE `template_command` (
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uuid` (`uuid`) USING BTREE,
-  KEY `template_uuid` (`template_uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='table template command';
+  KEY `template_uuid` (`template_uuid`),
+  KEY `IDX_deleted` (`deleted`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='table template command';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -362,8 +399,10 @@ CREATE TABLE `template_recipe` (
   `updated` datetime DEFAULT NULL,
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `method_v2` (`method`)
-) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `UQE_template_recipe_recipe_value` (`method`,`args`) USING HASH,
+  KEY `method_v2` (`method`),
+  KEY `IDX_deleted` (`deleted`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -375,4 +414,4 @@ CREATE TABLE `template_recipe` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-05-11  8:45:51
+-- Dump completed on 2022-05-12  2:28:35

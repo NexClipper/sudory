@@ -12,6 +12,7 @@ import (
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
+	trecipev1 "github.com/NexClipper/sudory/pkg/server/model/template_recipe/v1"
 )
 
 func TestSync(t *testing.T) {
@@ -35,6 +36,8 @@ func TestSync(t *testing.T) {
 			args: new(commandv1.TemplateCommand), want: nil, wantErr: false},
 		{name: "templatev1",
 			args: new(templatev1.Template), want: nil, wantErr: false},
+		{name: "trecipev1",
+			args: new(trecipev1.TemplateRecipe), want: nil, wantErr: false},
 		{name: "tokenv1",
 			args: new(clsttknv1.ClusterToken), want: nil, wantErr: false},
 		{name: "eventv1:event",
@@ -47,6 +50,8 @@ func TestSync(t *testing.T) {
 			args: new(eventv1.EventNotifierWebhook), want: nil, wantErr: false},
 		{name: "eventv1::rabbitMq",
 			args: new(eventv1.EventNotifierRabbitMq), want: nil, wantErr: false},
+		{name: "eventv1::notifier_status",
+			args: new(eventv1.EventNotifierStatus), want: nil, wantErr: false},
 
 		// TODO: Add test cases.
 	}

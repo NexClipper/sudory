@@ -200,6 +200,9 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.PUT("/event_notifier/webhook/:uuid", controller.UpdateEventNotifierWebhook)
 		group.PUT("/event_notifier/rabbitmq/:uuid", controller.UpdateEventNotifierRabbitMq)
 		group.DELETE("/event_notifier/:event_notifier_type/:uuid", controller.DeleteEventNotifier)
+		//server/event_notifier_status*
+		group.GET("/event_notifier_status", controller.FindEventNofitierStatus)
+		group.DELETE("/event_notifier_status/:uuid", controller.DeleteEventNofitierStatus)
 	}
 
 	return &Route{e: e}

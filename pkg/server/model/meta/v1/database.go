@@ -6,10 +6,10 @@ import (
 
 //database meta info
 type DbMeta struct {
-	Id      uint64     `json:"id"                xorm:"'id'      bigint   notnull pk autoincr comment('id')"`
-	Created *time.Time `json:"created,omitempty" xorm:"'created' datetime null    created     comment('created')"`
-	Updated *time.Time `json:"updated,omitempty" xorm:"'updated' datetime null    updated     comment('updated')"`
-	Deleted *time.Time `json:"deleted,omitempty" xorm:"'deleted' datetime null    deleted     comment('deleted')"`
+	Id      uint64     `json:"id"                xorm:"'id'      bigint   notnull             pk autoincr        comment('id')"`
+	Created *time.Time `json:"created,omitempty" xorm:"'created' datetime null    created                        comment('created')"`
+	Updated *time.Time `json:"updated,omitempty" xorm:"'updated' datetime null    updated                        comment('updated')"`
+	Deleted *time.Time `json:"deleted,omitempty" xorm:"'deleted' datetime null    deleted     index(IDX_deleted) comment('deleted')"`
 }
 
 //label meta info
@@ -21,5 +21,5 @@ type LabelMeta struct {
 
 //uuid meta info
 type UuidMeta struct {
-	Uuid string `json:"uuid" xorm:"'uuid' char(32) notnull unique comment('uuid')"`
+	Uuid string `json:"uuid" xorm:"'uuid' char(32) notnull unique(UQE_uuid) comment('uuid')"`
 }

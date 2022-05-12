@@ -224,6 +224,25 @@ definitions:
         description: amqp Dial
         type: string
     type: object
+  v1.EventNotifierStatus:
+    properties:
+      created:
+        type: string
+      deleted:
+        type: string
+      error:
+        type: string
+      id:
+        type: integer
+      notifier_type:
+        type: string
+      notifier_uuid:
+        type: string
+      updated:
+        type: string
+      uuid:
+        type: string
+    type: object
   v1.EventNotifierWebhook:
     properties:
       created:
@@ -1655,6 +1674,61 @@ paths:
             $ref: '#/definitions/v1.EventNotifierWebhook'
       tags:
       - server/event_notifier
+  /server/event_notifier_status:
+    get:
+      consumes:
+      - application/json
+      description: Find Event Nofitier Status
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: query  pkg/server/database/prepared/README.md
+        in: query
+        name: q
+        type: string
+      - description: order  pkg/server/database/prepared/README.md
+        in: query
+        name: o
+        type: string
+      - description: paging pkg/server/database/prepared/README.md
+        in: query
+        name: p
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.EventNotifierStatus'
+            type: array
+      tags:
+      - server/event_notifier_status
+  /server/event_notifier_status/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a Event Nofitier Status
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: EventNofitierStatus 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/event_notifier_status
   /server/global_variant:
     get:
       consumes:

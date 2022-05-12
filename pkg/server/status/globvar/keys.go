@@ -1,12 +1,14 @@
-//go:generate go run github.com/abice/go-enum --file=keys.go --names --nocase
 package globvar
 
 import (
+	"math"
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/pkg/errors"
 )
+
+//go:generate go run github.com/abice/go-enum --file=keys.go --names --nocase
 
 /* ENUM(
 bearer-token-signature-secret
@@ -17,6 +19,8 @@ client-session-expiration-time
 
 client-config-poll-interval
 client-config-loglevel
+
+event-notifier-status-rotate-limit
 )
 */
 type Key int
@@ -108,3 +112,15 @@ func ClientConfigLoglevel() string {
 }
 
 var clientConfigLoglevel string = "debug"
+
+// EventNofitierStatusRotateLimit
+//  이벤트 알림 상태 rotate limit
+func EventNofitierStatusRotateLimit() int {
+	if eventNofitierStatusRotateLimit == 0 {
+		return math.MaxUint8 //max uint (255)
+	}
+
+	return eventNofitierStatusRotateLimit
+}
+
+var eventNofitierStatusRotateLimit int = 20
