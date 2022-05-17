@@ -2,13 +2,13 @@ package event
 
 // EventPublish
 type EventPublish struct {
-	subs HashsetEventSubscribers
+	muxs HashsetEventNotifierMux
 }
 
 // NewEventPublish
 func NewEventPublish() *EventPublish {
 	pub := &EventPublish{}
-	pub.subs = HashsetEventSubscribers{}
+	pub.muxs = HashsetEventNotifierMux{}
 
 	return pub
 }
@@ -16,20 +16,20 @@ func NewEventPublish() *EventPublish {
 // Publish
 //  이밴트 리스너로 전달
 func (publisher EventPublish) Publish(sender string, v ...interface{}) {
-	for sub := range publisher.subs {
-		sub.Update(sender, v...)
+	for mux := range publisher.muxs {
+		mux.Update(sender, v...)
 	}
 }
 
-// Subscribers
-func (publisher EventPublish) Subscribers() HashsetEventSubscribers {
-	return publisher.subs
+// NotifierMuxers
+func (publisher EventPublish) NotifierMuxers() HashsetEventNotifierMux {
+	return publisher.muxs
 }
 
 // Close
 func (publisher EventPublish) Close() {
 	//clear subscribers
-	for sub := range publisher.Subscribers() {
-		sub.Close()
+	for mux := range publisher.NotifierMuxers() {
+		mux.Close()
 	}
 }

@@ -12,11 +12,16 @@ type EventNotifierWebhookProperty struct {
 	RequestTimeout string            `json:"request_timeout"           xorm:"'request_timeout' varchar(16)  null    comment('fmt(time.ParseDuration)')"` //for timeout context
 }
 
+func (EventNotifierWebhookProperty) Type() EventNotifierType {
+	return EventNotifierTypeWebhook
+}
+
 type EventNotifierWebhook struct {
 	metav1.DbMeta                `json:",inline" xorm:"extends"` //inline dbmeta
 	metav1.UuidMeta              `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta             `json:",inline" xorm:"extends"` //inline labelmeta
 	EventNotifierWebhookProperty `json:",inline" xorm:"extends"` //inline property
+	MIME                         `json:",inline" xorm:"extends"` //inline MIME
 }
 
 func (EventNotifierWebhook) TableName() string {
@@ -26,4 +31,5 @@ func (EventNotifierWebhook) TableName() string {
 type EventNotifierWebhook_create struct {
 	metav1.LabelMeta             `json:",inline" xorm:"extends"` //inline labelmeta
 	EventNotifierWebhookProperty `json:",inline" xorm:"extends"` //inline property
+	MIME                         `json:",inline" xorm:"extends"` //inline MIME
 }

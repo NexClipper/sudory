@@ -1,4 +1,4 @@
-package event
+package managed_event
 
 import (
 	"bytes"
@@ -11,25 +11,23 @@ import (
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
+	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
 	"github.com/pkg/errors"
 )
 
+var _ Notifier = (*webhookNotifier)(nil)
+
 type webhookNotifier struct {
-	opt WebhookNotifierConfig //config.WebhookNotifierConfig
-	sub EventNotifierMuxer    //include.EventSubscriber
+	opt *eventv1.EventNotifierWebhook //config.WebhookNotifierConfig
 
 	httpclient *http.Client //http.Client
 }
 
-func NewWebhookNotifier(opt WebhookNotifierConfig) *webhookNotifier {
+func NewWebhookNotifier(opt *eventv1.EventNotifierWebhook) *webhookNotifier {
 	if len(opt.Method) == 0 {
 		opt.Method = http.MethodGet //set default Method
 	}
 	opt.Method = strings.ToUpper(opt.Method) //Method to upper
-
-	if opt.RequestTimeout == 0 {
-		opt.RequestTimeout = 15 * time.Second //set default timeout
-	}
 
 	client := http.DefaultClient
 	if transport, ok := client.Transport.(*http.Transport); ok {
@@ -42,58 +40,55 @@ func NewWebhookNotifier(opt WebhookNotifierConfig) *webhookNotifier {
 	return notifier
 }
 func (notifier webhookNotifier) Type() fmt.Stringer {
-	return NotifierTypeWebhook
+	return notifier.opt.Type()
+}
+
+func (notifier webhookNotifier) Uuid() string {
+	return notifier.opt.Uuid
 }
 
 func (notifier webhookNotifier) Property() map[string]string {
 	return map[string]string{
-		"name":   notifier.sub.(EventNotifiMuxConfigHolder).Config().Name,
-		"type":   notifier.Type().String(),
+		"type":   notifier.opt.Type().String(),
+		"uuid":   notifier.opt.Uuid,
 		"method": notifier.opt.Method,
 		"url":    notifier.opt.Url,
 	}
 }
 
-func (notifier *webhookNotifier) Regist(sub EventNotifierMuxer) {
-	//Subscribe
-	if !(sub == nil && notifier.sub != nil) {
-		notifier.sub = sub
-		notifier.sub.Notifiers().Add(notifier)
-	}
-}
-
 func (notifier *webhookNotifier) Close() {
-	//Unsubscribe
-	if notifier.sub != nil {
-		notifier.sub.Notifiers().Remove(notifier)
-		notifier.sub = nil
-	}
+
 }
 
 func (notifier webhookNotifier) OnNotify(factory MarshalFactoryResult) error {
 	opt := notifier.opt
 	httpclient := notifier.httpclient
 
-	if err := notifier.HttpMultipartReq(opt, httpclient, factory); err != nil {
+	if err := notifier.HttpMultipartReq(*opt, httpclient, factory); err != nil {
 		return errors.Wrapf(err, "http multipart request")
 	}
 	return nil
 }
 
-func (webhookNotifier) HttpMultipartReq(opt WebhookNotifierConfig, httpclient *http.Client, factory MarshalFactoryResult) error {
+func (webhookNotifier) HttpMultipartReq(opt eventv1.EventNotifierWebhook, httpclient *http.Client, factory MarshalFactoryResult) error {
 
-	timeout, cancel := context.WithTimeout(context.Background(), opt.RequestTimeout)
+	requset_timeout, _ := time.ParseDuration(opt.RequestTimeout)
+	if requset_timeout == 0 {
+		requset_timeout = 15 * time.Second
+	}
+
+	timeout, cancel := context.WithTimeout(context.Background(), requset_timeout)
 	defer cancel()
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	b, err := factory("application/json")
+	b, err := factory(opt.ContentType)
 	if err != nil {
 		return errors.Wrapf(err, "marshal factory")
 	}
 	for _, b := range b {
-		part, err := writer.CreatePart(textproto.MIMEHeader{"Content-Type": {"application/json"}})
+		part, err := writer.CreatePart(textproto.MIMEHeader{"Content-Type": {opt.ContentType}})
 		if err != nil {
 			return errors.Wrapf(err, "create multipart")
 		}

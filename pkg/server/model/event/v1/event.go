@@ -21,10 +21,9 @@ func (Event) TableName() string {
 	return "event"
 }
 
-type EventWithNotifier struct {
+type EventWithEdges struct {
 	Event         `json:",inline" xorm:"extends"`
 	NotifierEdges []NotifierEdge `json:"notifier_edges,omitempty"`
-	Notifiers     []interface{}  `json:"notifiers,omitempty"`
 }
 
 type NotifierEdge struct {
@@ -46,3 +45,7 @@ type Event_update struct {
 type NotifierEdges struct {
 	NotifierEdges []NotifierEdge `json:"notifier_edges,omitempty"`
 }
+
+type EventNotifier map[string]interface{}
+
+type EventNotifiers []EventNotifier

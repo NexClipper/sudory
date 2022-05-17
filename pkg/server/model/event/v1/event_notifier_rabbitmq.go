@@ -28,11 +28,16 @@ type EventNotifierRabbitMqProperty struct {
 	MessageAppId           *string                `json:"message_app_id"            xorm:"'message_app_id'           null"` // application use - creating application
 }
 
+func (EventNotifierRabbitMqProperty) Type() EventNotifierType {
+	return EventNotifierTypeRabbitmq
+}
+
 type EventNotifierRabbitMq struct {
 	metav1.DbMeta                 `json:",inline" xorm:"extends"` //inline dbmeta
 	metav1.UuidMeta               `json:",inline" xorm:"extends"` //inline uuidmeta
 	metav1.LabelMeta              `json:",inline" xorm:"extends"` //inline labelmeta
 	EventNotifierRabbitMqProperty `json:",inline" xorm:"extends"` //inline property
+	MIME                          `json:",inline" xorm:"extends"` //inline MIME
 }
 
 func (EventNotifierRabbitMq) TableName() string {
@@ -42,4 +47,5 @@ func (EventNotifierRabbitMq) TableName() string {
 type EventNotifierRabbitMq_create struct {
 	metav1.LabelMeta              `json:",inline" xorm:"extends"` //inline labelmeta
 	EventNotifierRabbitMqProperty `json:",inline" xorm:"extends"` //inline property
+	MIME                          `json:",inline" xorm:"extends"` //inline MIME
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/event"
+	"github.com/NexClipper/sudory/pkg/server/event/managed_event"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
@@ -122,7 +123,9 @@ func (ctl Control) PollService(ctx echo.Context) error {
 			"step_count":    nullable.Int32(service.StepCount).Value(),
 			"step_position": nullable.Int32(service.StepPosition).Value(),
 		}
-		event.Invoke(service.SubscribedChannel, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
+
+		event.Invoke(service.SubscribedChannel, m)                              //Subscribe 등록된 구독 이벤트 이름으로 호출
+		managed_event.Invoke(service.ClusterUuid, service.SubscribedChannel, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
 	}
 
 	if _, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
@@ -242,6 +245,7 @@ func (ctl Control) PollService(ctx echo.Context) error {
 			"step_position": nullable.Int32(response.StepPosition).Value(),
 		}
 		event.Invoke("service-poll-out", m)
+		managed_event.Invoke(response.ClusterUuid, "service-poll-out", m)
 	}
 
 	return ctx.JSON(http.StatusOK, rsp_service)
@@ -360,6 +364,7 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 		"session_uuid": payload.Uuid,
 	}
 	event.Invoke("client-auth-accept", m)
+	managed_event.Invoke(payload.ClusterUuid, "client-auth-accept", m)
 
 	return ctx.JSON(http.StatusOK, OK())
 }

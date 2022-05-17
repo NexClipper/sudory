@@ -1,16 +1,14 @@
 package event
 
 import (
-	"bytes"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/pkg/errors"
 )
 
 type consoleNotifier struct {
-	sub EventSubscriber
+	sub EventNotifierMuxer
 }
 
 func NewConsoleNotifier() *consoleNotifier {
@@ -18,31 +16,18 @@ func NewConsoleNotifier() *consoleNotifier {
 
 	return notifier
 }
-func (notifier consoleNotifier) Type() string {
-	return NotifierTypeConsole.String()
+func (notifier consoleNotifier) Type() fmt.Stringer {
+	return NotifierTypeConsole
 }
 
 func (notifier consoleNotifier) Property() map[string]string {
 	return map[string]string{
-		"name": notifier.sub.Config().Name,
-		"type": notifier.Type(),
+		"name": notifier.sub.(EventNotifiMuxConfigHolder).Config().Name,
+		"type": notifier.Type().String(),
 	}
 }
 
-func (notifier consoleNotifier) PropertyString() string {
-	buff := bytes.Buffer{}
-	for key, value := range notifier.Property() {
-		if 0 < buff.Len() {
-			buff.WriteString(" ")
-		}
-		buff.WriteString(key)
-		buff.WriteString("=")
-		buff.WriteString(strconv.Quote(value))
-	}
-	return buff.String()
-}
-
-func (notifier *consoleNotifier) Regist(sub EventSubscriber) {
+func (notifier *consoleNotifier) Regist(sub EventNotifierMuxer) {
 	//Subscribe
 	if !(sub == nil && notifier.sub != nil) {
 		notifier.sub = sub
@@ -58,7 +43,7 @@ func (notifier *consoleNotifier) Close() {
 	}
 }
 
-func (notifier consoleNotifier) OnNotify(factory MarshalFactory) error {
+func (notifier consoleNotifier) OnNotify(factory MarshalFactoryResult) error {
 	w := os.Stdout
 
 	b, err := factory("application/json")
@@ -70,15 +55,4 @@ func (notifier consoleNotifier) OnNotify(factory MarshalFactory) error {
 	}
 
 	return nil
-}
-
-func (notifier consoleNotifier) OnNotifyAsync(factory MarshalFactory) <-chan NotifierFuture {
-	future := make(chan NotifierFuture)
-	go func() {
-		defer close(future)
-
-		future <- NotifierFuture{&notifier, notifier.OnNotify(factory)}
-	}()
-
-	return future
 }

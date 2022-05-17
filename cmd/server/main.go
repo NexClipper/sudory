@@ -15,6 +15,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/config"
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/event"
+	"github.com/NexClipper/sudory/pkg/server/event/managed_event"
 	"github.com/NexClipper/sudory/pkg/server/macro/enigma"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
@@ -79,16 +80,27 @@ func main() {
 	}
 	defer db.Close()
 
-	//init event
-	eventsConfigYaml := cfg.Events
-	if !path.IsAbs(cfg.Events) {
-		eventsConfigYaml = path.Join(path.Dir(*configPath), cfg.Events)
+	if true {
+		//init event
+		eventsConfigYaml := cfg.Events
+		if !path.IsAbs(cfg.Events) {
+			eventsConfigYaml = path.Join(path.Dir(*configPath), cfg.Events)
+		}
+		eventClose, err := newEvent(eventsConfigYaml)
+		if err != nil {
+			panic(err)
+		}
+		defer eventClose() //이벤트 종료
 	}
-	eventClose, err := newEvent(eventsConfigYaml)
-	if err != nil {
-		panic(err)
-	}
-	defer eventClose() //이벤트 종료
+	//init managed event
+	me := managed_event.NewManagedEvent()
+	me.SetEngine(db.Engine())
+	me.ErrorHandlers.Add(managed_event.DefaultErrorHandler)
+	me.NofitierErrorHandlers.Add(
+		managed_event.DefaultErrorHandler_nofitier(me),
+		func(n managed_event.Notifier, err error) { managed_event.DefaultErrorHandler(err) },
+	)
+	managed_event.Invoke = me.Invoke
 
 	//init global variant cron
 	cronGVClose, err := newGlobalVariantCron(db.Engine())

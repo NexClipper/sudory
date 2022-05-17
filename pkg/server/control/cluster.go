@@ -8,6 +8,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
+	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
@@ -42,8 +43,8 @@ func (ctl Control) CreateCluster(ctx echo.Context) error {
 
 	//property
 	cluster := clusterv1.Cluster{}
-	cluster.UuidMeta = NewUuidMeta()
-	cluster.LabelMeta = NewLabelMeta(body.Name, body.Summary)
+	cluster.UuidMeta = metav1.NewUuidMeta()
+	cluster.LabelMeta = metav1.NewLabelMeta(body.Name, body.Summary)
 	cluster.ClusterProperty = body.ClusterProperty
 
 	if cluster.PollingOption == nil {
@@ -148,7 +149,7 @@ func (ctl Control) UpdateCluster(ctx echo.Context) error {
 	//property
 	cluster := clusterv1.Cluster{}
 	cluster.Uuid = uuid //set uuid from path
-	cluster.LabelMeta = NewLabelMeta(body.Name, body.Summary)
+	cluster.LabelMeta = metav1.NewLabelMeta(body.Name, body.Summary)
 	cluster.ClusterProperty = body.ClusterProperty
 
 	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {

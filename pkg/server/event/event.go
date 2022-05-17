@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"strings"
+	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/reflected"
@@ -45,29 +46,15 @@ func NewEventConfig(configfile string) (*EventConfig, error) {
 	return cfgevent, nil
 }
 
-// // RegistNotifier
-// func RegistNotifier(sub EventSubscriber) error {
-// 	for i := range sub.Config().NotifierConfigs {
-// 		cfgnotifier := sub.Config().NotifierConfigs[i]
-
-// 		//new notifier
-// 		notifier, err := NotifierFactory(cfgnotifier)
-// 		if err != nil {
-// 			return errors.Wrapf(err, "notifier factory%s",
-// 				logs.KVL(
-// 					"config-event", sub.Config(),
-// 					"config-notifier", cfgnotifier,
-// 				))
-// 		}
-
-// 		//등록
-// 		notifier.Regist(sub)
-// 	}
-
-// 	return nil
-// }
-
 func PrintEventConfiguation(w io.Writer, pub EventPublisher) {
+
+	get_name := func(sub EventNotifierMuxer) string {
+		return sub.(EventNotifiMuxConfigHolder).Config().Name
+	}
+	get_update_interval := func(sub EventNotifierMuxer) time.Duration {
+		return sub.(EventNotifiMuxConfigHolder).Config().UpdateInterval
+	}
+
 	lst := []func(){
 		//subscriber
 		func() {
@@ -77,11 +64,11 @@ func PrintEventConfiguation(w io.Writer, pub EventPublisher) {
 			fmt.Fprintln(w, "subscriber:")
 
 			// var seq int = 0
-			for sub := range pub.Subscribers() {
+			for sub := range pub.NotifierMuxers() {
 				tabwrite.PrintKeyValue(
 					" ", "-", //empty line
-					"event-name", sub.Config().Name,
-					"update-interval", sub.Config().UpdateInterval.String(),
+					"event-name", get_name(sub),
+					"update-interval", get_update_interval(sub).String(),
 				)
 				// seq++
 			}
@@ -94,13 +81,13 @@ func PrintEventConfiguation(w io.Writer, pub EventPublisher) {
 			fmt.Fprintln(w, "notifier:")
 
 			// var seq int = 0
-			for sub := range pub.Subscribers() {
+			for sub := range pub.NotifierMuxers() {
 				for notifier := range sub.Notifiers() {
 					tabwrite.PrintKeyValue(
 						" ", "-", //empty line
-						"event-name", sub.Config().Name,
+						"event-name", get_name(sub),
 						"notifier-type", notifier.Type(),
-						"notifier-property", notifier.PropertyString(),
+						"notifier-property", MapString(notifier.Property()),
 					)
 					// seq++
 				}

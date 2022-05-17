@@ -6,8 +6,6 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
-	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
@@ -68,16 +66,4 @@ func (ctl Control) DeleteEventNofitierStatus(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, OK())
-}
-
-func CreateEventNotifierStatus(tx *xorm.Session, status eventv1.EventNotifierStatus) error {
-	if _, err := vault.NewEventNotifierStatus(tx).Create(status); err != nil {
-		return errors.Wrapf(err, "create event notifier status")
-	}
-
-	if err := vault.NewEventNotifierStatus(tx).Rotate(status.NotifierUuid, globvar.EventNofitierStatusRotateLimit()); err != nil {
-		return errors.Wrapf(err, "create event notifier status")
-	}
-
-	return nil
 }

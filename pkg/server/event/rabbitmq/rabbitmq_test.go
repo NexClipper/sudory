@@ -1,4 +1,4 @@
-package event_test
+package rabbitmq_test
 
 import (
 	"bytes"

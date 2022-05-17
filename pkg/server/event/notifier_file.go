@@ -2,7 +2,7 @@ package event
 
 import (
 	"bytes"
-	"strconv"
+	"fmt"
 
 	"github.com/NexClipper/sudory/pkg/server/event/filepool"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
@@ -11,7 +11,7 @@ import (
 
 type fileNotifier struct {
 	opt FileNotifierConfig
-	sub EventSubscriber
+	sub EventNotifierMuxer
 }
 
 func NewFileNotifier(opt FileNotifierConfig) (*fileNotifier, error) {
@@ -27,32 +27,19 @@ func NewFileNotifier(opt FileNotifierConfig) (*fileNotifier, error) {
 
 	return notifier, nil
 }
-func (notifier fileNotifier) Type() string {
-	return NotifierTypeFile.String()
+func (notifier fileNotifier) Type() fmt.Stringer {
+	return NotifierTypeFile
 }
 
 func (notifier fileNotifier) Property() map[string]string {
 	return map[string]string{
-		"name": notifier.sub.Config().Name,
-		"type": notifier.Type(),
+		"name": notifier.sub.(EventNotifiMuxConfigHolder).Config().Name,
+		"type": notifier.Type().String(),
 		"path": notifier.opt.Path,
 	}
 }
 
-func (notifier fileNotifier) PropertyString() string {
-	buff := bytes.Buffer{}
-	for key, value := range notifier.Property() {
-		if 0 < buff.Len() {
-			buff.WriteString(" ")
-		}
-		buff.WriteString(key)
-		buff.WriteString("=")
-		buff.WriteString(strconv.Quote(value))
-	}
-	return buff.String()
-}
-
-func (notifier *fileNotifier) Regist(sub EventSubscriber) {
+func (notifier *fileNotifier) Regist(sub EventNotifierMuxer) {
 	//Subscribe
 	if !(sub == nil && notifier.sub != nil) {
 		notifier.sub = sub
@@ -71,7 +58,7 @@ func (notifier *fileNotifier) Close() {
 	filepool.Close(filepath)
 }
 
-func (notifier fileNotifier) OnNotify(factory MarshalFactory) error {
+func (notifier fileNotifier) OnNotify(factory MarshalFactoryResult) error {
 	filepath := notifier.opt.Path
 
 	buff := bytes.Buffer{}
@@ -98,15 +85,4 @@ func (notifier fileNotifier) OnNotify(factory MarshalFactory) error {
 	}
 
 	return nil
-}
-
-func (notifier fileNotifier) OnNotifyAsync(factory MarshalFactory) <-chan NotifierFuture {
-	future := make(chan NotifierFuture)
-	go func() {
-		defer close(future)
-
-		future <- NotifierFuture{&notifier, notifier.OnNotify(factory)}
-	}()
-
-	return future
 }

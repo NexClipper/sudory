@@ -2,6 +2,8 @@ package v1
 
 import (
 	"time"
+
+	"github.com/NexClipper/sudory/pkg/server/macro"
 )
 
 //database meta info
@@ -22,4 +24,15 @@ type LabelMeta struct {
 //uuid meta info
 type UuidMeta struct {
 	Uuid string `json:"uuid" xorm:"'uuid' char(32) notnull unique(UQE_uuid) comment('uuid')"`
+}
+
+func NewLabelMeta(name string, summary *string) LabelMeta {
+	return LabelMeta{
+		Name:    name,
+		Summary: summary,
+	}
+}
+
+func NewUuidMeta() UuidMeta {
+	return UuidMeta{Uuid: macro.NewUuidString()}
 }

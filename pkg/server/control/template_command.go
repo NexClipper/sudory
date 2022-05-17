@@ -12,6 +12,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
+	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -129,8 +130,8 @@ func (ctl Control) CreateTemplateCommand(ctx echo.Context) error {
 
 	//property
 	command := commandv1.TemplateCommand{}
-	command.UuidMeta = NewUuidMeta()
-	command.LabelMeta = NewLabelMeta(body.Name, body.Summary)
+	command.UuidMeta = metav1.NewUuidMeta()
+	command.LabelMeta = metav1.NewLabelMeta(body.Name, body.Summary)
 	command.TemplateUuid = template_uuid
 	command.Sequence = &body.Sequence
 	command.Method = body.Method

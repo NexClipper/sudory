@@ -5,10 +5,10 @@ import (
 )
 
 type EventConfig struct {
-	EventSubscribeConfigs []EventSubscribeConfig `yaml:"events,omitempty"`
+	EventSubscribeConfigs []EventNotifierMuxerConfig `yaml:"events,omitempty"`
 }
 
-type EventSubscribeConfig struct {
+type EventNotifierMuxerConfig struct {
 	Name            string           `yaml:"name"`
 	UpdateInterval  time.Duration    `yaml:"update-interval"`
 	NotifierConfigs []NotifierConfig `yaml:"notifiers,omitempty"`

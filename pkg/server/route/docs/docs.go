@@ -731,7 +731,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.EventWithNotifier"
+                                "$ref": "#/definitions/v1.Event"
                             }
                         }
                     }
@@ -769,7 +769,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.EventWithNotifier"
+                            "$ref": "#/definitions/v1.EventWithEdges"
                         }
                     }
                 }
@@ -806,7 +806,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.EventWithNotifier"
+                            "$ref": "#/definitions/v1.Event"
                         }
                     }
                 }
@@ -850,7 +850,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.EventWithNotifier"
+                            "$ref": "#/definitions/v1.Event"
                         }
                     }
                 }
@@ -888,7 +888,44 @@ var doc = `{
                 }
             }
         },
-        "/server/event/{uuid}/notifier/add": {
+        "/server/event/{uuid}/edges": {
+            "get": {
+                "description": "Get event edges",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/event"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Event 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.EventNotifierEdge"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/event/{uuid}/edges/add": {
             "put": {
                 "description": "addtion event notifier edge",
                 "consumes": [
@@ -928,13 +965,13 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.EventWithNotifier"
+                            "$ref": "#/definitions/v1.EventNotifierEdge"
                         }
                     }
                 }
             }
         },
-        "/server/event/{uuid}/notifier/sub": {
+        "/server/event/{uuid}/edges/sub": {
             "put": {
                 "description": "subtraction event sub notifier",
                 "consumes": [
@@ -974,13 +1011,62 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.EventWithNotifier"
+                            "$ref": "#/definitions/v1.EventNotifierEdge"
                         }
                     }
                 }
             }
         },
         "/server/event_notifier/console": {
+            "get": {
+                "description": "Find event notifier console",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/event_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.EventNotifierConsole"
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Create a event notifier console",
                 "consumes": [
@@ -1020,6 +1106,41 @@ var doc = `{
             }
         },
         "/server/event_notifier/console/{uuid}": {
+            "get": {
+                "description": "Get a event notifier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/event_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "event notifier 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.EventNotifierConsole"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "Update a console event notifier",
                 "consumes": [
@@ -1063,9 +1184,90 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "Delete a event notifier console",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/event_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Event 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
             }
         },
         "/server/event_notifier/rabbitmq": {
+            "get": {
+                "description": "Find event notifier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/event_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.EventNotifierRabbitMq"
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Create a event notifier rabbitmq",
                 "consumes": [
@@ -1105,6 +1307,41 @@ var doc = `{
             }
         },
         "/server/event_notifier/rabbitmq/{uuid}": {
+            "get": {
+                "description": "Get a event notifier rabbitmq",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/event_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "event notifier 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.EventNotifierRabbitMq"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "Update a rabbitmq event notifier",
                 "consumes": [
@@ -1148,9 +1385,90 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "Delete a event notifier rabbitmq",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/event_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Event 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
             }
         },
         "/server/event_notifier/webhook": {
+            "get": {
+                "description": "Find event notifier webhook",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/event_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.EventNotifierWebhook"
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Create a event notifier webhook",
                 "consumes": [
@@ -1190,6 +1508,41 @@ var doc = `{
             }
         },
         "/server/event_notifier/webhook/{uuid}": {
+            "get": {
+                "description": "Get a event notifier webhook",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/event_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "event notifier 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.EventNotifierWebhook"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "Update a webhook event notifier",
                 "consumes": [
@@ -1233,111 +1586,9 @@ var doc = `{
                         }
                     }
                 }
-            }
-        },
-        "/server/event_notifier/{event_notifier_type}": {
-            "get": {
-                "description": "Find event notifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "v1.EventNotifierType",
-                        "name": "event_notifier_type",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "query  pkg/server/database/prepared/README.md",
-                        "name": "q",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "order  pkg/server/database/prepared/README.md",
-                        "name": "o",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "paging pkg/server/database/prepared/README.md",
-                        "name": "p",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.EventWithNotifier"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/server/event_notifier/{event_notifier_type}/{uuid}": {
-            "get": {
-                "description": "Get a event notifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "v1.EventNotifierType",
-                        "name": "event_notifier_type",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "event notifier 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventWithNotifier"
-                        }
-                    }
-                }
             },
             "delete": {
-                "description": "Delete a event notifier",
+                "description": "Delete a event notifier webhook",
                 "consumes": [
                     "application/json"
                 ],
@@ -1353,13 +1604,6 @@ var doc = `{
                         "description": "client session token",
                         "name": "x_auth_token",
                         "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "v1.EventNotifierType",
-                        "name": "event_notifier_type",
-                        "in": "path",
-                        "required": true
                     },
                     {
                         "type": "string",
@@ -2518,9 +2762,44 @@ var doc = `{
                 }
             }
         },
+        "v1.Event": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pattern": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "v1.EventNotifierConsole": {
             "type": "object",
             "properties": {
+                "Content-Type": {
+                    "type": "string"
+                },
                 "created": {
                     "type": "string"
                 },
@@ -2547,6 +2826,9 @@ var doc = `{
         "v1.EventNotifierConsole_create": {
             "type": "object",
             "properties": {
+                "Content-Type": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -2555,9 +2837,38 @@ var doc = `{
                 }
             }
         },
+        "v1.EventNotifierEdge": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "event_uuid": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "notifier_type": {
+                    "type": "string"
+                },
+                "notifier_uuid": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                }
+            }
+        },
         "v1.EventNotifierRabbitMq": {
             "type": "object",
             "properties": {
+                "Content-Type": {
+                    "type": "string"
+                },
                 "created": {
                     "type": "string"
                 },
@@ -2654,6 +2965,9 @@ var doc = `{
         "v1.EventNotifierRabbitMq_create": {
             "type": "object",
             "properties": {
+                "Content-Type": {
+                    "type": "string"
+                },
                 "exchange": {
                     "description": "amqp.Channel.Publish",
                     "type": "string"
@@ -2764,6 +3078,9 @@ var doc = `{
         "v1.EventNotifierWebhook": {
             "type": "object",
             "properties": {
+                "Content-Type": {
+                    "type": "string"
+                },
                 "created": {
                     "type": "string"
                 },
@@ -2807,6 +3124,9 @@ var doc = `{
         "v1.EventNotifierWebhook_create": {
             "type": "object",
             "properties": {
+                "Content-Type": {
+                    "type": "string"
+                },
                 "method": {
                     "description": "http",
                     "type": "string"
@@ -2832,7 +3152,7 @@ var doc = `{
                 }
             }
         },
-        "v1.EventWithNotifier": {
+        "v1.EventWithEdges": {
             "type": "object",
             "properties": {
                 "cluster_uuid": {
@@ -2855,10 +3175,6 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/v1.NotifierEdge"
                     }
-                },
-                "notifiers": {
-                    "type": "array",
-                    "items": {}
                 },
                 "pattern": {
                     "type": "string"
