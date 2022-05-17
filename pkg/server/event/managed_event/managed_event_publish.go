@@ -2,6 +2,7 @@ package managed_event
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/NexClipper/logger"
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
@@ -21,6 +22,8 @@ var _ EventPublisher = (*ManagedEvent)(nil)
 type ManagedEvent struct {
 	engine *xorm.Engine
 
+	HashsetEventNotifierMultiplexer
+
 	ErrorHandlers         event.HashsetErrorHandlers
 	NofitierErrorHandlers HashsetNofitierErrorHandler
 }
@@ -28,25 +31,28 @@ type ManagedEvent struct {
 func NewManagedEvent() *ManagedEvent {
 
 	me := ManagedEvent{}
+	me.HashsetEventNotifierMultiplexer = HashsetEventNotifierMultiplexer{}
+
 	me.ErrorHandlers = event.HashsetErrorHandlers{}
 	me.NofitierErrorHandlers = HashsetNofitierErrorHandler{}
 
 	return &me
 }
 
-func (me ManagedEvent) Invoke(cluster_uuid, pattern string, i ...interface{}) {
+func (me ManagedEvent) EventNotifierMultiplexer() HashsetEventNotifierMultiplexer {
+	return me.HashsetEventNotifierMultiplexer
+}
+
+func (me ManagedEvent) Invoke(cluster_uuid, subscribed_channel string, v ...interface{}) {
 
 	//make notifier mux
-	mux, err := me.BuildNotifierMuxer(cluster_uuid, pattern)
-	if err != nil {
+	if err := me.BuildNotifierMuxer(cluster_uuid, subscribed_channel); err != nil {
 		me.OnError(errors.Wrapf(err, "build managed event"))
 		return
 	}
 
 	//update message
-	if mux != nil {
-		mux.Update(pattern, i...)
-	}
+	me.Update(v...)
 }
 
 var (
@@ -73,11 +79,9 @@ var (
 				}
 
 				if err, ok := r.(error); ok {
-					me.OnError(errors.Wrapf(err, "recover notifier%s",
-						event.MapString(notifier.Property())))
+					me.OnError(errors.Wrapf(err, "recover notifier error handler"))
 				} else {
-					me.OnError(errors.Errorf("recover notifier %s: %+v",
-						event.MapString(notifier.Property()), r))
+					me.OnError(errors.Errorf("notifier error handler recover='%+v'", r))
 				}
 			}()
 
@@ -99,8 +103,7 @@ var (
 			//이벤트 알림 상태 테이블에 에러 메시지 저장
 			if err := vault.NewEventNotifierStatus(me.Engine().NewSession()).CreateAndRotate(record, globvar.EventNofitierStatusRotateLimit()); err != nil {
 				//저장 실패
-				me.OnError(errors.Wrapf(err, "notifier%s",
-					event.MapString(notifier.Property())))
+				me.OnError(errors.Wrapf(err, "save notifier status"))
 			}
 		}
 	}
@@ -127,52 +130,64 @@ func (me *ManagedEvent) OnNotifierError(notifier Notifier, err error) {
 	me.NofitierErrorHandlers.OnError(notifier, err)
 }
 
-func (me *ManagedEvent) BuildNotifierMuxer(cluster_uuid, pattern string) (EventNotifierMuxer, error) {
-
+func (me *ManagedEvent) BuildNotifierMuxer(cluster_uuid, subscribed_channel string) error {
 	tx := me.Engine().NewSession()
 
-	var mux EventNotifierMuxer
-
 	//load config
-	events, err := vault.NewEvent(tx).Find("cluster_uuid = ? AND pattern = ?", cluster_uuid, pattern)
+	events, err := vault.NewEvent(tx).Find("cluster_uuid = ?", cluster_uuid)
 	if err != nil {
-		return mux, errors.Wrapf(err, "find event")
+		return errors.Wrapf(err, "find event by cluster_uuid")
+	}
+	//subscribed_channel match by regex(event pattern)
+	events_ := make([]eventv1.Event, 0, len(events))
+	for _, event := range events {
+		reg, err := regexp.Compile(event.Pattern)
+		if err != nil {
+			//regexp compile pattern
+			return errors.Wrapf(err, "regexp compile%s", logs.KVL(
+				"pattern", event.Pattern,
+			))
+		}
+
+		if ok := reg.MatchString(subscribed_channel); ok {
+			events_ = append(events_, event)
+		}
 	}
 
-	for _, event := range events {
-		//new mux
-		mux = NewManagedEventNotifierMux(event)
-
-		//get edge
+	for _, event := range events_ {
+		//find edge
 		edges, err := vault.NewEventNotifierEdge(tx).Find("event_uuid = ?", event.Uuid)
 		if err != nil {
-			return mux, errors.Wrapf(err, "find event")
+			return errors.Wrapf(err, "find event edge")
 		}
 
+		opts := make([]interface{}, 0, 10)
 		for _, edge := range edges {
 			//get notifier
-			i, err := vault.NewEventNotifier(tx).Get(edge.NotifierType, edge.NotifierUuid)
+			opt, err := vault.NewEventNotifier(tx).Get(edge.NotifierType, edge.NotifierUuid)
 			if err != nil {
-				return mux, errors.Wrapf(err, "find event")
+				return errors.Wrapf(err, "get event notifier")
 			}
 
-			if _, ok := i[edge.NotifierType]; !ok {
-				continue
-			}
-
+			opts = append(opts, opt)
+		}
+		//new muxer
+		muxer := NewManagedEventNotifierMux(event)
+		for _, opt := range opts {
 			//notifier factory
-			notifier, err := NotifierFactory(i[edge.NotifierType])
+			notifier, err := NotifierFactory(opt)
 			if err != nil {
-				return mux, errors.Wrapf(err, "notifier factory")
+				return errors.Wrapf(err, "notifier factory")
 			}
 			//append notifier
-			mux.Notifiers().Add(notifier)
+			muxer.Notifiers().Add(notifier)
 		}
 
-		mux.Regist(me)
+		//regist multiplexer to event publisher
+		muxer.Regist(me)
 	}
 
-	return mux, nil
+	return nil
 }
 
 func NotifierFactory(i interface{}) (new_notifier Notifier, err error) {

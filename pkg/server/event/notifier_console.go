@@ -8,7 +8,7 @@ import (
 )
 
 type consoleNotifier struct {
-	sub EventNotifierMuxer
+	sub EventNotifierMultiplexer
 }
 
 func NewConsoleNotifier() *consoleNotifier {
@@ -27,7 +27,7 @@ func (notifier consoleNotifier) Property() map[string]string {
 	}
 }
 
-func (notifier *consoleNotifier) Regist(sub EventNotifierMuxer) {
+func (notifier *consoleNotifier) Regist(sub EventNotifierMultiplexer) {
 	//Subscribe
 	if !(sub == nil && notifier.sub != nil) {
 		notifier.sub = sub

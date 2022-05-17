@@ -48,10 +48,10 @@ func NewEventConfig(configfile string) (*EventConfig, error) {
 
 func PrintEventConfiguation(w io.Writer, pub EventPublisher) {
 
-	get_name := func(sub EventNotifierMuxer) string {
+	get_name := func(sub EventNotifierMultiplexer) string {
 		return sub.(EventNotifiMuxConfigHolder).Config().Name
 	}
-	get_update_interval := func(sub EventNotifierMuxer) time.Duration {
+	get_update_interval := func(sub EventNotifierMultiplexer) time.Duration {
 		return sub.(EventNotifiMuxConfigHolder).Config().UpdateInterval
 	}
 

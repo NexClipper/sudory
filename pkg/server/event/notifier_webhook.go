@@ -15,8 +15,8 @@ import (
 )
 
 type webhookNotifier struct {
-	opt WebhookNotifierConfig //config.WebhookNotifierConfig
-	sub EventNotifierMuxer    //include.EventSubscriber
+	opt WebhookNotifierConfig    //config.WebhookNotifierConfig
+	sub EventNotifierMultiplexer //include.EventSubscriber
 
 	httpclient *http.Client //http.Client
 }
@@ -54,7 +54,7 @@ func (notifier webhookNotifier) Property() map[string]string {
 	}
 }
 
-func (notifier *webhookNotifier) Regist(sub EventNotifierMuxer) {
+func (notifier *webhookNotifier) Regist(sub EventNotifierMultiplexer) {
 	//Subscribe
 	if !(sub == nil && notifier.sub != nil) {
 		notifier.sub = sub

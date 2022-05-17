@@ -11,7 +11,7 @@ import (
 
 type RabbitMQNotifier struct {
 	opt RabbitMQNotifierConfig
-	sub EventNotifierMuxer
+	sub EventNotifierMultiplexer
 
 	connection *amqp.Connection //RabbitMQ //amqp.Connection
 	channel    *amqp.Channel    //RabbitMQ //amqp.Channel
@@ -47,7 +47,7 @@ func (notifier RabbitMQNotifier) Property() map[string]string {
 	}
 }
 
-func (notifier *RabbitMQNotifier) Regist(sub EventNotifierMuxer) {
+func (notifier *RabbitMQNotifier) Regist(sub EventNotifierMultiplexer) {
 	//Subscribe
 	if !(sub == nil && notifier.sub != nil) {
 		notifier.sub = sub

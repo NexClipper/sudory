@@ -13,14 +13,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-type HashsetEventNotifierMux map[EventNotifierMuxer]struct{}
+type HashsetEventNotifierMux map[EventNotifierMultiplexer]struct{}
 
-func (hashset HashsetEventNotifierMux) Add(sub ...EventNotifierMuxer) {
+func (hashset HashsetEventNotifierMux) Add(sub ...EventNotifierMultiplexer) {
 	for _, sub := range sub {
 		hashset[sub] = struct{}{}
 	}
 }
-func (hashset HashsetEventNotifierMux) Remove(sub ...EventNotifierMuxer) {
+func (hashset HashsetEventNotifierMux) Remove(sub ...EventNotifierMultiplexer) {
 	for _, sub := range sub {
 		delete(hashset, sub)
 	}
@@ -89,8 +89,8 @@ type Notifier interface {
 	// PropertyString() string                                   //요약
 	OnNotify(MarshalFactoryResult) error //알림 발생
 	// OnNotifyAsync(MarshalFactoryResult) <-chan NotifierFuture //알림 발생 (async)
-	Regist(EventNotifierMuxer) //이벤트 구독
-	Close()                    //리스너 종료
+	Regist(EventNotifierMultiplexer) //이벤트 구독
+	Close()                          //리스너 종료
 }
 
 func OnNotifyAsync(notifier Notifier, factory MarshalFactoryResult) <-chan NotifierFuture {
@@ -108,8 +108,8 @@ type EventNotifiMuxConfigHolder interface {
 	Config() *EventNotifierMuxerConfig //설정
 }
 
-//EventNotifierMuxer
-type EventNotifierMuxer interface {
+//EventNotifierMultiplexer
+type EventNotifierMultiplexer interface {
 	Notifiers() HashsetNotifier    //Notifiers
 	Update(string, ...interface{}) //Update 발생
 	Regist(EventPublisher)         //EventPublisher 등록

@@ -11,7 +11,7 @@ import (
 
 type fileNotifier struct {
 	opt FileNotifierConfig
-	sub EventNotifierMuxer
+	sub EventNotifierMultiplexer
 }
 
 func NewFileNotifier(opt FileNotifierConfig) (*fileNotifier, error) {
@@ -39,7 +39,7 @@ func (notifier fileNotifier) Property() map[string]string {
 	}
 }
 
-func (notifier *fileNotifier) Regist(sub EventNotifierMuxer) {
+func (notifier *fileNotifier) Regist(sub EventNotifierMultiplexer) {
 	//Subscribe
 	if !(sub == nil && notifier.sub != nil) {
 		notifier.sub = sub

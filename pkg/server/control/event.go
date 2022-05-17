@@ -3,6 +3,7 @@ package control
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
@@ -40,6 +41,12 @@ func (ctl Control) CreateEvent(ctx echo.Context) error {
 				logs.KVL(
 					ParamLog(fmt.Sprintf("%s.Name", TypeName(body)), body.Name)...,
 				)))
+	}
+
+	//pattern
+	if _, err := regexp.Compile(body.Pattern); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
+			errors.Wrapf(err, "regexp compile event pattern"))
 	}
 
 	event := eventv1.Event{}

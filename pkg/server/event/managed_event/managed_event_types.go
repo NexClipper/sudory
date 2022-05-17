@@ -13,16 +13,22 @@ import (
 	"github.com/pkg/errors"
 )
 
-type HashsetEventNotifierMux map[EventNotifierMuxer]struct{}
+type HashsetEventNotifierMultiplexer map[EventNotifierMultiplexer]struct{}
 
-func (hashset HashsetEventNotifierMux) Add(sub ...EventNotifierMuxer) {
+func (hashset HashsetEventNotifierMultiplexer) Add(sub ...EventNotifierMultiplexer) {
 	for _, sub := range sub {
 		hashset[sub] = struct{}{}
 	}
 }
-func (hashset HashsetEventNotifierMux) Remove(sub ...EventNotifierMuxer) {
+func (hashset HashsetEventNotifierMultiplexer) Remove(sub ...EventNotifierMultiplexer) {
 	for _, sub := range sub {
 		delete(hashset, sub)
+	}
+}
+
+func (hashset HashsetEventNotifierMultiplexer) Update(v ...interface{}) {
+	for mux := range hashset {
+		mux.Update(v...)
 	}
 }
 
@@ -107,17 +113,18 @@ func OnNotifyAsync(notifier Notifier, factory MarshalFactoryResult) <-chan Notif
 	return future
 }
 
-//EventNotifierMuxer
-type EventNotifierMuxer interface {
-	Notifiers() HashsetNotifier    //Notifiers
-	Update(string, ...interface{}) //Update 발생
+//EventNotifierMultiplexer
+type EventNotifierMultiplexer interface {
+	Notifiers() HashsetNotifier //Notifiers
+	Update(...interface{})      //Update 발생
 	EventPublisher() EventPublisher
-	Regist(EventPublisher) EventNotifierMuxer
+	Regist(EventPublisher) EventNotifierMultiplexer
 	Close() //이벤트 구독 취소 //전체 Notifier 제거
 }
 
 //EventPublisher
 type EventPublisher interface {
+	EventNotifierMultiplexer() HashsetEventNotifierMultiplexer
 	Close()
 	OnError(error)
 	OnNotifierError(Notifier, error)

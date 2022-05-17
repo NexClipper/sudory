@@ -27,7 +27,7 @@ type EventNotifierMux struct {
 }
 
 var _ EventNotifiMuxConfigHolder = (*EventNotifierMux)(nil)
-var _ EventNotifierMuxer = (*EventNotifierMux)(nil)
+var _ EventNotifierMultiplexer = (*EventNotifierMux)(nil)
 
 func NewEventSubscribe(cfg EventNotifierMuxerConfig, errorHandler HashsetErrorHandlers) *EventNotifierMux {
 	if cfg.UpdateInterval == time.Duration(0) {
