@@ -15,8 +15,10 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/config"
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/event"
+	"github.com/NexClipper/sudory/pkg/server/event/managed_event"
 	"github.com/NexClipper/sudory/pkg/server/macro/enigma"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
+	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/NexClipper/sudory/pkg/server/route"
@@ -28,6 +30,7 @@ import (
 	"github.com/pkg/errors"
 	"xorm.io/builder"
 	"xorm.io/xorm"
+	"xorm.io/xorm/names"
 )
 
 const APP_NAME = "sudory-server"
@@ -77,16 +80,27 @@ func main() {
 	}
 	defer db.Close()
 
-	//init event
-	eventsConfigYaml := cfg.Events
-	if !path.IsAbs(cfg.Events) {
-		eventsConfigYaml = path.Join(path.Dir(*configPath), cfg.Events)
+	if true {
+		//init event
+		eventsConfigYaml := cfg.Events
+		if !path.IsAbs(cfg.Events) {
+			eventsConfigYaml = path.Join(path.Dir(*configPath), cfg.Events)
+		}
+		eventClose, err := newEvent(eventsConfigYaml)
+		if err != nil {
+			panic(err)
+		}
+		defer eventClose() //이벤트 종료
 	}
-	eventClose, err := newEvent(eventsConfigYaml)
-	if err != nil {
-		panic(err)
-	}
-	defer eventClose() //이벤트 종료
+	//init managed event
+	me := managed_event.NewManagedEvent()
+	me.SetEngine(db.Engine())
+	me.ErrorHandlers.Add(managed_event.DefaultErrorHandler)
+	me.NofitierErrorHandlers.Add(
+		managed_event.DefaultErrorHandler_nofitier(me),
+		func(n managed_event.Notifier, err error) { managed_event.DefaultErrorHandler(err) },
+	)
+	managed_event.Invoke = me.Invoke
 
 	//init global variant cron
 	cronGVClose, err := newGlobalVariantCron(db.Engine())
@@ -310,31 +324,74 @@ func newGlobalVariantCron(engine *xorm.Engine) (func(), error) {
 }
 
 func newPurgeDeletedDataCron(engine *xorm.Engine, respitePeriod time.Duration) (func(), error) {
-	if respitePeriod == 0 {
-		return func() {}, nil //사용하지 않는다
-	}
-
-	purgeServiceData := func() error {
-		_, err := engine.Transaction(func(tx *xorm.Session) (interface{}, error) {
+	purgeDeletedrecord := func(tables []names.TableName) error {
+		purge := func(tx *xorm.Session, table names.TableName) error {
 			cond := builder.Lt{"deleted": time.Now().Add(respitePeriod * -1)}
 			if err := database.XormDelete(
-				tx.Unscoped().Where(cond), new(stepv1.ServiceStep)); err != nil {
-				return nil, errors.Wrapf(err, "purge deleted service step data")
-			}
-			if err := database.XormDelete(
-				tx.Unscoped().Where(cond), new(servicev1.Service)); err != nil {
-				return nil, errors.Wrapf(err, "purge deleted service data")
+				tx.Unscoped().Where(cond), table); err != nil {
+				return errors.Wrapf(err, "purge deleted event notifier status%s", logs.KVL(
+					"table", table.TableName(),
+				))
 			}
 
+			return nil
+		}
+		_, err := engine.Transaction(func(tx *xorm.Session) (interface{}, error) {
+			for _, table := range tables {
+				if err := purge(tx, table); err != nil {
+					return nil, err
+				}
+			}
 			return nil, nil
 		})
 
 		return err
 	}
+	taskMapper := func(tables [][]names.TableName, functor func(tables []names.TableName) error) []func() error {
+		mapper := func(tables []names.TableName) func() error {
+			return func() error {
+				return functor(tables)
+			}
+		}
+
+		tasks := make([]func() error, len(tables))
+		for i := range tables {
+			tasks[i] = mapper(tables[i])
+		}
+		return tasks
+	}
+
+	taskWrapper := func(tasks []func() error, errorHandler func(error)) []func() {
+		wrapper := func(fn func() error) func() {
+			return func() {
+				if err := fn(); err != nil {
+					errorHandler(err)
+				}
+			}
+		}
+
+		wrappedtasks := make([]func(), len(tasks))
+		for i := range tasks {
+			wrappedtasks[i] = wrapper(tasks[i])
+		}
+		return wrappedtasks
+	}
+
+	//유예 시간 확인
+	if respitePeriod == 0 {
+		return func() {}, nil //사용하지 않는다
+	}
+
+	purgetables := [][]names.TableName{
+		{new(stepv1.ServiceStep), new(servicev1.Service)}, //transaction unit; service
+		{new(eventv1.EventNotifierStatus)},                //transaction unit; event notifier status
+	}
 
 	//first call
-	if err := purgeServiceData(); err != nil {
-		return nil, errors.Wrapf(err, "init")
+	for _, fn := range taskMapper(purgetables, purgeDeletedrecord) {
+		if err := fn(); err != nil {
+			return nil, errors.Wrapf(err, "first call")
+		}
 	}
 
 	//에러 핸들러 등록
@@ -349,18 +406,11 @@ func newPurgeDeletedDataCron(engine *xorm.Engine, respitePeriod time.Duration) (
 			})
 		})
 
-		logger.Error(fmt.Errorf("cron jobs: %w%s", err, stack))
+		logger.Error(fmt.Errorf("cron jobs: purge deleted data: %w%s", err, stack))
 	})
 
 	//new ticker
-	tickerClose := status.NewTicker(60*time.Minute,
-		//purge deleted service
-		func() {
-			if err := purgeServiceData(); err != nil {
-				errorHandlers.OnError(errors.Wrapf(err, "purge deleted service data"))
-			}
-		},
-	)
+	tickerClose := status.NewTicker(60*time.Minute, taskWrapper(taskMapper(purgetables, purgeDeletedrecord), errorHandlers.OnError)...)
 
 	return tickerClose, nil
 }

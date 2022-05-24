@@ -11,6 +11,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	clustertokenv1 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v1"
 	cryptov1 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v1"
+	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -63,8 +64,8 @@ func (ctl Control) CreateClusterToken(ctx echo.Context) error {
 
 	//property
 	token := clustertokenv1.ClusterToken{}
-	token.UuidMeta = NewUuidMeta()
-	token.LabelMeta = NewLabelMeta(body.Name, body.Summary)
+	token.UuidMeta = metav1.NewUuidMeta()
+	token.LabelMeta = metav1.NewLabelMeta(body.Name, body.Summary)
 	token.ClusterUuid = body.ClusterUuid
 	token.IssuedAtTime, token.ExpirationTime = bearerTokenTimeIssueNow()
 	token.Token = cryptov1.String(macro.NewUuidString())
@@ -168,7 +169,7 @@ func (ctl Control) UpdateClusterTokenLabel(ctx echo.Context) error {
 	//property
 	token := clustertokenv1.ClusterToken{}
 	token.Uuid = uuid
-	token.LabelMeta = NewLabelMeta(body.Name, body.Summary)
+	token.LabelMeta = metav1.NewLabelMeta(body.Name, body.Summary)
 
 	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
 		//update record

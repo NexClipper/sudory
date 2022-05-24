@@ -82,8 +82,6 @@ func init() {
 		LoggerInfoOutput = io.MultiWriter(rotate, LoggerInfoOutput)
 		LoggerErrorOutput = io.MultiWriter(rotate, LoggerErrorOutput)
 
-		io.MultiWriter()
-
 		logger.Init(cfg.Logger.SystemEventName, cfg.Logger.Verbose, cfg.Logger.SystemEvent, rotate)
 
 		logger.SetLevel(logger.Level(severity(cfg.Logger.Severity)))

@@ -9,6 +9,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
+	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
@@ -21,7 +22,7 @@ import (
 // @Tags        server/cluster
 // @Router      /server/cluster [post]
 // @Param       x_auth_token header string                   false "client session token"
-// @Param       client       body   v1.HttpReqCluster_Create true  "HttpReqCluster_Create"
+// @Param       cluster      body   v1.HttpReqCluster_Create true  "HttpReqCluster_Create"
 // @Success     200 {object} v1.Cluster
 func (ctl Control) CreateCluster(ctx echo.Context) error {
 	body := new(clusterv1.HttpReqCluster_Create)
@@ -43,8 +44,8 @@ func (ctl Control) CreateCluster(ctx echo.Context) error {
 
 	//property
 	cluster := clusterv1.Cluster{}
-	cluster.UuidMeta = NewUuidMeta()
-	cluster.LabelMeta = NewLabelMeta(body.Name, body.Summary)
+	cluster.UuidMeta = metav1.NewUuidMeta()
+	cluster.LabelMeta = metav1.NewLabelMeta(body.Name, body.Summary)
 	cluster.ClusterProperty = body.ClusterProperty
 
 	//polling option; nil check
@@ -133,7 +134,7 @@ func (ctl Control) GetCluster(ctx echo.Context) error {
 // @Router      /server/cluster/{uuid} [put]
 // @Param       x_auth_token header string                   false "client session token"
 // @Param       uuid         path   string                   true  "Cluster 의 Uuid"
-// @Param       client       body   v1.HttpReqCluster_Update true  "HttpReqCluster_Update"
+// @Param       cluster      body   v1.HttpReqCluster_Update true  "HttpReqCluster_Update"
 // @Success     200 {object} v1.Cluster
 func (ctl Control) UpdateCluster(ctx echo.Context) error {
 	body := new(clusterv1.HttpReqCluster_Update)
@@ -158,7 +159,7 @@ func (ctl Control) UpdateCluster(ctx echo.Context) error {
 	//property
 	cluster := clusterv1.Cluster{}
 	cluster.Uuid = uuid //set uuid from path
-	cluster.LabelMeta = NewLabelMeta(body.Name, body.Summary)
+	cluster.LabelMeta = metav1.NewLabelMeta(body.Name, body.Summary)
 	cluster.ClusterProperty = body.ClusterProperty
 
 	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {

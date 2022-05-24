@@ -1,67 +1,50 @@
-package event
+package managed_event
 
 import (
 	"fmt"
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
+	"github.com/NexClipper/sudory/pkg/server/macro/newist"
+	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
+	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
 )
 
+var _ Notifier = (*RabbitMQNotifier)(nil)
+
 type RabbitMQNotifier struct {
-	opt RabbitMQNotifierConfig
-	sub EventNotifierMultiplexer
+	opt *eventv1.EventNotifierRabbitMq
 
 	connection *amqp.Connection //RabbitMQ //amqp.Connection
 	channel    *amqp.Channel    //RabbitMQ //amqp.Channel
 }
 
-func NewRabbitMqNotifier(opt RabbitMQNotifierConfig) (*RabbitMQNotifier, error) {
-	conn, ch, err := new(RabbitMQNotifier).Dial(opt.Url)
-	if err != nil {
-		return nil, errors.Wrapf(err, "dial to rabbimq%s",
-			logs.KVL(
-				"url", opt.Url,
-			))
-	}
-
+func NewRabbitMqNotifier(opt *eventv1.EventNotifierRabbitMq) (*RabbitMQNotifier, error) {
 	notifier := &RabbitMQNotifier{}
 	notifier.opt = opt
-	notifier.connection = conn
-	notifier.channel = ch
 
 	return notifier, nil
 }
 func (notifier RabbitMQNotifier) Type() fmt.Stringer {
-	return NotifierTypeRabbitMQ
+	return notifier.opt.Type()
+}
+func (notifier RabbitMQNotifier) Uuid() string {
+	return notifier.opt.Uuid
 }
 
 func (notifier RabbitMQNotifier) Property() map[string]string {
 	return map[string]string{
-		"name":        notifier.sub.(EventNotifiMuxConfigHolder).Config().Name,
-		"type":        notifier.Type().String(),
+		"type":        notifier.opt.Type().String(),
+		"uuid":        notifier.opt.Uuid,
 		"url":         notifier.opt.Url,
-		"exchange":    notifier.opt.Exchange,
-		"routing-key": notifier.opt.RoutingKey,
-	}
-}
-
-func (notifier *RabbitMQNotifier) Regist(sub EventNotifierMultiplexer) {
-	//Subscribe
-	if !(sub == nil && notifier.sub != nil) {
-		notifier.sub = sub
-		notifier.sub.Notifiers().Add(notifier)
+		"exchange":    nullable.String(notifier.opt.Exchange).Value(),
+		"routing-key": nullable.String(notifier.opt.RoutingKey).Value(),
 	}
 }
 
 func (notifier *RabbitMQNotifier) Close() {
-	//Unsubscribe
-	if notifier.sub != nil {
-		notifier.sub.Notifiers().Remove(notifier)
-		notifier.sub = nil
-	}
-
 	//disconnect rabbitmq
 	var established bool = !(notifier.connection == nil || notifier.connection.IsClosed())
 	if established {
@@ -86,13 +69,13 @@ func (notifier *RabbitMQNotifier) OnNotify(factory MarshalFactoryResult) error {
 	opt := notifier.opt
 	ch := notifier.channel
 
-	opt.MessageContentType = "application/json"
-	b, err := factory("application/json")
+	opt.MessageContentType = newist.String(notifier.opt.ContentType)
+	b, err := factory(notifier.opt.ContentType)
 	if err != nil {
 		return errors.Wrapf(err, "marshal factory")
 	}
 	for _, b := range b {
-		if err := notifier.Publish(opt, ch, b); err != nil {
+		if err := notifier.Publish(*opt, ch, b); err != nil {
 			return errors.Wrapf(err, "publish to rabbimq%s",
 				logs.KVL(
 					"opt", opt,
@@ -117,26 +100,32 @@ func (RabbitMQNotifier) Dial(url string) (*amqp.Connection, *amqp.Channel, error
 	return conn, ch, nil
 }
 
-func (RabbitMQNotifier) Publish(opt RabbitMQNotifierConfig, ch *amqp.Channel, b []byte) error {
+func (RabbitMQNotifier) Publish(opt eventv1.EventNotifierRabbitMq, ch *amqp.Channel, b []byte) error {
 	publishing := amqp.Publishing{}
-	publishing.ContentType = opt.MessageContentType
-	publishing.ContentEncoding = opt.MessageContentEncoding
+	publishing.ContentType = nullable.String(opt.MessageContentType).Value()
+	publishing.ContentEncoding = nullable.String(opt.MessageContentEncoding).Value()
 	publishing.Headers = opt.MessageHeaders
-	publishing.DeliveryMode = opt.MessageDeliveryMode
-	publishing.Priority = opt.MessagePriority
-	publishing.CorrelationId = opt.MessageCorrelationId
-	publishing.ReplyTo = opt.MessageReplyTo
-	publishing.Expiration = opt.MessageExpiration
-	publishing.MessageId = opt.MessageMessageId
-	if opt.MessageTimestamp {
+	publishing.DeliveryMode = nullable.Uint8(opt.MessageDeliveryMode).Value()
+	publishing.Priority = nullable.Uint8(opt.MessagePriority).Value()
+	publishing.CorrelationId = nullable.String(opt.MessageCorrelationId).Value()
+	publishing.ReplyTo = nullable.String(opt.MessageReplyTo).Value()
+	publishing.Expiration = nullable.String(opt.MessageExpiration).Value()
+	publishing.MessageId = nullable.String(opt.MessageMessageId).Value()
+	if nullable.Bool(opt.MessageTimestamp).Value() {
 		publishing.Timestamp = time.Now()
 	}
-	publishing.Type = opt.Type
-	publishing.UserId = opt.MessageUserId
-	publishing.AppId = opt.MessageAppId
+	publishing.Type = nullable.String(opt.MessageType).Value()
+	publishing.UserId = nullable.String(opt.MessageUserId).Value()
+	publishing.AppId = nullable.String(opt.MessageAppId).Value()
 	publishing.Body = b
 
-	if err := ch.Publish(opt.Exchange, opt.RoutingKey, opt.Mandatory, opt.Immediate, publishing); err != nil {
+	if err := ch.Publish(
+		nullable.String(opt.Exchange).Value(),
+		nullable.String(opt.RoutingKey).Value(),
+		nullable.Bool(opt.Mandatory).Value(),
+		nullable.Bool(opt.Immediate).Value(),
+		publishing,
+	); err != nil {
 		return errors.Wrapf(err, "publish to rabbitmq%s",
 			logs.KVL("exchange", opt.Exchange,
 				"routing_key", opt.RoutingKey,

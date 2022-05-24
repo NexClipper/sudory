@@ -10,6 +10,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
+	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
 	"github.com/labstack/echo/v4"
@@ -92,15 +93,15 @@ func (ctl Control) CreateTemplate(ctx echo.Context) error {
 
 	//property
 	template := templatev1.Template{}
-	template.UuidMeta = NewUuidMeta()
-	template.LabelMeta = NewLabelMeta(body.Name, body.Summary)
+	template.UuidMeta = metav1.NewUuidMeta()
+	template.LabelMeta = metav1.NewLabelMeta(body.Name, body.Summary)
 	template.Origin = body.Origin
 
 	//create command
 	commands := map_command(body.Commands, func(i int, iter commandv1.HttpReqTemplateCommand_Create_ByTemplate) commandv1.TemplateCommand {
 		command := commandv1.TemplateCommand{}
-		command.UuidMeta = NewUuidMeta()
-		command.LabelMeta = NewLabelMeta(iter.Name, iter.Summary)
+		command.UuidMeta = metav1.NewUuidMeta()
+		command.LabelMeta = metav1.NewLabelMeta(iter.Name, iter.Summary)
 		command.TemplateUuid = template.Uuid
 		command.Sequence = newist.Int32(int32(i))
 		command.Method = iter.Method
@@ -282,7 +283,7 @@ func (ctl Control) UpdateTemplate(ctx echo.Context) error {
 	//set uuid from path
 	template := templatev1.Template{}
 	template.Uuid = uuid
-	template.LabelMeta = NewLabelMeta(body.Name, body.Summary)
+	template.LabelMeta = metav1.NewLabelMeta(body.Name, body.Summary)
 	template.Origin = body.Origin
 
 	r, err := ctl.Scope(func(db database.Context) (interface{}, error) {

@@ -182,6 +182,34 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.POST("/cluster_token", controller.CreateClusterToken)
 		group.PUT("/cluster_token/:uuid/refresh", controller.RefreshClusterTokenTime)
 		group.PUT("/cluster_token/:uuid/expire", controller.ExpireClusterToken)
+		//server/event*
+		group.POST("/event", controller.CreateEvent)
+		group.GET("/event", controller.FindEvent)
+		group.GET("/event/:uuid", controller.GetEvent)
+		group.PUT("/event/:uuid", controller.UpdateEvent)
+		group.GET("/event/:uuid/edges", controller.GetEventEdges)
+		group.PUT("/event/:uuid/edges/add", controller.UpdateEventAddtionNotifiers)
+		group.PUT("/event/:uuid/edges/sub", controller.UpdateEventSubtractionNotifiers)
+		group.DELETE("/event/:uuid", controller.DeleteEvent)
+		//server/event_notifier*
+		group.POST("/event_notifier/console", controller.CreateEventNotifierConsole)
+		group.POST("/event_notifier/webhook", controller.CreateEventNotifierWebhook)
+		group.POST("/event_notifier/rabbitmq", controller.CreateEventNotifierRabbitMq)
+		group.GET("/event_notifier/console", controller.FindEventNotifierConsole)
+		group.GET("/event_notifier/webhook", controller.FindEventNotifierWebhook)
+		group.GET("/event_notifier/rabbitmq", controller.FindEventNotifierRabbitmq)
+		group.GET("/event_notifier/console/:uuid", controller.GetEventNotifierConsole)
+		group.GET("/event_notifier/webhook/:uuid", controller.GetEventNotifierWebhook)
+		group.GET("/event_notifier/rabbitmq/:uuid", controller.GetEventNotifierRabbitmq)
+		group.PUT("/event_notifier/console/:uuid", controller.UpdateEventNotifierConsole)
+		group.PUT("/event_notifier/webhook/:uuid", controller.UpdateEventNotifierWebhook)
+		group.PUT("/event_notifier/rabbitmq/:uuid", controller.UpdateEventNotifierRabbitMq)
+		group.DELETE("/event_notifier/console", controller.DeleteEventNotifierConsole)
+		group.DELETE("/event_notifier/webhook", controller.DeleteEventNotifierWebhook)
+		group.DELETE("/event_notifier/rabbitmq", controller.DeleteEventNotifierRabbitmq)
+		//server/event_notifier_status*
+		group.GET("/event_notifier_status", controller.FindEventNofitierStatus)
+		group.DELETE("/event_notifier_status/:uuid", controller.DeleteEventNofitierStatus)
 	}
 
 	return &Route{e: e}

@@ -46,6 +46,326 @@ definitions:
       uuid:
         type: string
     type: object
+  v1.Event:
+    properties:
+      cluster_uuid:
+        type: string
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      pattern:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        type: string
+    type: object
+  v1.Event_create:
+    properties:
+      cluster_uuid:
+        type: string
+      name:
+        type: string
+      notifier_edges:
+        items:
+          $ref: '#/definitions/v1.NotifierEdge'
+        type: array
+      pattern:
+        type: string
+      summary:
+        type: string
+    type: object
+  v1.Event_update:
+    properties:
+      cluster_uuid:
+        type: string
+      name:
+        type: string
+      pattern:
+        type: string
+      summary:
+        type: string
+    type: object
+  v1.EventNotifierConsole:
+    properties:
+      Content-Type:
+        type: string
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        type: string
+    type: object
+  v1.EventNotifierConsole_create:
+    properties:
+      Content-Type:
+        type: string
+      name:
+        type: string
+      summary:
+        type: string
+    type: object
+  v1.EventNotifierEdge:
+    properties:
+      created:
+        type: string
+      deleted:
+        type: string
+      event_uuid:
+        type: string
+      id:
+        type: integer
+      notifier_type:
+        type: string
+      notifier_uuid:
+        type: string
+      updated:
+        type: string
+    type: object
+  v1.EventNotifierRabbitMq:
+    properties:
+      Content-Type:
+        type: string
+      created:
+        type: string
+      deleted:
+        type: string
+      exchange:
+        description: amqp.Channel.Publish
+        type: string
+      id:
+        type: integer
+      immediate:
+        type: boolean
+      mandatory:
+        type: boolean
+      message_app_id:
+        description: application use - creating application
+        type: string
+      message_content_encoding:
+        description: MIME content encoding
+        type: string
+      message_content_type:
+        description: MIME content type
+        type: string
+      message_correlation_id:
+        description: application use - correlation identifier
+        type: string
+      message_delivery_mode:
+        description: queue implementation use - Transient (1) or Persistent (2)
+        type: integer
+      message_expiration:
+        description: implementation use - message expiration spec
+        type: string
+      message_headers:
+        additionalProperties: true
+        description: amqp.Publishing
+        type: object
+      message_message_id:
+        description: application use - message identifier
+        type: string
+      message_priority:
+        description: queue implementation use - 0 to 9
+        type: integer
+      message_reply_to:
+        description: 'application use - address to to reply to (ex: RPC)'
+        type: string
+      message_timestamp:
+        description: application use - message timestamp
+        type: boolean
+      message_type:
+        description: application use - message type name
+        type: string
+      message_user_id:
+        description: application use - creating user id
+        type: string
+      name:
+        type: string
+      routing_key:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+      url:
+        description: amqp Dial
+        type: string
+      uuid:
+        type: string
+    type: object
+  v1.EventNotifierRabbitMq_create:
+    properties:
+      Content-Type:
+        type: string
+      exchange:
+        description: amqp.Channel.Publish
+        type: string
+      immediate:
+        type: boolean
+      mandatory:
+        type: boolean
+      message_app_id:
+        description: application use - creating application
+        type: string
+      message_content_encoding:
+        description: MIME content encoding
+        type: string
+      message_content_type:
+        description: MIME content type
+        type: string
+      message_correlation_id:
+        description: application use - correlation identifier
+        type: string
+      message_delivery_mode:
+        description: queue implementation use - Transient (1) or Persistent (2)
+        type: integer
+      message_expiration:
+        description: implementation use - message expiration spec
+        type: string
+      message_headers:
+        additionalProperties: true
+        description: amqp.Publishing
+        type: object
+      message_message_id:
+        description: application use - message identifier
+        type: string
+      message_priority:
+        description: queue implementation use - 0 to 9
+        type: integer
+      message_reply_to:
+        description: 'application use - address to to reply to (ex: RPC)'
+        type: string
+      message_timestamp:
+        description: application use - message timestamp
+        type: boolean
+      message_type:
+        description: application use - message type name
+        type: string
+      message_user_id:
+        description: application use - creating user id
+        type: string
+      name:
+        type: string
+      routing_key:
+        type: string
+      summary:
+        type: string
+      url:
+        description: amqp Dial
+        type: string
+    type: object
+  v1.EventNotifierStatus:
+    properties:
+      created:
+        type: string
+      deleted:
+        type: string
+      error:
+        type: string
+      id:
+        type: integer
+      notifier_type:
+        type: string
+      notifier_uuid:
+        type: string
+      updated:
+        type: string
+      uuid:
+        type: string
+    type: object
+  v1.EventNotifierWebhook:
+    properties:
+      Content-Type:
+        type: string
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        type: integer
+      method:
+        description: http
+        type: string
+      name:
+        type: string
+      request_headers:
+        additionalProperties:
+          type: string
+        type: object
+      request_timeout:
+        description: for timeout context
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+      url:
+        type: string
+      uuid:
+        type: string
+    type: object
+  v1.EventNotifierWebhook_create:
+    properties:
+      Content-Type:
+        type: string
+      method:
+        description: http
+        type: string
+      name:
+        type: string
+      request_headers:
+        additionalProperties:
+          type: string
+        type: object
+      request_timeout:
+        description: for timeout context
+        type: string
+      summary:
+        type: string
+      url:
+        type: string
+    type: object
+  v1.EventWithEdges:
+    properties:
+      cluster_uuid:
+        type: string
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      notifier_edges:
+        items:
+          $ref: '#/definitions/v1.NotifierEdge'
+        type: array
+      pattern:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        type: string
+    type: object
   v1.GlobalVariant:
     properties:
       created:
@@ -369,6 +689,20 @@ definitions:
       uuid:
         type: string
     type: object
+  v1.NotifierEdge:
+    properties:
+      notifier_type:
+        type: string
+      notifier_uuid:
+        type: string
+    type: object
+  v1.NotifierEdges:
+    properties:
+      notifier_edges:
+        items:
+          $ref: '#/definitions/v1.NotifierEdge'
+        type: array
+    type: object
   v1.RagulerPollingOption:
     type: object
   v1.ServiceStep:
@@ -611,7 +945,7 @@ paths:
         type: string
       - description: HttpReqCluster_Create
         in: body
-        name: client
+        name: cluster
         required: true
         schema:
           $ref: '#/definitions/v1.HttpReqCluster_Create'
@@ -685,7 +1019,7 @@ paths:
         type: string
       - description: HttpReqCluster_Update
         in: body
-        name: client
+        name: cluster
         required: true
         schema:
           $ref: '#/definitions/v1.HttpReqCluster_Update'
@@ -938,6 +1272,669 @@ paths:
             $ref: '#/definitions/v1.ClusterToken'
       tags:
       - server/cluster_token
+  /server/event:
+    get:
+      consumes:
+      - application/json
+      description: Find event
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: query  pkg/server/database/prepared/README.md
+        in: query
+        name: q
+        type: string
+      - description: order  pkg/server/database/prepared/README.md
+        in: query
+        name: o
+        type: string
+      - description: paging pkg/server/database/prepared/README.md
+        in: query
+        name: p
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.Event'
+            type: array
+      tags:
+      - server/event
+    post:
+      consumes:
+      - application/json
+      description: Create a event
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Event_create
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v1.Event_create'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EventWithEdges'
+      tags:
+      - server/event
+  /server/event/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a event
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Event 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/event
+    get:
+      consumes:
+      - application/json
+      description: Get a event
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Event 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.Event'
+      tags:
+      - server/event
+    put:
+      consumes:
+      - application/json
+      description: Update a event
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Event 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: Event_update
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v1.Event_update'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.Event'
+      tags:
+      - server/event
+  /server/event/{uuid}/edges:
+    get:
+      consumes:
+      - application/json
+      description: Get event edges
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Event 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EventNotifierEdge'
+      tags:
+      - server/event
+  /server/event/{uuid}/edges/add:
+    put:
+      consumes:
+      - application/json
+      description: addtion event notifier edge
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Event 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: NotifierEdges
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v1.NotifierEdges'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EventNotifierEdge'
+      tags:
+      - server/event
+  /server/event/{uuid}/edges/sub:
+    put:
+      consumes:
+      - application/json
+      description: subtraction event sub notifier
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Event 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: NotifierEdges
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v1.NotifierEdges'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EventNotifierEdge'
+      tags:
+      - server/event
+  /server/event_notifier/console:
+    get:
+      consumes:
+      - application/json
+      description: Find event notifier console
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: query  pkg/server/database/prepared/README.md
+        in: query
+        name: q
+        type: string
+      - description: order  pkg/server/database/prepared/README.md
+        in: query
+        name: o
+        type: string
+      - description: paging pkg/server/database/prepared/README.md
+        in: query
+        name: p
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.EventNotifierConsole'
+            type: array
+      tags:
+      - server/event_notifier
+    post:
+      consumes:
+      - application/json
+      description: Create a event notifier console
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: EventNotifierConsole_create
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v1.EventNotifierConsole_create'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EventNotifierConsole'
+      tags:
+      - server/event_notifier
+  /server/event_notifier/console/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a event notifier console
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Event 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/event_notifier
+    get:
+      consumes:
+      - application/json
+      description: Get a event notifier
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: event notifier 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EventNotifierConsole'
+      tags:
+      - server/event_notifier
+    put:
+      consumes:
+      - application/json
+      description: Update a console event notifier
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Event 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: EventNotifierConsole_create
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v1.EventNotifierConsole_create'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EventNotifierConsole'
+      tags:
+      - server/event_notifier
+  /server/event_notifier/rabbitmq:
+    get:
+      consumes:
+      - application/json
+      description: Find event notifier
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: query  pkg/server/database/prepared/README.md
+        in: query
+        name: q
+        type: string
+      - description: order  pkg/server/database/prepared/README.md
+        in: query
+        name: o
+        type: string
+      - description: paging pkg/server/database/prepared/README.md
+        in: query
+        name: p
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.EventNotifierRabbitMq'
+            type: array
+      tags:
+      - server/event_notifier
+    post:
+      consumes:
+      - application/json
+      description: Create a event notifier rabbitmq
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: EventNotifierRabbitMq_create
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v1.EventNotifierRabbitMq_create'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EventNotifierRabbitMq'
+      tags:
+      - server/event_notifier
+  /server/event_notifier/rabbitmq/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a event notifier rabbitmq
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Event 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/event_notifier
+    get:
+      consumes:
+      - application/json
+      description: Get a event notifier rabbitmq
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: event notifier 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EventNotifierRabbitMq'
+      tags:
+      - server/event_notifier
+    put:
+      consumes:
+      - application/json
+      description: Update a rabbitmq event notifier
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Event 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: EventNotifierRabbitMq_create
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v1.EventNotifierRabbitMq_create'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EventNotifierRabbitMq'
+      tags:
+      - server/event_notifier
+  /server/event_notifier/webhook:
+    get:
+      consumes:
+      - application/json
+      description: Find event notifier webhook
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: query  pkg/server/database/prepared/README.md
+        in: query
+        name: q
+        type: string
+      - description: order  pkg/server/database/prepared/README.md
+        in: query
+        name: o
+        type: string
+      - description: paging pkg/server/database/prepared/README.md
+        in: query
+        name: p
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.EventNotifierWebhook'
+            type: array
+      tags:
+      - server/event_notifier
+    post:
+      consumes:
+      - application/json
+      description: Create a event notifier webhook
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: EventNotifierWebhook_create
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v1.EventNotifierWebhook_create'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EventNotifierWebhook'
+      tags:
+      - server/event_notifier
+  /server/event_notifier/webhook/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a event notifier webhook
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Event 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/event_notifier
+    get:
+      consumes:
+      - application/json
+      description: Get a event notifier webhook
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: event notifier 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EventNotifierWebhook'
+      tags:
+      - server/event_notifier
+    put:
+      consumes:
+      - application/json
+      description: Update a webhook event notifier
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Event 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: EventNotifierWebhook_create
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v1.EventNotifierWebhook_create'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.EventNotifierWebhook'
+      tags:
+      - server/event_notifier
+  /server/event_notifier_status:
+    get:
+      consumes:
+      - application/json
+      description: Find Event Nofitier Status
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: query  pkg/server/database/prepared/README.md
+        in: query
+        name: q
+        type: string
+      - description: order  pkg/server/database/prepared/README.md
+        in: query
+        name: o
+        type: string
+      - description: paging pkg/server/database/prepared/README.md
+        in: query
+        name: p
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v1.EventNotifierStatus'
+            type: array
+      tags:
+      - server/event_notifier_status
+  /server/event_notifier_status/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a Event Nofitier Status
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: EventNofitierStatus 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/event_notifier_status
   /server/global_variant:
     get:
       consumes:

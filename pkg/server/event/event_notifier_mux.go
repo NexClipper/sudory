@@ -10,11 +10,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-type EventSub struct {
-	config EventSubscribeConfig
+type EventNotifierMux struct {
+	config EventNotifierMuxerConfig
 	pub    EventPublisher
 
-	notifiers    HashsetNotifiers
+	notifiers    HashsetNotifier
 	errorHandler HashsetErrorHandlers
 
 	*fifo.Queue //arrival item queue
@@ -26,13 +26,16 @@ type EventSub struct {
 	arrival        *gate.ManualReset //item arrival gate
 }
 
-func NewEventSubscribe(cfg EventSubscribeConfig, errorHandler HashsetErrorHandlers) *EventSub {
+var _ EventNotifiMuxConfigHolder = (*EventNotifierMux)(nil)
+var _ EventNotifierMultiplexer = (*EventNotifierMux)(nil)
+
+func NewEventSubscribe(cfg EventNotifierMuxerConfig, errorHandler HashsetErrorHandlers) *EventNotifierMux {
 	if cfg.UpdateInterval == time.Duration(0) {
 		cfg.UpdateInterval = time.Second * 15 //default update-interval is 15s
 	}
 
-	sub := &EventSub{}
-	sub.notifiers = HashsetNotifiers{}
+	sub := &EventNotifierMux{}
+	sub.notifiers = HashsetNotifier{}
 	sub.Queue = fifo.NewQueue()
 	sub.closing, sub.doClose = context.WithCancel(context.Background())
 	sub.closed = gate.NewManualReset(true)
@@ -44,21 +47,17 @@ func NewEventSubscribe(cfg EventSubscribeConfig, errorHandler HashsetErrorHandle
 	return sub
 }
 
-func (subscriber EventSub) Config() *EventSubscribeConfig {
-	return &subscriber.config
+func (mux EventNotifierMux) Config() *EventNotifierMuxerConfig {
+	return &mux.config
 }
 
-func (subscriber EventSub) Notifiers() HashsetNotifiers {
-	return subscriber.notifiers
+func (mux EventNotifierMux) Notifiers() HashsetNotifier {
+	return mux.notifiers
 }
 
-// func (subscriber EventSub) ErrorHandlers() HashsetErrorHandlers {
-// 	return subscriber.errorHandler
-// }
-
-func (subscriber *EventSub) Update(sender string, v ...interface{}) {
+func (mux *EventNotifierMux) Update(sender string, v ...interface{}) {
 	//이벤트 이름으로 처리하는 이벤트 검사
-	if subscriber.config.Name != sender {
+	if mux.config.Name != sender {
 		return //처리하는 이벤트가 아니다
 	}
 
@@ -68,61 +67,61 @@ func (subscriber *EventSub) Update(sender string, v ...interface{}) {
 		}
 
 		//add arrivals in queue
-		subscriber.Queue.Add(v)
+		mux.Queue.Add(v)
 	}
 
 	//release arrival wait
-	subscriber.arrival.Set()
+	mux.arrival.Set()
 
-	subscriber.onceforupdater.Do(func() {
+	mux.onceforupdater.Do(func() {
 		//goroutine 생성하면서, closed 게이트 활성
 		//생성 함수에서 미리 활성 하면,
 		//Update 함수를 타지 않는 경우 closed 게이트를 풀어 주는 부분이 없어서
-		//closed를 기다리는 subscriber.Close() 함수에서 무한 대기
-		subscriber.closed.Reset()
+		//closed를 기다리는 mux.Close() 함수에서 무한 대기
+		mux.closed.Reset()
 
 		go func() {
 			defer func() {
 				//goroutine 종료하면서, closed 게이트 풀어준다
-				//이어서 goroutine 종료한 subscriber.Close() 함수에서
+				//이어서 goroutine 종료한 mux.Close() 함수에서
 				//대기를 완료하고 subscriber가 종료된다.
-				subscriber.closed.Set()
+				mux.closed.Set()
 			}()
 		LOOP:
 			for {
 				select {
-				case <-subscriber.closing.Done(): //wait closing
+				case <-mux.closing.Done(): //wait closing
 					//큐가 비어있어야 끝난다
-					if subscriber.Queue.Len() == 0 {
+					if mux.Queue.Len() == 0 {
 						return
 					}
-				case <-subscriber.arrival.Wait(): //wait arrival
-					subscriber.arrival.Reset()
-				case <-time.After(subscriber.config.UpdateInterval): //wait timer
+				case <-mux.arrival.Wait(): //wait arrival
+					mux.arrival.Reset()
+				case <-time.After(mux.config.UpdateInterval): //wait timer
 				}
 
 				//check queue length
-				queue_length := subscriber.Queue.Len()
+				queue_length := mux.Queue.Len()
 				if queue_length == 0 {
 					continue LOOP //queue is empty
 				}
 
 				sl := make([]interface{}, 0, queue_length)
 				for i := 0; i < queue_length; i++ {
-					item := subscriber.Queue.Next()
+					item := mux.Queue.Next()
 					sl = append(sl, item)
 				}
 				factory := NewMarshalFactory(sl...)
 
 				//모든 리스너의 Update 호출 (async)
-				futures := subscriber.notifiers.OnNotifyAsync(factory)
+				futures := mux.notifiers.OnNotifyAsync(factory)
 
 				for _, future := range futures {
 					for future := range future {
 						if future.Error != nil {
 							//업데이트 오류 처리
-							subscriber.errorHandler.OnError(errors.Wrapf(future.Error, "event notify %s",
-								future.Notifier.PropertyString()))
+							mux.errorHandler.OnError(errors.Wrapf(future.Error, "event notify %s",
+								MapString(future.Notifier.Property())))
 						}
 					}
 				}
@@ -132,27 +131,31 @@ func (subscriber *EventSub) Update(sender string, v ...interface{}) {
 	})
 }
 
-func (subscriber *EventSub) Regist(pub EventPublisher) {
-	subscriber.pub = pub
-	if subscriber.pub != nil {
-		pub.Subscribers().Add(subscriber) //Subscribe
+func (mux *EventNotifierMux) Regist(pub EventPublisher) {
+	if mux.pub != nil {
+		mux.pub = pub
+	}
+	if mux.pub != nil {
+		mux.pub.NotifierMuxers().Add(mux) //Subscribe
 	}
 }
 
-func (subscriber *EventSub) Close() {
+func (mux *EventNotifierMux) Close() {
 	//unsubscribe
-	if subscriber.pub != nil {
-		subscriber.pub.Subscribers().Remove(subscriber) //Unsubscribe
+	if mux.pub != nil {
+		mux.pub.NotifierMuxers().Remove(mux) //Unsubscribe
 	}
 
 	//close the goroutine
-	subscriber.doClose()
+	if mux.doClose != nil {
+		mux.doClose()
+	}
 	//wait for terminate the goroutine
 	//
-	<-subscriber.closed.Wait()
+	<-mux.closed.Wait()
 
 	//clear notifiers
-	for iter := range subscriber.notifiers {
+	for iter := range mux.Notifiers() {
 		iter.Close()
 	}
 }

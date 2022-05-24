@@ -12,6 +12,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
+	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/labstack/echo/v4"
@@ -134,8 +135,8 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 	//property
 	//property service
 	service := servicev1.Service{}
-	service.UuidMeta = NewUuidMeta()                          //new service uuid
-	service.LabelMeta = NewLabelMeta(body.Name, body.Summary) //label
+	service.UuidMeta = metav1.NewUuidMeta()                          //new service uuid
+	service.LabelMeta = metav1.NewLabelMeta(body.Name, body.Summary) //label
 	service.ClusterUuid = body.ClusterUuid
 	service.TemplateUuid = body.TemplateUuid
 	service.Status = newist.Int32(int32(servicev1.StatusRegist)) //init service Status(Regist)
@@ -148,14 +149,14 @@ func (ctl Control) CreateService(ctx echo.Context) error {
 		command := commands[i]
 
 		step := stepv1.ServiceStep{}
-		step.UuidMeta = NewUuidMeta()                                //new step uuid
-		step.LabelMeta = NewLabelMeta(command.Name, command.Summary) //label
-		step.ServiceUuid = service.Uuid                              //new service uuid
-		step.Sequence = newist.Int32(int32(i))                       //sequence 0 to len(steps)
-		step.Status = newist.Int32(int32(servicev1.StatusRegist))    //init step Status(Regist)
-		step.Method = command.Method                                 //command method
-		step.Args = sse.Args                                         //step args
-		step.ResultFilter = command.ResultFilter                     //command result filter
+		step.UuidMeta = metav1.NewUuidMeta()                                //new step uuid
+		step.LabelMeta = metav1.NewLabelMeta(command.Name, command.Summary) //label
+		step.ServiceUuid = service.Uuid                                     //new service uuid
+		step.Sequence = newist.Int32(int32(i))                              //sequence 0 to len(steps)
+		step.Status = newist.Int32(int32(servicev1.StatusRegist))           //init step Status(Regist)
+		step.Method = command.Method                                        //command method
+		step.Args = sse.Args                                                //step args
+		step.ResultFilter = command.ResultFilter                            //command result filter
 		// step.Result = newist.String("")
 		return step
 	})
