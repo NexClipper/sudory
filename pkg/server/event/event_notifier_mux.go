@@ -133,11 +133,11 @@ func (mux *EventNotifierMux) Update(sender string, v ...interface{}) {
 
 func (mux *EventNotifierMux) Regist(pub EventPublisher) {
 	if mux.pub != nil {
-		mux.pub = pub
+		panic(errors.New("already have a publisher"))
 	}
-	if mux.pub != nil {
-		mux.pub.NotifierMuxers().Add(mux) //Subscribe
-	}
+
+	mux.pub = pub
+	mux.pub.NotifierMuxers().Add(mux) //Subscribe
 }
 
 func (mux *EventNotifierMux) Close() {
