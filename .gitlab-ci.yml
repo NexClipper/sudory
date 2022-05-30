@@ -93,7 +93,7 @@ deploy-nexclipper-sudory-server:
     APP_IMAGE_NAME: "nexclipper-sudory-server"
   before_script:
     - echo -e "\nLogin to Kubernetes"
-    - source /data/scripts/login-cluster.sh dev
+    - source /data/scripts/login-cluster-linode.sh dev
   script:
     - "source /data/scripts/deploy_v2.sh dev sudory"
   rules:
@@ -108,7 +108,7 @@ deploy-nexclipper-sudory-client:
     APP_IMAGE_NAME: "nexclipper-sudory-client"
   before_script:
     - echo -e "\nLogin to Kubernetes"
-    - source /data/scripts/login-cluster.sh dev
+    - source /data/scripts/login-cluster-linode.sh dev
   script:
     - echo "Retrieve uuid and token for sudory client"
     - "source kube/getClientToken.sh $S_SERVER_URL"
