@@ -7,7 +7,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
-	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
+	channelv1 "github.com/NexClipper/sudory/pkg/server/model/channel/v1"
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
 )
@@ -15,13 +15,13 @@ import (
 var _ Notifier = (*RabbitMQNotifier)(nil)
 
 type RabbitMQNotifier struct {
-	opt *eventv1.EventNotifierRabbitMq
+	opt *channelv1.NotifierRabbitMq
 
 	connection *amqp.Connection //RabbitMQ //amqp.Connection
 	channel    *amqp.Channel    //RabbitMQ //amqp.Channel
 }
 
-func NewRabbitMqNotifier(opt *eventv1.EventNotifierRabbitMq) (*RabbitMQNotifier, error) {
+func NewRabbitMqNotifier(opt *channelv1.NotifierRabbitMq) (*RabbitMQNotifier, error) {
 	notifier := &RabbitMQNotifier{}
 	notifier.opt = opt
 
@@ -100,7 +100,7 @@ func (RabbitMQNotifier) Dial(url string) (*amqp.Connection, *amqp.Channel, error
 	return conn, ch, nil
 }
 
-func (RabbitMQNotifier) Publish(opt eventv1.EventNotifierRabbitMq, ch *amqp.Channel, b []byte) error {
+func (RabbitMQNotifier) Publish(opt channelv1.NotifierRabbitMq, ch *amqp.Channel, b []byte) error {
 	publishing := amqp.Publishing{}
 	publishing.ContentType = nullable.String(opt.MessageContentType).Value()
 	publishing.ContentEncoding = nullable.String(opt.MessageContentEncoding).Value()

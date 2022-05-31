@@ -4,20 +4,20 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/prepare"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
+	channelv1 "github.com/NexClipper/sudory/pkg/server/model/channel/v1"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
 )
 
-type EventNotifierConsole struct {
+type NotifierConsole struct {
 	tx *xorm.Session
 }
 
-func NewEventNotifierConsole(tx *xorm.Session) *EventNotifierConsole {
-	return &EventNotifierConsole{tx: tx}
+func NewNotifierConsole(tx *xorm.Session) *NotifierConsole {
+	return &NotifierConsole{tx: tx}
 }
 
-func (vault EventNotifierConsole) Create(model eventv1.EventNotifierConsole) (*eventv1.EventNotifierConsole, error) {
+func (vault NotifierConsole) Create(model channelv1.NotifierConsole) (*channelv1.NotifierConsole, error) {
 	if err := database.XormCreate(vault.tx, &model); err != nil {
 		return nil, errors.Wrapf(err, "create %v", model.TableName())
 	}
@@ -25,12 +25,12 @@ func (vault EventNotifierConsole) Create(model eventv1.EventNotifierConsole) (*e
 	return &model, nil
 }
 
-func (vault EventNotifierConsole) Get(uuid string) (*eventv1.EventNotifierConsole, error) {
+func (vault NotifierConsole) Get(uuid string) (*channelv1.NotifierConsole, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		uuid,
 	}
-	model := &eventv1.EventNotifierConsole{}
+	model := &channelv1.NotifierConsole{}
 	if err := database.XormGet(
 		vault.tx.Where(where, args...), model); err != nil {
 		return nil, errors.Wrapf(err, "get %v", model.TableName())
@@ -39,31 +39,31 @@ func (vault EventNotifierConsole) Get(uuid string) (*eventv1.EventNotifierConsol
 	return model, nil
 }
 
-func (vault EventNotifierConsole) Find(where string, args ...interface{}) ([]eventv1.EventNotifierConsole, error) {
-	models := make([]eventv1.EventNotifierConsole, 0)
+func (vault NotifierConsole) Find(where string, args ...interface{}) ([]channelv1.NotifierConsole, error) {
+	models := make([]channelv1.NotifierConsole, 0)
 	if err := database.XormFind(
 		vault.tx.Where(where, args...), &models); err != nil {
-		return nil, errors.Wrapf(err, "find %v", new(eventv1.EventNotifierRabbitMq).TableName())
+		return nil, errors.Wrapf(err, "find %v", new(channelv1.NotifierRabbitMq).TableName())
 	}
 
 	return models, nil
 }
 
-func (vault EventNotifierConsole) Query(query map[string]string) ([]eventv1.EventNotifierConsole, error) {
+func (vault NotifierConsole) Query(query map[string]string) ([]channelv1.NotifierConsole, error) {
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
-		return nil, errors.Wrapf(err, "query %v%v", new(eventv1.EventNotifierConsole).TableName(),
+		return nil, errors.Wrapf(err, "query %v%v", new(channelv1.NotifierConsole).TableName(),
 			logs.KVL(
 				"query", query,
 			))
 	}
 
 	//find service
-	models := make([]eventv1.EventNotifierConsole, 0)
+	models := make([]channelv1.NotifierConsole, 0)
 	if err := database.XormFind(
 		preparer.Prepared(vault.tx), &models); err != nil {
-		return nil, errors.Wrapf(err, "query %v%v", new(eventv1.EventNotifierConsole).TableName(),
+		return nil, errors.Wrapf(err, "query %v%v", new(channelv1.NotifierConsole).TableName(),
 			logs.KVL(
 				"query", query,
 			))
@@ -72,7 +72,7 @@ func (vault EventNotifierConsole) Query(query map[string]string) ([]eventv1.Even
 	return models, nil
 }
 
-func (vault EventNotifierConsole) Update(model eventv1.EventNotifierConsole) (*eventv1.EventNotifierConsole, error) {
+func (vault NotifierConsole) Update(model channelv1.NotifierConsole) (*channelv1.NotifierConsole, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		model.Uuid,
@@ -86,16 +86,16 @@ func (vault EventNotifierConsole) Update(model eventv1.EventNotifierConsole) (*e
 	return &model, nil
 }
 
-func (vault EventNotifierConsole) Delete(uuid string) error {
+func (vault NotifierConsole) Delete(uuid string) error {
 	//delete event notifier edge
-	edge := new(eventv1.EventNotifierEdge)
+	edge := new(channelv1.ChannelNotifierEdge)
 	if err := database.XormDelete(
-		vault.tx.Where("notifier_uuid = ?", uuid), edge); err != nil {
+		vault.tx.Where("notifier_type = ? AND notifier_uuid = ?", channelv1.NotifierTypeConsole.String(), uuid), edge); err != nil {
 		return errors.Wrapf(err, "delete %v", edge.TableName())
 	}
 
 	//delete event notifier console
-	model := &eventv1.EventNotifierConsole{}
+	model := &channelv1.NotifierConsole{}
 	if err := database.XormDelete(
 		vault.tx.Where("uuid = ?", uuid), model); err != nil {
 		return errors.Wrapf(err, "delete %v", model.TableName())

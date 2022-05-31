@@ -11,19 +11,19 @@ import (
 	"xorm.io/xorm"
 )
 
-// @Description Find Event Nofitier Status
+// @Description Find channel notifier status
 // @Accept      json
 // @Produce     json
-// @Tags        server/event_notifier_status
-// @Router      /server/event_notifier_status [get]
+// @Tags        server/channel_notifier_status
+// @Router      /server/channel_notifier_status [get]
 // @Param       x_auth_token header string false "client session token"
 // @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
 // @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
 // @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
-// @Success     200 {array} v1.EventNotifierStatus
-func (ctl Control) FindEventNofitierStatus(ctx echo.Context) error {
+// @Success     200 {array} v1.NotifierStatus
+func (ctl Control) FindChannelNotifierStatus(ctx echo.Context) error {
 	//find event
-	status, err := vault.NewEventNotifierStatus(ctl.db.Engine().NewSession()).Query(echoutil.QueryParam(ctx))
+	status, err := vault.NewNotifierStatus(ctl.db.Engine().NewSession()).Query(echoutil.QueryParam(ctx))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "query event"))
@@ -33,15 +33,15 @@ func (ctl Control) FindEventNofitierStatus(ctx echo.Context) error {
 
 }
 
-// @Description Delete a Event Nofitier Status
+// @Description Delete a channel notifier status
 // @Accept json
 // @Produce json
-// @Tags server/event_notifier_status
-// @Router /server/event_notifier_status/{uuid} [delete]
+// @Tags server/channel_notifier_status
+// @Router /server/channel_notifier_status/{uuid} [delete]
 // @Param       x_auth_token header string false "client session token"
-// @Param       uuid         path   string true  "EventNofitierStatus 의 Uuid"
+// @Param       uuid         path   string true  "EventNotifierStatus 의 Uuid"
 // @Success 200
-func (ctl Control) DeleteEventNofitierStatus(ctx echo.Context) error {
+func (ctl Control) DeleteChannelNotifierStatus(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
@@ -54,7 +54,7 @@ func (ctl Control) DeleteEventNofitierStatus(ctx echo.Context) error {
 
 	_, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
 		//delete event
-		if err := vault.NewEventNotifierStatus(tx).Delete(uuid); err != nil {
+		if err := vault.NewNotifierStatus(tx).Delete(uuid); err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 				errors.Wrapf(err, "delete event notifier status"))
 		}

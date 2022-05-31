@@ -3,9 +3,9 @@ package v1
 import (
 	"testing"
 
+	channelv1 "github.com/NexClipper/sudory/pkg/server/model/channel/v1"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	clsttknv1 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v1"
-	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
 	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variant/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
@@ -40,18 +40,18 @@ func TestSync(t *testing.T) {
 			args: new(trecipev1.TemplateRecipe), want: nil, wantErr: false},
 		{name: "tokenv1",
 			args: new(clsttknv1.ClusterToken), want: nil, wantErr: false},
-		{name: "eventv1:event",
-			args: new(eventv1.Event), want: nil, wantErr: false},
-		{name: "eventv1::notifier_edge",
-			args: new(eventv1.EventNotifierEdge), want: nil, wantErr: false},
-		{name: "eventv1::console",
-			args: new(eventv1.EventNotifierConsole), want: nil, wantErr: false},
-		{name: "eventv1::webhook",
-			args: new(eventv1.EventNotifierWebhook), want: nil, wantErr: false},
-		{name: "eventv1::rabbitMq",
-			args: new(eventv1.EventNotifierRabbitMq), want: nil, wantErr: false},
-		{name: "eventv1::notifier_status",
-			args: new(eventv1.EventNotifierStatus), want: nil, wantErr: false},
+		{name: "channelv1:channel",
+			args: new(channelv1.Channel), want: nil, wantErr: false},
+		{name: "channelv1::channel_notifier_edge",
+			args: new(channelv1.ChannelNotifierEdge), want: nil, wantErr: false},
+		{name: "channelv1::notifier_console",
+			args: new(channelv1.NotifierConsole), want: nil, wantErr: false},
+		{name: "channelv1::notifier_webhook",
+			args: new(channelv1.NotifierWebhook), want: nil, wantErr: false},
+		{name: "channelv1::notifier_rabbitMq",
+			args: new(channelv1.NotifierRabbitMq), want: nil, wantErr: false},
+		{name: "channelv1::notifier_status",
+			args: new(channelv1.NotifierStatus), want: nil, wantErr: false},
 
 		// TODO: Add test cases.
 	}

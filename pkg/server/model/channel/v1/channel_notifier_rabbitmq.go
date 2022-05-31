@@ -2,7 +2,7 @@ package v1
 
 import metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 
-type EventNotifierRabbitMqProperty struct {
+type NotifierRabbitMqProperty struct {
 	//amqp Dial
 	Url string `json:"url" xorm:"'url' notnull"`
 
@@ -28,24 +28,24 @@ type EventNotifierRabbitMqProperty struct {
 	MessageAppId           *string                `json:"message_app_id"            xorm:"'message_app_id'           null"` // application use - creating application
 }
 
-func (EventNotifierRabbitMqProperty) Type() EventNotifierType {
-	return EventNotifierTypeRabbitmq
+func (NotifierRabbitMqProperty) Type() NotifierType {
+	return NotifierTypeRabbitmq
 }
 
-type EventNotifierRabbitMq struct {
-	metav1.DbMeta                 `json:",inline" xorm:"extends"` //inline dbmeta
-	metav1.UuidMeta               `json:",inline" xorm:"extends"` //inline uuidmeta
-	metav1.LabelMeta              `json:",inline" xorm:"extends"` //inline labelmeta
-	EventNotifierRabbitMqProperty `json:",inline" xorm:"extends"` //inline property
-	MIME                          `json:",inline" xorm:"extends"` //inline MIME
+type NotifierRabbitMq struct {
+	metav1.DbMeta            `json:",inline" xorm:"extends"` //inline dbmeta
+	metav1.UuidMeta          `json:",inline" xorm:"extends"` //inline uuidmeta
+	metav1.LabelMeta         `json:",inline" xorm:"extends"` //inline labelmeta
+	NotifierRabbitMqProperty `json:",inline" xorm:"extends"` //inline property
+	MIME                     `json:",inline" xorm:"extends"` //inline MIME
 }
 
-func (EventNotifierRabbitMq) TableName() string {
-	return "event_notifier_rabbitmq"
+func (NotifierRabbitMq) TableName() string {
+	return "channel_notifier_rabbitmq"
 }
 
-type EventNotifierRabbitMq_create struct {
-	metav1.LabelMeta              `json:",inline" xorm:"extends"` //inline labelmeta
-	EventNotifierRabbitMqProperty `json:",inline" xorm:"extends"` //inline property
-	MIME                          `json:",inline" xorm:"extends"` //inline MIME
+type NotifierRabbitMq_create struct {
+	metav1.LabelMeta         `json:",inline" xorm:"extends"` //inline labelmeta
+	NotifierRabbitMqProperty `json:",inline" xorm:"extends"` //inline property
+	MIME                     `json:",inline" xorm:"extends"` //inline MIME
 }

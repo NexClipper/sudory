@@ -18,7 +18,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/event/managed_event"
 	"github.com/NexClipper/sudory/pkg/server/macro/enigma"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
+	channelv1 "github.com/NexClipper/sudory/pkg/server/model/channel/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/NexClipper/sudory/pkg/server/route"
@@ -384,7 +384,7 @@ func newPurgeDeletedDataCron(engine *xorm.Engine, respitePeriod time.Duration) (
 
 	purgetables := [][]names.TableName{
 		{new(stepv1.ServiceStep), new(servicev1.Service)}, //transaction unit; service
-		{new(eventv1.EventNotifierStatus)},                //transaction unit; event notifier status
+		{new(channelv1.NotifierStatus)},                   //transaction unit; event notifier status
 	}
 
 	//first call

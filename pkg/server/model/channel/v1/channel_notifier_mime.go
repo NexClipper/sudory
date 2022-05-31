@@ -2,7 +2,7 @@ package v1
 
 import "github.com/pkg/errors"
 
-//go:generate go run github.com/abice/go-enum --file=event_notifier_mime.go --names --nocase=true
+//go:generate go run github.com/abice/go-enum --file=channel_notifier_mime.go --names --nocase=true
 
 /* ENUM(
 application/json

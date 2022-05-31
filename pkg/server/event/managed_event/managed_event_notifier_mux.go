@@ -3,12 +3,12 @@ package managed_event
 import (
 	"github.com/NexClipper/sudory/pkg/server/event"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
+	channelv1 "github.com/NexClipper/sudory/pkg/server/model/channel/v1"
 	"github.com/pkg/errors"
 )
 
 type ManagedEventNotifierMux struct {
-	config eventv1.Event
+	config channelv1.Channel
 	pub    EventPublisher
 
 	notifiers HashsetNotifier
@@ -17,7 +17,7 @@ type ManagedEventNotifierMux struct {
 var _ EventNotifiMuxConfigHolder = (*ManagedEventNotifierMux)(nil)
 var _ EventNotifierMultiplexer = (*ManagedEventNotifierMux)(nil)
 
-func NewManagedEventNotifierMux(cfg eventv1.Event) *ManagedEventNotifierMux {
+func NewManagedEventNotifierMux(cfg channelv1.Channel) *ManagedEventNotifierMux {
 
 	mux := &ManagedEventNotifierMux{}
 	mux.notifiers = HashsetNotifier{}
@@ -27,7 +27,7 @@ func NewManagedEventNotifierMux(cfg eventv1.Event) *ManagedEventNotifierMux {
 	return mux
 }
 
-func (mux ManagedEventNotifierMux) Config() *eventv1.Event {
+func (mux ManagedEventNotifierMux) Config() *channelv1.Channel {
 	return &mux.config
 }
 
@@ -47,11 +47,11 @@ func (mux *ManagedEventNotifierMux) Update(v ...interface{}) {
 					//업데이트 오류 처리
 					mux.EventPublisher().OnNotifierError(
 						future.Notifier,
-						errors.Wrapf(future.Error, "event notify%s %s",
+						errors.Wrapf(future.Error, "on notify%s %s",
 							logs.KVL(
 								"cluster_uuid", mux.Config().ClusterUuid,
-								"event_uuid", mux.Config().Uuid,
-								"event_pattern", mux.Config().Pattern,
+								"channel_uuid", mux.Config().Uuid,
+								"channel_name", mux.Config().Name,
 							),
 							event.MapString(future.Notifier.Property())))
 
