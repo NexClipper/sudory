@@ -8,7 +8,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/event"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
+	channelv1 "github.com/NexClipper/sudory/pkg/server/model/channel/v1"
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/pkg/errors"
@@ -94,14 +94,14 @@ var (
 				})
 			})
 
-			record := eventv1.EventNotifierStatus{}
+			record := channelv1.NotifierStatus{}
 			record.UuidMeta = metav1.NewUuidMeta()
 			record.NotifierType = notifier.Type().String()
 			record.NotifierUuid = notifier.Uuid()
 			record.Error = fmt.Sprintf("%s%s", err.Error(), stack)
 
 			//이벤트 알림 상태 테이블에 에러 메시지 저장
-			if err := vault.NewEventNotifierStatus(me.Engine().NewSession()).CreateAndRotate(record, globvar.EventNofitierStatusRotateLimit()); err != nil {
+			if err := vault.NewNotifierStatus(me.Engine().NewSession()).CreateAndRotate(record, globvar.EventNofitierStatusRotateLimit()); err != nil {
 				//저장 실패
 				me.OnError(errors.Wrapf(err, "save notifier status"))
 			}
@@ -134,18 +134,18 @@ func (me *ManagedEvent) BuildNotifierMuxer(cluster_uuid, subscribed_channel stri
 	tx := me.Engine().NewSession()
 
 	//load config
-	events, err := vault.NewEvent(tx).Find("cluster_uuid = ?", cluster_uuid)
+	events, err := vault.NewChannel(tx).Find("cluster_uuid = ?", cluster_uuid)
 	if err != nil {
-		return errors.Wrapf(err, "find event by cluster_uuid")
+		return errors.Wrapf(err, "find channel by cluster_uuid")
 	}
-	//subscribed_channel match by regex(event pattern)
-	events_ := make([]eventv1.Event, 0, len(events))
+	//subscribed_channel match by regex(event name)
+	events_ := make([]channelv1.Channel, 0, len(events))
 	for _, event := range events {
-		reg, err := regexp.Compile(event.Pattern)
+		reg, err := regexp.Compile(event.Name)
 		if err != nil {
-			//regexp compile pattern
+			//regexp compile expr
 			return errors.Wrapf(err, "regexp compile%s", logs.KVL(
-				"pattern", event.Pattern,
+				"expr", event.Name,
 			))
 		}
 
@@ -156,17 +156,17 @@ func (me *ManagedEvent) BuildNotifierMuxer(cluster_uuid, subscribed_channel stri
 
 	for _, event := range events_ {
 		//find edge
-		edges, err := vault.NewEventNotifierEdge(tx).Find("event_uuid = ?", event.Uuid)
+		edges, err := vault.NewChannelNotifierEdge(tx).Find("event_uuid = ?", event.Uuid)
 		if err != nil {
-			return errors.Wrapf(err, "find event edge")
+			return errors.Wrapf(err, "find channel edge")
 		}
 
 		opts := make([]interface{}, 0, 10)
 		for _, edge := range edges {
 			//get notifier
-			opt, err := vault.NewEventNotifier(tx).Get(edge.NotifierType, edge.NotifierUuid)
+			opt, err := vault.NewChannelNotifier(tx).Get(edge.NotifierType, edge.NotifierUuid)
 			if err != nil {
-				return errors.Wrapf(err, "get event notifier")
+				return errors.Wrapf(err, "get channel notifier")
 			}
 
 			opts = append(opts, opt)
@@ -193,11 +193,11 @@ func (me *ManagedEvent) BuildNotifierMuxer(cluster_uuid, subscribed_channel stri
 func NotifierFactory(i interface{}) (new_notifier Notifier, err error) {
 
 	switch opt := i.(type) {
-	case *eventv1.EventNotifierConsole:
+	case *channelv1.NotifierConsole:
 		new_notifier = NewConsoleNotifier(opt)
-	case *eventv1.EventNotifierWebhook:
+	case *channelv1.NotifierWebhook:
 		new_notifier = NewWebhookNotifier(opt)
-	case *eventv1.EventNotifierRabbitMq:
+	case *channelv1.NotifierRabbitMq:
 		new_notifier, err = NewRabbitMqNotifier(opt)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create rabbitmq notifier%s",

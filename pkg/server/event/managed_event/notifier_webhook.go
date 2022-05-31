@@ -11,19 +11,19 @@ import (
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
+	channelv1 "github.com/NexClipper/sudory/pkg/server/model/channel/v1"
 	"github.com/pkg/errors"
 )
 
 var _ Notifier = (*webhookNotifier)(nil)
 
 type webhookNotifier struct {
-	opt *eventv1.EventNotifierWebhook //config.WebhookNotifierConfig
+	opt *channelv1.NotifierWebhook //config.WebhookNotifierConfig
 
 	httpclient *http.Client //http.Client
 }
 
-func NewWebhookNotifier(opt *eventv1.EventNotifierWebhook) *webhookNotifier {
+func NewWebhookNotifier(opt *channelv1.NotifierWebhook) *webhookNotifier {
 	if len(opt.Method) == 0 {
 		opt.Method = http.MethodGet //set default Method
 	}
@@ -70,7 +70,7 @@ func (notifier webhookNotifier) OnNotify(factory MarshalFactoryResult) error {
 	return nil
 }
 
-func (webhookNotifier) HttpMultipartReq(opt eventv1.EventNotifierWebhook, httpclient *http.Client, factory MarshalFactoryResult) error {
+func (webhookNotifier) HttpMultipartReq(opt channelv1.NotifierWebhook, httpclient *http.Client, factory MarshalFactoryResult) error {
 
 	requset_timeout, _ := time.ParseDuration(opt.RequestTimeout)
 	if requset_timeout == 0 {

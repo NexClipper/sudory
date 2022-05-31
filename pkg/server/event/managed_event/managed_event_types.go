@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
+	channelv1 "github.com/NexClipper/sudory/pkg/server/model/channel/v1"
 	"github.com/pkg/errors"
 )
 
@@ -84,7 +84,7 @@ func (hashset HashsetNofitierErrorHandler) OnError(notifier Notifier, err error)
 }
 
 type EventNotifiMuxConfigHolder interface {
-	Config() *eventv1.Event
+	Config() *channelv1.Channel
 }
 
 type NotifierFuture struct {

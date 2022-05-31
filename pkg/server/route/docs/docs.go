@@ -117,6 +117,1039 @@ var doc = `{
                 }
             }
         },
+        "/server/channel": {
+            "get": {
+                "description": "Find channel",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.Channel"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a channel",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "description": "Event_create",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.Channel_create"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.Channel"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/channel/{uuid}": {
+            "get": {
+                "description": "Get a channel",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.Channel"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a channel",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Event_update",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.Channel_update"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.Channel"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a channel",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/channel/{uuid}/notifier_edges": {
+            "get": {
+                "description": "Get channel edges",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.ChannelNotifierEdge"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/server/channel/{uuid}/notifier_edges/add": {
+            "put": {
+                "description": "addtion channel notifier edge",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "NotifierEdge",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.NotifierEdge"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.ChannelNotifierEdge"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/server/channel/{uuid}/notifier_edges/sub": {
+            "put": {
+                "description": "subtraction channel sub notifier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Channel 의 NotifierEdge",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.NotifierEdge"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.ChannelNotifierEdge"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/server/channel_notifier/console": {
+            "get": {
+                "description": "Find channel notifier console",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.NotifierConsole"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a channel notifier console",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "description": "EventNotifierConsole_create",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierConsole_create"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierConsole"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/channel_notifier/console/{uuid}": {
+            "get": {
+                "description": "Get a channel notifier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "channel notifier 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierConsole"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a console channel notifier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "NotifierConsole_create",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierConsole_create"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierConsole"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a channel notifier console",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/channel_notifier/rabbitmq": {
+            "get": {
+                "description": "Find channel notifier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.NotifierRabbitMq"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a channel notifier rabbitmq",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "description": "NotifierRabbitMq_create",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierRabbitMq_create"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierRabbitMq"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/channel_notifier/rabbitmq/{uuid}": {
+            "get": {
+                "description": "Get a channel notifier rabbitmq",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "channel notifier 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierRabbitMq"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a rabbitmq channel notifier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "NotifierRabbitMq_create",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierRabbitMq_create"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierRabbitMq"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a channel notifier rabbitmq",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/channel_notifier/webhook": {
+            "get": {
+                "description": "Find channel notifier webhook",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.NotifierWebhook"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a channel notifier webhook",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "description": "EventNotifierWebhook_create",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierWebhook_create"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierWebhook"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/channel_notifier/webhook/{uuid}": {
+            "get": {
+                "description": "Get a channel notifier webhook",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "channel notifier 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierWebhook"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a webhook channel notifier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "NotifierWebhook_create",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierWebhook_create"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.NotifierWebhook"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a channel notifier webhook",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/channel_notifier_status": {
+            "get": {
+                "description": "Find channel notifier status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier_status"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.NotifierStatus"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/server/channel_notifier_status/{uuid}": {
+            "delete": {
+                "description": "Delete a channel notifier status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channel_notifier_status"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "EventNotifierStatus 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/server/cluster": {
             "get": {
                 "description": "Find cluster",
@@ -683,1024 +1716,6 @@ var doc = `{
                         "schema": {
                             "$ref": "#/definitions/v1.ClusterToken"
                         }
-                    }
-                }
-            }
-        },
-        "/server/event": {
-            "get": {
-                "description": "Find event",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "query  pkg/server/database/prepared/README.md",
-                        "name": "q",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "order  pkg/server/database/prepared/README.md",
-                        "name": "o",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "paging pkg/server/database/prepared/README.md",
-                        "name": "p",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.Event"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a event",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "description": "Event_create",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.Event_create"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventWithEdges"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/event/{uuid}": {
-            "get": {
-                "description": "Get a event",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.Event"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a event",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Event_update",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.Event_update"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.Event"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a event",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/server/event/{uuid}/edges": {
-            "get": {
-                "description": "Get event edges",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierEdge"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/event/{uuid}/edges/add": {
-            "put": {
-                "description": "addtion event notifier edge",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "NotifierEdges",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierEdges"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierEdge"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/event/{uuid}/edges/sub": {
-            "put": {
-                "description": "subtraction event sub notifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "NotifierEdges",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierEdges"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierEdge"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/event_notifier/console": {
-            "get": {
-                "description": "Find event notifier console",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "query  pkg/server/database/prepared/README.md",
-                        "name": "q",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "order  pkg/server/database/prepared/README.md",
-                        "name": "o",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "paging pkg/server/database/prepared/README.md",
-                        "name": "p",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.EventNotifierConsole"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a event notifier console",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "description": "EventNotifierConsole_create",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierConsole_create"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierConsole"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/event_notifier/console/{uuid}": {
-            "get": {
-                "description": "Get a event notifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "event notifier 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierConsole"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a console event notifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "EventNotifierConsole_create",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierConsole_create"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierConsole"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a event notifier console",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/server/event_notifier/rabbitmq": {
-            "get": {
-                "description": "Find event notifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "query  pkg/server/database/prepared/README.md",
-                        "name": "q",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "order  pkg/server/database/prepared/README.md",
-                        "name": "o",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "paging pkg/server/database/prepared/README.md",
-                        "name": "p",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.EventNotifierRabbitMq"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a event notifier rabbitmq",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "description": "EventNotifierRabbitMq_create",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierRabbitMq_create"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierRabbitMq"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/event_notifier/rabbitmq/{uuid}": {
-            "get": {
-                "description": "Get a event notifier rabbitmq",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "event notifier 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierRabbitMq"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a rabbitmq event notifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "EventNotifierRabbitMq_create",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierRabbitMq_create"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierRabbitMq"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a event notifier rabbitmq",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/server/event_notifier/webhook": {
-            "get": {
-                "description": "Find event notifier webhook",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "query  pkg/server/database/prepared/README.md",
-                        "name": "q",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "order  pkg/server/database/prepared/README.md",
-                        "name": "o",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "paging pkg/server/database/prepared/README.md",
-                        "name": "p",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.EventNotifierWebhook"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a event notifier webhook",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "description": "EventNotifierWebhook_create",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierWebhook_create"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierWebhook"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/event_notifier/webhook/{uuid}": {
-            "get": {
-                "description": "Get a event notifier webhook",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "event notifier 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierWebhook"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a webhook event notifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "EventNotifierWebhook_create",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierWebhook_create"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.EventNotifierWebhook"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a event notifier webhook",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Event 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/server/event_notifier_status": {
-            "get": {
-                "description": "Find Event Nofitier Status",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier_status"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "query  pkg/server/database/prepared/README.md",
-                        "name": "q",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "order  pkg/server/database/prepared/README.md",
-                        "name": "o",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "paging pkg/server/database/prepared/README.md",
-                        "name": "p",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.EventNotifierStatus"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/server/event_notifier_status/{uuid}": {
-            "delete": {
-                "description": "Delete a Event Nofitier Status",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/event_notifier_status"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "EventNofitierStatus 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
                     }
                 }
             }
@@ -2691,6 +2706,95 @@ var doc = `{
         }
     },
     "definitions": {
+        "v1.Channel": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.ChannelNotifierEdge": {
+            "type": "object",
+            "properties": {
+                "channel_uuid": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "notifier_type": {
+                    "type": "string"
+                },
+                "notifier_uuid": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.Channel_create": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "notifier_edges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.NotifierEdge"
+                    }
+                },
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.Channel_update": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
         "v1.Cluster": {
             "type": "object",
             "properties": {
@@ -2758,474 +2862,6 @@ var doc = `{
                     "type": "string"
                 },
                 "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.Event": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "pattern": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.EventNotifierConsole": {
-            "type": "object",
-            "properties": {
-                "Content-Type": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.EventNotifierConsole_create": {
-            "type": "object",
-            "properties": {
-                "Content-Type": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.EventNotifierEdge": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "event_uuid": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "notifier_type": {
-                    "type": "string"
-                },
-                "notifier_uuid": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.EventNotifierRabbitMq": {
-            "type": "object",
-            "properties": {
-                "Content-Type": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "exchange": {
-                    "description": "amqp.Channel.Publish",
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "immediate": {
-                    "type": "boolean"
-                },
-                "mandatory": {
-                    "type": "boolean"
-                },
-                "message_app_id": {
-                    "description": "application use - creating application",
-                    "type": "string"
-                },
-                "message_content_encoding": {
-                    "description": "MIME content encoding",
-                    "type": "string"
-                },
-                "message_content_type": {
-                    "description": "MIME content type",
-                    "type": "string"
-                },
-                "message_correlation_id": {
-                    "description": "application use - correlation identifier",
-                    "type": "string"
-                },
-                "message_delivery_mode": {
-                    "description": "queue implementation use - Transient (1) or Persistent (2)",
-                    "type": "integer"
-                },
-                "message_expiration": {
-                    "description": "implementation use - message expiration spec",
-                    "type": "string"
-                },
-                "message_headers": {
-                    "description": "amqp.Publishing",
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "message_message_id": {
-                    "description": "application use - message identifier",
-                    "type": "string"
-                },
-                "message_priority": {
-                    "description": "queue implementation use - 0 to 9",
-                    "type": "integer"
-                },
-                "message_reply_to": {
-                    "description": "application use - address to to reply to (ex: RPC)",
-                    "type": "string"
-                },
-                "message_timestamp": {
-                    "description": "application use - message timestamp",
-                    "type": "boolean"
-                },
-                "message_type": {
-                    "description": "application use - message type name",
-                    "type": "string"
-                },
-                "message_user_id": {
-                    "description": "application use - creating user id",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "routing_key": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "url": {
-                    "description": "amqp Dial",
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.EventNotifierRabbitMq_create": {
-            "type": "object",
-            "properties": {
-                "Content-Type": {
-                    "type": "string"
-                },
-                "exchange": {
-                    "description": "amqp.Channel.Publish",
-                    "type": "string"
-                },
-                "immediate": {
-                    "type": "boolean"
-                },
-                "mandatory": {
-                    "type": "boolean"
-                },
-                "message_app_id": {
-                    "description": "application use - creating application",
-                    "type": "string"
-                },
-                "message_content_encoding": {
-                    "description": "MIME content encoding",
-                    "type": "string"
-                },
-                "message_content_type": {
-                    "description": "MIME content type",
-                    "type": "string"
-                },
-                "message_correlation_id": {
-                    "description": "application use - correlation identifier",
-                    "type": "string"
-                },
-                "message_delivery_mode": {
-                    "description": "queue implementation use - Transient (1) or Persistent (2)",
-                    "type": "integer"
-                },
-                "message_expiration": {
-                    "description": "implementation use - message expiration spec",
-                    "type": "string"
-                },
-                "message_headers": {
-                    "description": "amqp.Publishing",
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "message_message_id": {
-                    "description": "application use - message identifier",
-                    "type": "string"
-                },
-                "message_priority": {
-                    "description": "queue implementation use - 0 to 9",
-                    "type": "integer"
-                },
-                "message_reply_to": {
-                    "description": "application use - address to to reply to (ex: RPC)",
-                    "type": "string"
-                },
-                "message_timestamp": {
-                    "description": "application use - message timestamp",
-                    "type": "boolean"
-                },
-                "message_type": {
-                    "description": "application use - message type name",
-                    "type": "string"
-                },
-                "message_user_id": {
-                    "description": "application use - creating user id",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "routing_key": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "url": {
-                    "description": "amqp Dial",
-                    "type": "string"
-                }
-            }
-        },
-        "v1.EventNotifierStatus": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "error": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "notifier_type": {
-                    "type": "string"
-                },
-                "notifier_uuid": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.EventNotifierWebhook": {
-            "type": "object",
-            "properties": {
-                "Content-Type": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "method": {
-                    "description": "http",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "request_headers": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "request_timeout": {
-                    "description": "for timeout context",
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.EventNotifierWebhook_create": {
-            "type": "object",
-            "properties": {
-                "Content-Type": {
-                    "type": "string"
-                },
-                "method": {
-                    "description": "http",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "request_headers": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "request_timeout": {
-                    "description": "for timeout context",
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.EventWithEdges": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "notifier_edges": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1.NotifierEdge"
-                    }
-                },
-                "pattern": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.Event_create": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "notifier_edges": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1.NotifierEdge"
-                    }
-                },
-                "pattern": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.Event_update": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "pattern": {
-                    "type": "string"
-                },
-                "summary": {
                     "type": "string"
                 }
             }
@@ -3714,6 +3350,49 @@ var doc = `{
                 }
             }
         },
+        "v1.NotifierConsole": {
+            "type": "object",
+            "properties": {
+                "Content-Type": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.NotifierConsole_create": {
+            "type": "object",
+            "properties": {
+                "Content-Type": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
         "v1.NotifierEdge": {
             "type": "object",
             "properties": {
@@ -3725,14 +3404,292 @@ var doc = `{
                 }
             }
         },
-        "v1.NotifierEdges": {
+        "v1.NotifierRabbitMq": {
             "type": "object",
             "properties": {
-                "notifier_edges": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1.NotifierEdge"
+                "Content-Type": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "exchange": {
+                    "description": "amqp.Channel.Publish",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "immediate": {
+                    "type": "boolean"
+                },
+                "mandatory": {
+                    "type": "boolean"
+                },
+                "message_app_id": {
+                    "description": "application use - creating application",
+                    "type": "string"
+                },
+                "message_content_encoding": {
+                    "description": "MIME content encoding",
+                    "type": "string"
+                },
+                "message_content_type": {
+                    "description": "MIME content type",
+                    "type": "string"
+                },
+                "message_correlation_id": {
+                    "description": "application use - correlation identifier",
+                    "type": "string"
+                },
+                "message_delivery_mode": {
+                    "description": "queue implementation use - Transient (1) or Persistent (2)",
+                    "type": "integer"
+                },
+                "message_expiration": {
+                    "description": "implementation use - message expiration spec",
+                    "type": "string"
+                },
+                "message_headers": {
+                    "description": "amqp.Publishing",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "message_message_id": {
+                    "description": "application use - message identifier",
+                    "type": "string"
+                },
+                "message_priority": {
+                    "description": "queue implementation use - 0 to 9",
+                    "type": "integer"
+                },
+                "message_reply_to": {
+                    "description": "application use - address to to reply to (ex: RPC)",
+                    "type": "string"
+                },
+                "message_timestamp": {
+                    "description": "application use - message timestamp",
+                    "type": "boolean"
+                },
+                "message_type": {
+                    "description": "application use - message type name",
+                    "type": "string"
+                },
+                "message_user_id": {
+                    "description": "application use - creating user id",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "routing_key": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "url": {
+                    "description": "amqp Dial",
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.NotifierRabbitMq_create": {
+            "type": "object",
+            "properties": {
+                "Content-Type": {
+                    "type": "string"
+                },
+                "exchange": {
+                    "description": "amqp.Channel.Publish",
+                    "type": "string"
+                },
+                "immediate": {
+                    "type": "boolean"
+                },
+                "mandatory": {
+                    "type": "boolean"
+                },
+                "message_app_id": {
+                    "description": "application use - creating application",
+                    "type": "string"
+                },
+                "message_content_encoding": {
+                    "description": "MIME content encoding",
+                    "type": "string"
+                },
+                "message_content_type": {
+                    "description": "MIME content type",
+                    "type": "string"
+                },
+                "message_correlation_id": {
+                    "description": "application use - correlation identifier",
+                    "type": "string"
+                },
+                "message_delivery_mode": {
+                    "description": "queue implementation use - Transient (1) or Persistent (2)",
+                    "type": "integer"
+                },
+                "message_expiration": {
+                    "description": "implementation use - message expiration spec",
+                    "type": "string"
+                },
+                "message_headers": {
+                    "description": "amqp.Publishing",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "message_message_id": {
+                    "description": "application use - message identifier",
+                    "type": "string"
+                },
+                "message_priority": {
+                    "description": "queue implementation use - 0 to 9",
+                    "type": "integer"
+                },
+                "message_reply_to": {
+                    "description": "application use - address to to reply to (ex: RPC)",
+                    "type": "string"
+                },
+                "message_timestamp": {
+                    "description": "application use - message timestamp",
+                    "type": "boolean"
+                },
+                "message_type": {
+                    "description": "application use - message type name",
+                    "type": "string"
+                },
+                "message_user_id": {
+                    "description": "application use - creating user id",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "routing_key": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "url": {
+                    "description": "amqp Dial",
+                    "type": "string"
+                }
+            }
+        },
+        "v1.NotifierStatus": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "notifier_type": {
+                    "type": "string"
+                },
+                "notifier_uuid": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.NotifierWebhook": {
+            "type": "object",
+            "properties": {
+                "Content-Type": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "method": {
+                    "description": "http",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "request_headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
                     }
+                },
+                "request_timeout": {
+                    "description": "for timeout context",
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.NotifierWebhook_create": {
+            "type": "object",
+            "properties": {
+                "Content-Type": {
+                    "type": "string"
+                },
+                "method": {
+                    "description": "http",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "request_headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "request_timeout": {
+                    "description": "for timeout context",
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
                 }
             }
         },

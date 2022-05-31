@@ -36,7 +36,7 @@ import (
 // @Produce     json
 // @Tags        client/service
 // @Router      /client/service [put]
-// @Param       x-sudory-client-token header string                        true "client session token"
+// @Param       x-sudory-client-token header string                         true "client session token"
 // @Param       service               body   []v1.HttpReqService_ClientSide true "HttpReqService_ClientSide"
 // @Success     200 {array}  v1.HttpRspService_ClientSide
 // @Header      200 {string} x-sudory-client-token "x-sudory-client-token"

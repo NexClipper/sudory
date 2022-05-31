@@ -153,71 +153,214 @@ ALTER TABLE `cluster`
 
 
 -- OSS-292
+-- 
+-- CREATE TABLE IF NOT EXISTS `event` (
+-- 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+-- 	`uuid` CHAR(32) NOT NULL COMMENT 'uuid' COLLATE 'utf8mb4_general_ci',
+-- 	`name` VARCHAR(255) NOT NULL COMMENT 'name' COLLATE 'utf8mb4_general_ci',
+-- 	`summary` VARCHAR(255) NULL DEFAULT NULL COMMENT 'summary' COLLATE 'utf8mb4_general_ci',
+-- 	`cluster_uuid` CHAR(32) NOT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`pattern` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`created` DATETIME NULL DEFAULT NULL COMMENT 'created',
+-- 	`updated` DATETIME NULL DEFAULT NULL COMMENT 'updated',
+-- 	`deleted` DATETIME NULL DEFAULT NULL COMMENT 'deleted',
+-- 	PRIMARY KEY (`id`) USING BTREE,
+-- 	UNIQUE INDEX `UQE_event_uuid` (`uuid`) USING BTREE,
+-- 	INDEX `IDX_event_cluster_uuid` (`cluster_uuid`) USING BTREE,
+-- 	INDEX `IDX_event_pattern` (`pattern`) USING BTREE,
+-- 	INDEX `IDX_deleted` (`deleted`) USING BTREE
+-- )
+-- COLLATE='utf8mb4_general_ci'
+-- ENGINE=InnoDB
+-- AUTO_INCREMENT=4
+-- ;
+-- 
+-- CREATE TABLE IF NOT EXISTS `event_notifier_console` (
+-- 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+-- 	`uuid` CHAR(32) NOT NULL COMMENT 'uuid' COLLATE 'utf8mb4_general_ci',
+-- 	`name` VARCHAR(255) NOT NULL COMMENT 'name' COLLATE 'utf8mb4_general_ci',
+-- 	`summary` VARCHAR(255) NULL DEFAULT NULL COMMENT 'summary' COLLATE 'utf8mb4_general_ci',
+-- 	`content_type` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`created` DATETIME NULL DEFAULT NULL COMMENT 'created',
+-- 	`updated` DATETIME NULL DEFAULT NULL COMMENT 'updated',
+-- 	`deleted` DATETIME NULL DEFAULT NULL COMMENT 'deleted',
+-- 	PRIMARY KEY (`id`) USING BTREE,
+-- 	UNIQUE INDEX `UQE_event_notifier_console_uuid` (`uuid`) USING BTREE,
+-- 	INDEX `IDX_deleted` (`deleted`) USING BTREE
+-- )
+-- COLLATE='utf8mb4_general_ci'
+-- ENGINE=InnoDB
+-- AUTO_INCREMENT=3
+-- ;
+-- 
+-- CREATE TABLE IF NOT EXISTS `event_notifier_edge` (
+-- 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+-- 	`notifier_type` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`notifier_uuid` CHAR(32) NOT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`event_uuid` CHAR(32) NOT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`created` DATETIME NULL DEFAULT NULL COMMENT 'created',
+-- 	`updated` DATETIME NULL DEFAULT NULL COMMENT 'updated',
+-- 	`deleted` DATETIME NULL DEFAULT NULL COMMENT 'deleted',
+-- 	PRIMARY KEY (`id`) USING BTREE,
+-- 	INDEX `IDX_notifier_edge_event_uuid` (`event_uuid`) USING BTREE,
+-- 	INDEX `IDX_notifier_edge_notifier_type` (`notifier_type`) USING BTREE,
+-- 	INDEX `IDX_notifier_edge_notifier_uuid` (`notifier_uuid`) USING BTREE,
+-- 	INDEX `IDX_deleted` (`deleted`) USING BTREE
+-- )
+-- COLLATE='utf8mb4_general_ci'
+-- ENGINE=InnoDB
+-- AUTO_INCREMENT=8
+-- ;
+-- 
+-- CREATE TABLE IF NOT EXISTS `event_notifier_rabbitmq` (
+-- 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+-- 	`uuid` CHAR(32) NOT NULL COMMENT 'uuid' COLLATE 'utf8mb4_general_ci',
+-- 	`name` VARCHAR(255) NOT NULL COMMENT 'name' COLLATE 'utf8mb4_general_ci',
+-- 	`summary` VARCHAR(255) NULL DEFAULT NULL COMMENT 'summary' COLLATE 'utf8mb4_general_ci',
+-- 	`content_type` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`url` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`exchange` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`routing_key` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`mandatory` TINYINT(1) NULL DEFAULT NULL,
+-- 	`immediate` TINYINT(1) NULL DEFAULT NULL,
+-- 	`message_headers` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`message_content_type` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`message_content_encoding` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`message_delivery_mode` INT(10) UNSIGNED NULL DEFAULT NULL,
+-- 	`message_priority` INT(10) UNSIGNED NULL DEFAULT NULL,
+-- 	`message_correlation_id` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`message_reply_to` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`message_expiration` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`message_message_id` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`message_timestamp` TINYINT(1) NULL DEFAULT NULL,
+-- 	`message_type` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`message_user_id` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`message_app_id` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`created` DATETIME NULL DEFAULT NULL COMMENT 'created',
+-- 	`updated` DATETIME NULL DEFAULT NULL COMMENT 'updated',
+-- 	`deleted` DATETIME NULL DEFAULT NULL COMMENT 'deleted',
+-- 	PRIMARY KEY (`id`) USING BTREE,
+-- 	UNIQUE INDEX `UQE_event_notifier_rabbitmq_uuid` (`uuid`) USING BTREE,
+-- 	INDEX `IDX_deleted` (`deleted`) USING BTREE
+-- )
+-- COLLATE='utf8mb4_general_ci'
+-- ENGINE=InnoDB
+-- AUTO_INCREMENT=2
+-- ;
+-- 
+-- CREATE TABLE IF NOT EXISTS `event_notifier_webhook` (
+-- 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+-- 	`uuid` CHAR(32) NOT NULL COMMENT 'uuid' COLLATE 'utf8mb4_general_ci',
+-- 	`name` VARCHAR(255) NOT NULL COMMENT 'name' COLLATE 'utf8mb4_general_ci',
+-- 	`summary` VARCHAR(255) NULL DEFAULT NULL COMMENT 'summary' COLLATE 'utf8mb4_general_ci',
+-- 	`content_type` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`method` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`url` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`request_headers` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`request_timeout` VARCHAR(16) NULL DEFAULT NULL COMMENT 'fmt(time.ParseDuration)' COLLATE 'utf8mb4_general_ci',
+-- 	`created` DATETIME NULL DEFAULT NULL COMMENT 'created',
+-- 	`updated` DATETIME NULL DEFAULT NULL COMMENT 'updated',
+-- 	`deleted` DATETIME NULL DEFAULT NULL COMMENT 'deleted',
+-- 	PRIMARY KEY (`id`) USING BTREE,
+-- 	UNIQUE INDEX `UQE_event_notifier_webhook_uuid` (`uuid`) USING BTREE,
+-- 	INDEX `IDX_deleted` (`deleted`) USING BTREE
+-- )
+-- COLLATE='utf8mb4_general_ci'
+-- ENGINE=InnoDB
+-- AUTO_INCREMENT=5
+-- ;
+-- 
+-- CREATE TABLE IF NOT EXISTS `event_notifier_status` (
+-- 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+-- 	`uuid` CHAR(32) NOT NULL COMMENT 'uuid' COLLATE 'utf8mb4_general_ci',
+-- 	`notifier_type` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`notifier_uuid` CHAR(32) NOT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`error` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+-- 	`created` DATETIME NULL DEFAULT NULL COMMENT 'created',
+-- 	`updated` DATETIME NULL DEFAULT NULL COMMENT 'updated',
+-- 	`deleted` DATETIME NULL DEFAULT NULL COMMENT 'deleted',
+-- 	PRIMARY KEY (`id`) USING BTREE,
+-- 	UNIQUE INDEX `UQE_event_notifier_status_uuid` (`uuid`) USING BTREE,
+-- 	INDEX `IDX_event_notifier_status_notifier_type` (`notifier_type`) USING BTREE,
+-- 	INDEX `IDX_event_notifier_status_notifier_uuid` (`notifier_uuid`) USING BTREE,
+-- 	INDEX `IDX_deleted` (`deleted`) USING BTREE
+-- )
+-- COLLATE='utf8mb4_general_ci'
+-- ENGINE=InnoDB
+-- AUTO_INCREMENT=95
+-- ;
+-- 
+-- !OSS-292
 
-CREATE TABLE IF NOT EXISTS `event` (
+-- OSS-306
+
+DROP TABLE IF EXISTS event;
+DROP TABLE IF EXISTS event_notifier_edge;
+DROP TABLE IF EXISTS event_notifier_console;
+DROP TABLE IF EXISTS event_notifier_rabbitmq;
+DROP TABLE IF EXISTS event_notifier_status;
+DROP TABLE IF EXISTS event_notifier_webhook;
+
+CREATE TABLE IF NOT EXISTS `channel` (
 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
 	`uuid` CHAR(32) NOT NULL COMMENT 'uuid' COLLATE 'utf8mb4_general_ci',
 	`name` VARCHAR(255) NOT NULL COMMENT 'name' COLLATE 'utf8mb4_general_ci',
 	`summary` VARCHAR(255) NULL DEFAULT NULL COMMENT 'summary' COLLATE 'utf8mb4_general_ci',
 	`cluster_uuid` CHAR(32) NOT NULL COLLATE 'utf8mb4_general_ci',
-	`pattern` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
 	`created` DATETIME NULL DEFAULT NULL COMMENT 'created',
 	`updated` DATETIME NULL DEFAULT NULL COMMENT 'updated',
 	`deleted` DATETIME NULL DEFAULT NULL COMMENT 'deleted',
 	PRIMARY KEY (`id`) USING BTREE,
-	UNIQUE INDEX `UQE_event_uuid` (`uuid`) USING BTREE,
-	INDEX `IDX_event_cluster_uuid` (`cluster_uuid`) USING BTREE,
-	INDEX `IDX_event_pattern` (`pattern`) USING BTREE,
+	UNIQUE INDEX `UQE_uuid` (`uuid`) USING BTREE,
+	INDEX `IDX_channel_cluster_uuid` (`cluster_uuid`) USING BTREE,
 	INDEX `IDX_deleted` (`deleted`) USING BTREE
 )
 COLLATE='utf8mb4_general_ci'
 ENGINE=InnoDB
-AUTO_INCREMENT=4
 ;
 
-CREATE TABLE IF NOT EXISTS `event_notifier_console` (
+CREATE TABLE IF NOT EXISTS `channel_notifier_edge` (
 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
-	`uuid` CHAR(32) NOT NULL COMMENT 'uuid' COLLATE 'utf8mb4_general_ci',
-	`name` VARCHAR(255) NOT NULL COMMENT 'name' COLLATE 'utf8mb4_general_ci',
-	`summary` VARCHAR(255) NULL DEFAULT NULL COMMENT 'summary' COLLATE 'utf8mb4_general_ci',
-	`content_type` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
-	`created` DATETIME NULL DEFAULT NULL COMMENT 'created',
-	`updated` DATETIME NULL DEFAULT NULL COMMENT 'updated',
-	`deleted` DATETIME NULL DEFAULT NULL COMMENT 'deleted',
-	PRIMARY KEY (`id`) USING BTREE,
-	UNIQUE INDEX `UQE_event_notifier_console_uuid` (`uuid`) USING BTREE,
-	INDEX `IDX_deleted` (`deleted`) USING BTREE
-)
-COLLATE='utf8mb4_general_ci'
-ENGINE=InnoDB
-AUTO_INCREMENT=3
-;
-
-CREATE TABLE IF NOT EXISTS `event_notifier_edge` (
-	`id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+	`channel_uuid` CHAR(32) NOT NULL COLLATE 'utf8mb4_general_ci',
 	`notifier_type` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
 	`notifier_uuid` CHAR(32) NOT NULL COLLATE 'utf8mb4_general_ci',
-	`event_uuid` CHAR(32) NOT NULL COLLATE 'utf8mb4_general_ci',
 	`created` DATETIME NULL DEFAULT NULL COMMENT 'created',
 	`updated` DATETIME NULL DEFAULT NULL COMMENT 'updated',
 	`deleted` DATETIME NULL DEFAULT NULL COMMENT 'deleted',
 	PRIMARY KEY (`id`) USING BTREE,
-	INDEX `IDX_notifier_edge_event_uuid` (`event_uuid`) USING BTREE,
-	INDEX `IDX_notifier_edge_notifier_type` (`notifier_type`) USING BTREE,
-	INDEX `IDX_notifier_edge_notifier_uuid` (`notifier_uuid`) USING BTREE,
-	INDEX `IDX_deleted` (`deleted`) USING BTREE
+	INDEX `IDX_channel_notifier_edge_notifier_type` (`notifier_type`) USING BTREE,
+	INDEX `IDX_channel_notifier_edge_notifier_uuid` (`notifier_uuid`) USING BTREE,
+	INDEX `IDX_deleted` (`deleted`) USING BTREE,
+	INDEX `IDX_channel_notifier_edge_channel_uuid` (`channel_uuid`) USING BTREE
 )
 COLLATE='utf8mb4_general_ci'
 ENGINE=InnoDB
-AUTO_INCREMENT=8
 ;
 
-CREATE TABLE IF NOT EXISTS `event_notifier_rabbitmq` (
+
+
+CREATE TABLE IF NOT EXISTS `channel_notifier_console` (
 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
 	`uuid` CHAR(32) NOT NULL COMMENT 'uuid' COLLATE 'utf8mb4_general_ci',
 	`name` VARCHAR(255) NOT NULL COMMENT 'name' COLLATE 'utf8mb4_general_ci',
 	`summary` VARCHAR(255) NULL DEFAULT NULL COMMENT 'summary' COLLATE 'utf8mb4_general_ci',
 	`content_type` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
+	`created` DATETIME NULL DEFAULT NULL COMMENT 'created',
+	`updated` DATETIME NULL DEFAULT NULL COMMENT 'updated',
+	`deleted` DATETIME NULL DEFAULT NULL COMMENT 'deleted',
+	PRIMARY KEY (`id`) USING BTREE,
+	UNIQUE INDEX `UQE_uuid` (`uuid`) USING BTREE,
+	INDEX `IDX_deleted` (`deleted`) USING BTREE
+)
+COLLATE='utf8mb4_general_ci'
+ENGINE=InnoDB
+;
+
+CREATE TABLE IF NOT EXISTS `channel_notifier_rabbitmq` (
+	`id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+	`uuid` CHAR(32) NOT NULL COMMENT 'uuid' COLLATE 'utf8mb4_general_ci',
+	`name` VARCHAR(255) NOT NULL COMMENT 'name' COLLATE 'utf8mb4_general_ci',
+	`summary` VARCHAR(255) NULL DEFAULT NULL COMMENT 'summary' COLLATE 'utf8mb4_general_ci',
 	`url` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
 	`exchange` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
 	`routing_key` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
@@ -236,41 +379,41 @@ CREATE TABLE IF NOT EXISTS `event_notifier_rabbitmq` (
 	`message_type` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
 	`message_user_id` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
 	`message_app_id` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
+	`content_type` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
 	`created` DATETIME NULL DEFAULT NULL COMMENT 'created',
 	`updated` DATETIME NULL DEFAULT NULL COMMENT 'updated',
 	`deleted` DATETIME NULL DEFAULT NULL COMMENT 'deleted',
 	PRIMARY KEY (`id`) USING BTREE,
-	UNIQUE INDEX `UQE_event_notifier_rabbitmq_uuid` (`uuid`) USING BTREE,
+	UNIQUE INDEX `UQE_uuid` (`uuid`) USING BTREE,
 	INDEX `IDX_deleted` (`deleted`) USING BTREE
 )
 COLLATE='utf8mb4_general_ci'
 ENGINE=InnoDB
-AUTO_INCREMENT=2
 ;
 
-CREATE TABLE IF NOT EXISTS `event_notifier_webhook` (
+CREATE TABLE IF NOT EXISTS `channel_notifier_webhook` (
 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
 	`uuid` CHAR(32) NOT NULL COMMENT 'uuid' COLLATE 'utf8mb4_general_ci',
 	`name` VARCHAR(255) NOT NULL COMMENT 'name' COLLATE 'utf8mb4_general_ci',
 	`summary` VARCHAR(255) NULL DEFAULT NULL COMMENT 'summary' COLLATE 'utf8mb4_general_ci',
-	`content_type` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
 	`method` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
 	`url` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
 	`request_headers` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_general_ci',
 	`request_timeout` VARCHAR(16) NULL DEFAULT NULL COMMENT 'fmt(time.ParseDuration)' COLLATE 'utf8mb4_general_ci',
+	`content_type` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
 	`created` DATETIME NULL DEFAULT NULL COMMENT 'created',
 	`updated` DATETIME NULL DEFAULT NULL COMMENT 'updated',
 	`deleted` DATETIME NULL DEFAULT NULL COMMENT 'deleted',
 	PRIMARY KEY (`id`) USING BTREE,
-	UNIQUE INDEX `UQE_event_notifier_webhook_uuid` (`uuid`) USING BTREE,
+	UNIQUE INDEX `UQE_uuid` (`uuid`) USING BTREE,
 	INDEX `IDX_deleted` (`deleted`) USING BTREE
 )
 COLLATE='utf8mb4_general_ci'
 ENGINE=InnoDB
-AUTO_INCREMENT=5
 ;
 
-CREATE TABLE IF NOT EXISTS `event_notifier_status` (
+
+CREATE TABLE IF NOT EXISTS `channel_notifier_status` (
 	`id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
 	`uuid` CHAR(32) NOT NULL COMMENT 'uuid' COLLATE 'utf8mb4_general_ci',
 	`notifier_type` VARCHAR(255) NOT NULL COLLATE 'utf8mb4_general_ci',
@@ -280,14 +423,13 @@ CREATE TABLE IF NOT EXISTS `event_notifier_status` (
 	`updated` DATETIME NULL DEFAULT NULL COMMENT 'updated',
 	`deleted` DATETIME NULL DEFAULT NULL COMMENT 'deleted',
 	PRIMARY KEY (`id`) USING BTREE,
-	UNIQUE INDEX `UQE_event_notifier_status_uuid` (`uuid`) USING BTREE,
-	INDEX `IDX_event_notifier_status_notifier_type` (`notifier_type`) USING BTREE,
-	INDEX `IDX_event_notifier_status_notifier_uuid` (`notifier_uuid`) USING BTREE,
-	INDEX `IDX_deleted` (`deleted`) USING BTREE
+	UNIQUE INDEX `UQE_uuid` (`uuid`) USING BTREE,
+	INDEX `IDX_channel_notifier_status_notifier_uuid` (`notifier_uuid`) USING BTREE,
+	INDEX `IDX_deleted` (`deleted`) USING BTREE,
+	INDEX `IDX_channel_notifier_status_notifier_type` (`notifier_type`) USING BTREE
 )
 COLLATE='utf8mb4_general_ci'
 ENGINE=InnoDB
-AUTO_INCREMENT=95
 ;
 
--- !OSS-292
+-- !OSS-306

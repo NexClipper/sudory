@@ -4,18 +4,18 @@ import (
 	"fmt"
 	"os"
 
-	eventv1 "github.com/NexClipper/sudory/pkg/server/model/event/v1"
+	channelv1 "github.com/NexClipper/sudory/pkg/server/model/channel/v1"
 	"github.com/pkg/errors"
 )
 
 var _ Notifier = (*consoleNotifier)(nil)
 
 type consoleNotifier struct {
-	opt *eventv1.EventNotifierConsole
+	opt *channelv1.NotifierConsole
 	// sub event.EventNotifierMuxer
 }
 
-func NewConsoleNotifier(opt *eventv1.EventNotifierConsole) *consoleNotifier {
+func NewConsoleNotifier(opt *channelv1.NotifierConsole) *consoleNotifier {
 	notifier := &consoleNotifier{}
 	notifier.opt = opt
 
