@@ -97,6 +97,11 @@ func (c *Client) ResourceRequest(gv schema.GroupVersion, resource, verb, namespa
 		if err != nil {
 			break
 		}
+	case "delete":
+		err = c.ResourceDelete(gv, resource, namespace, name)
+		if err != nil {
+			break
+		}
 	default:
 		err = fmt.Errorf("unknown verb(%s)", verb)
 	}
