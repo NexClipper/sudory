@@ -8,8 +8,22 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func (c *Client) ResourceDelete(gv schema.GroupVersion, resource, namespace, name string) error {
+// func (c *Client) ResourceDelete(gv schema.GroupVersion, resource, namespace, name string) error {
+func (c *Client) ResourceDelete(gv schema.GroupVersion, resource string, params map[string]interface{}) error {
 	var err error
+
+	var namespace string
+	var name string
+
+	if found, err := FindCastFromMap(params, "namespace", &namespace); found && err != nil {
+		return err
+	}
+
+	if found, err := FindCastFromMap(params, "name", &name); found && err != nil {
+		return err
+	} else if !found {
+		return err
+	}
 
 	switch gv.Identifier() {
 	case "v1":

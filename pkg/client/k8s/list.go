@@ -9,9 +9,20 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func (c *Client) ResourceList(gv schema.GroupVersion, resource, namespace string, labels map[string]string) (string, error) {
+func (c *Client) ResourceList(gv schema.GroupVersion, resource string, params map[string]interface{}) (string, error) {
 	var result interface{}
 	var err error
+
+	var namespace string
+	var labels = make(map[string]interface{})
+
+	if found, err := FindCastFromMap(params, "namespace", &namespace); found && err != nil {
+		return "", err
+	}
+
+	if found, err := FindCastFromMap(params, "labels", &labels); found && err != nil {
+		return "", err
+	}
 
 	labelsString, err := convertMapToLabelSelector(labels)
 	if err != nil {

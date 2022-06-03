@@ -59,13 +59,11 @@ func NewCommander(command *service.StepCommand) (Commander, error) {
 }
 
 type K8sCommander struct {
-	client    *k8s.Client
-	gv        schema.GroupVersion // v1, apps/v1, ...
-	resource  string              // pod, namespace, deployment, ...
-	namespace string              // "", default, ...
-	name      string              // my-pod, my-namespace, ...
-	verb      string              // get, list, watch, ...
-	labels    map[string]string
+	client   *k8s.Client
+	gv       schema.GroupVersion // v1, apps/v1, ...
+	resource string              // pod, namespace, deployment, ...
+	verb     string              // get, list, watch, ...
+	args     map[string]interface{}
 }
 
 func NewK8sCommander(command *service.StepCommand) (Commander, error) {
@@ -73,7 +71,7 @@ func NewK8sCommander(command *service.StepCommand) (Commander, error) {
 	if err != nil {
 		return nil, err
 	}
-	cmdr := &K8sCommander{client: client, labels: make(map[string]string)}
+	cmdr := &K8sCommander{client: client, args: make(map[string]interface{})}
 
 	err = cmdr.ParseCommand(command)
 	if err != nil {
@@ -103,25 +101,15 @@ func (c *K8sCommander) ParseCommand(command *service.StepCommand) error {
 	c.resource = mlist[1]
 	c.verb = mlist[2]
 
-	if s, ok := macro.MapString(command.Args, "namespace"); ok {
-		c.namespace = s
-	}
-
-	if s, ok := macro.MapString(command.Args, "name"); ok {
-		c.name = s
-	}
-
-	if m, ok := macro.MapMap(command.Args, "labels"); ok {
-		for k, v := range m {
-			c.labels[k] = fmt.Sprintf("%v", v)
-		}
+	if command.Args != nil {
+		c.args = command.Args
 	}
 
 	return nil
 }
 
 func (c *K8sCommander) Run() (string, error) {
-	return c.client.ResourceRequest(c.gv, c.resource, c.verb, c.namespace, c.name, c.labels)
+	return c.client.ResourceRequest(c.gv, c.resource, c.verb, c.args)
 }
 
 type P8sCommander struct {
