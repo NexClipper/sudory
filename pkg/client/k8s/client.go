@@ -82,23 +82,28 @@ func (c *Client) RawRequest() *rawRequest {
 	return newRawRequest(c)
 }
 
-func (c *Client) ResourceRequest(gv schema.GroupVersion, resource, verb, namespace, name string, labels map[string]string) (string, error) {
+func (c *Client) ResourceRequest(gv schema.GroupVersion, resource, verb string, args map[string]interface{}) (string, error) {
 	var result string
 	var err error
 
 	switch verb {
 	case "get":
-		result, err = c.ResourceGet(gv, resource, namespace, name)
+		result, err = c.ResourceGet(gv, resource, args)
 		if err != nil {
 			break
 		}
 	case "list":
-		result, err = c.ResourceList(gv, resource, namespace, labels)
+		result, err = c.ResourceList(gv, resource, args)
 		if err != nil {
 			break
 		}
 	case "delete":
-		err = c.ResourceDelete(gv, resource, namespace, name)
+		err = c.ResourceDelete(gv, resource, args)
+		if err != nil {
+			break
+		}
+	case "patch":
+		result, err = c.ResourcePatch(gv, resource, args)
 		if err != nil {
 			break
 		}
