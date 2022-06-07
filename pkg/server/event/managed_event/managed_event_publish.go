@@ -156,7 +156,7 @@ func (me *ManagedEvent) BuildNotifierMuxer(cluster_uuid, subscribed_channel stri
 
 	for _, event := range events_ {
 		//find edge
-		edges, err := vault.NewChannelNotifierEdge(tx).Find("event_uuid = ?", event.Uuid)
+		edges, err := vault.NewChannelNotifierEdge(tx).Find("channel_uuid = ?", event.Uuid)
 		if err != nil {
 			return errors.Wrapf(err, "find channel edge")
 		}
