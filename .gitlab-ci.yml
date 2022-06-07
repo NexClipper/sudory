@@ -114,7 +114,6 @@ deploy-nexclipper-sudory-client:
     - "source kube/getClientToken.sh $S_SERVER_URL"
     - "source /data/scripts/deploy_v2.sh dev sudoryclient"
   rules:
-    - if: '$CI_COMMIT_BRANCH == "develop"'
-    - if: $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
       when: manual
   allow_failure: true
