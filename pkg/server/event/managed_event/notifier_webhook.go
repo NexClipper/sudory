@@ -64,21 +64,16 @@ func (notifier webhookNotifier) OnNotify(factory MarshalFactoryResult) error {
 	opt := notifier.opt
 	httpclient := notifier.httpclient
 
-	if err := notifier.HttpMultipartReq(*opt, httpclient, factory); err != nil {
-		return errors.Wrapf(err, "http multipart request")
+	// httpreq := notifier.HttpMultipartReq
+	httpreq := notifier.HttpReq
+
+	if err := httpreq(*opt, httpclient, factory); err != nil {
+		return errors.Wrapf(err, "http request")
 	}
 	return nil
 }
 
 func (webhookNotifier) HttpMultipartReq(opt channelv1.NotifierWebhook, httpclient *http.Client, factory MarshalFactoryResult) error {
-
-	requset_timeout, _ := time.ParseDuration(opt.RequestTimeout)
-	if requset_timeout == 0 {
-		requset_timeout = 15 * time.Second
-	}
-
-	timeout, cancel := context.WithTimeout(context.Background(), requset_timeout)
-	defer cancel()
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -98,7 +93,15 @@ func (webhookNotifier) HttpMultipartReq(opt channelv1.NotifierWebhook, httpclien
 	}
 	writer.Close()
 
-	//Create request with timeout
+	//create http request with timeout context
+	requset_timeout, _ := time.ParseDuration(opt.RequestTimeout)
+	if requset_timeout == 0 {
+		requset_timeout = 15 * time.Second
+	}
+
+	timeout, cancel := context.WithTimeout(context.Background(), requset_timeout)
+	defer cancel()
+
 	req, err := http.NewRequestWithContext(timeout, opt.Method, opt.Url, body)
 	if err != nil {
 		return errors.Wrapf(err, "make request with context%s",
@@ -114,7 +117,7 @@ func (webhookNotifier) HttpMultipartReq(opt channelv1.NotifierWebhook, httpclien
 	}
 	req.Header.Set("Content-Type", "multipart/mixed; boundary="+writer.Boundary())
 
-	//Request to update services's status to server.
+	//request to host
 	rsp, err := httpclient.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "request to%s",
@@ -126,21 +129,86 @@ func (webhookNotifier) HttpMultipartReq(opt channelv1.NotifierWebhook, httpclien
 	}
 	defer rsp.Body.Close()
 
+	//read response
 	buffer := bytes.Buffer{}
 	if _, err := buffer.ReadFrom(rsp.Body); err != nil {
 		return errors.Wrapf(err, "read to response body")
 	}
 
+	//check status code
 	if rsp.StatusCode/100 != 2 {
-
 		return errors.Errorf("bad response status%s",
 			logs.KVL(
 				"status", rsp.Status,
 				"code", rsp.StatusCode,
 				"body", buffer.String(),
 			))
-
 	}
 
+	return nil
+}
+
+func (webhookNotifier) HttpReq(opt channelv1.NotifierWebhook, httpclient *http.Client, factory MarshalFactoryResult) error {
+
+	b, err := factory(opt.ContentType)
+	if err != nil {
+		return errors.Wrapf(err, "marshal factory")
+	}
+
+	for _, b := range b {
+		body := bytes.NewBuffer(b)
+
+		//create http request with timeout context
+		requset_timeout, _ := time.ParseDuration(opt.RequestTimeout)
+		if requset_timeout == 0 {
+			requset_timeout = 15 * time.Second
+		}
+		timeout, cancel := context.WithTimeout(context.Background(), requset_timeout)
+		defer cancel()
+
+		req, err := http.NewRequestWithContext(timeout, opt.Method, opt.Url, body)
+		if err != nil {
+			return errors.Wrapf(err, "make request with context%s",
+				logs.KVL(
+					"method", opt.Method,
+					"url", opt.Url,
+				))
+		}
+
+		//Header
+		for key, val := range opt.RequestHeaders {
+			req.Header.Set(key, val) //set http header
+		}
+
+		req.Header.Set("Content-Type", opt.ContentType)
+
+		//request to host
+		rsp, err := httpclient.Do(req)
+		if err != nil {
+			return errors.Wrapf(err, "request to%s",
+				logs.KVL(
+					"method", opt.Method,
+					"url", opt.Url,
+					"headers", opt.RequestHeaders,
+				))
+		}
+		defer rsp.Body.Close()
+
+		//read response
+		buffer := bytes.Buffer{}
+		if _, err := buffer.ReadFrom(rsp.Body); err != nil {
+			return errors.Wrapf(err, "read to response body")
+		}
+
+		//check status code
+		if rsp.StatusCode/100 != 2 {
+			return errors.Errorf("bad response status%s",
+				logs.KVL(
+					"status", rsp.Status,
+					"code", rsp.StatusCode,
+					"body", buffer.String(),
+				))
+		}
+	}
 	return nil
 }
