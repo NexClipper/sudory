@@ -44,15 +44,19 @@ func (me ManagedEvent) EventNotifierMultiplexer() HashsetEventNotifierMultiplexe
 }
 
 func (me ManagedEvent) Invoke(cluster_uuid, subscribed_channel string, v ...interface{}) {
+	clone := NewManagedEvent()
+	clone.engine = me.engine
+	clone.ErrorHandlers = me.ErrorHandlers
+	clone.NofitierErrorHandlers = me.NofitierErrorHandlers
 
 	//make notifier mux
-	if err := me.BuildNotifierMuxer(cluster_uuid, subscribed_channel); err != nil {
-		me.OnError(errors.Wrapf(err, "build managed event"))
+	if err := clone.BuildNotifierMuxer(cluster_uuid, subscribed_channel); err != nil {
+		clone.OnError(errors.Wrapf(err, "build managed event"))
 		return
 	}
 
 	//update message
-	me.Update(v...)
+	clone.Update(v...)
 }
 
 var (
