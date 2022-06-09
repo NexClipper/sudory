@@ -6,18 +6,22 @@ import (
 	"path/filepath"
 
 	monitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	aggregatorv1 "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
 
 var k8sClient *Client
 
 type Client struct {
-	client  *kubernetes.Clientset
-	mclient monitoringclient.Interface
+	client         *kubernetes.Clientset
+	mclient        monitoringclient.Interface
+	apiextv1client apiextensionsv1.Interface
+	aggrev1client  aggregatorv1.Interface
 }
 
 func getClusterConfig() (*rest.Config, error) {
@@ -65,7 +69,17 @@ func NewClient() (*Client, error) {
 		return nil, err
 	}
 
-	k8sClient = &Client{client: clientset, mclient: mclient}
+	apiextv1client, err := apiextensionsv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	aggrev1client, err := aggregatorv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	k8sClient = &Client{client: clientset, mclient: mclient, apiextv1client: apiextv1client, aggrev1client: aggrev1client}
 
 	return k8sClient, nil
 }
