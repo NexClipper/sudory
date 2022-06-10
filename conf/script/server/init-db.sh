@@ -32,12 +32,12 @@ apk add mariadb-client
 EXISTS=$(${CMD_PRE} --execute "show databases" | grep "${DB_SCHEME}")
 
 
-if [[ ${EXISTS} != "" && ${EXPORT_PATH} != "" ]] ; then
-	echo "=============== start export for backup scheme ==============="
-	mkdir ${EXPORT_PATH}
-	CMD=$(mysqldump --user=${ROOT_USERNAME} --password=${ROOT_PASSWORD} --host=${DB_HOST} --port=${DB_PORT} -e --single-transaction -c ${DB_SCHEME} > ${EXPORT_FILE})
-	echo "=============== complete export for backup scheme ==============="
-fi
+# if [[ ${EXISTS} != "" && ${EXPORT_PATH} != "" ]] ; then
+# 	echo "=============== start export for backup scheme ==============="
+# 	mkdir ${EXPORT_PATH}
+# 	CMD=$(mysqldump --user=${ROOT_USERNAME} --password=${ROOT_PASSWORD} --host=${DB_HOST} --port=${DB_PORT} -e --single-transaction -c ${DB_SCHEME} > ${EXPORT_FILE})
+# 	echo "=============== complete export for backup scheme ==============="
+# fi
 
 
 if [[ ${EXISTS} != "" ]] ; then
