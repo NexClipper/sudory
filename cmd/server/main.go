@@ -109,15 +109,16 @@ func main() {
 	}
 	defer cronGVClose() //크론잡 종료
 
-	//init purge deleted service
-	cronPurgeServiceClose, err := newPurgeDeletedDataCron(db.Engine(), cfg.RespitePeriod)
-	if err != nil {
-		panic(err)
+	if false {
+		//init purge deleted service
+		cronPurgeServiceClose, err := newPurgeDeletedDataCron(db.Engine(), cfg.RespitePeriod)
+		if err != nil {
+			panic(err)
+		}
+		defer cronPurgeServiceClose() //크론잡 종료
 	}
-	defer cronPurgeServiceClose() //크론잡 종료
 
 	r := route.New(cfg, db)
-
 	r.Start(cfg.Host.Port)
 
 	logger.Debugf("%s is DONE", path.Base(strings.ReplaceAll(os.Args[0], "\\", "/")))
