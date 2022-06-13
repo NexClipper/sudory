@@ -9,9 +9,22 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func (c *Client) ResourceGet(gv schema.GroupVersion, resource, namespace, name string) (string, error) {
+func (c *Client) ResourceGet(gv schema.GroupVersion, resource string, params map[string]interface{}) (string, error) {
 	var result interface{}
 	var err error
+
+	var namespace string
+	var name string
+
+	if found, err := FindCastFromMap(params, "namespace", &namespace); found && err != nil {
+		return "", err
+	}
+
+	if found, err := FindCastFromMap(params, "name", &name); found && err != nil {
+		return "", err
+	} else if !found {
+		return "", err
+	}
 
 	switch gv.Identifier() {
 	case "v1":
@@ -66,6 +79,31 @@ func (c *Client) ResourceGet(gv schema.GroupVersion, resource, namespace, name s
 			if err != nil {
 				break
 			}
+		case "limitranges":
+			result, err = c.client.CoreV1().LimitRanges(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "podtemplates":
+			result, err = c.client.CoreV1().PodTemplates(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "replicationcontrollers":
+			result, err = c.client.CoreV1().ReplicationControllers(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "resourcequotas":
+			result, err = c.client.CoreV1().ResourceQuotas(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "serviceaccounts":
+			result, err = c.client.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
 		default:
 			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
 		}
@@ -91,6 +129,11 @@ func (c *Client) ResourceGet(gv schema.GroupVersion, resource, namespace, name s
 			if err != nil {
 				break
 			}
+		case "controllerrevisions":
+			result, err = c.client.AppsV1().ControllerRevisions(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
 		default:
 			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
 		}
@@ -101,6 +144,16 @@ func (c *Client) ResourceGet(gv schema.GroupVersion, resource, namespace, name s
 			if err != nil {
 				break
 			}
+		case "ingressclasses":
+			result, err = c.client.NetworkingV1().IngressClasses().Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "networkpolicies":
+			result, err = c.client.NetworkingV1().NetworkPolicies(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
 		default:
 			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
 		}
@@ -108,6 +161,26 @@ func (c *Client) ResourceGet(gv schema.GroupVersion, resource, namespace, name s
 		switch resource {
 		case "storageclasses":
 			result, err = c.client.StorageV1().StorageClasses().Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "csidrivers":
+			result, err = c.client.StorageV1().CSIDrivers().Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "csinodes":
+			result, err = c.client.StorageV1().CSINodes().Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "csistoragecapacities":
+			result, err = c.client.StorageV1().CSIStorageCapacities(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "volumeattachments":
+			result, err = c.client.StorageV1().VolumeAttachments().Get(context.TODO(), name, metav1.GetOptions{})
 			if err != nil {
 				break
 			}
@@ -131,6 +204,36 @@ func (c *Client) ResourceGet(gv schema.GroupVersion, resource, namespace, name s
 			if err != nil {
 				break
 			}
+		case "alertmanagers":
+			result, err = c.mclient.MonitoringV1().Alertmanagers(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "podmonitors":
+			result, err = c.mclient.MonitoringV1().PodMonitors(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "probes":
+			result, err = c.mclient.MonitoringV1().Probes(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "thanosrulers":
+			result, err = c.mclient.MonitoringV1().ThanosRulers(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "monitoring.coreos.com/v1alpha1":
+		switch resource {
+		case "alertmanagerconfigs":
+			result, err = c.mclient.MonitoringV1alpha1().AlertmanagerConfigs(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
 		default:
 			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
 		}
@@ -143,6 +246,136 @@ func (c *Client) ResourceGet(gv schema.GroupVersion, resource, namespace, name s
 			}
 		case "jobs":
 			result, err = c.client.BatchV1().Jobs(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "admissionregistration.k8s.io/v1":
+		switch resource {
+		case "mutatingwebhookconfigurations":
+			result, err = c.client.AdmissionregistrationV1().MutatingWebhookConfigurations().Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "validatingwebhookconfigurations":
+			result, err = c.client.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "apiextensions.k8s.io/v1":
+		switch resource {
+		case "customresourcedefinitions":
+			result, err = c.apiextv1client.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "apiregistration.k8s.io/v1":
+		switch resource {
+		case "apiservices":
+			result, err = c.aggrev1client.ApiregistrationV1().APIServices().Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "autoscaling/v2":
+		switch resource {
+		case "horizontalpodautoscalers":
+			result, err = c.client.AutoscalingV2().HorizontalPodAutoscalers(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "certificates.k8s.io/v1":
+		switch resource {
+		case "certificatesigningrequests":
+			result, err = c.client.CertificatesV1().CertificateSigningRequests().Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "coordination.k8s.io/v1":
+		switch resource {
+		case "leases":
+			result, err = c.client.CoordinationV1().Leases(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "discovery.k8s.io/v1":
+		switch resource {
+		case "endpointslices":
+			result, err = c.client.DiscoveryV1().EndpointSlices(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "node.k8s.io/v1":
+		switch resource {
+		case "runtimeclasses":
+			result, err = c.client.NodeV1().RuntimeClasses().Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "policy/v1":
+		switch resource {
+		case "poddisruptionbudgets":
+			result, err = c.client.PolicyV1().PodDisruptionBudgets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "rbac.authorization.k8s.io/v1":
+		switch resource {
+		case "clusterrolebindings":
+			result, err = c.client.RbacV1().ClusterRoleBindings().Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "clusterroles":
+			result, err = c.client.RbacV1().ClusterRoles().Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "rolebindings":
+			result, err = c.client.RbacV1().RoleBindings(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		case "roles":
+			result, err = c.client.RbacV1().Roles(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "scheduling.k8s.io/v1":
+		switch resource {
+		case "priorityclasses":
+			result, err = c.client.SchedulingV1().PriorityClasses().Get(context.TODO(), name, metav1.GetOptions{})
 			if err != nil {
 				break
 			}
