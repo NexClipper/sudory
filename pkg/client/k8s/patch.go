@@ -56,6 +56,11 @@ func (c *Client) ResourcePatch(gv schema.GroupVersion, resource string, params m
 			if err != nil {
 				break
 			}
+		case "persistentvolumeclaims":
+			result, err = c.client.CoreV1().PersistentVolumeClaims(namespace).Patch(context.TODO(), name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
 		default:
 			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
 		}
