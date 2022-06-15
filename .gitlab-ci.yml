@@ -29,7 +29,6 @@ code-build-server:
     - apk add --no-cache make git
     - go get -v -u github.com/swaggo/swag/cmd/swag
     - make prep 
-    - go mod tidy
     - make swagger
   script:
     - make go-build target=server
@@ -47,7 +46,6 @@ code-build-client:
     - apk add --no-cache make git
     - go get -v -u github.com/swaggo/swag/cmd/swag
     - make prep 
-    - go mod tidy
     - make swagger
   script:
     - make go-build target=client
