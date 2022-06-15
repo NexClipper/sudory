@@ -39,8 +39,6 @@ data:
       update-interval: 5s
       notifiers:
       - notifier:
-        type: console
-      - notifier:
         type: 'rabbitmq'
         url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
         exchange: ''
@@ -72,8 +70,6 @@ data:
       update-interval: 5s
       notifiers:
       - notifier:
-        type: console
-      - notifier:
         type: 'rabbitmq'
         url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
         exchange: ''
@@ -82,8 +78,6 @@ data:
       name: 'nc_metric_received'
       update-interval: 5s
       notifiers:
-      - notifier:
-        type: console
       - notifier:
         type: 'rabbitmq'
         url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
@@ -94,8 +88,6 @@ data:
       update-interval: 5s
       notifiers:
       - notifier:
-        type: console
-      - notifier:
         type: 'rabbitmq'
         url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
         exchange: ''
@@ -104,8 +96,6 @@ data:
       name: 'nc_alert'
       update-interval: 5s
       notifiers:
-      - notifier:
-        type: console
       - notifier:
         type: 'rabbitmq'
         url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
