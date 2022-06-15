@@ -78,7 +78,7 @@ You need to have MariaDB 10.0 and above to install sudoRy server. Recommand usin
 
 ```console
 data:
-  db_host: "192.168.8.71"
+  db_host: "XXX.XXX.XXX.XXX"
   db_port: "3306"
   db_scheme: "sudory"
   db_export_path: "."
