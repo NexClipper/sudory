@@ -28,7 +28,7 @@ var doc = `{
     "paths": {
         "/client/auth": {
             "post": {
-                "description": "Auth a client",
+                "description": "auth client",
                 "consumes": [
                     "application/json"
                 ],
@@ -41,7 +41,7 @@ var doc = `{
                 "parameters": [
                     {
                         "description": "HttpReqAuth",
-                        "name": "auth",
+                        "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -57,8 +57,7 @@ var doc = `{
                         },
                         "headers": {
                             "x-sudory-client-token": {
-                                "type": "string",
-                                "description": "x-sudory-client-token"
+                                "type": "string"
                             }
                         }
                     }
@@ -66,8 +65,45 @@ var doc = `{
             }
         },
         "/client/service": {
+            "get": {
+                "description": "get []Service",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "client/service"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x-sudory-client-token",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v1.HttpRspService_ClientSide"
+                            }
+                        },
+                        "headers": {
+                            "x-sudory-client-token": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
             "put": {
-                "description": "Poll a Service",
+                "description": "update a service",
                 "consumes": [
                     "application/json"
                 ],
@@ -86,31 +122,21 @@ var doc = `{
                         "required": true
                     },
                     {
-                        "description": "HttpReqService_ClientSide",
-                        "name": "service",
+                        "description": "HttpReq_ServiceUpdate_ClientSide",
+                        "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.HttpReqService_ClientSide"
-                            }
+                            "$ref": "#/definitions/v1.HttpReq_ServiceUpdate_ClientSide"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.HttpRspService_ClientSide"
-                            }
-                        },
+                        "description": "",
                         "headers": {
                             "x-sudory-client-token": {
-                                "type": "string",
-                                "description": "x-sudory-client-token"
+                                "type": "string"
                             }
                         }
                     }
@@ -2994,68 +3020,6 @@ var doc = `{
                 }
             }
         },
-        "v1.HttpReqService_ClientSide": {
-            "type": "object",
-            "properties": {
-                "assigned_client_uuid": {
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "on_completion": {
-                    "description": "서비스 완료 후",
-                    "type": "integer"
-                },
-                "result": {
-                    "description": "실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "step_count": {
-                    "type": "integer"
-                },
-                "step_position": {
-                    "type": "integer"
-                },
-                "steps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1.ServiceStep"
-                    }
-                },
-                "subscribed_channel": {
-                    "description": "서비스 POLL 결과 전달 이벤트 채널 이름",
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "template_uuid": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
         "v1.HttpReqService_Create": {
             "type": "object",
             "properties": {
@@ -3187,6 +3151,35 @@ var doc = `{
                     "type": "string"
                 },
                 "summary": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpReq_ServiceUpdate_ClientSide": {
+            "type": "object",
+            "properties": {
+                "result": {
+                    "description": "실행 결과(정상:'결과', 오류:'오류 메시지')",
+                    "type": "string"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.HttpReq_ServiceUpdate_Step_ClientSide"
+                    }
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.HttpReq_ServiceUpdate_Step_ClientSide": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer"
+                },
+                "uuid": {
                     "type": "string"
                 }
             }

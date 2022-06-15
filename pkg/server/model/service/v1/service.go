@@ -120,6 +120,27 @@ type HttpRspService struct {
 // 	return json.Marshal(v)
 // }
 
-type HttpReqService_ClientSide HttpRspService
+// type HttpReqService_ClientSide HttpRspService
 
 type HttpRspService_ClientSide HttpRspService
+
+// HttpReq_ServiceUpdate_ClientSide
+// {
+//   "uuid":"service_uuid",
+//   "result":"",
+//   "steps":[
+//     {
+//       "uuid":"step_uuid",
+//       "status":"step_status"
+//     }
+//   ]
+// }
+type HttpReq_ServiceUpdate_ClientSide struct {
+	metav1.UuidMeta `json:",inline" xorm:"extends"`         //inline uuidmeta
+	Result          *string                                 `json:"result,omitempty"` //실행 결과(정상:'결과', 오류:'오류 메시지')
+	Steps           []HttpReq_ServiceUpdate_Step_ClientSide `json:"steps,omitempty"`
+}
+type HttpReq_ServiceUpdate_Step_ClientSide struct {
+	metav1.UuidMeta `json:",inline" xorm:"extends"` //inline uuidmeta
+	Status          *int32                          `json:"status,omitempty"` //
+}
