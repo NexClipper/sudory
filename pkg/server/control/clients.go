@@ -21,6 +21,7 @@ import (
 	authv1 "github.com/NexClipper/sudory/pkg/server/model/auth/v1"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	clustertokenv1 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v1"
+	cryptov1 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
@@ -30,17 +31,15 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// Poll []Service (client)
-// @Description Poll a Service
+// @Description get []Service
 // @Accept      json
 // @Produce     json
 // @Tags        client/service
-// @Router      /client/service [put]
-// @Param       x-sudory-client-token header string                         true "client session token"
-// @Param       service               body   []v1.HttpReqService_ClientSide true "HttpReqService_ClientSide"
+// @Router      /client/service [get]
+// @Param       x-sudory-client-token header string true "client session token"
 // @Success     200 {array}  v1.HttpRspService_ClientSide
-// @Header      200 {string} x-sudory-client-token "x-sudory-client-token"
-func (ctl Control) PollService(ctx echo.Context) error {
+// @Header      200 {string} x-sudory-client-token
+func (ctl Control) PollingService(ctx echo.Context) error {
 	clientTokenPayload_once := func(ctx echo.Context) func() (*sessionv1.ClientSessionPayload, error) {
 		var (
 			once      sync.Once
@@ -69,7 +68,6 @@ func (ctl Control) PollService(ctx echo.Context) error {
 							"token", token,
 						))
 				}
-
 			})
 			return claims, err
 		}
@@ -89,81 +87,6 @@ func (ctl Control) PollService(ctx echo.Context) error {
 		service.AssignedClientUuid = payload.Uuid
 
 		return service
-	}
-
-	body := []servicev1.HttpReqService_ClientSide{}
-	if err := echoutil.Bind(ctx, &body); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
-				logs.KVL(
-					"type", TypeName(body),
-				)))
-	}
-
-	for i := range body {
-		body[i].ServiceProperty = body[i].Service.ChaniningStep(body[i].Steps)
-	}
-	for i := range body {
-		service := body[i].Service
-		//invoke event (service-poll-in)
-		m := map[string]interface{}{
-			"event_name":           "service-poll-in",
-			"service_uuid":         service.Uuid,
-			"service_name":         service.Name,
-			"template_uuid":        service.TemplateUuid,
-			"cluster_uuid":         service.ClusterUuid,
-			"assigned_client_uuid": service.AssignedClientUuid,
-			"status":               nullable.Int32(service.Status).Value(),
-			"result": func() string {
-				if service.Result != nil {
-					return string(*service.Result)
-				}
-				return ""
-			}(),
-			"step_count":    nullable.Int32(service.StepCount).Value(),
-			"step_position": nullable.Int32(service.StepPosition).Value(),
-		}
-
-		event.Invoke(service.SubscribedChannel, m)                              //Subscribe 등록된 구독 이벤트 이름으로 호출
-		managed_event.Invoke(service.ClusterUuid, service.SubscribedChannel, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
-	}
-
-	if _, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
-		for _, iter := range body {
-			service := iter.Service
-			steps := iter.Steps
-
-			//save service
-			if _, err := vault.NewService(tx).Update(service); err != nil {
-				return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-					errors.Wrapf(err, "update request service"))
-			}
-			//save step
-			for _, step := range steps {
-				if _, err := vault.NewServiceStep(tx).Update(step); err != nil {
-					return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-						errors.Wrapf(err, "update request service step"))
-				}
-			}
-
-			//OnCompletion
-			if servicev1.StatusSuccess <= servicev1.Status(nullable.Int32(service.Status).Value()) {
-				switch servicev1.OnCompletion(nullable.Int8(service.OnCompletion).Value()) {
-				case servicev1.OnCompletionRemove:
-					//OnCompletionRemove
-					if err := vault.NewService(tx).Delete(service.Uuid); err != nil {
-						return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-							errors.Wrapf(err, "fire and forbidden a service%v",
-								logs.KVL(
-									"uuid", service.Uuid,
-								)))
-					}
-				}
-			}
-		}
-		return nil, nil
-	}); err != nil {
-		return err
 	}
 
 	//make response
@@ -203,7 +126,7 @@ func (ctl Control) PollService(ctx echo.Context) error {
 			service_, err := vault.NewService(tx).Update(service)
 			if err != nil {
 				return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-					errors.Wrapf(err, "update response service"))
+					errors.Wrapf(err, "update service"))
 			}
 
 			for i := range steps {
@@ -211,7 +134,7 @@ func (ctl Control) PollService(ctx echo.Context) error {
 				step_, err := vault.NewServiceStep(tx).Update(step)
 				if err != nil {
 					return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-						errors.Wrapf(err, "update response service"))
+						errors.Wrapf(err, "update step"))
 				}
 				steps[i] = *step_
 			}
@@ -227,39 +150,135 @@ func (ctl Control) PollService(ctx echo.Context) error {
 
 	//invoke event (service-poll-out)
 	for _, response := range rsp_service {
-		m := map[string]interface{}{
-			"event_name":           "service-poll-out",
-			"service_uuid":         response.Uuid,
-			"service_name":         response.Name,
-			"template_uuid":        response.TemplateUuid,
-			"cluster_uuid":         response.ClusterUuid,
-			"assigned_client_uuid": response.AssignedClientUuid,
-			"status":               nullable.Int32(response.Status).Value(),
-			"result": func() string {
-				if response.Result != nil {
-					return string(*response.Result)
-				}
-				return ""
-			}(),
-			"step_count":    nullable.Int32(response.StepCount).Value(),
-			"step_position": nullable.Int32(response.StepPosition).Value(),
+		const event_name = "service-poll-out"
+		m := map[string]interface{}{}
+		m["event_name"] = event_name
+		m["service_uuid"] = response.Uuid
+		m["service_name"] = response.Name
+		m["template_uuid"] = response.TemplateUuid
+		m["cluster_uuid"] = response.ClusterUuid
+		m["assigned_client_uuid"] = response.AssignedClientUuid
+		m["status"] = nullable.Int32(response.Status).Value()
+		if response.Result != nil {
+			m["result"] = string(*response.Result)
 		}
-		event.Invoke("service-poll-out", m)
-		managed_event.Invoke(response.ClusterUuid, "service-poll-out", m)
+		m["step_count"] = nullable.Int32(response.StepCount).Value()
+		m["step_position"] = nullable.Int32(response.StepPosition).Value()
+
+		event.Invoke(event_name, m)
+		managed_event.Invoke(response.ClusterUuid, event_name, m)
 	}
 
 	return ctx.JSON(http.StatusOK, rsp_service)
 }
 
-// Auth Client
-// @Description Auth a client
+// @Description update a service
+// @Accept      json
+// @Produce     json
+// @Tags        client/service
+// @Router      /client/service [put]
+// @Param       x-sudory-client-token header string           true  "client session token"
+// @Param       body body v1.HttpReq_ServiceUpdate_ClientSide true "HttpReq_ServiceUpdate_ClientSide"
+// @Success     200
+// @Header      200 {string} x-sudory-client-token
+func (ctl Control) UpdateService(ctx echo.Context) error {
+	body := servicev1.HttpReq_ServiceUpdate_ClientSide{}
+	if err := echoutil.Bind(ctx, &body); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
+			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+				logs.KVL(
+					"type", TypeName(body),
+				)))
+	}
+	//get record; service, steps
+	service, steps, err := vault.NewService(ctl.db.Engine().NewSession()).Get(body.Uuid)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+			errors.Wrapf(err, "get service"))
+	}
+
+	//service; update body
+	service.Result = func(s *string) *cryptov1.String {
+		if s == nil {
+			return nil
+		}
+		t := cryptov1.String(*body.Result)
+		return &t
+	}(body.Result)
+
+	//steps; update body
+	for i := range steps {
+		steps[i].Uuid = body.Steps[i].Uuid
+		steps[i].Status = body.Steps[i].Status
+	}
+
+	//service; ChaniningStep
+	service.ServiceProperty = service.ChaniningStep(steps)
+
+	if _, err := ctl.ScopeSession(func(tx *xorm.Session) (out interface{}, err error) {
+		//save service
+		service, err = vault.NewService(tx).Update(*service)
+		if err != nil {
+			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+				errors.Wrapf(err, "update service"))
+		}
+		//save step
+		for _, step := range steps {
+			if _, err := vault.NewServiceStep(tx).Update(step); err != nil {
+				return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+					errors.Wrapf(err, "update service step"))
+			}
+		}
+		//OnCompletion
+		if servicev1.StatusSuccess <= servicev1.Status(nullable.Int32(service.Status).Value()) {
+			switch servicev1.OnCompletion(nullable.Int8(service.OnCompletion).Value()) {
+			case servicev1.OnCompletionRemove:
+				//OnCompletionRemove
+				if err := vault.NewService(tx).Delete(service.Uuid); err != nil {
+					return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+						errors.Wrapf(err, "on completion a service%v",
+							logs.KVL(
+								"uuid", service.Uuid,
+							)))
+				}
+			}
+		}
+
+		return nil, nil
+	}); err != nil {
+		return err
+	}
+
+	//invoke event (service-poll-in)
+	const event_name = "service-poll-in"
+	m := map[string]interface{}{}
+	m["event_name"] = event_name
+	m["service_uuid"] = service.Uuid
+	m["service_name"] = service.Name
+	m["template_uuid"] = service.TemplateUuid
+	m["cluster_uuid"] = service.ClusterUuid
+	m["assigned_client_uuid"] = service.AssignedClientUuid
+	m["status"] = nullable.Int32(service.Status).Value()
+	if service.Result != nil {
+		m["result"] = string(*service.Result)
+	}
+	m["step_count"] = nullable.Int32(service.StepCount).Value()
+	m["step_position"] = nullable.Int32(service.StepPosition).Value()
+
+	event.Invoke(service.SubscribedChannel, m)                              //Subscribe 등록된 구독 이벤트 이름으로 호출
+	managed_event.Invoke(service.ClusterUuid, service.SubscribedChannel, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
+
+	return ctx.JSON(http.StatusOK, OK())
+}
+
+// @Description auth client
 // @Accept      json
 // @Produce     json
 // @Tags        client/auth
 // @Router      /client/auth [post]
-// @Param       auth body v1.HttpReqAuth true "HttpReqAuth"
+// @Param       body body v1.HttpReqAuth true "HttpReqAuth"
 // @Success     200 {string} ok
-// @Header      200 {string} x-sudory-client-token "x-sudory-client-token"
+// @Header      200 {string} x-sudory-client-token
 func (ctl Control) AuthClient(ctx echo.Context) error {
 	auth := new(authv1.HttpReqAuth)
 	if err := echoutil.Bind(ctx, auth); err != nil {
@@ -358,13 +377,14 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 	ctx.Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, token_string)
 
 	//invoke event (client-auth-accept)
+	const event_name = "client-auth-accept"
 	m := map[string]interface{}{
-		"event_name":   "client-auth-accept",
+		"event_name":   event_name,
 		"cluster_uuid": payload.ClusterUuid,
 		"session_uuid": payload.Uuid,
 	}
-	event.Invoke("client-auth-accept", m)
-	managed_event.Invoke(payload.ClusterUuid, "client-auth-accept", m)
+	event.Invoke(event_name, m)
+	managed_event.Invoke(payload.ClusterUuid, event_name, m)
 
 	return ctx.JSON(http.StatusOK, OK())
 }

@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/panta/machineid"
 
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
@@ -14,12 +16,16 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/scheduler"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
-	"github.com/golang-jwt/jwt/v4"
 )
 
 const (
-	defaultPollingInterval = 5 // * time.Second
-	minPollingInterval     = 5
+	defaultPollingInterval  = 5 // * time.Second
+	minPollingInterval      = 5
+	maxRetryForFailedToSend = 5
+)
+
+var (
+	failedToSendCountMap sync.Map
 )
 
 type Fetcher struct {
@@ -33,7 +39,7 @@ type Fetcher struct {
 	done            chan struct{}
 }
 
-func NewFetcher(bearerToken, server, clusterId string, scheduler *scheduler.Scheduler) (*Fetcher, error) {
+func NewFetcher(bearerToken, server, clusterId string, sch *scheduler.Scheduler) (*Fetcher, error) {
 	id, err := machineid.ID()
 	if err != nil {
 		return nil, err
@@ -47,7 +53,7 @@ func NewFetcher(bearerToken, server, clusterId string, scheduler *scheduler.Sche
 		client:          httpclient.NewHttpClient(server, "", 0, 0),
 		ticker:          time.NewTicker(defaultPollingInterval * time.Second),
 		pollingInterval: defaultPollingInterval,
-		scheduler:       scheduler,
+		scheduler:       sch,
 		done:            make(chan struct{})}, nil
 }
 
@@ -79,6 +85,8 @@ func (f *Fetcher) Polling(ctx context.Context) error {
 		return fmt.Errorf("fetcher or fetcher.ticker is not created")
 	}
 
+	go f.UpdateServiceProcess()
+
 	go func() {
 		for {
 			select {
@@ -94,21 +102,45 @@ func (f *Fetcher) Polling(ctx context.Context) error {
 }
 
 func (f *Fetcher) poll() {
-	// Get updated services. If the service is done, it is deleted.
-	updatedServices := f.scheduler.GetServicesWithUpdatedDoneFlag()
+	// check if there are any services that have failed to send
+	failedServices := f.scheduler.GetServicesWithFailedToSendFlag()
 
-	// services -> reqData
-	reqData := scheduler.ServiceListClientToServer2(updatedServices)
+	for _, serv := range failedServices {
+		failedCnt := 0
+		if cnt, ok := failedToSendCountMap.Load(serv.GetServiceId()); ok {
+			failedCnt = cnt.(int)
+		}
 
-	jsonb, err := json.Marshal(reqData)
-	if err != nil {
-		f.scheduler.RollbackServicesWithDoneUpdatedFlag(updatedServices)
-		log.Errorf(err.Error())
+		if failedCnt > maxRetryForFailedToSend {
+			failedToSendCountMap.Delete(serv.GetServiceId())
+			f.scheduler.DeleteServiceWithFlag(serv.GetServiceId(), scheduler.ServiceCheckedFlagFailedToSend)
+			continue
+		}
+
+		// services -> reqData
+		reqData := scheduler.ServiceClientToServer(serv)
+
+		if reqData == nil {
+			continue
+		}
+
+		jsonb, err := json.Marshal(reqData)
+		if err != nil {
+			log.Errorf(err.Error())
+			failedToSendCountMap.Store(serv.GetServiceId(), failedCnt+1)
+			continue
+		}
+
+		if _, err := f.client.PutJson("/client/service", nil, jsonb); err != nil {
+			log.Errorf(err.Error())
+			failedToSendCountMap.Store(serv.GetServiceId(), failedCnt+1)
+			continue
+		}
+		f.scheduler.DeleteServiceWithFlag(serv.GetServiceId(), scheduler.ServiceCheckedFlagFailedToSend)
 	}
 
-	body, err := f.client.PutJson("/client/service", nil, jsonb)
+	body, err := f.client.GetJson("/client/service", nil)
 	if err != nil {
-		f.scheduler.RollbackServicesWithDoneUpdatedFlag(updatedServices)
 		log.Errorf(err.Error())
 
 		if f.client.IsTokenExpired() {
@@ -118,7 +150,6 @@ func (f *Fetcher) poll() {
 
 		return
 	}
-	f.scheduler.DeleteServicesWithDoneFlag(updatedServices)
 
 	f.ChangeClientConfigFromToken()
 
@@ -136,7 +167,7 @@ func (f *Fetcher) poll() {
 	}
 
 	// respData -> services
-	recvServices := scheduler.ServiceListServerToClient2(respData)
+	recvServices := scheduler.ServiceListServerToClient(respData)
 
 	// Register new services.
 	f.scheduler.RegisterServices(recvServices)
@@ -163,5 +194,26 @@ func (f *Fetcher) ChangeClientConfigFromToken() {
 			log.Debugf("Changed logger level to %s\n", claims.Loglevel)
 		}
 	}
+}
 
+func (f *Fetcher) UpdateServiceProcess() {
+	for serv := range f.scheduler.NotifyServiceUpdate() {
+		if serv == nil {
+			continue
+		}
+
+		jsonb, err := json.Marshal(serv)
+		if err != nil {
+			log.Errorf(err.Error())
+			f.scheduler.ChangeServiceFlagFailedToSend(serv.Uuid)
+			continue
+		}
+
+		if _, err := f.client.PutJson("/client/service", nil, jsonb); err != nil {
+			log.Errorf(err.Error())
+			f.scheduler.ChangeServiceFlagFailedToSend(serv.Uuid)
+			continue
+		}
+		f.scheduler.DeleteServiceWithFlag(serv.Uuid, scheduler.ServiceCheckedFlagDone)
+	}
 }
