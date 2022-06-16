@@ -3,6 +3,7 @@ package v1
 import (
 	"math"
 	"sort"
+	"time"
 
 	cryptov1 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v1"
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
@@ -116,5 +117,7 @@ type HttpReq_ServiceUpdate_ClientSide struct {
 }
 type HttpReq_ServiceUpdate_Step_ClientSide struct {
 	metav1.UuidMeta `json:",inline" xorm:"extends"` //inline uuidmeta
-	Status          *int32                          `json:"status,omitempty"` //
+	Status          *int32                          `json:"status,omitempty"`  //
+	Started         *time.Time                      `json:"started,omitempty"` //
+	Ended           *time.Time                      `json:"ended,omitempty"`   //
 }

@@ -210,6 +210,8 @@ func (ctl Control) UpdateService(ctx echo.Context) error {
 	for i := range steps {
 		steps[i].Uuid = body.Steps[i].Uuid
 		steps[i].Status = body.Steps[i].Status
+		steps[i].Started = body.Steps[i].Started
+		steps[i].Ended = body.Steps[i].Ended
 	}
 
 	//service; ChaniningStep
