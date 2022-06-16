@@ -6,11 +6,11 @@ import (
 	urlPkg "net/url"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/hashicorp/go-retryablehttp"
 
 	"github.com/NexClipper/sudory/pkg/client/log"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
-	"github.com/golang-jwt/jwt/v4"
 )
 
 const CustomHeaderClientToken = "x-sudory-client-token"
@@ -70,7 +70,7 @@ func (hc *HttpClient) Request(method, path string, params map[string]string, bod
 	}
 
 	if hc.token != "" {
-		req.Header.Add(CustomHeaderClientToken, hc.token)
+		req.Header.Set(CustomHeaderClientToken, hc.token)
 	}
 
 	resp, err := hc.client.Do(req)
@@ -97,6 +97,10 @@ func (hc *HttpClient) Request(method, path string, params map[string]string, bod
 
 func (c *HttpClient) Get(path string, params map[string]string) ([]byte, error) {
 	return c.Request("GET", path, params, "", nil)
+}
+
+func (c *HttpClient) GetJson(path string, params map[string]string) ([]byte, error) {
+	return c.Request("GET", path, params, "application/json", nil)
 }
 
 func (c *HttpClient) Post(path string, params map[string]string, rawBody []byte) ([]byte, error) {
