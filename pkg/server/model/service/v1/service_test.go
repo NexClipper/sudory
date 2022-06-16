@@ -65,12 +65,7 @@ func TestHttpHttpRspService(t *testing.T) {
 
 func TestHttpReqClientSideServiceJson(t *testing.T) {
 
-	m := HttpReq_ServiceUpdate_ClientSide{}
-	m.Uuid = "uuid"
-	m.Result = newist.String("hello")
-	m.Steps = make([]HttpReq_ServiceUpdate_Step_ClientSide, 1)
-	m.Steps[0].Uuid = "diuu"
-	m.Steps[0].Status = newist.Int32(0xff)
+	m := HttpReqService_ClientSide{Service: NewService()}
 
 	data, err := json.MarshalIndent(m, "", " ")
 	if err != nil {
