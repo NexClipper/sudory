@@ -37,11 +37,11 @@ func (se *ServiceExecutor) Execute() (err error) {
 
 	se.service.StartTime = time.Now()
 	se.service.Status = service.ServiceStatusProcessing
-	se.SendStatusUpdate()
+	//se.SendStatusUpdate()
 	for i, step := range se.service.Steps {
 		var te *StepExecutor
 
-		te, err = NewStepExecutor(*step)
+		te, err = NewStepExecutor(step)
 		if err != nil {
 			se.service.Steps[i].Status = service.StepStatusFail
 			se.service.Steps[i].EndTime = time.Now()
@@ -61,7 +61,7 @@ func (se *ServiceExecutor) Execute() (err error) {
 		// update execute result to service scheduler through returnChannel.
 		se.service.Steps[i].Status = service.StepStatusSuccess
 		se.service.Steps[i].EndTime = time.Now()
-		se.SendStatusUpdate()
+		//se.SendStatusUpdate()
 	}
 
 	return nil

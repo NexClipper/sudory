@@ -107,19 +107,14 @@ type HttpRspService struct {
 	Steps   []stepv1.ServiceStep `json:"steps"`
 }
 
-// func (object HttpRspService) MarshalJSON() ([]byte, error) {
-// 	object.ServiceProperty = object.ChaniningStep(object.Steps)
-// 	v := struct {
-// 		Service `json:",inline"`
-// 		Steps   []stepv1.ServiceStep `json:",inline"`
-// 	}{
-// 		Service: object.Service,
-// 		Steps:   object.Steps,
-// 	}
-
-// 	return json.Marshal(v)
-// }
-
-type HttpReqService_ClientSide HttpRspService
-
 type HttpRspService_ClientSide HttpRspService
+
+type HttpReq_ServiceUpdate_ClientSide struct {
+	metav1.UuidMeta `json:",inline" xorm:"extends"`         //inline uuidmeta
+	Result          *string                                 `json:"result,omitempty"` //실행 결과(정상:'결과', 오류:'오류 메시지')
+	Steps           []HttpReq_ServiceUpdate_Step_ClientSide `json:"steps,omitempty"`
+}
+type HttpReq_ServiceUpdate_Step_ClientSide struct {
+	metav1.UuidMeta `json:",inline" xorm:"extends"` //inline uuidmeta
+	Status          *int32                          `json:"status,omitempty"` //
+}

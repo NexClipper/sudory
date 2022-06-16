@@ -50,11 +50,11 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		e.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
 			Generator: func() func() string {
 				var (
-					ticketId uint64
+					id uint64
 				)
 				return func() string {
-					atomic.AddUint64(&ticketId, 1)
-					return fmt.Sprintf("%d", ticketId)
+					id := atomic.AddUint64(&id, 1)
+					return fmt.Sprintf("%d", id)
 				}
 			}(),
 		}))
@@ -80,12 +80,15 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	//"/client"
 	{
 		group := e.Group("/client")
-
-		//route /client/service*
-		group.PUT("/service", controller.PollService, func(next echo.HandlerFunc) echo.HandlerFunc {
+		group.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 			return func(c echo.Context) (err error) {
-				if err := controller.VerifyClientSessionToken(c); err != nil {
-					return err
+				switch c.Path() {
+				case "/client/auth":
+					//do noting
+				default:
+					if err := controller.VerifyClientSessionToken(c); err != nil {
+						return err
+					}
 				}
 
 				if err := next(c); err != nil {
@@ -95,6 +98,10 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 				return nil
 			}
 		})
+
+		//route /client/service*
+		group.GET("/service", controller.PollingService)
+		group.PUT("/service", controller.UpdateService)
 		//route /client/auth*
 		group.POST("/auth", controller.AuthClient)
 	}

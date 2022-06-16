@@ -32,7 +32,7 @@ type Service struct {
 	UpdateTime time.Time
 	EndTime    time.Time
 	Status     ServiceStatus
-	Steps      []*Step
+	Steps      []Step
 	Result     Result
 	ServerData servicev1.HttpRspService_ClientSide
 }
@@ -57,7 +57,7 @@ type Result struct {
 }
 
 type Step struct {
-	Id           int
+	Id           string
 	ParentId     string
 	Command      *StepCommand
 	StartTime    time.Time
