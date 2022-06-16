@@ -54,63 +54,10 @@ kind: ClusterRole
 metadata:
   name: sudory-controller
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - endpoints
-  - events
-  - namespaces
-  - nodes
-  - persistentvolumes
-  - persistentvolumeclaims
-  - pods
-  - secrets
-  - services
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - "apps"
-  resources:
-  - daemonsets
-  - deployments
-  - replicasets
-  - statefulsets
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - "networking.k8s.io"
-  resources:
-  - ingresses
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - "storage.k8s.io"
-  resources:
-  - storageclasses
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - "monitoring.coreos.com"
-  resources:
-  - prometheuses
-  - prometheusrules
-  - servicemonitors
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - "batch"
-  resources:
-  - cronjobs
-  - jobs
-  verbs:
-  - get
-  - list
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+  
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
