@@ -52,7 +52,11 @@ func ServiceClientToServer(client *ServiceChecked) *servicev1.HttpReq_ServiceUpd
 	}
 
 	for _, s := range client.service.Steps {
-		st := servicev1.HttpReq_ServiceUpdate_Step_ClientSide{UuidMeta: metav1.UuidMeta{Uuid: s.Id}}
+		st := servicev1.HttpReq_ServiceUpdate_Step_ClientSide{
+			UuidMeta: metav1.UuidMeta{Uuid: s.Id},
+			Started:  newist.Time(s.StartTime),
+			Ended:    newist.Time(s.EndTime),
+		}
 
 		switch s.Status {
 		case service.StepStatusPreparing, service.StepStatusProcessing:
@@ -62,6 +66,7 @@ func ServiceClientToServer(client *ServiceChecked) *servicev1.HttpReq_ServiceUpd
 		case service.StepStatusFail:
 			st.Status = newist.Int32(int32(servicev1.StatusFail))
 		}
+
 		server.Steps = append(server.Steps, st)
 	}
 

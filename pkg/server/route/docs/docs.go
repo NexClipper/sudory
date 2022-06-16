@@ -3176,6 +3176,12 @@ var doc = `{
         "v1.HttpReq_ServiceUpdate_Step_ClientSide": {
             "type": "object",
             "properties": {
+                "ended": {
+                    "type": "string"
+                },
+                "started": {
+                    "type": "string"
+                },
                 "status": {
                     "type": "integer"
                 },
