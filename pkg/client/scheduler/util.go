@@ -3,10 +3,11 @@ package scheduler
 import (
 	"github.com/NexClipper/sudory/pkg/client/service"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
+	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 )
 
-func ServiceListServerToClient2(server []servicev1.HttpRspService_ClientSide) map[string]*service.Service {
+func ServiceListServerToClient(server []servicev1.HttpRspService_ClientSide) map[string]*service.Service {
 	client := make(map[string]*service.Service)
 	for _, v := range server {
 		serv := &service.Service{
@@ -15,13 +16,13 @@ func ServiceListServerToClient2(server []servicev1.HttpRspService_ClientSide) ma
 			ClusterId:  v.ClusterUuid,
 			ServerData: v,
 		}
-		for i, s := range v.Steps {
+		for _, s := range v.Steps {
 			rf := ""
 			if s.ResultFilter != nil {
 				rf = *s.ResultFilter
 			}
 			serv.Steps = append(serv.Steps, &service.Step{
-				Id:           i,
+				Id:           s.Uuid,
 				ParentId:     serv.Id,
 				Command:      &service.StepCommand{Method: s.Method, Args: s.Args},
 				ResultFilter: rf,
@@ -33,41 +34,71 @@ func ServiceListServerToClient2(server []servicev1.HttpRspService_ClientSide) ma
 	return client
 }
 
-func ServiceListClientToServer2(client map[string]ServiceChecked) []servicev1.HttpReqService_ClientSide {
-	server := make([]servicev1.HttpReqService_ClientSide, 0, len(client))
-
+func ServiceClientToServer(client *ServiceChecked) *servicev1.HttpReq_ServiceUpdate_ClientSide {
 	if client == nil {
-		return server
+		return nil
 	}
 
+	server := &servicev1.HttpReq_ServiceUpdate_ClientSide{
+		UuidMeta: metav1.UuidMeta{Uuid: client.service.Id},
+	}
+
+	if client.service.Result.Body != "" {
+		server.Result = &client.service.Result.Body
+	}
+	if client.service.Result.Err != nil {
+		err := client.service.Result.Err.Error()
+		server.Result = &err
+	}
+
+	for _, s := range client.service.Steps {
+		st := servicev1.HttpReq_ServiceUpdate_Step_ClientSide{UuidMeta: metav1.UuidMeta{Uuid: s.Id}}
+
+		switch s.Status {
+		case service.StepStatusPreparing, service.StepStatusProcessing:
+			st.Status = newist.Int32(int32(servicev1.StatusProcessing))
+		case service.StepStatusSuccess:
+			st.Status = newist.Int32(int32(servicev1.StatusSuccess))
+		case service.StepStatusFail:
+			st.Status = newist.Int32(int32(servicev1.StatusFail))
+		}
+		server.Steps = append(server.Steps, st)
+	}
+
+	return server
+}
+
+func ServiceListClientToServer(client map[string]*ServiceChecked) []*servicev1.HttpReq_ServiceUpdate_ClientSide {
+	if client == nil {
+		return nil
+	}
+
+	server := make([]*servicev1.HttpReq_ServiceUpdate_ClientSide, 0, len(client))
 	for _, v := range client {
-		serv := servicev1.HttpReqService_ClientSide{Service: v.service.ServerData.Service, Steps: v.service.ServerData.Steps}
-		// switch v.service.Status {
-		// case service.ServiceStatusPreparing, service.ServiceStatusStart, service.ServiceStatusProcessing:
-		// 	serv.Service.Status = newist.Int32(int32(servicev1.StatusProcessing))
-		// case service.ServiceStatusSuccess:
-		// 	serv.Service.Status = newist.Int32(int32(servicev1.StatusSuccess))
-		// case service.ServiceStatusFailed:
-		// 	serv.Service.Status = newist.Int32(int32(servicev1.StatusFail))
-		// }
+		serv := &servicev1.HttpReq_ServiceUpdate_ClientSide{
+			UuidMeta: metav1.UuidMeta{Uuid: v.service.Id},
+		}
 
 		if v.service.Result.Body != "" {
-			serv.Service.Result = newist.Cryptov1String(v.service.Result.Body)
+			serv.Result = &v.service.Result.Body
 		}
 		if v.service.Result.Err != nil {
-			serv.Service.Result = newist.Cryptov1String(v.service.Result.Err.Error())
+			err := v.service.Result.Err.Error()
+			serv.Result = &err
 		}
 
-		for i, s := range v.service.Steps {
-			serv.Steps[i].Status = newist.Int32(int32(s.Status))
+		for _, s := range v.service.Steps {
+			st := servicev1.HttpReq_ServiceUpdate_Step_ClientSide{UuidMeta: metav1.UuidMeta{Uuid: s.Id}}
+
 			switch s.Status {
 			case service.StepStatusPreparing, service.StepStatusProcessing:
-				serv.Steps[i].Status = newist.Int32(int32(servicev1.StatusProcessing))
+				st.Status = newist.Int32(int32(servicev1.StatusProcessing))
 			case service.StepStatusSuccess:
-				serv.Steps[i].Status = newist.Int32(int32(servicev1.StatusSuccess))
+				st.Status = newist.Int32(int32(servicev1.StatusSuccess))
 			case service.StepStatusFail:
-				serv.Steps[i].Status = newist.Int32(int32(servicev1.StatusFail))
+				st.Status = newist.Int32(int32(servicev1.StatusFail))
 			}
+			serv.Steps = append(serv.Steps, st)
 		}
 
 		server = append(server, serv)

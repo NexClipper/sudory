@@ -13,23 +13,31 @@ type ServiceCheckedFlag int32
 const (
 	ServiceCheckedFlagCreated ServiceCheckedFlag = iota
 	ServiceCheckedFlagUpdated
-	ServiceCheckedFlagSent
 	ServiceCheckedFlagDone
+	ServiceCheckedFlagFailedToSend
 )
 
 type ServiceChecked struct {
-	flag    ServiceCheckedFlag // 0: created, 1: updated, 2: sent, 3: done
+	flag    ServiceCheckedFlag // 0: created, 1: updated, 2: done, 3: failed_to_send
 	service service.Service
 }
 
+func (sc *ServiceChecked) GetServiceId() string {
+	return sc.service.Id
+}
+
 type Scheduler struct {
-	services   map[string]*ServiceChecked
-	updateChan chan service.Service // this channel receives service's status
-	lock       sync.RWMutex
+	services         map[string]*ServiceChecked
+	updateChan       chan service.Service // this channel receives service's status
+	notifyUpdateChan chan *ServiceChecked
+	lock             sync.RWMutex
 }
 
 func NewScheduler() *Scheduler {
-	return &Scheduler{services: make(map[string]*ServiceChecked), updateChan: make(chan service.Service)}
+	return &Scheduler{
+		services:         make(map[string]*ServiceChecked),
+		updateChan:       make(chan service.Service),
+		notifyUpdateChan: make(chan *ServiceChecked)}
 }
 
 func (s *Scheduler) Start() error {
@@ -77,68 +85,74 @@ func (s *Scheduler) RecvNotifyServiceStatus() {
 	// If you want to stop. close(s.ch).
 	for serv := range s.updateChan {
 		s.lock.Lock()
-		s.services[serv.Id].service = serv
+		sc, ok := s.services[serv.Id]
+		if !ok {
+			s.lock.Unlock()
+			continue
+		}
+
+		sc.service = serv
 		if serv.Status == service.ServiceStatusSuccess || serv.Status == service.ServiceStatusFailed {
-			s.services[serv.Id].flag = ServiceCheckedFlagDone
+			sc.flag = ServiceCheckedFlagDone
 		} else {
-			s.services[serv.Id].flag = ServiceCheckedFlagUpdated
+			sc.flag = ServiceCheckedFlagUpdated
 		}
 		s.lock.Unlock()
+		s.notifyUpdateChan <- sc
 	}
 }
 
-// get services with updated status
-func (s *Scheduler) GetServicesWithUpdatedDoneFlag() map[string]ServiceChecked {
+func (s *Scheduler) NotifyServiceUpdate() <-chan *ServiceChecked {
+	return s.notifyUpdateChan
+}
+
+// get services with failed to send
+func (s *Scheduler) GetServicesWithFailedToSendFlag() []*ServiceChecked {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if len(s.services) <= 0 {
+	if len(s.services) == 0 {
 		return nil
 	}
 
-	res := make(map[string]ServiceChecked)
-	for id, serv := range s.services {
-		if serv.flag == ServiceCheckedFlagUpdated {
-			res[id] = ServiceChecked{flag: serv.flag, service: serv.service}
-			serv.flag = ServiceCheckedFlagSent
-		} else if serv.flag == ServiceCheckedFlagDone {
-			res[id] = ServiceChecked{flag: serv.flag, service: serv.service}
+	var res []*ServiceChecked
+	for _, serv := range s.services {
+		if serv.flag == ServiceCheckedFlagFailedToSend {
+			res = append(res, serv)
 		}
 	}
 
 	return res
 }
 
-func (s *Scheduler) DeleteServicesWithDoneFlag(services map[string]ServiceChecked) {
+func (s *Scheduler) DeleteServiceWithFlag(id string, flag ServiceCheckedFlag) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if len(s.services) <= 0 {
+	if id == "" {
 		return
 	}
 
-	for id, v := range services {
-		if v.flag == ServiceCheckedFlagDone {
-			delete(s.services, id)
-		}
+	sc, ok := s.services[id]
+	if !ok {
+		return
+	}
+
+	if sc.flag == flag {
+		delete(s.services, sc.service.Id)
 	}
 }
 
-func (s *Scheduler) RollbackServicesWithDoneUpdatedFlag(services map[string]ServiceChecked) {
+func (s *Scheduler) ChangeServiceFlagFailedToSend(sc *ServiceChecked) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if len(s.services) <= 0 {
+	if sc == nil {
 		return
 	}
 
-	for id, v := range services {
-		if v.flag == ServiceCheckedFlagDone {
-			s.services[id].flag = v.flag
-		} else if v.flag == ServiceCheckedFlagUpdated {
-			if s.services[id].flag == ServiceCheckedFlagSent {
-				s.services[id].flag = v.flag
-			}
-		}
+	if sc.flag == ServiceCheckedFlagDone {
+		sc.flag = ServiceCheckedFlagFailedToSend
+		s.services[sc.service.Id] = sc
 	}
 }
