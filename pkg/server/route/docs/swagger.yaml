@@ -126,25 +126,6 @@ definitions:
   v1.Hashset:
     additionalProperties: true
     type: object
-  v1.HttpReq_ServiceUpdate_ClientSide:
-    properties:
-      result:
-        description: 실행 결과(정상:'결과', 오류:'오류 메시지')
-        type: string
-      steps:
-        items:
-          $ref: '#/definitions/v1.HttpReq_ServiceUpdate_Step_ClientSide'
-        type: array
-      uuid:
-        type: string
-    type: object
-  v1.HttpReq_ServiceUpdate_Step_ClientSide:
-    properties:
-      status:
-        type: integer
-      uuid:
-        type: string
-    type: object
   v1.HttpReqAuth:
     properties:
       assertion:
@@ -200,6 +181,48 @@ definitions:
   v1.HttpReqGlobalVariant_Update:
     properties:
       value:
+        type: string
+    type: object
+  v1.HttpReqService_ClientSide:
+    properties:
+      assigned_client_uuid:
+        type: string
+      cluster_uuid:
+        type: string
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      on_completion:
+        description: 서비스 완료 후
+        type: integer
+      result:
+        description: 실행 결과(정상:'결과', 오류:'오류 메시지')
+        type: string
+      status:
+        type: integer
+      step_count:
+        type: integer
+      step_position:
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/v1.ServiceStep'
+        type: array
+      subscribed_channel:
+        description: 서비스 POLL 결과 전달 이벤트 채널 이름
+        type: string
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      updated:
+        type: string
+      uuid:
         type: string
     type: object
   v1.HttpReqService_Create:
@@ -785,11 +808,11 @@ paths:
     post:
       consumes:
       - application/json
-      description: auth client
+      description: Auth a client
       parameters:
       - description: HttpReqAuth
         in: body
-        name: body
+        name: auth
         required: true
         schema:
           $ref: '#/definitions/v1.HttpReqAuth'
@@ -800,22 +823,31 @@ paths:
           description: OK
           headers:
             x-sudory-client-token:
+              description: x-sudory-client-token
               type: string
           schema:
             type: string
       tags:
       - client/auth
   /client/service:
-    get:
+    put:
       consumes:
       - application/json
-      description: get []Service
+      description: Poll a Service
       parameters:
       - description: client session token
         in: header
         name: x-sudory-client-token
         required: true
         type: string
+      - description: HttpReqService_ClientSide
+        in: body
+        name: service
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/v1.HttpReqService_ClientSide'
+          type: array
       produces:
       - application/json
       responses:
@@ -823,37 +855,12 @@ paths:
           description: OK
           headers:
             x-sudory-client-token:
+              description: x-sudory-client-token
               type: string
           schema:
             items:
               $ref: '#/definitions/v1.HttpRspService_ClientSide'
             type: array
-      tags:
-      - client/service
-    put:
-      consumes:
-      - application/json
-      description: update a service
-      parameters:
-      - description: client session token
-        in: header
-        name: x-sudory-client-token
-        required: true
-        type: string
-      - description: HttpReq_ServiceUpdate_ClientSide
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/v1.HttpReq_ServiceUpdate_ClientSide'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-          headers:
-            x-sudory-client-token:
-              type: string
       tags:
       - client/service
   /server/channel:

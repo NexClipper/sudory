@@ -57,7 +57,7 @@ type Result struct {
 }
 
 type Step struct {
-	Id           string
+	Id           int
 	ParentId     string
 	Command      *StepCommand
 	StartTime    time.Time
