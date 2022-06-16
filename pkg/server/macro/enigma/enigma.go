@@ -5,12 +5,12 @@ import (
 )
 
 var (
-	Machines map[string]Cipher
+	_CipherSet map[string]Cipher
 )
 
 func init() {
-	if Machines == nil {
-		Machines = make(map[string]Cipher)
+	if _CipherSet == nil {
+		_CipherSet = make(map[string]Cipher)
 	}
 }
 
@@ -20,12 +20,12 @@ func LoadConfig(cfg Config) error {
 		if err != nil {
 			return errors.Wrapf(err, "new machine")
 		}
-		Machines[k] = machine
+		_CipherSet[k] = machine
 	}
 
 	return nil
 }
 
-func GetMachine(k string) Cipher {
-	return Machines[k]
+func CipherSet(k string) Cipher {
+	return _CipherSet[k]
 }

@@ -402,8 +402,8 @@ func (ctl ControlVanilla) GetService(ctx echo.Context) (err error) {
 	rst := servicev2.HttpRsp_Service{}
 
 	var servcie servicev2.Service_tangled
-	stmt := vanilla.Stmt.Select(servcie.TableName(), servcie.ColumnNames(), eq_uuid, nil, nil)
-	err = stmt.QueryRow(ctl.DB())(func(s vanilla.Scanner) (err error) {
+	err = vanilla.Stmt.Select(servcie.TableName(), servcie.ColumnNames(), eq_uuid, nil, nil).
+		QueryRow(ctl.DB())(func(s vanilla.Scanner) (err error) {
 		err = servcie.Scan(s)
 		if err == nil {
 			rst.Service_tangled = servcie

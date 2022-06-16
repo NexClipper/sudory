@@ -19,6 +19,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/enigma"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	channelv1 "github.com/NexClipper/sudory/pkg/server/model/channel/v1"
+	dctv1 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/NexClipper/sudory/pkg/server/route"
@@ -424,6 +425,7 @@ func newEnigma(configFilename string) error {
 				"filename", configFilename,
 			))
 	}
+
 	if err := enigma.LoadConfig(config); err != nil {
 		b, _ := ioutil.ReadFile(configFilename)
 
@@ -434,16 +436,29 @@ func newEnigma(configFilename string) error {
 			))
 	}
 
+	if len(config.CryptoAlgorithmSet) == 0 {
+		return errors.New("'enigma cripto alg set' is empty")
+	}
+
+	for _, k := range dctv1.CiperKeyNames() {
+		if _, ok := config.CryptoAlgorithmSet[k]; !ok {
+			return errors.Errorf("not found enigma machine name%s",
+				logs.KVL(
+					"key", k,
+				))
+		}
+	}
+
 	enigma.PrintConfig(os.Stdout, config)
 
 	for key := range config.CryptoAlgorithmSet {
 		const quickbrownfox = `the quick brown fox jumps over the lazy dog`
-		encripted, err := enigma.GetMachine(key).Encode([]byte(quickbrownfox))
+		encripted, err := enigma.CipherSet(key).Encode([]byte(quickbrownfox))
 		if err != nil {
 			return errors.Wrapf(err, "enigma test: encode %v",
 				logs.KVL("config-name", key))
 		}
-		plain, err := enigma.GetMachine(key).Decode(encripted)
+		plain, err := enigma.CipherSet(key).Decode(encripted)
 		if err != nil {
 			return errors.Wrapf(err, "enigma test: decode %v",
 				logs.KVL("config-name", key))
