@@ -49,7 +49,6 @@ func (f *Fetcher) HandShake() error {
 
 func (f *Fetcher) RetryHandshake() {
 	maxRetryCnt := 5
-	// retry := 0
 
 	ticker := time.NewTicker(time.Second * time.Duration(f.pollingInterval))
 	defer ticker.Stop()
@@ -59,7 +58,6 @@ func (f *Fetcher) RetryHandshake() {
 		if err := f.HandShake(); err != nil {
 			log.Warnf("Failed to Handshake Retry : count(%d), error(%v)\n", retry, err)
 		} else {
-			f.ticker.Reset(time.Second * time.Duration(f.pollingInterval))
 			return
 		}
 		retry++

@@ -1,7 +1,8 @@
 package httpclient
 
 import (
-	"io/ioutil"
+	"bytes"
+	"io"
 	"net/http"
 	urlPkg "net/url"
 	"time"
@@ -87,12 +88,10 @@ func (hc *HttpClient) Request(method, path string, params map[string]string, bod
 		hc.token = recvToken
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
+	var result bytes.Buffer
+	io.Copy(&result, resp.Body)
 
-	return body, nil
+	return result.Bytes(), nil
 }
 
 func (c *HttpClient) Get(path string, params map[string]string) ([]byte, error) {
