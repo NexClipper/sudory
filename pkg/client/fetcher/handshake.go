@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"time"
@@ -25,7 +26,10 @@ func (f *Fetcher) HandShake() error {
 		return err
 	}
 
-	_, err = f.client.PostJson("/client/auth", nil, b)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	_, err = f.client.PostJson(ctx, "/client/auth", nil, b)
 	if err != nil {
 		return err
 	}
