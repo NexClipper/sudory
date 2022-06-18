@@ -3,53 +3,57 @@ package p8s
 import (
 	"context"
 	"encoding/json"
-
-	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"fmt"
 )
 
 func (c *Client) Targets() (string, error) {
-	v1api := v1.NewAPI(c.client)
-	ctx, cancel := context.WithTimeout(context.TODO(), defaultQueryTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	data, err := v1api.Targets(ctx)
+	body, err := c.client.Get(ctx, "/api/v1/targets", nil)
 	if err != nil {
 		return "", err
 	}
 
-	b, err := json.Marshal(data)
-	if err != nil {
+	var apiresp apiResponse
+	if err := json.Unmarshal(body, &apiresp); err != nil {
 		return "", err
 	}
 
-	return string(b), nil
+	if apiresp.Status != "success" {
+		return "", fmt.Errorf(apiresp.Error)
+	}
+
+	return string(apiresp.Data), nil
 }
 
 func (c *Client) TargetsMetadata(params map[string]interface{}) (string, error) {
-	type targetsMetadataParams struct {
-		MatchTarget string `json:"match_target,omitempty"`
-		Metric      string `json:"metric,omitempty"`
-		Limit       string `json:"limit,omitempty"`
+	m := make(map[string]string)
+
+	for k, v := range params {
+		str, ok := v.(string)
+		if !ok {
+			return "", fmt.Errorf("params['%s']'s type must be string, not %T", k, v)
+		}
+		m[k] = str
 	}
 
-	tmParams := &targetsMetadataParams{}
-	if err := mapToStruct(params, tmParams); err != nil {
-		return "", err
-	}
-
-	v1api := v1.NewAPI(c.client)
-	ctx, cancel := context.WithTimeout(context.TODO(), defaultQueryTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	data, err := v1api.TargetsMetadata(ctx, tmParams.MatchTarget, tmParams.Metric, tmParams.Limit)
+	body, err := c.client.Get(ctx, "/api/v1/targets/metadata", m)
 	if err != nil {
 		return "", err
 	}
 
-	b, err := json.Marshal(data)
-	if err != nil {
+	var apiresp apiResponse
+	if err := json.Unmarshal(body, &apiresp); err != nil {
 		return "", err
 	}
 
-	return string(b), nil
+	if apiresp.Status != "success" {
+		return "", fmt.Errorf(apiresp.Error)
+	}
+
+	return string(apiresp.Data), nil
 }

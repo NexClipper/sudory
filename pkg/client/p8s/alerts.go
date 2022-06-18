@@ -3,24 +3,26 @@ package p8s
 import (
 	"context"
 	"encoding/json"
-
-	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"fmt"
 )
 
 func (c *Client) Alerts() (string, error) {
-	v1api := v1.NewAPI(c.client)
-	ctx, cancel := context.WithTimeout(context.TODO(), defaultQueryTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	data, err := v1api.Alerts(ctx)
+	body, err := c.client.Get(ctx, "/api/v1/alerts", nil)
 	if err != nil {
 		return "", err
 	}
 
-	b, err := json.Marshal(data)
-	if err != nil {
+	var apiresp apiResponse
+	if err := json.Unmarshal(body, &apiresp); err != nil {
 		return "", err
 	}
 
-	return string(b), nil
+	if apiresp.Status != "success" {
+		return "", fmt.Errorf(apiresp.Error)
+	}
+
+	return string(apiresp.Data), nil
 }

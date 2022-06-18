@@ -45,7 +45,7 @@ func NewFetcher(bearerToken, server, clusterId string) (*Fetcher, error) {
 		bearerToken:     bearerToken,
 		machineID:       id,
 		clusterId:       clusterId,
-		client:          httpclient.NewHttpClient(server, "", 1, 5000), // 1 retry, 5s wait
+		client:          httpclient.NewHttpClient(server, "", 0, 0),
 		pollingInterval: defaultPollingInterval,
 		done:            make(chan struct{})}, nil
 }
@@ -87,8 +87,11 @@ func (f *Fetcher) Polling(ctx context.Context) error {
 }
 
 func (f *Fetcher) poll() {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
 	// get services from server
-	body, err := f.client.Get("/client/service", nil)
+	body, err := f.client.Get(ctx, "/client/service", nil)
 	if err != nil {
 		log.Errorf(err.Error())
 
@@ -146,16 +149,17 @@ func (f *Fetcher) poll() {
 
 			wgg.Add(1)
 
-			go func(sendData *ReqUpdateService, jsonb []byte) {
+			go func(jsonb []byte) {
 				defer wgg.Done()
-				if _, err := f.client.PutJson("/client/service", nil, jsonb); err != nil {
+
+				if _, err := f.client.PutJson(context.Background(), "/client/service", nil, jsonb); err != nil {
 					log.Errorf(err.Error())
 
 					if f.client.IsTokenExpired() {
 						f.RetryHandshake()
 					}
 				}
-			}(sendData, jsonb)
+			}(jsonb)
 		}
 		wgg.Wait()
 		done <- struct{}{}
