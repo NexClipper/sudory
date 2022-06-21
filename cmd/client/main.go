@@ -12,6 +12,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/k8s"
 	"github.com/NexClipper/sudory/pkg/client/log"
+	"github.com/NexClipper/sudory/pkg/client/scheduler"
 	"github.com/NexClipper/sudory/pkg/version"
 )
 
@@ -64,7 +65,10 @@ func main() {
 	}
 	log.Debugf("Successed to check K8s's api-server status.\n")
 
-	fetcher, err := fetcher.NewFetcher(*token, *server, *clusterid)
+	scheduler := scheduler.NewScheduler()
+	scheduler.Start()
+
+	fetcher, err := fetcher.NewFetcher(*token, *server, *clusterid, scheduler)
 	if err != nil {
 		log.Fatalf("Failed to create poller : %v.\n", err)
 	}

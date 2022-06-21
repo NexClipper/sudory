@@ -62,6 +62,7 @@ func (f *Fetcher) RetryHandshake() {
 		if err := f.HandShake(); err != nil {
 			log.Warnf("Failed to Handshake Retry : count(%d), error(%v)\n", retry, err)
 		} else {
+			f.ticker.Reset(time.Second * time.Duration(f.pollingInterval))
 			return
 		}
 		retry++

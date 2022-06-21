@@ -5,15 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/panta/machineid"
 
-	"github.com/NexClipper/sudory/pkg/client/executor"
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/log"
+	"github.com/NexClipper/sudory/pkg/client/scheduler"
 	"github.com/NexClipper/sudory/pkg/client/service"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
@@ -29,12 +28,14 @@ type Fetcher struct {
 	machineID       string
 	clusterId       string
 	client          *httpclient.HttpClient
+	ticker          *time.Ticker
 	pollingInterval int
+	scheduler       *scheduler.Scheduler
 	done            chan struct{}
 }
 
 // func NewFetcher(bearerToken, server, clusterId string, sch *scheduler.Scheduler) (*Fetcher, error) {
-func NewFetcher(bearerToken, server, clusterId string) (*Fetcher, error) {
+func NewFetcher(bearerToken, server, clusterId string, scheduler *scheduler.Scheduler) (*Fetcher, error) {
 	id, err := machineid.ID()
 	if err != nil {
 		return nil, err
@@ -46,7 +47,9 @@ func NewFetcher(bearerToken, server, clusterId string) (*Fetcher, error) {
 		machineID:       id,
 		clusterId:       clusterId,
 		client:          httpclient.NewHttpClient(server, "", 0, 0),
+		ticker:          time.NewTicker(defaultPollingInterval * time.Second),
 		pollingInterval: defaultPollingInterval,
+		scheduler:       scheduler,
 		done:            make(chan struct{})}, nil
 }
 
@@ -59,6 +62,7 @@ func (f *Fetcher) ChangePollingInterval(interval int) (int, error) {
 		return 0, nil
 	}
 	f.pollingInterval = interval
+	f.ticker.Reset(time.Second * time.Duration(interval))
 
 	return interval, nil
 }
@@ -72,14 +76,20 @@ func (f *Fetcher) Cancel() {
 }
 
 func (f *Fetcher) Polling(ctx context.Context) error {
+	if f == nil || f.ticker == nil {
+		return fmt.Errorf("fetcher or fetcher.ticker is not created")
+	}
+
+	go f.UpdateServiceProcess()
+
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			default:
+			case <-f.ticker.C:
+				f.poll()
 			}
-			f.poll()
 		}
 	}()
 
@@ -97,6 +107,7 @@ func (f *Fetcher) poll() {
 
 		// if session token is expired, retry handshake
 		if f.client.IsTokenExpired() {
+			f.ticker.Stop()
 			f.RetryHandshake()
 		}
 
@@ -120,54 +131,10 @@ func (f *Fetcher) poll() {
 	}
 
 	// respData -> services
-	recvServices := ConvertServiceListServerToClient(respData)
+	recvServices := service.ConvertServiceListServerToClient(respData)
 
-	updateChan := make(chan service.Service)
-	wg := &sync.WaitGroup{}
-	for _, serv := range recvServices {
-		se := executor.NewServiceExecutor(*serv, updateChan)
-
-		wg.Add(1)
-		go func(e *executor.ServiceExecutor) {
-			defer wg.Done()
-			e.Execute()
-		}(se)
-	}
-
-	done := make(chan struct{})
-	go func() {
-		wgg := &sync.WaitGroup{}
-
-		for serv := range updateChan {
-			sendData := ConvertServiceClientToServer(&serv)
-
-			jsonb, err := json.Marshal(sendData)
-			if err != nil {
-				log.Errorf(err.Error())
-				continue
-			}
-
-			wgg.Add(1)
-
-			go func(jsonb []byte) {
-				defer wgg.Done()
-
-				if _, err := f.client.PutJson(context.Background(), "/client/service", nil, jsonb); err != nil {
-					log.Errorf(err.Error())
-
-					if f.client.IsTokenExpired() {
-						f.RetryHandshake()
-					}
-				}
-			}(jsonb)
-		}
-		wgg.Wait()
-		done <- struct{}{}
-	}()
-
-	wg.Wait()
-	close(updateChan)
-	<-done
+	// Register new services.
+	f.scheduler.RegisterServices(recvServices)
 }
 
 func (f *Fetcher) ChangeClientConfigFromToken() {
@@ -190,5 +157,21 @@ func (f *Fetcher) ChangeClientConfigFromToken() {
 		if err := log.GetLogger().SetLevel(claims.Loglevel); err == nil {
 			log.Debugf("Changed logger level to %s\n", claims.Loglevel)
 		}
+	}
+}
+
+func (f *Fetcher) UpdateServiceProcess() {
+	for reqServ := range f.scheduler.NotifyServiceUpdate() {
+		jsonb, err := json.Marshal(reqServ)
+		if err != nil {
+			log.Errorf(err.Error())
+			continue
+		}
+
+		go func() {
+			if _, err := f.client.PutJson(context.Background(), "/client/service", nil, jsonb); err != nil {
+				log.Errorf(err.Error())
+			}
+		}()
 	}
 }

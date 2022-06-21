@@ -27,7 +27,6 @@ type Service struct {
 	Id         string
 	Name       string
 	ClusterId  string
-	ExecType   ServiceExecType
 	StartTime  time.Time
 	UpdateTime time.Time
 	EndTime    time.Time
@@ -65,4 +64,79 @@ type Step struct {
 	Status       StepStatus
 	ResultFilter string
 	Result       Result
+}
+
+type ReqUpdateService struct {
+	Uuid   string                   `json:"uuid"`
+	Result string                   `json:"result,omitempty"`
+	Steps  []*ReqUpdateService_Step `json:"steps,omitempty"`
+}
+
+type ReqUpdateService_Step struct {
+	Uuid    string    `json:"uuid"`
+	Status  int32     `json:"status,omitempty"`
+	Started time.Time `json:"started,omitempty"`
+	Ended   time.Time `json:"ended,omitempty"`
+}
+
+func ConvertServiceListServerToClient(server []servicev1.HttpRspService_ClientSide) map[string]*Service {
+	client := make(map[string]*Service)
+	for _, v := range server {
+		serv := &Service{
+			Id:         v.Uuid,
+			Name:       v.Name,
+			ClusterId:  v.ClusterUuid,
+			ServerData: v,
+		}
+		for _, s := range v.Steps {
+			rf := ""
+			if s.ResultFilter != nil {
+				rf = *s.ResultFilter
+			}
+			serv.Steps = append(serv.Steps, Step{
+				Id:           s.Uuid,
+				ParentId:     serv.Id,
+				Command:      &StepCommand{Method: s.Method, Args: s.Args},
+				ResultFilter: rf,
+			})
+		}
+		client[v.Uuid] = serv
+	}
+
+	return client
+}
+
+func ConvertServiceClientToServer(client Service) *ReqUpdateService {
+	server := &ReqUpdateService{
+		Uuid: client.Id,
+	}
+
+	if client.Result.Body != "" {
+		server.Result = client.Result.Body
+	}
+	if client.Result.Err != nil {
+		err := client.Result.Err.Error()
+		server.Result = err
+	}
+
+	for _, s := range client.Steps {
+		st := &ReqUpdateService_Step{
+			Uuid:    s.Id,
+			Started: s.StartTime,
+			Ended:   s.EndTime,
+		}
+
+		switch s.Status {
+		case StepStatusPreparing, StepStatusProcessing:
+			st.Status = int32(servicev1.StatusProcessing)
+		case StepStatusSuccess:
+			st.Status = int32(servicev1.StatusSuccess)
+		case StepStatusFail:
+			st.Status = int32(servicev1.StatusFail)
+		}
+
+		server.Steps = append(server.Steps, st)
+	}
+
+	return server
 }
