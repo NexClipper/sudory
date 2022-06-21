@@ -161,7 +161,8 @@ func (f *Fetcher) ChangeClientConfigFromToken() {
 }
 
 func (f *Fetcher) UpdateServiceProcess() {
-	for reqServ := range f.scheduler.NotifyServiceUpdate() {
+	for update := range f.scheduler.NotifyServiceUpdate() {
+		reqServ := service.ConvertServiceStepUpdateClientToServer(update)
 		jsonb, err := json.Marshal(reqServ)
 		if err != nil {
 			log.Errorf(err.Error())

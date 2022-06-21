@@ -14,18 +14,16 @@ type Scheduler struct {
 	servicesStatusMap map[string]service.ServiceStatus
 	lock              sync.RWMutex
 	maxProcessLimit   int
-	updateChan        chan service.Service // this channel receives service's status
-	// notifyUpdateChan  chan service.Service
-	notifyUpdateChan chan service.ReqUpdateService
+	updateChan        chan service.UpdateServiceStep // this channel receives service's status
+	notifyUpdateChan  chan service.UpdateServiceStep
 }
 
 func NewScheduler() *Scheduler {
 	return &Scheduler{
 		servicesStatusMap: make(map[string]service.ServiceStatus),
 		maxProcessLimit:   defaultMaxProcessLimit,
-		updateChan:        make(chan service.Service),
-		// notifyUpdateChan:  make(chan service.Service)}
-		notifyUpdateChan: make(chan service.ReqUpdateService)}
+		updateChan:        make(chan service.UpdateServiceStep),
+		notifyUpdateChan:  make(chan service.UpdateServiceStep)}
 }
 
 func (s *Scheduler) Start() error {
@@ -58,10 +56,10 @@ func (s *Scheduler) RegisterServices(services map[string]*service.Service) {
 
 	// 3. maxProcessLimit - len(statusMap) is number starting now
 	remain := s.maxProcessLimit - len(s.servicesStatusMap)
-	s.lock.Unlock()
 
 	for _, serv := range startingList {
 		if remain > 0 {
+			s.servicesStatusMap[serv.Id] = service.ServiceStatusPreparing
 			// create and execute(goroutine) service.
 			go s.ExecuteService(serv)
 			remain--
@@ -69,6 +67,7 @@ func (s *Scheduler) RegisterServices(services map[string]*service.Service) {
 			break
 		}
 	}
+	s.lock.Unlock()
 }
 
 func (s *Scheduler) ExecuteService(serv *service.Service) error {
@@ -80,20 +79,22 @@ func (s *Scheduler) ExecuteService(serv *service.Service) error {
 
 func (s *Scheduler) RecvNotifyServiceStatus() {
 	// If you want to stop. close(s.ch).
-	for serv := range s.updateChan {
-		send := service.ConvertServiceClientToServer(serv)
+	for update := range s.updateChan {
+		serviceStatus := service.ServiceStatusProcessing
+		if update.StepCount == update.Sequence+1 {
+			if update.Status == service.StepStatusSuccess {
+				serviceStatus = service.ServiceStatusSuccess
+			} else if update.Status == service.StepStatusFail {
+				serviceStatus = service.ServiceStatusFailed
+			}
+		}
 		s.lock.Lock()
-		s.servicesStatusMap[serv.Id] = serv.Status
+		s.servicesStatusMap[update.Uuid] = service.ServiceStatus(serviceStatus)
 		s.lock.Unlock()
-		// s.notifyUpdateChan <- serv
-		s.notifyUpdateChan <- *send
+		s.notifyUpdateChan <- update
 	}
 }
 
-// func (s *Scheduler2) NotifyServiceUpdate() <-chan service.Service {
-// 	return s.notifyUpdateChan
-// }
-
-func (s *Scheduler) NotifyServiceUpdate() <-chan service.ReqUpdateService {
+func (s *Scheduler) NotifyServiceUpdate() <-chan service.UpdateServiceStep {
 	return s.notifyUpdateChan
 }

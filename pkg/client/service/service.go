@@ -4,6 +4,7 @@ import (
 	"time"
 
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
+	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
 )
 
 type ServiceExecType int32
@@ -66,17 +67,14 @@ type Step struct {
 	Result       Result
 }
 
-type ReqUpdateService struct {
-	Uuid   string                   `json:"uuid"`
-	Result string                   `json:"result,omitempty"`
-	Steps  []*ReqUpdateService_Step `json:"steps,omitempty"`
-}
-
-type ReqUpdateService_Step struct {
-	Uuid    string    `json:"uuid"`
-	Status  int32     `json:"status,omitempty"`
-	Started time.Time `json:"started,omitempty"`
-	Ended   time.Time `json:"ended,omitempty"`
+type UpdateServiceStep struct {
+	Uuid      string
+	StepCount int
+	Sequence  int
+	Status    StepStatus
+	Result    string
+	Started   time.Time
+	Ended     time.Time
 }
 
 func ConvertServiceListServerToClient(server []servicev1.HttpRspService_ClientSide) map[string]*Service {
@@ -106,36 +104,23 @@ func ConvertServiceListServerToClient(server []servicev1.HttpRspService_ClientSi
 	return client
 }
 
-func ConvertServiceClientToServer(client Service) *ReqUpdateService {
-	server := &ReqUpdateService{
-		Uuid: client.Id,
+func ConvertServiceStepUpdateClientToServer(client UpdateServiceStep) *servicev2.HttpReq_ClientServiceUpdate {
+	server := &servicev2.HttpReq_ClientServiceUpdate{
+		Uuid:     client.Uuid,
+		Sequence: client.Sequence,
+		// Status:client.Status,
+		Result:  client.Result,
+		Started: client.Started,
+		Ended:   client.Ended,
 	}
 
-	if client.Result.Body != "" {
-		server.Result = client.Result.Body
-	}
-	if client.Result.Err != nil {
-		err := client.Result.Err.Error()
-		server.Result = err
-	}
-
-	for _, s := range client.Steps {
-		st := &ReqUpdateService_Step{
-			Uuid:    s.Id,
-			Started: s.StartTime,
-			Ended:   s.EndTime,
-		}
-
-		switch s.Status {
-		case StepStatusPreparing, StepStatusProcessing:
-			st.Status = int32(servicev1.StatusProcessing)
-		case StepStatusSuccess:
-			st.Status = int32(servicev1.StatusSuccess)
-		case StepStatusFail:
-			st.Status = int32(servicev1.StatusFail)
-		}
-
-		server.Steps = append(server.Steps, st)
+	switch client.Status {
+	case StepStatusPreparing, StepStatusProcessing:
+		server.Status = servicev2.StepStatusProcessing
+	case StepStatusSuccess:
+		server.Status = servicev2.StepStatusSuccess
+	case StepStatusFail:
+		server.Status = servicev2.StepStatusFail
 	}
 
 	return server
