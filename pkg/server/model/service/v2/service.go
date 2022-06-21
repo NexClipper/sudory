@@ -76,7 +76,7 @@ type Service_tangled struct {
 	ServiceStatus_essential  `json:",inline"` //status
 	ServiceResults_essential `json:",inline"` //result
 
-	Updated time.Time `column:"updated" json:"updated"` //pk
+	Updated noxorm.NullTime `column:"updated" json:"updated"` //pk
 }
 
 /*
@@ -125,10 +125,23 @@ func (record Service_tangled) TableName() string {
 		"A.uuid",
 		"A.created",
 		"B.created AS updated",
+		"name",
+		"summary",
+		"cluster_uuid",
+		"template_uuid",
+		"step_count",
+		"subscribed_channel",
+		"on_completion",
+		fmt.Sprintf("IFNULL(result_type, %v) AS result_type", int(ResultTypeNone)),
+		"result",
+		fmt.Sprintf("IFNULL(assigned_client_uuid, '%v') AS assigned_client_uuid", ""),
+		fmt.Sprintf("IFNULL(step_position, %v) AS step_position", 0),
+		fmt.Sprintf("IFNULL(status, %v) AS status", int(StepStatusRegist)),
+		"message",
 	}
-	columns = append(columns, Service_essential{}.ColumnNames()...)
-	columns = append(columns, ServiceStatus_essential{}.ColumnNames()...)
-	columns = append(columns, ServiceResults_essential{}.ColumnNames()...)
+	// columns = append(columns, Service_essential{}.ColumnNames()...)
+	// columns = append(columns, ServiceStatus_essential{}.ColumnNames()...)
+	// columns = append(columns, ServiceResults_essential{}.ColumnNames()...)
 	A := record.Service.TableName()
 	B := record.ServiceStatus_essential.TableName()
 	C := record.ServiceResults_essential.TableName()

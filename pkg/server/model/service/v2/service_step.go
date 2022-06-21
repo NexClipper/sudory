@@ -58,7 +58,7 @@ type ServiceStep_tangled struct {
 	ServiceStep                 `json:",inline"` //step
 	ServiceStepStatus_essential `json:",inline"` //status
 
-	Updated time.Time `column:"updated" json:"updated,omitempty"` //pk
+	Updated noxorm.NullTime `column:"updated" json:"updated,omitempty"` //pk
 }
 
 /* *
@@ -98,9 +98,17 @@ func (record ServiceStep_tangled) TableName() string {
 		"A.sequence",
 		"A.created",
 		"B.created AS updated",
+		"name",
+		"summary",
+		"method",
+		"args",
+		"result_filter",
+		fmt.Sprintf("IFNULL(status, %v) AS status", int(StepStatusRegist)),
+		"started",
+		"ended",
 	}
-	columns = append(columns, ServiceStep_essential{}.ColumnNames()...)
-	columns = append(columns, ServiceStepStatus_essential{}.ColumnNames()...)
+	// columns = append(columns, ServiceStep_essential{}.ColumnNames()...)
+	// columns = append(columns, ServiceStepStatus_essential{}.ColumnNames()...)
 	A := record.ServiceStep.TableName()
 	B := record.ServiceStepStatus_essential.TableName()
 	return fmt.Sprintf(q, strings.Join(columns, ", "), A, B, B)

@@ -103,6 +103,10 @@ func (nt *NullTime) Scan(value interface{}) error {
 	return nil
 }
 
+func (nt NullTime) Value() (driver.Value, error) {
+	return time.Time(nt), nil
+}
+
 func (nt NullTime) MarshalJSON() ([]byte, error) {
 	t := (time.Time)(nt)
 	// if t.IsZero() {

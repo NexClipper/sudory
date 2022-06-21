@@ -65,17 +65,20 @@ func ParseOnCompletion(name string) (OnCompletion, error) {
 }
 
 const (
+	// ResultTypeNone is a ResultType of type None.
+	ResultTypeNone ResultType = iota
 	// ResultTypeDatabase is a ResultType of type Database.
-	ResultTypeDatabase ResultType = iota
+	ResultTypeDatabase
 	// ResultTypeDigitalOceanSpaces is a ResultType of type DigitalOcean:Spaces.
 	ResultTypeDigitalOceanSpaces
 )
 
-const _ResultTypeName = "databaseDigitalOcean:Spaces"
+const _ResultTypeName = "nonedatabaseDigitalOcean:Spaces"
 
 var _ResultTypeNames = []string{
-	_ResultTypeName[0:8],
-	_ResultTypeName[8:27],
+	_ResultTypeName[0:4],
+	_ResultTypeName[4:12],
+	_ResultTypeName[12:31],
 }
 
 // ResultTypeNames returns a list of possible string values of ResultType.
@@ -86,8 +89,9 @@ func ResultTypeNames() []string {
 }
 
 var _ResultTypeMap = map[ResultType]string{
-	ResultTypeDatabase:           _ResultTypeName[0:8],
-	ResultTypeDigitalOceanSpaces: _ResultTypeName[8:27],
+	ResultTypeNone:               _ResultTypeName[0:4],
+	ResultTypeDatabase:           _ResultTypeName[4:12],
+	ResultTypeDigitalOceanSpaces: _ResultTypeName[12:31],
 }
 
 // String implements the Stringer interface.
@@ -99,10 +103,12 @@ func (x ResultType) String() string {
 }
 
 var _ResultTypeValue = map[string]ResultType{
-	_ResultTypeName[0:8]:                   ResultTypeDatabase,
-	strings.ToLower(_ResultTypeName[0:8]):  ResultTypeDatabase,
-	_ResultTypeName[8:27]:                  ResultTypeDigitalOceanSpaces,
-	strings.ToLower(_ResultTypeName[8:27]): ResultTypeDigitalOceanSpaces,
+	_ResultTypeName[0:4]:                    ResultTypeNone,
+	strings.ToLower(_ResultTypeName[0:4]):   ResultTypeNone,
+	_ResultTypeName[4:12]:                   ResultTypeDatabase,
+	strings.ToLower(_ResultTypeName[4:12]):  ResultTypeDatabase,
+	_ResultTypeName[12:31]:                  ResultTypeDigitalOceanSpaces,
+	strings.ToLower(_ResultTypeName[12:31]): ResultTypeDigitalOceanSpaces,
 }
 
 // ParseResultType attempts to convert a string to a ResultType.

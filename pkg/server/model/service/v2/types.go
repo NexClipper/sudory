@@ -9,6 +9,7 @@ package v2
 type OnCompletion int8
 
 /* ENUM(
+	none
 	database
 	DigitalOcean:Spaces
 )

@@ -1,10 +1,12 @@
 package v2
 
 import (
+	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
+	"reflect"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/enigma"
-	v2 "github.com/NexClipper/sudory/pkg/server/model/noxorm/v2"
 	"github.com/pkg/errors"
 )
 
@@ -25,55 +27,77 @@ func EnigmaDecode(bytes []byte) (out []byte, err error) {
 }
 
 // CryptoString
-type CryptoString v2.NullString
+type CryptoString string
 
 func (cs CryptoString) String() string {
 	return (string)(cs)
 }
 
-func (field *CryptoString) FromDB(bytes []byte) (err error) {
-	if bytes, err = EnigmaDecode(bytes); err != nil {
-		return errors.Wrapf(err, "default crypto string: decode")
+func (cs *CryptoString) Scan(value interface{}) error {
+
+	var i sql.NullString
+	if err := i.Scan(value); err != nil {
+		return err
 	}
 
-	*field = CryptoString(bytes)
-
-	return
+	// if nil the make Valid false
+	if reflect.TypeOf(value) == nil {
+		*cs = (CryptoString)(i.String)
+	} else {
+		bytes, err := EnigmaDecode([]byte(i.String))
+		if err != nil {
+			return errors.Wrapf(err, "default crypto string: decode")
+		}
+		*cs = CryptoString(bytes)
+	}
+	return nil
 }
-func (field CryptoString) ToDB() (out []byte, err error) {
-	if out, err = EnigmaEncode([]byte(field)); err != nil {
-		return out, errors.Wrapf(err, "default crypto string: encode")
+func (cs CryptoString) Value() (driver.Value, error) {
+	out, err := EnigmaEncode([]byte(cs))
+	if err != nil {
+		return string(out), errors.Wrapf(err, "default crypto string: encode")
 	}
 
-	return
+	return string(out), nil
 }
 
 // CryptoJson
-type CryptoJson v2.NullJson
+type CryptoJson map[string]interface{}
 
 func (cj CryptoJson) Json() map[string]interface{} {
 	return (map[string]interface{})(cj)
 }
 
-func (field *CryptoJson) FromDB(bytes []byte) (err error) {
-	if bytes, err = EnigmaDecode(bytes); err != nil {
-		return errors.Wrapf(err, "default crypto hashset: decode")
-	}
+func (cj *CryptoJson) Scan(value interface{}) error {
 
-	if err = json.Unmarshal(bytes, field); err != nil {
-		return errors.Wrapf(err, "default crypto hashset: json unmarshal")
+	var i sql.NullString
+	if err := i.Scan(value); err != nil {
+		return err
 	}
+	// if nil the make Valid false
+	if reflect.TypeOf(value) == nil {
+		*cj = map[string]interface{}{}
+	} else {
+		bytes, err := EnigmaDecode([]byte(i.String))
+		if err != nil {
+			return errors.Wrapf(err, "default crypto hashset: decode")
+		}
 
-	return
+		if err := json.Unmarshal(bytes, cj); err != nil {
+			return errors.Wrapf(err, "default crypto hashset: json unmarshal")
+		}
+	}
+	return nil
 }
-func (field CryptoJson) ToDB() (out []byte, err error) {
-	if out, err = json.Marshal(field); err != nil {
-		return nil, errors.Wrapf(err, "default crypto hashset: json marshal")
+func (cj CryptoJson) Value() (driver.Value, error) {
+	out, err := json.Marshal(cj)
+	if err != nil {
+		return string(out), errors.Wrapf(err, "default crypto hashset: json marshal")
+	}
+	out, err = EnigmaEncode(out)
+	if err != nil {
+		return string(out), errors.Wrapf(err, "default crypto hashset: encode")
 	}
 
-	if out, err = EnigmaEncode(out); err != nil {
-		return out, errors.Wrapf(err, "default crypto hashset: encode")
-	}
-
-	return
+	return string(out), nil
 }

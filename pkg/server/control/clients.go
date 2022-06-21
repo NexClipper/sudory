@@ -59,24 +59,27 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 	// find services
 	var services []servicev2.HttpRsp_Service = []servicev2.HttpRsp_Service{}
 	Do(&err, func() (err error) {
-		condition := vanilla.NewCond(
-			// 서비스의 polling 조건
-			"WHERE cluster_uuid = ? AND ((status = ? OR status = ? OR status = ?))",
-			cluster.Uuid,
-			servicev2.StepStatusRegist,
-			servicev2.StepStatusSend,
-			servicev2.StepStatusProcessing,
-		)
-		limit := vanilla.NewCond(
-			// limit
-			"LIMIT ?",
-			func() int {
-				if 0 < cluster.PoliingLimit {
-					return cluster.PoliingLimit
-				}
-				return math.MaxUint8 // LIMIT 255
-			}(),
-		)
+		// condition := vanilla.NewCond(
+		// 	// 서비스의 polling 조건
+		// 	"WHERE cluster_uuid = ? AND ((status = ? OR status = ? OR status = ?))",
+		// 	cluster.Uuid,
+		// 	servicev2.StepStatusRegist,
+		// 	servicev2.StepStatusSend,
+		// 	servicev2.StepStatusProcessing,
+		// )
+		// vanilla.NewCond(
+		// 	// limit
+		// 	"LIMIT ?",
+		// 	func() int {
+		// 		if 0 < cluster.PoliingLimit {
+		// 			return cluster.PoliingLimit
+		// 		}
+		// 		return math.MaxUint8 // LIMIT 255
+		// 	}(),
+		// )
+
+		condition := PollingServiceCondition(cluster.Uuid)
+		limit := PollingServiceConditionLimit(cluster.PoliingLimit)
 
 		services, err = find_service(ctl.DB(), *condition, *limit)
 		err = errors.Wrapf(err, "failed to find services")
@@ -143,7 +146,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 							step_status.Status = servicev2.StepStatusSend
 
 							// save status
-							err = vanilla.InsertRow(tx, step.TableName(), step.ColumnNames())(func(e vanilla.Executor) (sql.Result, error) {
+							err = vanilla.InsertRow(tx, step_status.TableName(), step_status.ColumnNames())(func(e vanilla.Executor) (sql.Result, error) {
 								return e.Exec(step_status.Values()...)
 							})
 							err = errors.Wrapf(err, "faild to save service step status%v", logs.KVL(
@@ -742,7 +745,7 @@ func CountClusterServices(tx vanilla.Preparer, cluster_uuid string) (count int, 
 	}
 	condition := PollingServiceCondition(cluster_uuid)
 
-	err = vanilla.QueryRows(tx, service.TableName(), columns, condition...)(func(s vanilla.Scanner) (err error) {
+	err = vanilla.QueryRows(tx, service.TableName(), columns, *condition)(func(s vanilla.Scanner) (err error) {
 		err = s.Scan(&count)
 		err = errors.Wrapf(err, "service Scan")
 		return
@@ -755,7 +758,7 @@ func CountClusterServices(tx vanilla.Preparer, cluster_uuid string) (count int, 
 	return
 }
 
-func PollingServiceCondition(cluster_uuid string) []vanilla.Condition {
+func PollingServiceCondition(cluster_uuid string) *vanilla.Condition {
 	condition := vanilla.NewCond(
 		// 서비스의 polling 조건
 		"WHERE cluster_uuid = ? AND ((status = ? OR status = ? OR status = ?))",
@@ -765,12 +768,10 @@ func PollingServiceCondition(cluster_uuid string) []vanilla.Condition {
 		servicev2.StepStatusProcessing,
 	)
 
-	return []vanilla.Condition{
-		*condition,
-	}
+	return condition
 }
 
-func PollingServiceConditionWithLimit(cluster_uuid string, poliing_limit int) []vanilla.Condition {
+func PollingServiceConditionLimit(poliing_limit int) *vanilla.Condition {
 	limit := vanilla.NewCond(
 		// limit
 		"LIMIT ?",
@@ -782,8 +783,5 @@ func PollingServiceConditionWithLimit(cluster_uuid string, poliing_limit int) []
 		}(),
 	)
 
-	return append(
-		PollingServiceCondition(cluster_uuid),
-		*limit,
-	)
+	return limit
 }
