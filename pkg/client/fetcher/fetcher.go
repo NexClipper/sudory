@@ -14,7 +14,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/client/scheduler"
 	"github.com/NexClipper/sudory/pkg/client/service"
-	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
+	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 )
 
@@ -116,7 +116,7 @@ func (f *Fetcher) poll() {
 
 	f.ChangeClientConfigFromToken()
 
-	respData := []servicev1.HttpRspService_ClientSide{}
+	respData := []servicev2.HttpRsp_ClientServicePolling{}
 	if body != nil {
 		if err := json.Unmarshal(body, &respData); err != nil {
 			log.Errorf(err.Error())

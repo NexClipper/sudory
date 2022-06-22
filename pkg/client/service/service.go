@@ -3,7 +3,6 @@ package service
 import (
 	"time"
 
-	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
 )
 
@@ -34,7 +33,6 @@ type Service struct {
 	Status     ServiceStatus
 	Steps      []Step
 	Result     Result
-	ServerData servicev1.HttpRspService_ClientSide
 }
 
 type StepStatus int32
@@ -77,25 +75,20 @@ type UpdateServiceStep struct {
 	Ended     time.Time
 }
 
-func ConvertServiceListServerToClient(server []servicev1.HttpRspService_ClientSide) map[string]*Service {
+func ConvertServiceListServerToClient(server []servicev2.HttpRsp_ClientServicePolling) map[string]*Service {
 	client := make(map[string]*Service)
 	for _, v := range server {
 		serv := &Service{
-			Id:         v.Uuid,
-			Name:       v.Name,
-			ClusterId:  v.ClusterUuid,
-			ServerData: v,
+			Id:        v.Uuid,
+			Name:      v.Name,
+			ClusterId: v.ClusterUuid,
 		}
 		for _, s := range v.Steps {
-			rf := ""
-			if s.ResultFilter != nil {
-				rf = *s.ResultFilter
-			}
 			serv.Steps = append(serv.Steps, Step{
 				Id:           s.Uuid,
 				ParentId:     serv.Id,
 				Command:      &StepCommand{Method: s.Method, Args: s.Args},
-				ResultFilter: rf,
+				ResultFilter: s.ResultFilter.String(),
 			})
 		}
 		client[v.Uuid] = serv
