@@ -28,7 +28,7 @@ import (
 
 const __DEFAULT_ARGS_CAPACITY__ = 10
 const __DEBUG_PRINT_STATMENT__ = false
-const __SQL_PREPARE_PLACEHOLDER__ = "?"
+const __SQL_PREPARED_STMT_PLACEHOLDER__ = "?"
 
 type Preparer interface {
 	Prepare(query string) (*sql.Stmt, error)
@@ -146,7 +146,7 @@ func Insert(tablename string, columns []string) QueryMuxer {
 	s := fmt.Sprintf(query,
 		tablename,
 		strings.Join(columns, ","),
-		strings.Join(Repeat(len(columns), __SQL_PREPARE_PLACEHOLDER__ /*placeholder=?*/), ","),
+		strings.Join(Repeat(len(columns), __SQL_PREPARED_STMT_PLACEHOLDER__ /*placeholder=?*/), ","),
 	)
 
 	if __DEBUG_PRINT_STATMENT__ {
@@ -187,7 +187,7 @@ func Update(tablename string, column_names []string, column_values []interface{}
 	set_prepare_placeholder := func() []string {
 		ss := make([]string, len(column_names))
 		for i := range column_names {
-			ss[i] = column_names[i] + "=" + __SQL_PREPARE_PLACEHOLDER__ /*placeholder=?*/
+			ss[i] = column_names[i] + "=" + __SQL_PREPARED_STMT_PLACEHOLDER__ /*placeholder=?*/
 		}
 		return ss
 	}
@@ -421,7 +421,7 @@ func InsertRows(tx Preparer, table_name string, column_names []string) func(func
 	}
 }
 
-func UpdateRow(tx Preparer, table_name string, keys_values map[string]interface{}, conditions ...Condition) error {
+func UpdateRow(tx Preparer, table_name string, keys_values map[string]interface{}, conditions ...Condition) (affected int64, err error) {
 	keys := make([]string, 0, len(keys_values))
 	values := make([]interface{}, 0, len(keys_values))
 	for k, v := range keys_values {
@@ -440,11 +440,11 @@ func UpdateRow(tx Preparer, table_name string, keys_values map[string]interface{
 		result, err = stmt.Exec(args...)
 		err = errors.Wrapf(err, "sql.Stmt.Exec")
 		Do(&err, func() (err error) {
-			affected, err := result.RowsAffected()
+			affected, err = result.RowsAffected()
 			err = errors.Wrapf(err, "sql.Result.RowsAffected")
-			if affected == 0 {
-				err = ErrorCompose(err, errors.New("no affected"))
-			}
+			// if affected == 0 {
+			// 	err = ErrorCompose(err, errors.New("no affected"))
+			// }
 			return
 		})
 		return
@@ -452,5 +452,5 @@ func UpdateRow(tx Preparer, table_name string, keys_values map[string]interface{
 	err = errors.Wrapf(err, "faild to insert rows%v", logs.KVL(
 		"table", table_name,
 	))
-	return err
+	return affected, err
 }

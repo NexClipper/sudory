@@ -597,12 +597,6 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 
 	time_now := time.Now()
 
-	if claims.ExpiresAt == globvar.ClientSessionExpirationTime(time_now).Unix() {
-		// In the case of the expiration time of the token expiration time
-		// Do not re-issued tokens
-		return
-	}
-
 	// polling interval
 	var cluster *clusterv2.Cluster
 	Do(&err, func() (err error) {
@@ -648,25 +642,49 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 	})
 
 	Do(&err, func() (err error) {
+		session := sessionv2.Session{}
+		cond := vanilla.NewCond(
+			"WHERE uuid = ? AND deleted IS NULL",
+			claims.Uuid,
+		)
+		var affected int64
 		err = ctl.Scope(func(tx *sql.Tx) (err error) {
-			session := sessionv2.Session{}
 			keys_values := map[string]interface{}{
 				"token":           new_token_string,
 				"expiration_time": time.Unix(claims.ExpiresAt, 0),
 				"updated":         time_now,
 			}
-			cond := vanilla.NewCond(
-				"WHERE uuid = ? AND deleted IS NULL",
-				claims.Uuid,
-			)
 
-			err = vanilla.UpdateRow(tx, session.TableName(), keys_values, *cond)
+			affected, err = vanilla.UpdateRow(tx, session.TableName(), keys_values, *cond)
 			err = errors.Wrapf(err, "failed to update client session for refresh client session%v", logs.KVL(
 				"uuid", claims.Uuid,
 				"data", keys_values,
 			))
 			return
 		})
+		Do(&err, func() (err error) {
+			// check client session record
+			if 0 < affected {
+				// exists record
+				return
+			}
+
+			columns := []string{
+				"COUNT(1)",
+			}
+			var count int
+			err = vanilla.QueryRow(ctl.DB(), session.TableName(), columns, *cond)(func(s vanilla.Scanner) error {
+				return s.Scan(&count)
+			})
+			err = errors.Wrapf(err, "not found session record%v", logs.KVL(
+				"claims_uuid", claims.Uuid,
+			))
+			if count == 0 {
+				err = ErrorCompose(err, errors.New("no affected"))
+			}
+			return
+		})
+
 		return
 	})
 
