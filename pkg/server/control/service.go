@@ -214,7 +214,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 		service.TemplateUuid = body.TemplateUuid
 		service.StepCount = len(body.Steps)
 		service.SubscribedChannel = noxorm.NullString(body.SubscribedChannel)
-		service.OnCompletion = body.OnCompletion
+		// service.OnCompletion = body.OnCompletion
 
 		//create steps
 		for i := range body.Steps {

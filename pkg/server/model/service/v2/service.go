@@ -16,7 +16,7 @@ type Service_essential struct {
 	TemplateUuid      string            `column:"template_uuid"      json:"template_uuid,omitempty"`
 	StepCount         int               `column:"step_count"         json:"step_count,omitempty"`
 	SubscribedChannel noxorm.NullString `column:"subscribed_channel" json:"subscribed_channel,omitempty"`
-	OnCompletion      OnCompletion      `column:"on_completion"      json:"on_completion,omitempty"`
+	// OnCompletion      OnCompletion      `column:"on_completion"      json:"on_completion,omitempty"`
 }
 
 func (Service_essential) TableName() string {

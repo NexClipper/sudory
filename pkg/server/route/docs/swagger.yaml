@@ -672,8 +672,6 @@ definitions:
         type: string
       name:
         type: string
-      on_completion:
-        type: integer
       status:
         type: integer
       step_count:
@@ -710,8 +708,6 @@ definitions:
         type: string
       name:
         type: string
-      on_completion:
-        type: integer
       result:
         type: string
       result_type:
@@ -752,8 +748,6 @@ definitions:
         type: string
       name:
         type: string
-      on_completion:
-        type: integer
       status:
         type: integer
       step_count:

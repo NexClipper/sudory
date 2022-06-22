@@ -3714,9 +3714,6 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "on_completion": {
-                    "type": "integer"
-                },
                 "status": {
                     "type": "integer"
                 },
@@ -3769,9 +3766,6 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
-                },
-                "on_completion": {
-                    "type": "integer"
                 },
                 "result": {
                     "type": "string"
@@ -3876,9 +3870,6 @@ var doc = `{
                 },
                 "name": {
                     "type": "string"
-                },
-                "on_completion": {
-                    "type": "integer"
                 },
                 "status": {
                     "type": "integer"

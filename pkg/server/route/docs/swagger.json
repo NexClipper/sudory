@@ -3698,9 +3698,6 @@
                 "name": {
                     "type": "string"
                 },
-                "on_completion": {
-                    "type": "integer"
-                },
                 "status": {
                     "type": "integer"
                 },
@@ -3753,9 +3750,6 @@
                 },
                 "name": {
                     "type": "string"
-                },
-                "on_completion": {
-                    "type": "integer"
                 },
                 "result": {
                     "type": "string"
@@ -3860,9 +3854,6 @@
                 },
                 "name": {
                     "type": "string"
-                },
-                "on_completion": {
-                    "type": "integer"
                 },
                 "status": {
                     "type": "integer"
