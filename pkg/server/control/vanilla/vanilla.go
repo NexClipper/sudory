@@ -27,7 +27,7 @@ import (
 // }
 
 const __DEFAULT_ARGS_CAPACITY__ = 10
-const __DEBUG_PRINT_STATMENT__ = true
+const __DEBUG_PRINT_STATMENT__ = false
 const __SQL_PREPARE_PLACEHOLDER__ = "?"
 
 type Preparer interface {

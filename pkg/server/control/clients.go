@@ -374,7 +374,6 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 
 	//invoke event (service-poll-in)
 	Do(&err, func() (err error) {
-
 		const event_name = "service-poll-in"
 		m := map[string]interface{}{}
 		m["event_name"] = event_name
@@ -596,6 +595,14 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 		return HttpError(err, http.StatusBadRequest) // StatusBadRequest
 	}
 
+	time_now := time.Now()
+
+	if claims.ExpiresAt == globvar.ClientSessionExpirationTime(time_now).Unix() {
+		// In the case of the expiration time of the token expiration time
+		// Do not re-issued tokens
+		return
+	}
+
 	// polling interval
 	var cluster *clusterv2.Cluster
 	Do(&err, func() (err error) {
@@ -620,7 +627,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 
 	//reflesh payload
 	claims.PollInterval = polling_interval
-	claims.ExpiresAt = globvar.ClientSessionExpirationTime(time.Now()).Unix()
+	claims.ExpiresAt = globvar.ClientSessionExpirationTime(time_now).Unix()
 	claims.Loglevel = globvar.ClientConfigLoglevel()
 
 	var new_token_string string
@@ -646,7 +653,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 			keys_values := map[string]interface{}{
 				"token":           new_token_string,
 				"expiration_time": time.Unix(claims.ExpiresAt, 0),
-				"updated":         time.Now(),
+				"updated":         time_now,
 			}
 			cond := vanilla.NewCond(
 				"WHERE uuid = ? AND deleted IS NULL",
@@ -654,7 +661,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 			)
 
 			err = vanilla.UpdateRow(tx, session.TableName(), keys_values, *cond)
-			err = errors.Wrapf(err, "failed to update client session for renew client session%v", logs.KVL(
+			err = errors.Wrapf(err, "failed to update client session for refresh client session%v", logs.KVL(
 				"uuid", claims.Uuid,
 				"data", keys_values,
 			))
