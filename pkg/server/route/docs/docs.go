@@ -91,7 +91,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.HttpRspService_ClientSide"
+                                "$ref": "#/definitions/v2.HttpRsp_ClientServicePolling"
                             }
                         },
                         "headers": {
@@ -122,12 +122,12 @@ var doc = `{
                         "required": true
                     },
                     {
-                        "description": "HttpReq_ServiceUpdate_ClientSide",
+                        "description": "HttpReq_ClientServiceUpdate",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReq_ServiceUpdate_ClientSide"
+                            "$ref": "#/definitions/v2.HttpReq_ClientServiceUpdate"
                         }
                     }
                 ],
@@ -1921,7 +1921,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.HttpRspService"
+                                "$ref": "#/definitions/v2.HttpRsp_Service"
                             }
                         }
                     }
@@ -1946,12 +1946,12 @@ var doc = `{
                         "in": "header"
                     },
                     {
-                        "description": "HttpReqService_Create",
+                        "description": "HttpReq_ServiceCreate",
                         "name": "service",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqService_Create"
+                            "$ref": "#/definitions/v2.HttpReq_ServiceCreate"
                         }
                     }
                 ],
@@ -1959,7 +1959,58 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpRspService"
+                            "$ref": "#/definitions/v2.HttpRsp_Service"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/service/step": {
+            "get": {
+                "description": "Find Service Steps",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/service"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v2.HttpRsp_ServiceStep"
+                            }
                         }
                     }
                 }
@@ -1998,52 +2049,8 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.ServiceStep"
+                                "$ref": "#/definitions/v2.HttpRsp_ServiceStep"
                             }
-                        }
-                    }
-                }
-            }
-        },
-        "/server/service/{service_uuid}/step/{uuid}": {
-            "get": {
-                "description": "Get a Service Step",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/service_step"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "ServiceStep 의 service_uuid",
-                        "name": "service_uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "ServiceStep 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.ServiceStep"
                         }
                     }
                 }
@@ -2080,47 +2087,15 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpRspService"
+                            "$ref": "#/definitions/v2.HttpRsp_Service"
                         }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a Service",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/service"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Service 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
                     }
                 }
             }
         },
-        "/server/service/{uuid}/result": {
+        "/server/service/{uuid}/step": {
             "get": {
-                "description": "Get a Service with Result",
+                "description": "Get Service Steps",
                 "consumes": [
                     "application/json"
                 ],
@@ -2139,7 +2114,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Service 의 Uuid",
+                        "description": "ServiceStep 의 uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2149,7 +2124,54 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpRspService"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v2.HttpRsp_ServiceStep"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/server/service/{uuid}/step/{sequence}": {
+            "get": {
+                "description": "Get Service Step",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/service"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ServiceStep 의 uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ServiceStep 의 sequence",
+                        "name": "sequence",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v2.HttpRsp_ServiceStep"
                         }
                     }
                 }
@@ -2921,10 +2943,6 @@ var doc = `{
                 }
             }
         },
-        "v1.Hashset": {
-            "type": "object",
-            "additionalProperties": true
-        },
         "v1.HttpReqAuth": {
             "type": "object",
             "properties": {
@@ -3007,44 +3025,6 @@ var doc = `{
             "type": "object",
             "properties": {
                 "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqServiceStep_Create_ByService": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "object",
-                    "additionalProperties": true
-                }
-            }
-        },
-        "v1.HttpReqService_Create": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "on_completion": {
-                    "type": "integer"
-                },
-                "steps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1.HttpReqServiceStep_Create_ByService"
-                    }
-                },
-                "subscribed_channel": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "template_uuid": {
                     "type": "string"
                 }
             }
@@ -3151,165 +3131,6 @@ var doc = `{
                     "type": "string"
                 },
                 "summary": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReq_ServiceUpdate_ClientSide": {
-            "type": "object",
-            "properties": {
-                "result": {
-                    "description": "실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "steps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1.HttpReq_ServiceUpdate_Step_ClientSide"
-                    }
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReq_ServiceUpdate_Step_ClientSide": {
-            "type": "object",
-            "properties": {
-                "ended": {
-                    "type": "string"
-                },
-                "started": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpRspService": {
-            "type": "object",
-            "properties": {
-                "assigned_client_uuid": {
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "on_completion": {
-                    "description": "서비스 완료 후",
-                    "type": "integer"
-                },
-                "result": {
-                    "description": "실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "step_count": {
-                    "type": "integer"
-                },
-                "step_position": {
-                    "type": "integer"
-                },
-                "steps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1.ServiceStep"
-                    }
-                },
-                "subscribed_channel": {
-                    "description": "서비스 POLL 결과 전달 이벤트 채널 이름",
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "template_uuid": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpRspService_ClientSide": {
-            "type": "object",
-            "properties": {
-                "assigned_client_uuid": {
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "on_completion": {
-                    "description": "서비스 완료 후",
-                    "type": "integer"
-                },
-                "result": {
-                    "description": "실행 결과(정상:'결과', 오류:'오류 메시지')",
-                    "type": "string"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "step_count": {
-                    "type": "integer"
-                },
-                "step_position": {
-                    "type": "integer"
-                },
-                "steps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1.ServiceStep"
-                    }
-                },
-                "subscribed_channel": {
-                    "description": "서비스 POLL 결과 전달 이벤트 채널 이름",
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "template_uuid": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
                     "type": "string"
                 }
             }
@@ -3695,56 +3516,6 @@ var doc = `{
         "v1.RagulerPollingOption": {
             "type": "object"
         },
-        "v1.ServiceStep": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "$ref": "#/definitions/v1.Hashset"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "ended": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "method": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "result_filter": {
-                    "type": "string"
-                },
-                "sequence": {
-                    "type": "integer"
-                },
-                "service_uuid": {
-                    "type": "string"
-                },
-                "started": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
         "v1.Session": {
             "type": "object",
             "properties": {
@@ -3886,6 +3657,298 @@ var doc = `{
                     "type": "string"
                 },
                 "updated": {
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_ClientServiceUpdate": {
+            "type": "object",
+            "properties": {
+                "ended": {
+                    "type": "string"
+                },
+                "result": {
+                    "description": "StepStatus 값에 따라; 결과 혹은 에러 메시지",
+                    "type": "string"
+                },
+                "sequence": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "started": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "uuid": {
+                    "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_ServiceCreate": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "on_completion": {
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v2.HttpReq_ServiceStep_Create"
+                    }
+                },
+                "subscribed_channel": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_ServiceStep_Create": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_ClientServicePolling": {
+            "type": "object",
+            "properties": {
+                "assigned_client_uuid": {
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "created": {
+                    "description": "pk",
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "on_completion": {
+                    "type": "integer"
+                },
+                "result": {
+                    "type": "string"
+                },
+                "result_type": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "step_count": {
+                    "type": "integer"
+                },
+                "step_position": {
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v2.ServiceStep_tangled"
+                    }
+                },
+                "subscribed_channel": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "type": "string"
+                },
+                "updated": {
+                    "description": "pk",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_Service": {
+            "type": "object",
+            "properties": {
+                "assigned_client_uuid": {
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "created": {
+                    "description": "pk",
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "on_completion": {
+                    "type": "integer"
+                },
+                "result": {
+                    "type": "string"
+                },
+                "result_type": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "step_count": {
+                    "type": "integer"
+                },
+                "step_position": {
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v2.ServiceStep_tangled"
+                    }
+                },
+                "subscribed_channel": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "type": "string"
+                },
+                "updated": {
+                    "description": "pk",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_ServiceStep": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "$ref": "#/definitions/v2.NullJson"
+                },
+                "created": {
+                    "description": "pk",
+                    "type": "string"
+                },
+                "ended": {
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "result_filter": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "started": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "description": "pk",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.NullJson": {
+            "type": "object",
+            "additionalProperties": true
+        },
+        "v2.ServiceStep_tangled": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "$ref": "#/definitions/v2.NullJson"
+                },
+                "created": {
+                    "description": "pk",
+                    "type": "string"
+                },
+                "ended": {
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "result_filter": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "started": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "description": "pk",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk",
                     "type": "string"
                 }
             }

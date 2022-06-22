@@ -65,3 +65,24 @@ func Stack(err error) string {
 
 	return buf.String()
 }
+
+func ErrorComposef(a, b error, format string, args ...interface{}) error {
+	if b == nil {
+		return a
+	}
+	if a != nil {
+		return errors.Wrapf(a, errors.Wrapf(b, format, args...).Error())
+	}
+
+	return errors.Wrapf(b, format, args)
+}
+func ErrorCompose(a, b error) error {
+	if b == nil {
+		return a
+	}
+	if a != nil {
+		return errors.Wrapf(a, b.Error())
+	}
+
+	return b
+}

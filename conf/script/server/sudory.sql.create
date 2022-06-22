@@ -1,13 +1,13 @@
--- MariaDB dump 10.19  Distrib 10.5.15-MariaDB, for Linux (x86_64)
+-- MariaDB dump 10.19  Distrib 10.8.3-MariaDB, for debian-linux-gnu (x86_64)
 --
--- Host: ncdb-mariadb-primary.mariadb.svc.cluster.local    Database: nc_sudory
+-- Host: localhost    Database: sudory
 -- ------------------------------------------------------
--- Server version       10.6.8-MariaDB-log
+-- Server version       10.8.3-MariaDB-1:10.8.3+maria~jammy
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
+/*!40101 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -192,7 +192,7 @@ CREATE TABLE `cluster` (
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=200 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_bin COMMENT='cluster 관리 테이블';
+) ENGINE=InnoDB AUTO_INCREMENT=201 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_bin COMMENT='cluster 관리 테이블';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -218,7 +218,7 @@ CREATE TABLE `cluster_token` (
   UNIQUE KEY `uuid` (`uuid`) USING BTREE,
   UNIQUE KEY `token` (`token`),
   KEY `IDX_token_cluster_uuid` (`cluster_uuid`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=103 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=104 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -239,7 +239,7 @@ CREATE TABLE `global_variant` (
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -250,29 +250,58 @@ DROP TABLE IF EXISTS `service`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `service` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `uuid` char(32) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin NOT NULL,
-  `name` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin NOT NULL,
-  `summary` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin DEFAULT NULL,
-  `cluster_uuid` char(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'clusters uuid',
-  `template_uuid` char(32) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `assigned_client_uuid` char(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `step_count` int(11) DEFAULT NULL,
-  `step_position` int(11) DEFAULT NULL,
-  `status` int(11) DEFAULT NULL COMMENT 'status',
-  `result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-  `subscribed_channel` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'subscribe channel',
-  `on_completion` tinyint(4) NOT NULL DEFAULT 0 COMMENT 'on completion',
+  `uuid` char(32) COLLATE utf8mb4_bin NOT NULL,
   `created` datetime NOT NULL,
-  `updated` datetime DEFAULT NULL,
-  `deleted` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`,`created`),
-  UNIQUE KEY `UQE_service_uuid` (`uuid`,`created`),
-  KEY `IDX_service_cluster_uuid` (`cluster_uuid`),
-  KEY `IDX_service_status` (`status`),
-  KEY `IDX_service_template_uuid` (`template_uuid`),
-  KEY `IDX_service_assigned_client_uuid` (`assigned_client_uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=13644 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `name` varchar(255) COLLATE utf8mb4_bin NOT NULL,
+  `summary` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `cluster_uuid` char(32) COLLATE utf8mb4_bin NOT NULL,
+  `template_uuid` char(32) COLLATE utf8mb4_bin NOT NULL,
+  `step_count` int(11) NOT NULL,
+  `subscribed_channel` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `on_completion` tinyint(4) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`uuid`,`created`),
+  KEY `cluster_uuid` (`cluster_uuid`),
+  KEY `template_uuid` (`template_uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+ PARTITION BY HASH (to_days(`created`))
+PARTITIONS 5;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `service_result`
+--
+
+DROP TABLE IF EXISTS `service_result`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `service_result` (
+  `uuid` char(32) COLLATE utf8mb4_bin NOT NULL,
+  `created` datetime NOT NULL,
+  `result_type` int(11) NOT NULL,
+  `result` longtext COLLATE utf8mb4_bin DEFAULT NULL,
+  PRIMARY KEY (`uuid`,`created`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+ PARTITION BY HASH (to_days(`created`))
+PARTITIONS 5;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `service_status`
+--
+
+DROP TABLE IF EXISTS `service_status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `service_status` (
+  `uuid` char(32) COLLATE utf8mb4_bin NOT NULL,
+  `created` datetime NOT NULL,
+  `assigned_client_uuid` char(32) COLLATE utf8mb4_bin NOT NULL,
+  `step_position` int(11) NOT NULL,
+  `status` int(11) NOT NULL,
+  `message` text COLLATE utf8mb4_bin DEFAULT NULL,
+  PRIMARY KEY (`uuid`,`created`),
+  KEY `status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
  PARTITION BY HASH (to_days(`created`))
 PARTITIONS 5;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -285,26 +314,39 @@ DROP TABLE IF EXISTS `service_step`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `service_step` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `uuid` char(32) COLLATE utf8mb3_bin NOT NULL,
-  `name` varchar(255) COLLATE utf8mb3_bin NOT NULL,
-  `summary` varchar(255) COLLATE utf8mb3_bin DEFAULT NULL,
-  `service_uuid` char(32) COLLATE utf8mb3_bin NOT NULL COMMENT 'services uuid',
-  `sequence` int(11) NOT NULL COMMENT 'sequence',
-  `method` varchar(255) COLLATE utf8mb3_bin NOT NULL COMMENT 'method',
-  `args` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'args',
-  `result_filter` varchar(4096) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'result_filter',
-  `status` int(11) NOT NULL COMMENT 'status',
+  `uuid` char(32) COLLATE utf8mb4_bin NOT NULL,
+  `sequence` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_bin NOT NULL,
+  `summary` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
+  `method` varchar(255) COLLATE utf8mb4_bin NOT NULL,
+  `args` text COLLATE utf8mb4_bin DEFAULT NULL,
+  `result_filter` varchar(4096) COLLATE utf8mb4_bin DEFAULT NULL,
+  PRIMARY KEY (`uuid`,`sequence`,`created`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+ PARTITION BY HASH (to_days(`created`))
+PARTITIONS 5;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `service_step_status`
+--
+
+DROP TABLE IF EXISTS `service_step_status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `service_step_status` (
+  `uuid` char(32) COLLATE utf8mb4_bin NOT NULL,
+  `sequence` int(11) NOT NULL,
+  `created` datetime NOT NULL,
+  `status` int(11) NOT NULL,
   `started` datetime DEFAULT NULL,
   `ended` datetime DEFAULT NULL,
-  `created` datetime DEFAULT NULL,
-  `updated` datetime DEFAULT NULL,
-  `deleted` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UQE_service_step_uuid` (`uuid`),
-  KEY `IDX_service_step_service_uuid` (`service_uuid`),
+  PRIMARY KEY (`uuid`,`sequence`,`created`),
   KEY `status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=1552 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+ PARTITION BY HASH (to_days(`created`))
+PARTITIONS 5;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -327,7 +369,7 @@ CREATE TABLE `session` (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uuid` (`uuid`) USING BTREE,
   KEY `cluster_uuid` (`cluster_uuid`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=3568 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3573 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -348,7 +390,7 @@ CREATE TABLE `template` (
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uuid` (`uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_bin COMMENT='table template';
+) ENGINE=InnoDB AUTO_INCREMENT=120 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_bin COMMENT='table template';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -374,7 +416,7 @@ CREATE TABLE `template_command` (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uuid` (`uuid`) USING BTREE,
   KEY `template_uuid` (`template_uuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_bin COMMENT='table template command';
+) ENGINE=InnoDB AUTO_INCREMENT=120 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_bin COMMENT='table template command';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -395,7 +437,7 @@ CREATE TABLE `template_recipe` (
   `deleted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `method_v2` (`method`)
-) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=121 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -407,4 +449,4 @@ CREATE TABLE `template_recipe` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-06-10 10:06:23
+-- Dump completed on 2022-06-18  9:22:23

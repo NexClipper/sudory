@@ -41,6 +41,7 @@ type Route struct {
 func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	e := echo.New()
 	controller := control.New(db)
+	vanilla := control.NewVanilla(db.Engine().DB().DB)
 
 	//echo cors config
 	e.Use(echoCORSConfig(cfg))
@@ -100,8 +101,8 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		})
 
 		//route /client/service*
-		group.GET("/service", controller.PollingService)
-		group.PUT("/service", controller.UpdateService)
+		group.GET("/service", vanilla.PollingService)
+		group.PUT("/service", vanilla.UpdateService)
 		//route /client/auth*
 		group.POST("/auth", controller.AuthClient)
 	}
@@ -164,15 +165,15 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		//route /server/template_recipe*
 		group.GET("/template_recipe", controller.FindTemplateRecipe)
 		//route /server/service*
-		group.GET("/service", controller.FindService)
-		group.GET("/service/:uuid", controller.GetService)
-		group.GET("/service/:uuid/result", controller.GetServiceResult)
-		group.POST("/service", controller.CreateService)
+		group.GET("/service", vanilla.FindService)
+		group.GET("/service/:uuid", vanilla.GetService)
+		group.POST("/service", vanilla.CreateService)
 		// router.e.PUT("/service/:uuid", controller.UpdateService)
-		group.DELETE("/service/:uuid", controller.DeleteService)
+		// group.DELETE("/service/:uuid", vanilla.DeleteService)
 		//route /server/service_step*
-		group.GET("/service/:service_uuid/step", controller.FindServiceStep)
-		group.GET("/service/:service_uuid/step/:uuid", controller.GetServiceStep)
+		group.GET("/service/step", vanilla.FindServiceStep)
+		group.GET("/service/:service_uuid/step", vanilla.GetServiceSteps)
+		group.GET("/service/:service_uuid/step/:sequence", vanilla.GetServiceStep)
 		//route /server/global_variant*
 		group.GET("/global_variant", controller.FindGlobalVariant)
 		group.GET("/global_variant/:uuid", controller.GetGlobalVariant)
