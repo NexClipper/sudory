@@ -91,8 +91,8 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 						err = errors.Wrapf(err, "failed to verifing a client sesstion token")
 						return err
 					}
-					if err := vanilla.RenewClientSessionToken(c); err != nil {
-						err = errors.Wrapf(err, "failed to renew a client sesstion token")
+					if err := vanilla.RefreshClientSessionToken(c); err != nil {
+						err = errors.Wrapf(err, "failed to refreshing a client sesstion token")
 						return err
 					}
 				}

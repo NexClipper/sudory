@@ -99,6 +99,8 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 		return
 	})
 
+	time_now := time.Now()
+
 	Do(&err, func() (err error) {
 		err = ctl.Scope(func(tx *sql.Tx) (err error) {
 			for i := range services {
@@ -112,7 +114,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 					//Uuid
 					service_status.Uuid = service.Service.Uuid
 					//Created
-					service_status.Created = time.Now()
+					service_status.Created = time_now
 					//AssignedClientUuid
 					//할당된 클라이언트 정보 추가
 					service_status.AssignedClientUuid = claims.Uuid
@@ -142,7 +144,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 							//Sequence
 							step_status.Sequence = step.Sequence
 							//Created
-							step_status.Created = time.Now()
+							step_status.Created = time_now
 							step_status.Status = servicev2.StepStatusSend
 
 							// save status
@@ -214,7 +216,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	body := servicev2.HttpReq_ClientServiceUpdate{}
 	Do(&err, func() (err error) {
-		err = echoutil.Bind(ctx, body)
+		err = echoutil.Bind(ctx, &body)
 		err = errors.Wrapf(err, "bind%s",
 			logs.KVL(
 				"type", TypeName(body),
@@ -267,14 +269,24 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		// 기본값; 처리중(Processing)
 		return servicev2.StepStatusProcessing
 	}
+	serviceResult := func() crypto.CryptoString {
+		// 상태가 실패인 경우만
+		if body.Status == servicev2.StepStatusSuccess {
+			return (crypto.CryptoString)(body.Result)
+		}
+		//기본값; 공백 문자열
+		return ""
+	}
 	stepMessage := func() noxormv2.NullString {
 		// 상태가 실패인 경우만
-		if body.Status != servicev2.StepStatusFail {
+		if body.Status == servicev2.StepStatusFail {
 			return (noxormv2.NullString)(body.Result)
 		}
 		//기본값; 공백 문자열
 		return ""
 	}
+
+	time_now := time.Now()
 
 	// service status
 	service_status := func() servicev2.ServiceStatus {
@@ -284,20 +296,20 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		service.Message = stepMessage()
 		return servicev2.ServiceStatus{
 			Uuid:                    service.Uuid,
-			Created:                 time.Now(),
+			Created:                 time_now,
 			ServiceStatus_essential: service.ServiceStatus_essential,
 		}
-	}
+	}()
 	// service result
 	service_result := func() servicev2.ServiceResult {
 		service.ServiceResults_essential.ResultType = servicev2.ResultTypeDatabase //default
-		service.ServiceResults_essential.Result = (crypto.CryptoString)(body.Result)
+		service.ServiceResults_essential.Result = serviceResult()
 		return servicev2.ServiceResult{
 			Uuid:                     service.Uuid,
-			Created:                  time.Now(),
+			Created:                  time_now,
 			ServiceResults_essential: service.ServiceResults_essential,
 		}
-	}
+	}()
 	// step status
 	steps_status := func() servicev2.ServiceStepStatus {
 		step.ServiceStepStatus_essential.Status = body.Status                        // Status
@@ -305,17 +317,16 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		step.ServiceStepStatus_essential.Ended = (noxormv2.NullTime)(body.Ended)     // Ended
 		return servicev2.ServiceStepStatus{
 			Uuid:                        step.Uuid,
-			Created:                     time.Now(),
+			Created:                     time_now,
 			ServiceStepStatus_essential: step.ServiceStepStatus_essential,
 		}
-	}
+	}()
 
 	//save status
 	Do(&err, func() (err error) {
 		err = ctl.Scope(func(tx *sql.Tx) (err error) {
 			Do(&err, func() (err error) {
 				// 서비스 상태 저장
-				service_status := service_status()
 				err = vanilla.InsertRow(tx, service_status.TableName(), service_status.ColumnNames())(func(e vanilla.Executor) (sql.Result, error) {
 					return e.Exec(service_status.Values()...)
 				})
@@ -323,9 +334,13 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 				return
 			})
 			Do(&err, func() (err error) {
+				// 마지막 스탭의 결과만 저장 한다
+				if service.StepCount != stepPosition() {
+					return
+				}
 				// 상태 값이 성공이 아닌 경우
 				// 서비스 결과를 저장 하지 않는다
-				if service.Status < servicev2.StepStatusSuccess {
+				if service_status.Status != servicev2.StepStatusSuccess {
 					return
 				}
 				// 채널이 등록되어 있는 경우
@@ -333,8 +348,8 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 				if 0 < len(service.SubscribedChannel) {
 					return
 				}
+
 				// 서비스 결과 저장
-				service_result := service_result()
 				err = vanilla.InsertRow(tx, service_result.TableName(), service_result.ColumnNames())(func(e vanilla.Executor) (sql.Result, error) {
 					return e.Exec(service_result.Values()...)
 				})
@@ -343,7 +358,6 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 			})
 			Do(&err, func() (err error) {
 				// 서비스 스탭 저장
-				steps_status := steps_status()
 				err = vanilla.InsertRow(tx, steps_status.TableName(), steps_status.ColumnNames())(func(e vanilla.Executor) (sql.Result, error) {
 					return e.Exec(steps_status.Values()...)
 				})
@@ -360,6 +374,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 
 	//invoke event (service-poll-in)
 	Do(&err, func() (err error) {
+
 		const event_name = "service-poll-in"
 		m := map[string]interface{}{}
 		m["event_name"] = event_name
@@ -367,13 +382,17 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		m["service_name"] = service.Name
 		m["template_uuid"] = service.TemplateUuid
 		m["cluster_uuid"] = service.ClusterUuid
-		m["assigned_client_uuid"] = service.AssignedClientUuid
-		m["status"] = service.Status
-		if 0 < len(service.Result) {
-			m["result"] = service.Result.String()
+		m["assigned_client_uuid"] = service_status.AssignedClientUuid
+		m["status"] = service_status.Status
+		if 0 < len(service_result.Result) {
+			m["result_type"] = service_result.ResultType.String()
+			m["result"] = service_result.Result.String()
+		}
+		if 0 < len(service_status.Message) {
+			m["message"] = service_status.Message.String()
 		}
 		m["step_count"] = service.StepCount
-		m["step_position"] = service.StepPosition
+		m["step_position"] = service_status.StepPosition
 
 		event.Invoke(service.SubscribedChannel.String(), m)                              //Subscribe 등록된 구독 이벤트 이름으로 호출
 		managed_event.Invoke(service.ClusterUuid, service.SubscribedChannel.String(), m) //Subscribe 등록된 구독 이벤트 이름으로 호출
@@ -490,7 +509,7 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 	}
 
 	//save token to header
-	ctx.Response().Header().Add(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, token_string)
+	ctx.Response().Header().Set(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, token_string)
 
 	//invoke event (client-auth-accept)
 	const event_name = "client-auth-accept"
@@ -543,7 +562,7 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 	return nil
 }
 
-func (ctl ControlVanilla) RenewClientSessionToken(ctx echo.Context) (err error) {
+func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error) {
 	token := ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
 	Do(&err, func() (err error) {
 		if len(token) == 0 {
@@ -711,7 +730,7 @@ func GetSudoryClisentTokenClaims(ctx echo.Context) (claims *sessionv1.ClientSess
 	}
 
 	err = errors.Wrapf(err, "failed to parse header token%v", logs.KVL(
-		"header-token", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
+		"header_token", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
 		"token", token,
 	))
 	return
