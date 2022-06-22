@@ -10,4 +10,5 @@ const (
 	__TEMPLATE_UUID__ = "template_uuid"
 
 	__EVENT_NOTIFIER_TYPE__ = "event_notifier_type"
+	__SEQUENCE__            = "sequence"
 )

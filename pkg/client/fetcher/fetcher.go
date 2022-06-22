@@ -7,14 +7,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/panta/machineid"
 
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/client/scheduler"
-	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
+	"github.com/NexClipper/sudory/pkg/client/service"
+	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
-	"github.com/golang-jwt/jwt/v4"
 )
 
 const (
@@ -33,6 +34,7 @@ type Fetcher struct {
 	done            chan struct{}
 }
 
+// func NewFetcher(bearerToken, server, clusterId string, sch *scheduler.Scheduler) (*Fetcher, error) {
 func NewFetcher(bearerToken, server, clusterId string, scheduler *scheduler.Scheduler) (*Fetcher, error) {
 	id, err := machineid.ID()
 	if err != nil {
@@ -59,7 +61,6 @@ func (f *Fetcher) ChangePollingInterval(interval int) (int, error) {
 	if f.pollingInterval == interval {
 		return 0, nil
 	}
-
 	f.pollingInterval = interval
 	f.ticker.Reset(time.Second * time.Duration(interval))
 
@@ -79,6 +80,8 @@ func (f *Fetcher) Polling(ctx context.Context) error {
 		return fmt.Errorf("fetcher or fetcher.ticker is not created")
 	}
 
+	go f.UpdateServiceProcess()
+
 	go func() {
 		for {
 			select {
@@ -94,35 +97,26 @@ func (f *Fetcher) Polling(ctx context.Context) error {
 }
 
 func (f *Fetcher) poll() {
-	// Get updated services. If the service is done, it is deleted.
-	updatedServices := f.scheduler.GetServicesWithUpdatedDoneFlag()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
 
-	// services -> reqData
-	reqData := scheduler.ServiceListClientToServer2(updatedServices)
-
-	jsonb, err := json.Marshal(reqData)
+	// get services from server
+	body, err := f.client.Get(ctx, "/client/service", nil)
 	if err != nil {
-		f.scheduler.RollbackServicesWithDoneUpdatedFlag(updatedServices)
-		log.Errorf(err.Error())
-	}
-
-	body, err := f.client.PutJson("/client/service", nil, jsonb)
-	if err != nil {
-		f.scheduler.RollbackServicesWithDoneUpdatedFlag(updatedServices)
 		log.Errorf(err.Error())
 
+		// if session token is expired, retry handshake
 		if f.client.IsTokenExpired() {
 			f.ticker.Stop()
-			go f.RetryHandshake()
+			f.RetryHandshake()
 		}
 
 		return
 	}
-	f.scheduler.DeleteServicesWithDoneFlag(updatedServices)
 
 	f.ChangeClientConfigFromToken()
 
-	respData := []servicev1.HttpRspService_ClientSide{}
+	respData := []servicev2.HttpRsp_ClientServicePolling{}
 	if body != nil {
 		if err := json.Unmarshal(body, &respData); err != nil {
 			log.Errorf(err.Error())
@@ -132,11 +126,12 @@ func (f *Fetcher) poll() {
 	log.Debugf("Recived %d service from server.", len(respData))
 
 	if len(respData) == 0 {
+		<-time.After(time.Duration(f.pollingInterval) * time.Second)
 		return
 	}
 
 	// respData -> services
-	recvServices := scheduler.ServiceListServerToClient2(respData)
+	recvServices := service.ConvertServiceListServerToClient(respData)
 
 	// Register new services.
 	f.scheduler.RegisterServices(recvServices)
@@ -163,5 +158,21 @@ func (f *Fetcher) ChangeClientConfigFromToken() {
 			log.Debugf("Changed logger level to %s\n", claims.Loglevel)
 		}
 	}
+}
 
+func (f *Fetcher) UpdateServiceProcess() {
+	for update := range f.scheduler.NotifyServiceUpdate() {
+		reqServ := service.ConvertServiceStepUpdateClientToServer(update)
+		jsonb, err := json.Marshal(reqServ)
+		if err != nil {
+			log.Errorf(err.Error())
+			continue
+		}
+
+		go func() {
+			if _, err := f.client.PutJson(context.Background(), "/client/service", nil, jsonb); err != nil {
+				log.Errorf(err.Error())
+			}
+		}()
+	}
 }

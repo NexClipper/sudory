@@ -55,3 +55,15 @@ func (d *Duration) UnmarshalJSON(bytes []byte) error {
 	*d, err = parseDuration(s)
 	return err
 }
+
+type apiResponse struct {
+	Status    string          `json:"status"`
+	Data      json.RawMessage `json:"data"`
+	ErrorType string          `json:"errorType"`
+	Error     string          `json:"error"`
+	Warnings  []string        `json:"warnings,omitempty"`
+}
+
+func formatTime(t time.Time) string {
+	return strconv.FormatFloat(float64(t.Unix())+float64(t.Nanosecond())/1e9, 'f', -1, 64)
+}

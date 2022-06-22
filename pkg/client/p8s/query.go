@@ -3,9 +3,11 @@ package p8s
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/url"
+	"strconv"
 	"time"
 
-	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 )
 
@@ -20,24 +22,30 @@ func (c *Client) Query(params map[string]interface{}) (string, []string, error) 
 		return "", nil, err
 	}
 
-	v1api := v1.NewAPI(c.client)
-	ctx, cancel := context.WithTimeout(context.TODO(), defaultQueryTimeout)
+	urlValues := url.Values{}
+	urlValues.Set("query", qp.Query)
+	if !qp.Time.IsZero() {
+		urlValues.Set("time", formatTime(qp.Time))
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	data, warnings, err := v1api.Query(ctx, qp.Query, qp.Time)
+	body, err := c.client.PostForm(ctx, "/api/v1/query", nil, []byte(urlValues.Encode()))
 	if err != nil {
-		return "", warnings, err
+		return "", nil, err
 	}
 
-	qr := &QueryResult{ResultType: data.Type().String(), Result: data}
-
-	b, err := json.Marshal(qr)
-	if err != nil {
-		return "", warnings, err
+	var apiresp apiResponse
+	if err := json.Unmarshal(body, &apiresp); err != nil {
+		return "", nil, err
 	}
 
-	return string(b), warnings, nil
-	// return fmt.Sprintf(`{"resultType":"%s","result":%s}`, data.Type().String(), string(b)), warnings, nil
+	if apiresp.Status != "success" {
+		return "", apiresp.Warnings, fmt.Errorf(apiresp.Error)
+	}
+
+	return string(apiresp.Data), nil, nil
 }
 
 func (c *Client) QueryRange(params map[string]interface{}) (string, []string, error) {
@@ -54,30 +62,30 @@ func (c *Client) QueryRange(params map[string]interface{}) (string, []string, er
 		return "", nil, err
 	}
 
-	r := v1.Range{
-		Start: qp.Start,
-		End:   qp.End,
-		Step:  time.Duration(qp.Step),
-	}
+	urlValues := url.Values{}
+	urlValues.Set("query", qp.Query)
+	urlValues.Set("start", formatTime(qp.Start))
+	urlValues.Set("end", formatTime(qp.End))
+	urlValues.Set("step", strconv.FormatFloat(time.Duration(qp.Step).Seconds(), 'f', -1, 64))
 
-	v1api := v1.NewAPI(c.client)
-	ctx, cancel := context.WithTimeout(context.TODO(), defaultQueryTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	data, warnings, err := v1api.QueryRange(ctx, qp.Query, r)
+	body, err := c.client.PostForm(ctx, "/api/v1/query_range", nil, []byte(urlValues.Encode()))
 	if err != nil {
 		return "", nil, err
 	}
 
-	qr := &QueryResult{ResultType: data.Type().String(), Result: data}
-
-	b, err := json.Marshal(qr)
-	if err != nil {
+	var apiresp apiResponse
+	if err := json.Unmarshal(body, &apiresp); err != nil {
 		return "", nil, err
 	}
 
-	return string(b), warnings, nil
-	// return fmt.Sprintf(`{"resultType":"%s","result":%s}`, data.Type().String(), string(b)), warnings, nil
+	if apiresp.Status != "success" {
+		return "", apiresp.Warnings, fmt.Errorf(apiresp.Error)
+	}
+
+	return string(apiresp.Data), nil, nil
 }
 
 type QueryResult struct {

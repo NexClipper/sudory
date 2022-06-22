@@ -8,32 +8,26 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/service"
 )
 
-type ServiceCheckedFlag int32
-
-const (
-	ServiceCheckedFlagCreated ServiceCheckedFlag = iota
-	ServiceCheckedFlagUpdated
-	ServiceCheckedFlagSent
-	ServiceCheckedFlagDone
-)
-
-type ServiceChecked struct {
-	flag    ServiceCheckedFlag // 0: created, 1: updated, 2: sent, 3: done
-	service service.Service
-}
+const defaultMaxProcessLimit = 10
 
 type Scheduler struct {
-	services   map[string]*ServiceChecked
-	updateChan chan service.Service // this channel receives service's status
-	lock       sync.RWMutex
+	servicesStatusMap map[string]service.ServiceStatus
+	lock              sync.RWMutex
+	maxProcessLimit   int
+	updateChan        chan service.UpdateServiceStep // this channel receives service's status
+	notifyUpdateChan  chan service.UpdateServiceStep
 }
 
 func NewScheduler() *Scheduler {
-	return &Scheduler{services: make(map[string]*ServiceChecked), updateChan: make(chan service.Service)}
+	return &Scheduler{
+		servicesStatusMap: make(map[string]service.ServiceStatus),
+		maxProcessLimit:   defaultMaxProcessLimit,
+		updateChan:        make(chan service.UpdateServiceStep),
+		notifyUpdateChan:  make(chan service.UpdateServiceStep)}
 }
 
 func (s *Scheduler) Start() error {
-	if s.updateChan == nil || s.services == nil {
+	if s.updateChan == nil || s.servicesStatusMap == nil {
 		return fmt.Errorf("scheduler don't have channel")
 	}
 
@@ -43,102 +37,64 @@ func (s *Scheduler) Start() error {
 }
 
 func (s *Scheduler) RegisterServices(services map[string]*service.Service) {
-	for _, serv := range services {
-		s.lock.Lock()
-
-		_, ok := s.services[serv.Id]
-		if ok {
-			// drop duplicated service
-			s.lock.Unlock()
-			continue
+	// 1. already existing services drop
+	var startingList []*service.Service
+	s.lock.Lock()
+	for _, service := range services {
+		_, ok := s.servicesStatusMap[service.Id]
+		if !ok {
+			startingList = append(startingList, service)
 		}
-
-		s.services[serv.Id] = &ServiceChecked{service: *serv}
-		s.lock.Unlock()
-
-		// Create and Execute(goroutine) Service.
-		go s.ExecuteService(serv)
 	}
+
+	// 2. if existing service's status is ServiceStatusSuccess or ServiceStatusFailed, delete in statusMap
+	for uuid, status := range s.servicesStatusMap {
+		if status == service.ServiceStatusSuccess || status == service.ServiceStatusFailed {
+			delete(s.servicesStatusMap, uuid)
+		}
+	}
+
+	// 3. maxProcessLimit - len(statusMap) is number starting now
+	remain := s.maxProcessLimit - len(s.servicesStatusMap)
+
+	for _, serv := range startingList {
+		if remain > 0 {
+			s.servicesStatusMap[serv.Id] = service.ServiceStatusPreparing
+			// create and execute(goroutine) service.
+			go s.ExecuteService(serv)
+			remain--
+		} else {
+			break
+		}
+	}
+	s.lock.Unlock()
 }
 
 func (s *Scheduler) ExecuteService(serv *service.Service) error {
 	// Pass channel because scheduler need to update service's status.
 	se := executor.NewServiceExecutor(*serv, s.updateChan)
 
-	if serv.ExecType == service.ServiceExecTypeImmediate {
-		return se.Execute()
-	} else {
-		// TODO
-	}
-	return nil
+	return se.Execute()
 }
 
 func (s *Scheduler) RecvNotifyServiceStatus() {
 	// If you want to stop. close(s.ch).
-	for serv := range s.updateChan {
-		s.lock.Lock()
-		s.services[serv.Id].service = serv
-		if serv.Status == service.ServiceStatusSuccess || serv.Status == service.ServiceStatusFailed {
-			s.services[serv.Id].flag = ServiceCheckedFlagDone
-		} else {
-			s.services[serv.Id].flag = ServiceCheckedFlagUpdated
-		}
-		s.lock.Unlock()
-	}
-}
-
-// get services with updated status
-func (s *Scheduler) GetServicesWithUpdatedDoneFlag() map[string]ServiceChecked {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	if len(s.services) <= 0 {
-		return nil
-	}
-
-	res := make(map[string]ServiceChecked)
-	for id, serv := range s.services {
-		if serv.flag == ServiceCheckedFlagUpdated {
-			res[id] = ServiceChecked{flag: serv.flag, service: serv.service}
-			serv.flag = ServiceCheckedFlagSent
-		} else if serv.flag == ServiceCheckedFlagDone {
-			res[id] = ServiceChecked{flag: serv.flag, service: serv.service}
-		}
-	}
-
-	return res
-}
-
-func (s *Scheduler) DeleteServicesWithDoneFlag(services map[string]ServiceChecked) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	if len(s.services) <= 0 {
-		return
-	}
-
-	for id, v := range services {
-		if v.flag == ServiceCheckedFlagDone {
-			delete(s.services, id)
-		}
-	}
-}
-
-func (s *Scheduler) RollbackServicesWithDoneUpdatedFlag(services map[string]ServiceChecked) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	if len(s.services) <= 0 {
-		return
-	}
-
-	for id, v := range services {
-		if v.flag == ServiceCheckedFlagDone {
-			s.services[id].flag = v.flag
-		} else if v.flag == ServiceCheckedFlagUpdated {
-			if s.services[id].flag == ServiceCheckedFlagSent {
-				s.services[id].flag = v.flag
+	for update := range s.updateChan {
+		serviceStatus := service.ServiceStatusProcessing
+		if update.StepCount == update.Sequence+1 {
+			if update.Status == service.StepStatusSuccess {
+				serviceStatus = service.ServiceStatusSuccess
+			} else if update.Status == service.StepStatusFail {
+				serviceStatus = service.ServiceStatusFailed
 			}
 		}
+		s.lock.Lock()
+		s.servicesStatusMap[update.Uuid] = service.ServiceStatus(serviceStatus)
+		s.lock.Unlock()
+		s.notifyUpdateChan <- update
 	}
+}
+
+func (s *Scheduler) NotifyServiceUpdate() <-chan service.UpdateServiceStep {
+	return s.notifyUpdateChan
 }

@@ -50,7 +50,7 @@ func (ctl Control) CreateCluster(ctx echo.Context) error {
 
 	//polling option; nil check
 	if cluster.PollingOption == nil {
-		cluster.PollingOption = new(clusterv1.RagulerPollingOption).ToMap()
+		cluster.PollingOption = new(clusterv1.RegularPollingOption).ToMap()
 	}
 
 	//polling option; default(regular)
@@ -178,18 +178,18 @@ func (ctl Control) UpdateCluster(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
-// UpdateClusterPollingRaguler
+// UpdateClusterPollingRegular
 // @Description Update a cluster Polling Reguar
 // @Accept      json
 // @Produce     json
 // @Tags        server/cluster
-// @Router      /server/cluster/{uuid}/polling/raguler [put]
+// @Router      /server/cluster/{uuid}/polling/regular [put]
 // @Param       x_auth_token   header string                  false "client session token"
 // @Param       uuid           path   string                  true  "Cluster 의 Uuid"
-// @Param       polling_option body   v1.RagulerPollingOption true  "RagulerPollingOption"
+// @Param       polling_option body   v1.RegularPollingOption true  "RegularPollingOption"
 // @Success     200 {object} v1.Cluster
-func (ctl Control) UpdateClusterPollingRaguler(ctx echo.Context) error {
-	polling_option := new(clusterv1.RagulerPollingOption)
+func (ctl Control) UpdateClusterPollingRegular(ctx echo.Context) error {
+	polling_option := new(clusterv1.RegularPollingOption)
 	if err := echoutil.Bind(ctx, polling_option); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorBindRequestObject(), "bind%s",

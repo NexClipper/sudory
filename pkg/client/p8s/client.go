@@ -4,24 +4,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/prometheus/client_golang/api"
-
+	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/log"
 )
 
 const defaultQueryTimeout = 10 * time.Second
 
 type Client struct {
-	client api.Client
+	client *httpclient.HttpClient
 }
 
 func NewClient(url string) (*Client, error) {
-	client, err := api.NewClient(api.Config{Address: url})
-	if err != nil {
-		return nil, err
-	}
-
-	return &Client{client: client}, nil
+	return &Client{client: httpclient.NewHttpClient(url, "", 0, 0)}, nil
 }
 
 func (c *Client) ApiRequest(apiVersion, apiName string, queryParams map[string]interface{}) (string, error) {

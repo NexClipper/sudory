@@ -41,6 +41,7 @@ type Route struct {
 func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	e := echo.New()
 	controller := control.New(db)
+	vanilla := control.NewVanilla(db.Engine().DB().DB)
 
 	//echo cors config
 	e.Use(echoCORSConfig(cfg))
@@ -50,11 +51,11 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		e.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
 			Generator: func() func() string {
 				var (
-					ticketId uint64
+					id uint64
 				)
 				return func() string {
-					atomic.AddUint64(&ticketId, 1)
-					return fmt.Sprintf("%d", ticketId)
+					id := atomic.AddUint64(&id, 1)
+					return fmt.Sprintf("%d", id)
 				}
 			}(),
 		}))
@@ -80,12 +81,20 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	//"/client"
 	{
 		group := e.Group("/client")
-
-		//route /client/service*
-		group.PUT("/service", controller.PollService, func(next echo.HandlerFunc) echo.HandlerFunc {
+		group.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 			return func(c echo.Context) (err error) {
-				if err := controller.VerifyClientSessionToken(c); err != nil {
-					return err
+				switch c.Path() {
+				case "/client/auth":
+					//do noting
+				default:
+					if err := controller.VerifyClientSessionToken(c); err != nil {
+						err = errors.Wrapf(err, "failed to verifing a client sesstion token")
+						return err
+					}
+					if err := vanilla.RefreshClientSessionToken(c); err != nil {
+						err = errors.Wrapf(err, "failed to refreshing a client sesstion token")
+						return err
+					}
 				}
 
 				if err := next(c); err != nil {
@@ -95,6 +104,10 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 				return nil
 			}
 		})
+
+		//route /client/service*
+		group.GET("/service", vanilla.PollingService)
+		group.PUT("/service", vanilla.UpdateService)
 		//route /client/auth*
 		group.POST("/auth", controller.AuthClient)
 	}
@@ -139,7 +152,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.GET("/cluster/:uuid", controller.GetCluster)
 		group.POST("/cluster", controller.CreateCluster)
 		group.PUT("/cluster/:uuid", controller.UpdateCluster)
-		group.PUT("/cluster/:uuid/polling/raguler", controller.UpdateClusterPollingRaguler)
+		group.PUT("/cluster/:uuid/polling/regular", controller.UpdateClusterPollingRegular)
 		group.PUT("/cluster/:uuid/polling/smart", controller.UpdateClusterPollingSmart)
 		group.DELETE("/cluster/:uuid", controller.DeleteCluster)
 		//route /server/template*
@@ -157,15 +170,15 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		//route /server/template_recipe*
 		group.GET("/template_recipe", controller.FindTemplateRecipe)
 		//route /server/service*
-		group.GET("/service", controller.FindService)
-		group.GET("/service/:uuid", controller.GetService)
-		group.GET("/service/:uuid/result", controller.GetServiceResult)
-		group.POST("/service", controller.CreateService)
+		group.GET("/service", vanilla.FindService)
+		group.GET("/service/:uuid", vanilla.GetService)
+		group.POST("/service", vanilla.CreateService)
 		// router.e.PUT("/service/:uuid", controller.UpdateService)
-		group.DELETE("/service/:uuid", controller.DeleteService)
+		// group.DELETE("/service/:uuid", vanilla.DeleteService)
 		//route /server/service_step*
-		group.GET("/service/:service_uuid/step", controller.FindServiceStep)
-		group.GET("/service/:service_uuid/step/:uuid", controller.GetServiceStep)
+		group.GET("/service/step", vanilla.FindServiceStep)
+		group.GET("/service/:uuid/step", vanilla.GetServiceSteps)
+		group.GET("/service/:uuid/step/:sequence", vanilla.GetServiceStep)
 		//route /server/global_variant*
 		group.GET("/global_variant", controller.FindGlobalVariant)
 		group.GET("/global_variant/:uuid", controller.GetGlobalVariant)

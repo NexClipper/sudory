@@ -60,3 +60,41 @@ func WrapArray(emun ...interface{}) []interface{} {
 func WrapMap(a string, b interface{}) map[string]interface{} {
 	return map[string]interface{}{a: b}
 }
+
+func NewDecoration(m map[string]string) (deco *Decoration, err error) {
+
+	deco = &Decoration{}
+
+	//pagination
+	if pagination, err := NewPagination(m["p"]); err != nil {
+		if !macro.Eqaul(ErrorInvalidArgumentEmptyString(), err) {
+			return deco, errors.Wrapf(err, "NewPagination json=%s", m["p"])
+		}
+	} else {
+		deco.Pagination = pagination
+	}
+	//order
+	if order, err := NewOrder(m["o"]); err != nil {
+		if !macro.Eqaul(ErrorInvalidArgumentEmptyString(), err) {
+			return deco, errors.Wrapf(err, "NewOrder json=%s", m["o"])
+		}
+	} else {
+		deco.Orders = order
+	}
+	//Condition
+	if condition, err := NewCondition(m["q"]); err != nil {
+		if !macro.Eqaul(ErrorInvalidArgumentEmptyString(), err) {
+			return deco, errors.Wrapf(err, "NewCondition json=%s", m["q"])
+		}
+	} else {
+		deco.Condition = condition
+	}
+
+	return deco, nil
+}
+
+type Decoration struct {
+	*Pagination
+	*Orders
+	*Condition
+}

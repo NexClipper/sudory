@@ -9,7 +9,6 @@ import (
 func NewUuidString() string {
 	u := uuid.NewString()
 	return strings.Replace(u, "-", "", -1)
-
 }
 
 func NewUuid() uuid.UUID {
