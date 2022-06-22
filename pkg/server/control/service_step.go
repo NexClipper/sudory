@@ -2,6 +2,7 @@ package control
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vanilla"
@@ -153,17 +154,29 @@ func (ctl ControlVanilla) GetServiceStep(ctx echo.Context) (err error) {
 	})
 
 	uuid := echoutil.Param(ctx)[__UUID__]
-	sequence := echoutil.Param(ctx)[__SEQUENCE__]
+	var sequence int
+	Do(&err, func() (err error) {
+		s := echoutil.Param(ctx)[__SEQUENCE__]
+		sequence, err = strconv.Atoi(s)
+		err = errors.Wrapf(err, "sequence atoi%s", logs.KVL(
+			"a", s,
+		))
+		return
+	})
 
-	cond := vanilla.NewCond(
-		"WHERE uuid = ? AND sequence = ?",
-		uuid, sequence,
-	)
+	if err != nil {
+		return HttpError(err, http.StatusBadRequest)
+	}
 
-	steps, err := find_service_steps(ctl.DB(), *cond)
+	var step servicev2.ServiceStep_tangled
+	Do(&err, func() (err error) {
+		step, err = get_service_step(ctl.DB(), uuid, sequence)
+		return
+	})
+
 	if err != nil {
 		return HttpError(err, http.StatusInternalServerError)
 	}
 
-	return ctx.JSON(http.StatusOK, steps)
+	return ctx.JSON(http.StatusOK, step)
 }

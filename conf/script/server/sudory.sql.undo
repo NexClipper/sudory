@@ -1,0 +1,65 @@
+
+--
+-- Table structure for table `service`
+--
+
+DROP TABLE IF EXISTS `service`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `service` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `uuid` char(32) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin NOT NULL,
+  `summary` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_bin DEFAULT NULL,
+  `cluster_uuid` char(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'clusters uuid',
+  `template_uuid` char(32) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `assigned_client_uuid` char(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `step_count` int(11) DEFAULT NULL,
+  `step_position` int(11) DEFAULT NULL,
+  `status` int(11) DEFAULT NULL COMMENT 'status',
+  `result` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `subscribed_channel` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'subscribe channel',
+  `on_completion` tinyint(4) NOT NULL DEFAULT 0 COMMENT 'on completion',
+  `created` datetime NOT NULL,
+  `updated` datetime DEFAULT NULL,
+  `deleted` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`,`created`),
+  UNIQUE KEY `UQE_service_uuid` (`uuid`,`created`),
+  KEY `IDX_service_cluster_uuid` (`cluster_uuid`),
+  KEY `IDX_service_status` (`status`),
+  KEY `IDX_service_template_uuid` (`template_uuid`),
+  KEY `IDX_service_assigned_client_uuid` (`assigned_client_uuid`)
+) ENGINE=InnoDB AUTO_INCREMENT=13644 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+ PARTITION BY HASH (to_days(`created`))
+PARTITIONS 5;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `service_step`
+--
+
+DROP TABLE IF EXISTS `service_step`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `service_step` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `uuid` char(32) COLLATE utf8mb3_bin NOT NULL,
+  `name` varchar(255) COLLATE utf8mb3_bin NOT NULL,
+  `summary` varchar(255) COLLATE utf8mb3_bin DEFAULT NULL,
+  `service_uuid` char(32) COLLATE utf8mb3_bin NOT NULL COMMENT 'services uuid',
+  `sequence` int(11) NOT NULL COMMENT 'sequence',
+  `method` varchar(255) COLLATE utf8mb3_bin NOT NULL COMMENT 'method',
+  `args` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'args',
+  `result_filter` varchar(4096) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'result_filter',
+  `status` int(11) NOT NULL COMMENT 'status',
+  `started` datetime DEFAULT NULL,
+  `ended` datetime DEFAULT NULL,
+  `created` datetime DEFAULT NULL,
+  `updated` datetime DEFAULT NULL,
+  `deleted` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UQE_service_step_uuid` (`uuid`),
+  KEY `IDX_service_step_service_uuid` (`service_uuid`),
+  KEY `status` (`status`)
+) ENGINE=InnoDB AUTO_INCREMENT=1552 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;

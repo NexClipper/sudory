@@ -4,8 +4,11 @@ TRUNCATE TABLE `cluster`;
 TRUNCATE TABLE `global_variant`;
 
 TRUNCATE TABLE `service`;
+TRUNCATE TABLE `service_status`;
+TRUNCATE TABLE `service_result`;
 
 TRUNCATE TABLE `service_step`;
+TRUNCATE TABLE `service_step_status`;
 
 TRUNCATE TABLE `session`;
 

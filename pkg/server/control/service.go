@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -340,7 +341,7 @@ func (ctl ControlVanilla) FindService(ctx echo.Context) (err error) {
 			args...,
 		)
 
-		rsps, err = find_service(ctl.DB(), *cond)
+		rsps, err = find_services(ctl.DB(), *cond)
 		err = errors.Wrapf(err, "find service")
 		return
 	})
@@ -438,11 +439,34 @@ func ParseDecoration(m map[string]string) (conditions []string, args []interface
 				page := fmt.Sprintf("LIMIT %v, %v", deco.Pagination.Offset(), deco.Pagination.Limit())
 				conditions = append(conditions, page)
 			}
+			if deco.Pagination == nil {
+				page := fmt.Sprintf("LIMIT %v", math.MaxInt8)
+				conditions = append(conditions, page)
+			}
 			return
 		})
 		return
 	})
 
+	return
+}
+
+func get_service_step(tx vanilla.Preparer, service_uuid string, sequence int) (step servicev2.ServiceStep_tangled, err error) {
+	cond := vanilla.Condition{
+		Condition: "WHERE uuid = ? AND sequence = ?",
+		Args: []interface{}{
+			service_uuid,
+			sequence,
+		},
+	}
+
+	err = vanilla.QueryRow(tx, step.TableName(), step.ColumnNames(), cond)(func(s vanilla.Scanner) (err error) {
+		err = step.Scan(s)
+		err = errors.Wrapf(err, "step Scan")
+		return
+	})
+
+	err = errors.Wrapf(err, "failed to get a step")
 	return
 }
 
@@ -467,7 +491,7 @@ func get_service_steps(tx vanilla.Preparer, service_uuid string) (steps []servic
 		return
 	})
 
-	err = errors.Wrapf(err, "failed to get steps")
+	err = errors.Wrapf(err, "failed to get step lists")
 	return
 }
 
@@ -490,11 +514,11 @@ func find_service_status(tx vanilla.Preparer, condition ...vanilla.Condition) (r
 		return
 	})
 
-	err = errors.Wrapf(err, "failed to find service")
+	err = errors.Wrapf(err, "failed to find services")
 	return
 }
 
-func find_service(tx vanilla.Preparer, condition ...vanilla.Condition) (rsps []servicev2.HttpRsp_Service, err error) {
+func find_services(tx vanilla.Preparer, condition ...vanilla.Condition) (rsps []servicev2.HttpRsp_Service, err error) {
 	rsps = make([]servicev2.HttpRsp_Service, 0, __INIT_RECORD_CAPACITY__)
 
 	// cond := vanilla.Condition{
@@ -513,7 +537,7 @@ func find_service(tx vanilla.Preparer, condition ...vanilla.Condition) (rsps []s
 		return
 	})
 
-	err = errors.Wrapf(err, "failed to find service")
+	err = errors.Wrapf(err, "failed to find services")
 	return
 }
 
@@ -536,7 +560,7 @@ func find_service_steps(tx vanilla.Preparer, condition ...vanilla.Condition) (rs
 		return
 	})
 
-	err = errors.Wrapf(err, "failed to find service step")
+	err = errors.Wrapf(err, "failed to find service steps")
 	return
 }
 
