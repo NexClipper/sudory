@@ -1404,12 +1404,12 @@ var doc = `{
                         "required": true
                     },
                     {
-                        "description": "RagulerPollingOption",
+                        "description": "RegularPollingOption",
                         "name": "polling_option",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.RagulerPollingOption"
+                            "$ref": "#/definitions/v1.RegularPollingOption"
                         }
                     }
                 ],
@@ -3473,7 +3473,7 @@ var doc = `{
                 }
             }
         },
-        "v1.RagulerPollingOption": {
+        "v1.RegularPollingOption": {
             "type": "object"
         },
         "v1.Session": {

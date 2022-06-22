@@ -43,7 +43,7 @@ func (opt Cluster_essential) GetPollingOption() PollingHandler {
 	case PollingTypeRegular:
 		fallthrough
 	default:
-		return &RagulerPollingOption{}
+		return &RegularPollingOption{}
 	}
 }
 
@@ -51,17 +51,17 @@ func (opt *Cluster_essential) SetPollingOption(handle PollingHandler) {
 	switch handle := handle.(type) {
 	case *SmartPollingOption:
 		opt.PollingOption = handle.ToMap()
-	case *RagulerPollingOption:
+	case *RegularPollingOption:
 		opt.PollingOption = handle.ToMap()
 	}
 }
 
-type RagulerPollingOption struct{}
+type RegularPollingOption struct{}
 
-func (opt RagulerPollingOption) Interval(_default time.Duration, service_count int) time.Duration {
+func (opt RegularPollingOption) Interval(_default time.Duration, service_count int) time.Duration {
 	return _default
 }
-func (opt RagulerPollingOption) ToMap() map[string]interface{} {
+func (opt RegularPollingOption) ToMap() map[string]interface{} {
 	m := map[string]interface{}{
 		"type": PollingTypeRegular.String(),
 	}

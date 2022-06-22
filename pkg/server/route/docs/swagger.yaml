@@ -511,7 +511,7 @@ definitions:
       url:
         type: string
     type: object
-  v1.RagulerPollingOption:
+  v1.RegularPollingOption:
     type: object
   v1.Session:
     properties:
@@ -1738,12 +1738,12 @@ paths:
         name: uuid
         required: true
         type: string
-      - description: RagulerPollingOption
+      - description: RegularPollingOption
         in: body
         name: polling_option
         required: true
         schema:
-          $ref: '#/definitions/v1.RagulerPollingOption'
+          $ref: '#/definitions/v1.RegularPollingOption'
       produces:
       - application/json
       responses:
