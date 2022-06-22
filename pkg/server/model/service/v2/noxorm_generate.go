@@ -28,6 +28,10 @@ func (Service_tangled) ColumnNames() []string {
 	return []string{"uuid", "created", "name", "summary", "cluster_uuid", "template_uuid", "step_count", "subscribed_channel", "on_completion", "assigned_client_uuid", "step_position", "status", "message", "result_type", "result", "updated"}
 }
 
+func (Service_status) ColumnNames() []string {
+	return []string{"uuid", "created", "name", "summary", "cluster_uuid", "template_uuid", "step_count", "subscribed_channel", "on_completion", "assigned_client_uuid", "step_position", "status", "message", "updated"}
+}
+
 func (ServiceStep_essential) ColumnNames() []string {
 	return []string{"name", "summary", "method", "args", "result_filter"}
 }
@@ -74,6 +78,10 @@ func (row ServiceResult) Values() []interface{} {
 
 func (row Service_tangled) Values() []interface{} {
 	return []interface{}{row.Service.Uuid, row.Service.Created, row.Service.Service_essential.Name, row.Service.Service_essential.Summary, row.Service.Service_essential.ClusterUuid, row.Service.Service_essential.TemplateUuid, row.Service.Service_essential.StepCount, row.Service.Service_essential.SubscribedChannel, row.Service.Service_essential.OnCompletion, row.ServiceStatus_essential.AssignedClientUuid, row.ServiceStatus_essential.StepPosition, row.ServiceStatus_essential.Status, row.ServiceStatus_essential.Message, row.ServiceResults_essential.ResultType, row.ServiceResults_essential.Result, row.Updated}
+}
+
+func (row Service_status) Values() []interface{} {
+	return []interface{}{row.Service.Uuid, row.Service.Created, row.Service.Service_essential.Name, row.Service.Service_essential.Summary, row.Service.Service_essential.ClusterUuid, row.Service.Service_essential.TemplateUuid, row.Service.Service_essential.StepCount, row.Service.Service_essential.SubscribedChannel, row.Service.Service_essential.OnCompletion, row.ServiceStatus_essential.AssignedClientUuid, row.ServiceStatus_essential.StepPosition, row.ServiceStatus_essential.Status, row.ServiceStatus_essential.Message, row.Updated}
 }
 
 func (row ServiceStep_essential) Values() []interface{} {
@@ -126,6 +134,10 @@ func (row *ServiceResult) Scan(scanner Scanner) error {
 
 func (row *Service_tangled) Scan(scanner Scanner) error {
 	return scanner.Scan(&row.Service.Uuid, &row.Service.Created, &row.Service.Service_essential.Name, &row.Service.Service_essential.Summary, &row.Service.Service_essential.ClusterUuid, &row.Service.Service_essential.TemplateUuid, &row.Service.Service_essential.StepCount, &row.Service.Service_essential.SubscribedChannel, &row.Service.Service_essential.OnCompletion, &row.ServiceStatus_essential.AssignedClientUuid, &row.ServiceStatus_essential.StepPosition, &row.ServiceStatus_essential.Status, &row.ServiceStatus_essential.Message, &row.ServiceResults_essential.ResultType, &row.ServiceResults_essential.Result, &row.Updated)
+}
+
+func (row *Service_status) Scan(scanner Scanner) error {
+	return scanner.Scan(&row.Service.Uuid, &row.Service.Created, &row.Service.Service_essential.Name, &row.Service.Service_essential.Summary, &row.Service.Service_essential.ClusterUuid, &row.Service.Service_essential.TemplateUuid, &row.Service.Service_essential.StepCount, &row.Service.Service_essential.SubscribedChannel, &row.Service.Service_essential.OnCompletion, &row.ServiceStatus_essential.AssignedClientUuid, &row.ServiceStatus_essential.StepPosition, &row.ServiceStatus_essential.Status, &row.ServiceStatus_essential.Message, &row.Updated)
 }
 
 func (row *ServiceStep_essential) Scan(scanner Scanner) error {

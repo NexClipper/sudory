@@ -64,14 +64,6 @@ type ServiceResult struct {
 }
 
 type Service_tangled struct {
-	// Uuid    string    `column:"uuid"    json:"uuid"`    //pk
-	// Created time.Time `column:"created" json:"created"` //pk
-	// Updated time.Time `column:"updated" json:"updated"` //pk
-
-	// Service_essential        `json:",inline"` //service
-	// ServiceStatus_essential  `json:",inline"` //status
-	// ServiceResults_essential `json:",inline"` //result
-
 	Service                  `json:",inline"` //service
 	ServiceStatus_essential  `json:",inline"` //status
 	ServiceResults_essential `json:",inline"` //result
@@ -132,18 +124,71 @@ func (record Service_tangled) TableName() string {
 		"step_count",
 		"subscribed_channel",
 		"on_completion",
+		fmt.Sprintf("IFNULL(assigned_client_uuid, '%v') AS assigned_client_uuid", ""),
+		fmt.Sprintf("IFNULL(step_position, %v) AS step_position", 0),
+		fmt.Sprintf("IFNULL(status, %v) AS status", int(StepStatusRegist)),
+		"message",
 		fmt.Sprintf("IFNULL(result_type, %v) AS result_type", int(ResultTypeNone)),
 		"result",
+	}
+	A := record.Service.TableName()
+	B := record.ServiceStatus_essential.TableName()
+	C := record.ServiceResults_essential.TableName()
+	return fmt.Sprintf(q, strings.Join(columns, ", "), A, B, B, C, C)
+}
+
+type Service_status struct {
+	Service                 `json:",inline"` //service
+	ServiceStatus_essential `json:",inline"` //status
+
+	Updated noxorm.NullTime `column:"updated" json:"updated"` //pk
+}
+
+/*
+`
+SELECT A.uuid, A.created,
+       name, summary, cluster_uuid, template_uuid, step_count, subscribed_channel, on_completion,
+       B.created AS updated, assigned_client_uuid, step_position, status, message
+  FROM service A
+  LEFT JOIN service_status B
+         ON A.uuid = B.uuid
+        AND B.created = (
+            SELECT MAX(B.created) AS MAX_created
+              FROM service_status B
+             WHERE A.uuid = B.uuid
+			)
+`
+*/
+func (record Service_status) TableName() string {
+	q := `(
+    SELECT %v /**columns**/
+      FROM %v A /**service A**/
+      LEFT JOIN %v B /**service_status B**/
+             ON A.uuid = B.uuid 
+            AND B.created = (
+                SELECT MAX(B.created) AS MAX_created
+                  FROM %v B /**service_status B**/
+                 WHERE A.uuid = B.uuid 
+                )
+    ) X`
+
+	columns := []string{
+		"A.uuid",
+		"A.created",
+		"B.created AS updated",
+		"name",
+		"summary",
+		"cluster_uuid",
+		"template_uuid",
+		"step_count",
+		"subscribed_channel",
+		"on_completion",
 		fmt.Sprintf("IFNULL(assigned_client_uuid, '%v') AS assigned_client_uuid", ""),
 		fmt.Sprintf("IFNULL(step_position, %v) AS step_position", 0),
 		fmt.Sprintf("IFNULL(status, %v) AS status", int(StepStatusRegist)),
 		"message",
 	}
-	// columns = append(columns, Service_essential{}.ColumnNames()...)
-	// columns = append(columns, ServiceStatus_essential{}.ColumnNames()...)
-	// columns = append(columns, ServiceResults_essential{}.ColumnNames()...)
 	A := record.Service.TableName()
 	B := record.ServiceStatus_essential.TableName()
-	C := record.ServiceResults_essential.TableName()
-	return fmt.Sprintf(q, strings.Join(columns, ", "), A, B, B, C, C)
+	return fmt.Sprintf(q, strings.Join(columns, ", "), A, B, B)
 }

@@ -471,6 +471,29 @@ func get_service_steps(tx vanilla.Preparer, service_uuid string) (steps []servic
 	return
 }
 
+func find_service_status(tx vanilla.Preparer, condition ...vanilla.Condition) (rsps []servicev2.Service_status, err error) {
+	rsps = make([]servicev2.Service_status, 0, __INIT_RECORD_CAPACITY__)
+
+	// cond := vanilla.Condition{
+	// 	Condition: condition,
+	// 	Args:      args,
+	// }
+	service_status := servicev2.Service_status{}
+
+	err = vanilla.QueryRows(tx, service_status.TableName(), service_status.ColumnNames(), condition...)(func(s vanilla.Scanner) (err error) {
+		err = service_status.Scan(s)
+		err = errors.Wrapf(err, "service Scan")
+		Do(&err, func() (err error) {
+			rsps = append(rsps, service_status)
+			return
+		})
+		return
+	})
+
+	err = errors.Wrapf(err, "failed to find service")
+	return
+}
+
 func find_service(tx vanilla.Preparer, condition ...vanilla.Condition) (rsps []servicev2.HttpRsp_Service, err error) {
 	rsps = make([]servicev2.HttpRsp_Service, 0, __INIT_RECORD_CAPACITY__)
 

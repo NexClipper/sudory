@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vanilla"
-	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
@@ -14,35 +13,35 @@ import (
 	"github.com/pkg/errors"
 )
 
-// FindServiceStep
-// @Description Find Service Steps
-// @Accept      json
-// @Produce     json
-// @Tags        server/service_step
-// @Router      /server/service/{service_uuid}/step [get]
-// @Param       x_auth_token header string false "client session token"
-// @Param       service_uuid path   string true  "ServiceStep 의 service_uuid"
-// @Success     200 {array} v2.HttpRsp_ServiceStep
-func (ctl Control) FindServiceStep(ctx echo.Context) error {
-	if len(echoutil.Param(ctx)[__SERVICE_UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
-					ParamLog(__SERVICE_UUID__, echoutil.Param(ctx)[__SERVICE_UUID__])...,
-				)))
-	}
+// // FindServiceStep
+// // @Description Find Service Steps
+// // @Accept      json
+// // @Produce     json
+// // @Tags        server/service_step
+// // @Router      /server/service/{service_uuid}/step [get]
+// // @Param       x_auth_token header string false "client session token"
+// // @Param       service_uuid path   string true  "ServiceStep 의 service_uuid"
+// // @Success     200 {array} v2.HttpRsp_ServiceStep
+// func (ctl Control) FindServiceStep(ctx echo.Context) error {
+// 	if len(echoutil.Param(ctx)[__SERVICE_UUID__]) == 0 {
+// 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
+// 			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+// 				logs.KVL(
+// 					ParamLog(__SERVICE_UUID__, echoutil.Param(ctx)[__SERVICE_UUID__])...,
+// 				)))
+// 	}
 
-	where := "service_uuid = ?"
-	service_uuid := echoutil.Param(ctx)[__SERVICE_UUID__]
+// 	where := "service_uuid = ?"
+// 	service_uuid := echoutil.Param(ctx)[__SERVICE_UUID__]
 
-	r, err := vault.NewServiceStep(ctl.db.Engine().NewSession()).Find(where, service_uuid)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "find service step"))
-	}
+// 	r, err := vault.NewServiceStep(ctl.db.Engine().NewSession()).Find(where, service_uuid)
+// 	if err != nil {
+// 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
+// 			errors.Wrapf(err, "find service step"))
+// 	}
 
-	return ctx.JSON(http.StatusOK, r)
-}
+// 	return ctx.JSON(http.StatusOK, r)
+// }
 
 // FindServiceStep
 // @Description Find Service Steps

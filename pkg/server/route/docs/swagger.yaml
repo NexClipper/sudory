@@ -2077,32 +2077,6 @@ paths:
             $ref: '#/definitions/v2.HttpRsp_Service'
       tags:
       - server/service
-  /server/service/{service_uuid}/step:
-    get:
-      consumes:
-      - application/json
-      description: Find Service Steps
-      parameters:
-      - description: client session token
-        in: header
-        name: x_auth_token
-        type: string
-      - description: ServiceStep 의 service_uuid
-        in: path
-        name: service_uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/v2.HttpRsp_ServiceStep'
-            type: array
-      tags:
-      - server/service_step
   /server/service/{uuid}:
     get:
       consumes:

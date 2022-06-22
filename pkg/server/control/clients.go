@@ -78,12 +78,18 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 		// 	}(),
 		// )
 
-		condition := PollingServiceCondition(cluster.Uuid)
-		limit := PollingServiceConditionLimit(cluster.PoliingLimit)
-
-		services, err = find_service(ctl.DB(), *condition, *limit)
+		condition := pollingServiceCondition(cluster.Uuid)
+		limit := pollingServiceConditionLimit(cluster.PoliingLimit)
+		var service_status []servicev2.Service_status
+		service_status, err = find_service_status(ctl.DB(), *condition, *limit)
 		err = errors.Wrapf(err, "failed to find services")
 		Do(&err, func() (err error) {
+			services = make([]servicev2.HttpRsp_Service, len(service_status))
+			for i := range service_status {
+				services[i].Service = service_status[i].Service
+				services[i].ServiceStatus_essential = service_status[i].ServiceStatus_essential
+			}
+
 			for i := range services {
 				service_uuid := services[i].Service.Uuid
 				services[i].Steps, err = get_service_steps(ctl.DB(), service_uuid)
@@ -607,7 +613,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 
 	var service_count int
 	Do(&err, func() (err error) {
-		service_count, err = CountClusterServices(ctl.DB(), claims.ClusterUuid)
+		service_count, err = countClusterServices(ctl.DB(), claims.ClusterUuid)
 		err = errors.Wrapf(err, "failed to get cluster service count")
 		return
 	})
@@ -781,13 +787,13 @@ func getCookie(ctx echo.Context, key string) (string, error) {
 	return cookie.Value, nil
 }
 
-func CountClusterServices(tx vanilla.Preparer, cluster_uuid string) (count int, err error) {
+func countClusterServices(tx vanilla.Preparer, cluster_uuid string) (count int, err error) {
 
 	service := servicev2.Service_tangled{}
 	columns := []string{
 		"COUNT(1)",
 	}
-	condition := PollingServiceCondition(cluster_uuid)
+	condition := pollingServiceCondition(cluster_uuid)
 
 	err = vanilla.QueryRows(tx, service.TableName(), columns, *condition)(func(s vanilla.Scanner) (err error) {
 		err = s.Scan(&count)
@@ -802,7 +808,7 @@ func CountClusterServices(tx vanilla.Preparer, cluster_uuid string) (count int, 
 	return
 }
 
-func PollingServiceCondition(cluster_uuid string) *vanilla.Condition {
+func pollingServiceCondition(cluster_uuid string) *vanilla.Condition {
 	condition := vanilla.NewCond(
 		// 서비스의 polling 조건
 		"WHERE cluster_uuid = ? AND ((status = ? OR status = ? OR status = ?))",
@@ -815,7 +821,7 @@ func PollingServiceCondition(cluster_uuid string) *vanilla.Condition {
 	return condition
 }
 
-func PollingServiceConditionLimit(poliing_limit int) *vanilla.Condition {
+func pollingServiceConditionLimit(poliing_limit int) *vanilla.Condition {
 	limit := vanilla.NewCond(
 		// limit
 		"LIMIT ?",

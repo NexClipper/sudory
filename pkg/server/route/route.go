@@ -177,8 +177,8 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		// group.DELETE("/service/:uuid", vanilla.DeleteService)
 		//route /server/service_step*
 		group.GET("/service/step", vanilla.FindServiceStep)
-		group.GET("/service/:service_uuid/step", vanilla.GetServiceSteps)
-		group.GET("/service/:service_uuid/step/:sequence", vanilla.GetServiceStep)
+		group.GET("/service/:uuid/step", vanilla.GetServiceSteps)
+		group.GET("/service/:uuid/step/:sequence", vanilla.GetServiceStep)
 		//route /server/global_variant*
 		group.GET("/global_variant", controller.FindGlobalVariant)
 		group.GET("/global_variant/:uuid", controller.GetGlobalVariant)

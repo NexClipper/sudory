@@ -16,6 +16,7 @@ var objs = []interface{}{
 	v2.ServiceResults_essential{},
 	v2.ServiceResult{},
 	v2.Service_tangled{},
+	v2.Service_status{},
 
 	v2.ServiceStep_essential{},
 	v2.ServiceStep{},
