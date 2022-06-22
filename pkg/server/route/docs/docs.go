@@ -1921,7 +1921,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v2.HttpRsp_Service"
+                                "$ref": "#/definitions/v2.HttpRsp_Service_status"
                             }
                         }
                     }
@@ -3717,12 +3717,6 @@ var doc = `{
                 "on_completion": {
                     "type": "integer"
                 },
-                "result": {
-                    "type": "string"
-                },
-                "result_type": {
-                    "type": "integer"
-                },
                 "status": {
                     "type": "integer"
                 },
@@ -3852,6 +3846,62 @@ var doc = `{
                     "type": "integer"
                 },
                 "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "description": "pk",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_Service_status": {
+            "type": "object",
+            "properties": {
+                "assigned_client_uuid": {
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "created": {
+                    "description": "pk",
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "on_completion": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "step_count": {
+                    "type": "integer"
+                },
+                "step_position": {
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v2.ServiceStep_tangled"
+                    }
+                },
+                "subscribed_channel": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "template_uuid": {
                     "type": "string"
                 },
                 "updated": {

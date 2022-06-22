@@ -9,8 +9,8 @@ import (
 type HttpRsp_ClientServicePolling struct {
 	// Uuid    string                `json:"uuid"`              //pk
 	// Created time.Time             `json:"created,omitempty"` //pk
-	Service_tangled `json:",inline"`
-	Steps           []ServiceStep_tangled `json:"steps,omitempty"`
+	Service_status `json:",inline"`
+	Steps          []ServiceStep_tangled `json:"steps,omitempty"`
 }
 
 // HttpReq_ClientServiceUpdate
@@ -29,6 +29,13 @@ type HttpRsp_Service struct {
 	// Created time.Time             `json:"created,omitempty"` //pk
 	Service_tangled `json:",inline"`
 	Steps           []ServiceStep_tangled `json:"steps,omitempty"`
+}
+
+type HttpRsp_Service_status struct {
+	// Uuid    string                `json:"uuid"`              //pk
+	// Created time.Time             `json:"created,omitempty"` //pk
+	Service_status `json:",inline"`
+	Steps          []ServiceStep_tangled `json:"steps,omitempty"`
 }
 
 type HttpReq_Service_Create struct {

@@ -133,7 +133,7 @@ func TestQueryMultiRows(t *testing.T) {
 		return
 	})
 
-	rsp := servicev2.HttpRsp_Service{Service: service, Steps: steps}
+	rsp := servicev2.HttpRsp_Service{Service_tangled: service, Steps: steps}
 
 	Do(&err, func() (err error) {
 		b, err := json.Marshal(rsp)

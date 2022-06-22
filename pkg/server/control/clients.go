@@ -57,7 +57,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 	})
 
 	// find services
-	var services []servicev2.HttpRsp_Service = []servicev2.HttpRsp_Service{}
+	var services []servicev2.HttpRsp_ClientServicePolling = []servicev2.HttpRsp_ClientServicePolling{}
 	Do(&err, func() (err error) {
 		// condition := vanilla.NewCond(
 		// 	// 서비스의 polling 조건
@@ -81,10 +81,10 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 		condition := pollingServiceCondition(cluster.Uuid)
 		limit := pollingServiceConditionLimit(cluster.PoliingLimit)
 		var service_status []servicev2.Service_status
-		service_status, err = find_service_status(ctl.DB(), *condition, *limit)
+		service_status, err = find_services_status(ctl.DB(), *condition, *limit)
 		err = errors.Wrapf(err, "failed to find services")
 		Do(&err, func() (err error) {
-			services = make([]servicev2.HttpRsp_Service, len(service_status))
+			services = make([]servicev2.HttpRsp_ClientServicePolling, len(service_status))
 			for i := range service_status {
 				services[i].Service = service_status[i].Service
 				services[i].ServiceStatus_essential = service_status[i].ServiceStatus_essential
@@ -191,9 +191,10 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 			m["cluster_uuid"] = service.ClusterUuid
 			m["assigned_client_uuid"] = service.AssignedClientUuid
 			m["status"] = service.Status
-			if 0 < len(service.Result) {
-				m["result"] = service.Result
-			}
+			// if 0 < len(service.Result) {
+			// 	m["result_type"] = service.ResultType.String()
+			// 	m["result"] = service.Result
+			// }
 			m["step_count"] = service.StepCount
 			m["step_position"] = service.StepPosition
 

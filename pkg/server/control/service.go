@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -321,7 +320,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 // @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
 // @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
 // @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
-// @Success     200 {array} v2.HttpRsp_Service
+// @Success     200 {array} v2.HttpRsp_Service_status
 func (ctl ControlVanilla) FindService(ctx echo.Context) (err error) {
 
 	conditions, args, err := ParseDecoration(echoutil.QueryParam(ctx))
@@ -333,27 +332,35 @@ func (ctl ControlVanilla) FindService(ctx echo.Context) (err error) {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	rsps := make([]servicev2.HttpRsp_Service, 0, __INIT_RECORD_CAPACITY__)
+	rsps := make([]servicev2.HttpRsp_Service_status, 0, __INIT_RECORD_CAPACITY__)
 
 	Do(&err, func() (err error) {
 		cond := vanilla.NewCond(
 			strings.Join(conditions, "\n"),
 			args...,
 		)
-
-		rsps, err = find_services(ctl.DB(), *cond)
+		var servcie_status []servicev2.Service_status
+		servcie_status, err = find_services_status(ctl.DB(), *cond)
 		err = errors.Wrapf(err, "find service")
-		return
-	})
-	Do(&err, func() (err error) {
-		for i := range rsps {
-			service_uuid := rsps[i].Service.Uuid
-			rsps[i].Steps, err = get_service_steps(ctl.DB(), service_uuid)
-			err = errors.Wrapf(err, "get steps")
-			if err != nil {
-				break
+
+		Do(&err, func() (err error) {
+			for i := range servcie_status {
+				service_uuid := servcie_status[i].Service.Uuid
+				var service_steps []servicev2.ServiceStep_tangled
+				service_steps, err = get_service_steps(ctl.DB(), service_uuid)
+				err = errors.Wrapf(err, "get steps")
+				if err != nil {
+					break
+				}
+
+				rsps = append(rsps, servicev2.HttpRsp_Service_status{
+					Service_status: servcie_status[i],
+					Steps:          service_steps,
+				})
 			}
-		}
+			return
+		})
+
 		return
 	})
 
@@ -403,15 +410,7 @@ func (ctl ControlVanilla) GetService(ctx echo.Context) (err error) {
 	return ctx.JSON(http.StatusOK, servicev2.HttpRsp_Service{Service_tangled: *service, Steps: steps})
 }
 
-// func Do(err *error, fn func() (err error)) {
-// 	if err == nil {
-// 		panic(*err) // panic
-// 	}
-// 	if *err != nil {
-// 		return
-// 	}
-// 	*err = fn()
-// }
+const __DEFAULT_DECORATION_LIMIT__ = 20
 
 func ParseDecoration(m map[string]string) (conditions []string, args []interface{}, err error) {
 	conditions = make([]string, 0, 3)
@@ -440,7 +439,7 @@ func ParseDecoration(m map[string]string) (conditions []string, args []interface
 				conditions = append(conditions, page)
 			}
 			if deco.Pagination == nil {
-				page := fmt.Sprintf("LIMIT %v", math.MaxInt8)
+				page := fmt.Sprintf("LIMIT %v", __DEFAULT_DECORATION_LIMIT__)
 				conditions = append(conditions, page)
 			}
 			return
@@ -495,7 +494,7 @@ func get_service_steps(tx vanilla.Preparer, service_uuid string) (steps []servic
 	return
 }
 
-func find_service_status(tx vanilla.Preparer, condition ...vanilla.Condition) (rsps []servicev2.Service_status, err error) {
+func find_services_status(tx vanilla.Preparer, condition ...vanilla.Condition) (rsps []servicev2.Service_status, err error) {
 	rsps = make([]servicev2.Service_status, 0, __INIT_RECORD_CAPACITY__)
 
 	// cond := vanilla.Condition{
@@ -518,8 +517,8 @@ func find_service_status(tx vanilla.Preparer, condition ...vanilla.Condition) (r
 	return
 }
 
-func find_services(tx vanilla.Preparer, condition ...vanilla.Condition) (rsps []servicev2.HttpRsp_Service, err error) {
-	rsps = make([]servicev2.HttpRsp_Service, 0, __INIT_RECORD_CAPACITY__)
+func find_services_tangled(tx vanilla.Preparer, condition ...vanilla.Condition) (rsps []servicev2.Service_tangled, err error) {
+	rsps = make([]servicev2.Service_tangled, 0, __INIT_RECORD_CAPACITY__)
 
 	// cond := vanilla.Condition{
 	// 	Condition: condition,
@@ -531,7 +530,7 @@ func find_services(tx vanilla.Preparer, condition ...vanilla.Condition) (rsps []
 		err = service.Scan(s)
 		err = errors.Wrapf(err, "service Scan")
 		Do(&err, func() (err error) {
-			rsps = append(rsps, servicev2.HttpRsp_Service{Service_tangled: service})
+			rsps = append(rsps, service)
 			return
 		})
 		return

@@ -674,10 +674,6 @@ definitions:
         type: string
       on_completion:
         type: integer
-      result:
-        type: string
-      result_type:
-        type: integer
       status:
         type: integer
       step_count:
@@ -719,6 +715,44 @@ definitions:
       result:
         type: string
       result_type:
+        type: integer
+      status:
+        type: integer
+      step_count:
+        type: integer
+      step_position:
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/v2.ServiceStep_tangled'
+        type: array
+      subscribed_channel:
+        type: string
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      updated:
+        description: pk
+        type: string
+      uuid:
+        description: pk
+        type: string
+    type: object
+  v2.HttpRsp_Service_status:
+    properties:
+      assigned_client_uuid:
+        type: string
+      cluster_uuid:
+        type: string
+      created:
+        description: pk
+        type: string
+      message:
+        type: string
+      name:
+        type: string
+      on_completion:
         type: integer
       status:
         type: integer
@@ -2049,7 +2083,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v2.HttpRsp_Service'
+              $ref: '#/definitions/v2.HttpRsp_Service_status'
             type: array
       tags:
       - server/service
