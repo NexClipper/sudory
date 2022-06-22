@@ -1377,7 +1377,7 @@ var doc = `{
                 }
             }
         },
-        "/server/cluster/{uuid}/polling/raguler": {
+        "/server/cluster/{uuid}/polling/regular": {
             "put": {
                 "description": "Update a cluster Polling Reguar",
                 "consumes": [

@@ -1723,7 +1723,7 @@ paths:
             $ref: '#/definitions/v1.Cluster'
       tags:
       - server/cluster
-  /server/cluster/{uuid}/polling/raguler:
+  /server/cluster/{uuid}/polling/regular:
     put:
       consumes:
       - application/json

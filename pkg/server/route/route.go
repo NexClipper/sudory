@@ -152,7 +152,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.GET("/cluster/:uuid", controller.GetCluster)
 		group.POST("/cluster", controller.CreateCluster)
 		group.PUT("/cluster/:uuid", controller.UpdateCluster)
-		group.PUT("/cluster/:uuid/polling/raguler", controller.UpdateClusterPollingRaguler)
+		group.PUT("/cluster/:uuid/polling/regular", controller.UpdateClusterPollingRegular)
 		group.PUT("/cluster/:uuid/polling/smart", controller.UpdateClusterPollingSmart)
 		group.DELETE("/cluster/:uuid", controller.DeleteCluster)
 		//route /server/template*
