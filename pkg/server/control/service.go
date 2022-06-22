@@ -221,27 +221,27 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 			command := commands[i]
 			body := body.Steps[i]
 
-			// optional; step.Name
-			name := body.Name
-			if len(name) == 0 {
-				name = command.Name
-			}
-			// optional; step.Summary
-			summary := body.Summary
-			if len(summary) == 0 {
-				summary = command.Summary.String()
-			}
+			// // optional; step.Name
+			// name := body.Name
+			// if len(name) == 0 {
+			// 	name = command.Name
+			// }
+			// // optional; step.Summary
+			// summary := body.Summary
+			// if len(summary) == 0 {
+			// 	summary = command.Summary.String()
+			// }
 			//property step
 			step := servicev2.ServiceStep{
 				Uuid:     uuid,
 				Sequence: i,
 				Created:  time.Now(),
 			}
-			step.Name = name                          //
-			step.Summary = noxorm.NullString(summary) //
-			step.Method = string(command.Method)      // command method
-			step.Args = body.Args                     //
-			step.ResultFilter = command.ResultFilter  // command result filter
+			step.Name = command.Name                 //
+			step.Summary = command.Summary           //
+			step.Method = string(command.Method)     // command method
+			step.Args = body.Args                    //
+			step.ResultFilter = command.ResultFilter // command result filter
 
 			// save step
 			rsp.Steps = append(rsp.Steps, servicev2.ServiceStep_tangled{ServiceStep: step})

@@ -74,7 +74,7 @@ type Service_tangled struct {
 /*
 `
 SELECT A.uuid, A.created,
-       name, summary, cluster_uuid, template_uuid, step_count, subscribed_channel, on_completion,
+       name, summary, cluster_uuid, template_uuid, step_count, subscribed_channel,
        B.created AS updated, assigned_client_uuid, step_position, status, message, result_type, result
   FROM service A
   LEFT JOIN service_status B
@@ -123,7 +123,6 @@ func (record Service_tangled) TableName() string {
 		"template_uuid",
 		"step_count",
 		"subscribed_channel",
-		"on_completion",
 		fmt.Sprintf("IFNULL(assigned_client_uuid, '%v') AS assigned_client_uuid", ""),
 		fmt.Sprintf("IFNULL(step_position, %v) AS step_position", 0),
 		fmt.Sprintf("IFNULL(status, %v) AS status", int(StepStatusRegist)),
@@ -147,7 +146,7 @@ type Service_status struct {
 /*
 `
 SELECT A.uuid, A.created,
-       name, summary, cluster_uuid, template_uuid, step_count, subscribed_channel, on_completion,
+       name, summary, cluster_uuid, template_uuid, step_count, subscribed_channel,
        B.created AS updated, assigned_client_uuid, step_position, status, message
   FROM service A
   LEFT JOIN service_status B
@@ -182,7 +181,6 @@ func (record Service_status) TableName() string {
 		"template_uuid",
 		"step_count",
 		"subscribed_channel",
-		"on_completion",
 		fmt.Sprintf("IFNULL(assigned_client_uuid, '%v') AS assigned_client_uuid", ""),
 		fmt.Sprintf("IFNULL(step_position, %v) AS step_position", 0),
 		fmt.Sprintf("IFNULL(status, %v) AS status", int(StepStatusRegist)),

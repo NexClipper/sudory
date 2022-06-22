@@ -3656,9 +3656,6 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "on_completion": {
-                    "type": "integer"
-                },
                 "steps": {
                     "type": "array",
                     "items": {
@@ -3686,12 +3683,6 @@ var doc = `{
                 "args": {
                     "type": "object",
                     "additionalProperties": true
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
                 }
             }
         },

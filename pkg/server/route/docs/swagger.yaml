@@ -633,8 +633,6 @@ definitions:
         type: string
       name:
         type: string
-      on_completion:
-        type: integer
       steps:
         items:
           $ref: '#/definitions/v2.HttpReq_ServiceStep_Create'
@@ -654,10 +652,6 @@ definitions:
       args:
         additionalProperties: true
         type: object
-      name:
-        type: string
-      summary:
-        type: string
     type: object
   v2.HttpRsp_ClientServicePolling:
     properties:

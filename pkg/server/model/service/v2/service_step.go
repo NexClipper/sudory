@@ -65,7 +65,7 @@ type ServiceStep_tangled struct {
 `
 SELECT A.uuid, A.sequence, A.created,
        name, summary, method, args, result_filter,
-       B.created AS updated, status, started, ended
+       B.created AS updated, IFNULL(status, 0) AS status, started, ended
   FROM service_step A
   LEFT JOIN service_step_status B
          ON A.uuid = B.uuid

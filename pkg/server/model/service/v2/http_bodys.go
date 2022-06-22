@@ -25,32 +25,25 @@ type HttpReq_ClientServiceUpdate struct {
 }
 
 type HttpRsp_Service struct {
-	// Uuid    string                `json:"uuid"`              //pk
-	// Created time.Time             `json:"created,omitempty"` //pk
 	Service_tangled `json:",inline"`
 	Steps           []ServiceStep_tangled `json:"steps,omitempty"`
 }
 
 type HttpRsp_Service_status struct {
-	// Uuid    string                `json:"uuid"`              //pk
-	// Created time.Time             `json:"created,omitempty"` //pk
 	Service_status `json:",inline"`
 	Steps          []ServiceStep_tangled `json:"steps,omitempty"`
 }
 
 type HttpReq_Service_Create struct {
-	Name              string       `json:"name,omitempty"`
-	Summary           string       `json:"summary,omitempty"`
-	ClusterUuid       string       `json:"cluster_uuid,omitempty"`
-	TemplateUuid      string       `json:"template_uuid,omitempty"`
-	SubscribedChannel string       `json:"subscribed_channel,omitempty"`
-	OnCompletion      OnCompletion `json:"on_completion,omitempty"`
+	Name              string `json:"name,omitempty"`
+	Summary           string `json:"summary,omitempty"`
+	ClusterUuid       string `json:"cluster_uuid,omitempty"`
+	TemplateUuid      string `json:"template_uuid,omitempty"`
+	SubscribedChannel string `json:"subscribed_channel,omitempty"`
 }
 
 type HttpReq_ServiceStep_Create struct {
-	Name    string                 `json:"name,omitempty"`
-	Summary string                 `json:"summary,omitempty"`
-	Args    map[string]interface{} `json:"args,omitempty"`
+	Args map[string]interface{} `json:"args,omitempty"`
 }
 
 type HttpReq_ServiceCreate struct {

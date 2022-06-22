@@ -258,7 +258,6 @@ CREATE TABLE `service` (
   `template_uuid` char(32) COLLATE utf8mb4_bin NOT NULL,
   `step_count` int(11) NOT NULL,
   `subscribed_channel` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL,
-  `on_completion` tinyint(4) NOT NULL DEFAULT 0,
   PRIMARY KEY (`uuid`,`created`),
   KEY `cluster_uuid` (`cluster_uuid`),
   KEY `template_uuid` (`template_uuid`)
@@ -449,4 +448,4 @@ CREATE TABLE `template_recipe` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-06-21  8:22:58
+-- Dump completed on 2022-06-22  5:18:08
