@@ -234,7 +234,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 			m["step_position"] = service.StepPosition
 
 			event.Invoke(event_name, m)
-			managed_event.Invoke(service.ClusterUuid, event_name, m)
+			managed_event.Invoke(event_name, m)
 		}
 		return
 	})
@@ -471,8 +471,8 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		m["step_count"] = service.StepCount
 		m["step_position"] = service_status.StepPosition
 
-		event.Invoke(service.SubscribedChannel.String(), m)                              //Subscribe 등록된 구독 이벤트 이름으로 호출
-		managed_event.Invoke(service.ClusterUuid, service.SubscribedChannel.String(), m) //Subscribe 등록된 구독 이벤트 이름으로 호출
+		event.Invoke(service.SubscribedChannel.String(), m)         //Subscribe 등록된 구독 이벤트 이름으로 호출
+		managed_event.Invoke(service.SubscribedChannel.String(), m) //Subscribe 등록된 구독 이벤트 이름으로 호출
 
 		return
 	})
@@ -596,7 +596,7 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 		"session_uuid": payload.Uuid,
 	}
 	event.Invoke(event_name, m)
-	managed_event.Invoke(payload.ClusterUuid, event_name, m)
+	managed_event.Invoke(event_name, m)
 
 	return ctx.JSON(http.StatusOK, OK())
 }

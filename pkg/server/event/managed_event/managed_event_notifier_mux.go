@@ -49,7 +49,7 @@ func (mux *ManagedEventNotifierMux) Update(v ...interface{}) {
 						future.Notifier,
 						errors.Wrapf(future.Error, "on notify%s %s",
 							logs.KVL(
-								"cluster_uuid", mux.Config().ClusterUuid,
+								// "cluster_uuid", mux.Config().ClusterUuid,
 								"channel_uuid", mux.Config().Uuid,
 								"channel_name", mux.Config().Name,
 							),

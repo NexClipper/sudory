@@ -43,13 +43,13 @@ func (ctl Control) CreateChannel(ctx echo.Context) error {
 				)))
 	}
 
-	if len(body.ClusterUuid) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
-					ParamLog(fmt.Sprintf("%s.ClusterUuid", TypeName(body)), body.ClusterUuid)...,
-				)))
-	}
+	// if len(body.ClusterUuid) == 0 {
+	// 	return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
+	// 		errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+	// 			logs.KVL(
+	// 				ParamLog(fmt.Sprintf("%s.ClusterUuid", TypeName(body)), body.ClusterUuid)...,
+	// 			)))
+	// }
 
 	// if len(body.Pattern) == 0 {
 	// 	return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
@@ -59,11 +59,11 @@ func (ctl Control) CreateChannel(ctx echo.Context) error {
 	// 			)))
 	// }
 
-	// exists cluster
-	if _, err := vault.NewCluster(ctl.db.Engine().NewSession()).Get(body.ClusterUuid); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(err, "exists cluster"))
-	}
+	// // exists cluster
+	// if _, err := vault.NewCluster(ctl.db.Engine().NewSession()).Get(body.ClusterUuid); err != nil {
+	// 	return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
+	// 		errors.Wrapf(err, "exists cluster"))
+	// }
 
 	//pattern regex
 	if _, err := regexp.Compile(body.Name); err != nil {
