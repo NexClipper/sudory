@@ -34,6 +34,11 @@ type HttpRsp_Service_status struct {
 	Steps          []ServiceStep_tangled `json:"steps,omitempty"`
 }
 
+type HttpRsp_Service_create struct {
+	Service `json:",inline"`
+	Steps   []ServiceStep `json:"steps,omitempty"`
+}
+
 type HttpReq_Service_Create struct {
 	Name              string `json:"name,omitempty"`
 	Summary           string `json:"summary,omitempty"`
@@ -46,7 +51,7 @@ type HttpReq_ServiceStep_Create struct {
 	Args map[string]interface{} `json:"args,omitempty"`
 }
 
-type HttpReq_ServiceCreate struct {
+type HttpReq_Service_create struct {
 	Uuid                   string `json:"uuid"` //pk
 	HttpReq_Service_Create `json:",inline"`
 	Steps                  []HttpReq_ServiceStep_Create `json:"steps,omitempty"`

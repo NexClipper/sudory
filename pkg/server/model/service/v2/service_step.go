@@ -5,15 +5,15 @@ import (
 	"strings"
 	"time"
 
-	noxorm "github.com/NexClipper/sudory/pkg/server/model/noxorm/v2"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 )
 
 type ServiceStep_essential struct {
-	Name         string            `column:"name"          json:"name,omitempty"`
-	Summary      noxorm.NullString `column:"summary"       json:"summary,omitempty"`
-	Method       string            `column:"method"        json:"method,omitempty"`
-	Args         noxorm.NullJson   `column:"args"          json:"args,omitempty"`
-	ResultFilter noxorm.NullString `column:"result_filter" json:"result_filter,omitempty"`
+	Name         string             `column:"name"          json:"name,omitempty"`
+	Summary      vanilla.NullString `column:"summary"       json:"summary,omitempty"`
+	Method       string             `column:"method"        json:"method,omitempty"`
+	Args         vanilla.NullJson   `column:"args"          json:"args,omitempty"`
+	ResultFilter vanilla.NullString `column:"result_filter" json:"result_filter,omitempty"`
 }
 
 func (ServiceStep_essential) TableName() string {
@@ -29,9 +29,9 @@ type ServiceStep struct {
 }
 
 type ServiceStepStatus_essential struct {
-	Status  StepStatus      `column:"status"  json:"status,omitempty"`
-	Started noxorm.NullTime `column:"started" json:"started,omitempty"`
-	Ended   noxorm.NullTime `column:"ended"   json:"ended,omitempty"`
+	Status  StepStatus       `column:"status"  json:"status,omitempty"`
+	Started vanilla.NullTime `column:"started" json:"started,omitempty"`
+	Ended   vanilla.NullTime `column:"ended"   json:"ended,omitempty"`
 }
 
 func (ServiceStepStatus_essential) TableName() string {
@@ -58,7 +58,7 @@ type ServiceStep_tangled struct {
 	ServiceStep                 `json:",inline"` //step
 	ServiceStepStatus_essential `json:",inline"` //status
 
-	Updated noxorm.NullTime `column:"updated" json:"updated,omitempty"` //pk
+	Updated vanilla.NullTime `column:"updated" json:"updated,omitempty"` //pk
 }
 
 /* *

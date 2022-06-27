@@ -5,17 +5,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	crypto "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v2"
-	noxorm "github.com/NexClipper/sudory/pkg/server/model/noxorm/v2"
 )
 
 type Service_essential struct {
-	Name              string            `column:"name"               json:"name,omitempty"`
-	Summary           noxorm.NullString `column:"summary"            json:"summary,omitempty"`
-	ClusterUuid       string            `column:"cluster_uuid"       json:"cluster_uuid,omitempty"`
-	TemplateUuid      string            `column:"template_uuid"      json:"template_uuid,omitempty"`
-	StepCount         int               `column:"step_count"         json:"step_count,omitempty"`
-	SubscribedChannel noxorm.NullString `column:"subscribed_channel" json:"subscribed_channel,omitempty"`
+	Name              string             `column:"name"               json:"name,omitempty"`
+	Summary           vanilla.NullString `column:"summary"            json:"summary,omitempty"`
+	ClusterUuid       string             `column:"cluster_uuid"       json:"cluster_uuid,omitempty"`
+	TemplateUuid      string             `column:"template_uuid"      json:"template_uuid,omitempty"`
+	StepCount         int                `column:"step_count"         json:"step_count,omitempty"`
+	SubscribedChannel vanilla.NullString `column:"subscribed_channel" json:"subscribed_channel,omitempty"`
 	// OnCompletion      OnCompletion      `column:"on_completion"      json:"on_completion,omitempty"`
 }
 
@@ -30,10 +30,10 @@ type Service struct {
 }
 
 type ServiceStatus_essential struct {
-	AssignedClientUuid string            `column:"assigned_client_uuid" json:"assigned_client_uuid,omitempty"`
-	StepPosition       int               `column:"step_position"        json:"step_position,omitempty"`
-	Status             StepStatus        `column:"status"               json:"status,omitempty"`
-	Message            noxorm.NullString `column:"message"              json:"message,omitempty"`
+	AssignedClientUuid string             `column:"assigned_client_uuid" json:"assigned_client_uuid,omitempty"`
+	StepPosition       int                `column:"step_position"        json:"step_position,omitempty"`
+	Status             StepStatus         `column:"status"               json:"status,omitempty"`
+	Message            vanilla.NullString `column:"message"              json:"message,omitempty"`
 }
 
 func (ServiceStatus_essential) TableName() string {
@@ -68,7 +68,7 @@ type Service_tangled struct {
 	ServiceStatus_essential  `json:",inline"` //status
 	ServiceResults_essential `json:",inline"` //result
 
-	Updated noxorm.NullTime `column:"updated" json:"updated"` //pk
+	Updated vanilla.NullTime `column:"updated" json:"updated"` //pk
 }
 
 /*
@@ -140,7 +140,7 @@ type Service_status struct {
 	Service                 `json:",inline"` //service
 	ServiceStatus_essential `json:",inline"` //status
 
-	Updated noxorm.NullTime `column:"updated" json:"updated"` //pk
+	Updated vanilla.NullTime `column:"updated" json:"updated"` //pk
 }
 
 /*

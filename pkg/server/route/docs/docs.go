@@ -1946,12 +1946,12 @@ var doc = `{
                         "in": "header"
                     },
                     {
-                        "description": "HttpReq_ServiceCreate",
+                        "description": "HttpReq_Service_create",
                         "name": "service",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v2.HttpReq_ServiceCreate"
+                            "$ref": "#/definitions/v2.HttpReq_Service_create"
                         }
                     }
                 ],
@@ -1959,7 +1959,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v2.HttpRsp_Service"
+                            "$ref": "#/definitions/v2.HttpRsp_Service_create"
                         }
                     }
                 }
@@ -3647,7 +3647,16 @@ var doc = `{
                 }
             }
         },
-        "v2.HttpReq_ServiceCreate": {
+        "v2.HttpReq_ServiceStep_Create": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "v2.HttpReq_Service_create": {
             "type": "object",
             "properties": {
                 "cluster_uuid": {
@@ -3674,15 +3683,6 @@ var doc = `{
                 "uuid": {
                     "description": "pk",
                     "type": "string"
-                }
-            }
-        },
-        "v2.HttpReq_ServiceStep_Create": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "object",
-                    "additionalProperties": true
                 }
             }
         },
@@ -3802,7 +3802,7 @@ var doc = `{
             "type": "object",
             "properties": {
                 "args": {
-                    "$ref": "#/definitions/v2.NullJson"
+                    "$ref": "#/definitions/vanilla.NullJson"
                 },
                 "created": {
                     "description": "pk",
@@ -3835,6 +3835,43 @@ var doc = `{
                 },
                 "updated": {
                     "description": "pk",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_Service_create": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "created": {
+                    "description": "pk",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "step_count": {
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v2.ServiceStep"
+                    }
+                },
+                "subscribed_channel": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "template_uuid": {
                     "type": "string"
                 },
                 "uuid": {
@@ -3896,15 +3933,43 @@ var doc = `{
                 }
             }
         },
-        "v2.NullJson": {
+        "v2.ServiceStep": {
             "type": "object",
-            "additionalProperties": true
+            "properties": {
+                "args": {
+                    "$ref": "#/definitions/vanilla.NullJson"
+                },
+                "created": {
+                    "description": "pk",
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "result_filter": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk",
+                    "type": "string"
+                }
+            }
         },
         "v2.ServiceStep_tangled": {
             "type": "object",
             "properties": {
                 "args": {
-                    "$ref": "#/definitions/v2.NullJson"
+                    "$ref": "#/definitions/vanilla.NullJson"
                 },
                 "created": {
                     "description": "pk",
@@ -3944,6 +4009,10 @@ var doc = `{
                     "type": "string"
                 }
             }
+        },
+        "vanilla.NullJson": {
+            "type": "object",
+            "additionalProperties": true
         }
     }
 }`

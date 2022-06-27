@@ -627,7 +627,7 @@ definitions:
         description: pk
         type: string
     type: object
-  v2.HttpReq_ServiceCreate:
+  v2.HttpReq_Service_create:
     properties:
       cluster_uuid:
         type: string
@@ -729,6 +729,31 @@ definitions:
         description: pk
         type: string
     type: object
+  v2.HttpRsp_Service_create:
+    properties:
+      cluster_uuid:
+        type: string
+      created:
+        description: pk
+        type: string
+      name:
+        type: string
+      step_count:
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/v2.ServiceStep'
+        type: array
+      subscribed_channel:
+        type: string
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      uuid:
+        description: pk
+        type: string
+    type: object
   v2.HttpRsp_Service_status:
     properties:
       assigned_client_uuid:
@@ -768,7 +793,7 @@ definitions:
   v2.HttpRsp_ServiceStep:
     properties:
       args:
-        $ref: '#/definitions/v2.NullJson'
+        $ref: '#/definitions/vanilla.NullJson'
       created:
         description: pk
         type: string
@@ -796,13 +821,32 @@ definitions:
         description: pk
         type: string
     type: object
-  v2.NullJson:
-    additionalProperties: true
+  v2.ServiceStep:
+    properties:
+      args:
+        $ref: '#/definitions/vanilla.NullJson'
+      created:
+        description: pk
+        type: string
+      method:
+        type: string
+      name:
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        description: pk
+        type: integer
+      summary:
+        type: string
+      uuid:
+        description: pk
+        type: string
     type: object
   v2.ServiceStep_tangled:
     properties:
       args:
-        $ref: '#/definitions/v2.NullJson'
+        $ref: '#/definitions/vanilla.NullJson'
       created:
         description: pk
         type: string
@@ -829,6 +873,9 @@ definitions:
       uuid:
         description: pk
         type: string
+    type: object
+  vanilla.NullJson:
+    additionalProperties: true
     type: object
 info:
   contact:
@@ -2084,19 +2131,19 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: HttpReq_ServiceCreate
+      - description: HttpReq_Service_create
         in: body
         name: service
         required: true
         schema:
-          $ref: '#/definitions/v2.HttpReq_ServiceCreate'
+          $ref: '#/definitions/v2.HttpReq_Service_create'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v2.HttpRsp_Service'
+            $ref: '#/definitions/v2.HttpRsp_Service_create'
       tags:
       - server/service
   /server/service/{uuid}:
