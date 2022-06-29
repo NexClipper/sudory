@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/NexClipper/logger"
+	"github.com/NexClipper/sudory/conf/script/migrations"
 	"github.com/NexClipper/sudory/pkg/server/config"
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/event"
@@ -292,7 +293,15 @@ func doMigration(cfg *config.Config) (err error) {
 	dest := fmt.Sprintf("%v://%v", cfg.Database.Type, database.FormatDSN(cfg))
 
 	// read migration latest file
-	latest := &config.Latest{Source: cfg.Migrate.Source}
+	var latest interface {
+		Version() string
+		Err() error
+	}
+	if true {
+		latest = &config.Latest{Source: cfg.Migrate.Source}
+	} else {
+		latest = migrations.SudoryLatest
+	}
 	err = latest.Err()
 	if err != nil {
 		return err
