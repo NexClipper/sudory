@@ -8,7 +8,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strconv"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/NexClipper/logger"
@@ -27,6 +29,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/NexClipper/sudory/pkg/version"
 	"github.com/fsnotify/fsnotify"
+	"github.com/golang-migrate/migrate/v4"
 	"github.com/jinzhu/configor"
 	"github.com/pkg/errors"
 	"xorm.io/builder"
@@ -81,6 +84,10 @@ func main() {
 	}
 	defer db.Close()
 
+	if err := doMigration(cfg); err != nil {
+		panic(err)
+	}
+
 	if true {
 		//init event
 		eventsConfigYaml := cfg.Events
@@ -104,7 +111,7 @@ func main() {
 	managed_event.Invoke = me.Invoke
 
 	//init global variant cron
-	cronGVClose, err := newGlobalVariantCron(db.Engine())
+	cronGVClose, err := newGlobalVariablesCron(db.Engine())
 	if err != nil {
 		panic(err)
 	}
@@ -280,21 +287,119 @@ func newEvent(filename string) (closer func(), err error) {
 	}, nil
 }
 
-func newGlobalVariantCron(engine *xorm.Engine) (func(), error) {
+func doMigration(cfg *config.Config) (err error) {
+	src := fmt.Sprintf("file://%v", cfg.Migrate.Source)
+	dest := fmt.Sprintf("%v://%v", cfg.Database.Type, database.FormatDSN(cfg))
+
+	// read migration latest file
+	latest := &config.Latest{Source: cfg.Migrate.Source}
+	err = latest.Err()
+	if err != nil {
+		return err
+	}
+
+	latest_version, err := strconv.Atoi(latest.Version())
+	if err != nil {
+		return
+	}
+
+	mgrt, err := database.NewMigrate(src, dest)
+	if err != nil {
+		return
+	}
+	defer func() {
+		// close
+		serr, derr := mgrt.Close()
+		if err == nil && serr != nil {
+			err = errors.WithStack(serr)
+		}
+		if err == nil && derr != nil {
+			err = errors.WithStack(derr)
+		}
+	}()
+
+	// get migreate version (current)
+	cur_ver, cur_dirty, err := mgrt.Version()
+	if err != nil && err != migrate.ErrNilVersion {
+		err = errors.Wrapf(err, "failed to get current version")
+		return
+	}
+
+	// check dirty state
+	if cur_dirty {
+		return &migrate.ErrDirty{Version: int(cur_ver)}
+	}
+
+	if cur_ver < uint(latest_version) {
+		// do migrate goto V
+		err = mgrt.Migrate(uint(latest_version))
+		if err != nil && err != migrate.ErrNoChange {
+			err = errors.Wrapf(err, "failed to migrate goto version=\"%v\"", latest_version)
+			return
+		}
+	}
+
+	// get migreate version (latest)
+	new_ver, new_dirty, err := mgrt.Version()
+	if err != nil && err != migrate.ErrNilVersion {
+		err = errors.Wrapf(err, "failed to get current version")
+		return
+	}
+
+	cols := []string{
+		"",
+		"driver",
+		"database",
+		"source",
+		"version",
+		"status",
+		"dirty",
+	}
+
+	vals := []string{
+		"-",
+		cfg.Database.Type,
+		cfg.Database.DBName,
+		cfg.Migrate.Source,
+		fmt.Sprintf("v%v", new_ver),
+		func() string {
+			if cur_ver == new_ver {
+				return "no change"
+			} else {
+				return fmt.Sprintf("v%v->v%v", cur_ver, new_ver)
+			}
+		}(),
+		strconv.FormatBool(new_dirty),
+	}
+
+	// print migrate info
+	w := os.Stdout
+	defer fmt.Fprintln(w, strings.Repeat("_", 40))
+
+	tw := tabwriter.NewWriter(w, 0, 0, 3, ' ', 0)
+	defer tw.Flush()
+	fmt.Fprintln(w, "database migration:")
+	tw.Write([]byte(strings.Join(cols, "\t") + "\n"))
+	tw.Write([]byte(strings.Join(vals, "\t") + "\n"))
+
+	return
+}
+
+func newGlobalVariablesCron(engine *xorm.Engine) (func(), error) {
 	const interval = 10 * time.Second
 
 	//환경설정 updater 생성
-	updator := globvar.NewGlobalVariantUpdate(engine.NewSession())
+	updator := globvar.NewGlobalVariablesUpdate(engine.NewSession())
 	//환경변수 리스트 검사
 	if err := updator.WhiteListCheck(); err != nil {
 		//빠져있는 환경변수 추가
 		if err := updator.Merge(); err != nil {
-			return nil, errors.Wrapf(err, "global variant init merge")
+			return nil, errors.Wrapf(err, "global variables init merge")
 		}
 	}
 	//환경변수 업데이트
 	if err := updator.Update(); err != nil {
-		return nil, errors.Wrapf(err, "global variant init update")
+		return nil, errors.Wrapf(err, "global variables init update")
 	}
 
 	//에러 핸들러 등록
@@ -314,10 +419,10 @@ func newGlobalVariantCron(engine *xorm.Engine) (func(), error) {
 
 	//new ticker
 	tickerClose := status.NewTicker(interval,
-		//global variant update
+		//global variables update
 		func() {
 			if err := updator.Update(); err != nil {
-				errorHandlers.OnError(errors.Wrapf(err, "global variant update"))
+				errorHandlers.OnError(errors.Wrapf(err, "global variables update"))
 			}
 		},
 	)

@@ -1746,9 +1746,9 @@ var doc = `{
                 }
             }
         },
-        "/server/global_variant": {
+        "/server/global_variables": {
             "get": {
-                "description": "Find global_variant",
+                "description": "Find GlobalVariables",
                 "consumes": [
                     "application/json"
                 ],
@@ -1756,7 +1756,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server/global_variant"
+                    "server/global_variables"
                 ],
                 "parameters": [
                     {
@@ -1790,16 +1790,16 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.GlobalVariant"
+                                "$ref": "#/definitions/v1.GlobalVariables"
                             }
                         }
                     }
                 }
             }
         },
-        "/server/global_variant/{uuid}": {
+        "/server/global_variables/{uuid}": {
             "get": {
-                "description": "Get a global_variant",
+                "description": "Get a GlobalVariables",
                 "consumes": [
                     "application/json"
                 ],
@@ -1807,7 +1807,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server/global_variant"
+                    "server/global_variables"
                 ],
                 "parameters": [
                     {
@@ -1818,7 +1818,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "GlobalVariant 의 Uuid",
+                        "description": "GlobalVariables 의 Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -1828,13 +1828,13 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.GlobalVariant"
+                            "$ref": "#/definitions/v1.GlobalVariables"
                         }
                     }
                 }
             },
             "put": {
-                "description": "Update global_variant Value",
+                "description": "Update GlobalVariables Value",
                 "consumes": [
                     "application/json"
                 ],
@@ -1842,7 +1842,7 @@ var doc = `{
                     "application/json"
                 ],
                 "tags": [
-                    "server/global_variant"
+                    "server/global_variables"
                 ],
                 "parameters": [
                     {
@@ -1853,17 +1853,17 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "GlobalVariant 의 Uuid",
+                        "description": "GlobalVariables 의 Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "HttpReqGlobalVariant_Update",
+                        "description": "HttpReqGlobalVariables_update",
                         "name": "enviroment",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqGlobalVariant_Update"
+                            "$ref": "#/definitions/v1.HttpReqGlobalVariables_update"
                         }
                     }
                 ],
@@ -1871,7 +1871,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.GlobalVariant"
+                            "$ref": "#/definitions/v1.GlobalVariables"
                         }
                     }
                 }
@@ -2874,7 +2874,7 @@ var doc = `{
                 }
             }
         },
-        "v1.GlobalVariant": {
+        "v1.GlobalVariables": {
             "type": "object",
             "properties": {
                 "created": {
@@ -2981,7 +2981,7 @@ var doc = `{
                 }
             }
         },
-        "v1.HttpReqGlobalVariant_Update": {
+        "v1.HttpReqGlobalVariables_update": {
             "type": "object",
             "properties": {
                 "value": {

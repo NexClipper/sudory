@@ -104,7 +104,7 @@ definitions:
       uuid:
         type: string
     type: object
-  v1.GlobalVariant:
+  v1.GlobalVariables:
     properties:
       created:
         type: string
@@ -175,7 +175,7 @@ definitions:
       summary:
         type: string
     type: object
-  v1.HttpReqGlobalVariant_Update:
+  v1.HttpReqGlobalVariables_update:
     properties:
       value:
         type: string
@@ -2004,11 +2004,11 @@ paths:
             $ref: '#/definitions/v1.ClusterToken'
       tags:
       - server/cluster_token
-  /server/global_variant:
+  /server/global_variables:
     get:
       consumes:
       - application/json
-      description: Find global_variant
+      description: Find GlobalVariables
       parameters:
       - description: client session token
         in: header
@@ -2033,21 +2033,21 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.GlobalVariant'
+              $ref: '#/definitions/v1.GlobalVariables'
             type: array
       tags:
-      - server/global_variant
-  /server/global_variant/{uuid}:
+      - server/global_variables
+  /server/global_variables/{uuid}:
     get:
       consumes:
       - application/json
-      description: Get a global_variant
+      description: Get a GlobalVariables
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: GlobalVariant 의 Uuid
+      - description: GlobalVariables 의 Uuid
         in: path
         name: uuid
         required: true
@@ -2058,37 +2058,37 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.GlobalVariant'
+            $ref: '#/definitions/v1.GlobalVariables'
       tags:
-      - server/global_variant
+      - server/global_variables
     put:
       consumes:
       - application/json
-      description: Update global_variant Value
+      description: Update GlobalVariables Value
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: GlobalVariant 의 Uuid
+      - description: GlobalVariables 의 Uuid
         in: path
         name: uuid
         required: true
         type: string
-      - description: HttpReqGlobalVariant_Update
+      - description: HttpReqGlobalVariables_update
         in: body
         name: enviroment
         schema:
-          $ref: '#/definitions/v1.HttpReqGlobalVariant_Update'
+          $ref: '#/definitions/v1.HttpReqGlobalVariables_update'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.GlobalVariant'
+            $ref: '#/definitions/v1.GlobalVariables'
       tags:
-      - server/global_variant
+      - server/global_variables
   /server/service:
     get:
       consumes:

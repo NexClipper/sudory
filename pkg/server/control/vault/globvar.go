@@ -4,20 +4,20 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/prepare"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variant/v1"
+	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variables/v1"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
 )
 
-type GlobalVariant struct {
+type GlobalVariables struct {
 	tx *xorm.Session
 }
 
-func NewGlobalVariant(ctx *xorm.Session) *GlobalVariant {
-	return &GlobalVariant{tx: ctx}
+func NewGlobalVariables(ctx *xorm.Session) *GlobalVariables {
+	return &GlobalVariables{tx: ctx}
 }
 
-func (vault GlobalVariant) Create(record globvarv1.GlobalVariant) (*globvarv1.GlobalVariant, error) {
+func (vault GlobalVariables) Create(record globvarv1.GlobalVariables) (*globvarv1.GlobalVariables, error) {
 	if err := database.XormCreate(
 		vault.tx, &record); err != nil {
 		return nil, errors.Wrapf(err, "create %v", record.TableName())
@@ -26,12 +26,12 @@ func (vault GlobalVariant) Create(record globvarv1.GlobalVariant) (*globvarv1.Gl
 	return &record, nil
 }
 
-func (vault GlobalVariant) Get(uuid string) (*globvarv1.GlobalVariant, error) {
+func (vault GlobalVariables) Get(uuid string) (*globvarv1.GlobalVariables, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		uuid,
 	}
-	record := &globvarv1.GlobalVariant{}
+	record := &globvarv1.GlobalVariables{}
 	if err := database.XormGet(
 		vault.tx.Where(where, args...), record); err != nil {
 		return nil, errors.Wrapf(err, "get %v", record.TableName())
@@ -40,17 +40,17 @@ func (vault GlobalVariant) Get(uuid string) (*globvarv1.GlobalVariant, error) {
 	return record, nil
 }
 
-func (vault GlobalVariant) Find(where string, args ...interface{}) ([]globvarv1.GlobalVariant, error) {
-	models := make([]globvarv1.GlobalVariant, 0)
+func (vault GlobalVariables) Find(where string, args ...interface{}) ([]globvarv1.GlobalVariables, error) {
+	models := make([]globvarv1.GlobalVariables, 0)
 	if err := database.XormFind(
 		vault.tx.Where(where, args...), &models); err != nil {
-		return nil, errors.Wrapf(err, "find %v", new(globvarv1.GlobalVariant).TableName())
+		return nil, errors.Wrapf(err, "find %v", new(globvarv1.GlobalVariables).TableName())
 	}
 
 	return models, nil
 }
 
-func (vault GlobalVariant) Query(query map[string]string) ([]globvarv1.GlobalVariant, error) {
+func (vault GlobalVariables) Query(query map[string]string) ([]globvarv1.GlobalVariables, error) {
 	//parse query
 	preparer, err := prepare.NewParser(query)
 	if err != nil {
@@ -61,16 +61,16 @@ func (vault GlobalVariant) Query(query map[string]string) ([]globvarv1.GlobalVar
 	}
 
 	//find
-	records := make([]globvarv1.GlobalVariant, 0)
+	records := make([]globvarv1.GlobalVariables, 0)
 	if err := database.XormFind(
 		preparer.Prepared(vault.tx), &records); err != nil {
-		return nil, errors.Wrapf(err, "query %v", new(globvarv1.GlobalVariant).TableName())
+		return nil, errors.Wrapf(err, "query %v", new(globvarv1.GlobalVariables).TableName())
 	}
 
 	return records, nil
 }
 
-func (vault GlobalVariant) Update(record globvarv1.GlobalVariant) (*globvarv1.GlobalVariant, error) {
+func (vault GlobalVariables) Update(record globvarv1.GlobalVariables) (*globvarv1.GlobalVariables, error) {
 	where := "uuid = ?"
 	args := []interface{}{
 		record.Uuid,
@@ -83,12 +83,12 @@ func (vault GlobalVariant) Update(record globvarv1.GlobalVariant) (*globvarv1.Gl
 	return &record, nil
 }
 
-func (vault GlobalVariant) Delete(uuid string) error {
+func (vault GlobalVariables) Delete(uuid string) error {
 	where := "uuid = ?"
 	args := []interface{}{
 		uuid,
 	}
-	record := &globvarv1.GlobalVariant{}
+	record := &globvarv1.GlobalVariables{}
 	if err := database.XormDelete(
 		vault.tx.Where(where, args...), record); err != nil {
 		return errors.Wrapf(err, "delete %v", record.TableName())

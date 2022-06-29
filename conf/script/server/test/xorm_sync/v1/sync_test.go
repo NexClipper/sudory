@@ -25,7 +25,7 @@ func TestSync(t *testing.T) {
 		{name: "clusterv1",
 			args: new(clusterv1.Cluster), want: nil, wantErr: false},
 		{name: "envv1",
-			args: new(globvarv1.GlobalVariant), want: nil, wantErr: false},
+			args: new(globvarv1.GlobalVariables), want: nil, wantErr: false},
 		{name: "stepv1",
 			args: new(stepv1.ServiceStep), want: nil, wantErr: false},
 		{name: "servicev1",

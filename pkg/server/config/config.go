@@ -29,6 +29,10 @@ type Config struct {
 		LogLevel        string `default:"warn"`
 	}
 
+	Migrate struct {
+		Source string `yaml:"source" default:"./schema"`
+	} `yaml:"migrate"`
+
 	CORSConfig struct {
 		AllowOrigins string `env:"SUDORY_CORSCONFIG_ALLOW_ORIGINS" yaml:"allow-origins,omitempty"`
 		AllowMethods string `env:"SUDORY_CORSCONFIG_ALLOW_METHODS" yaml:"allow-methods,omitempty"`
