@@ -6,6 +6,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/NexClipper/sudory/pkg/client/alertmanager"
 	"github.com/NexClipper/sudory/pkg/client/helm"
 	"github.com/NexClipper/sudory/pkg/client/jq"
 	"github.com/NexClipper/sudory/pkg/client/k8s"
@@ -21,6 +22,7 @@ const (
 	CommandTypeP8s
 	CommandTypeHelm
 	CommandTypeJq
+	CommandTypeAlertManager
 )
 
 func (ct CommandType) String() string {
@@ -30,6 +32,10 @@ func (ct CommandType) String() string {
 		return "prometheus"
 	} else if ct == CommandTypeHelm {
 		return "helm"
+	} else if ct == CommandTypeJq {
+		return "jq"
+	} else if ct == CommandTypeAlertManager {
+		return "alertmanager"
 	}
 
 	return "Unknown CommandType"
@@ -53,6 +59,8 @@ func NewCommander(command *service.StepCommand) (Commander, error) {
 		return NewHelmCommander(command)
 	case "jq":
 		return NewJqCommander(command)
+	case "alertmanager":
+		return NewAlertManagerCommander(command)
 	}
 
 	return nil, fmt.Errorf("unknown command method(%s)", command.Method)
@@ -244,4 +252,57 @@ func (c *JqCommander) ParseCommand(command *service.StepCommand) error {
 
 func (c *JqCommander) Run() (string, error) {
 	return jq.Request(c.input, c.filter)
+}
+
+type AlertManagerCommander struct {
+	client     *alertmanager.Client
+	apiVersion string
+	api        string
+	verb       string
+	params     map[string]interface{}
+}
+
+func NewAlertManagerCommander(command *service.StepCommand) (Commander, error) {
+	cmdr := &AlertManagerCommander{}
+
+	if err := cmdr.ParseCommand(command); err != nil {
+		return nil, err
+	}
+
+	return cmdr, nil
+}
+
+func (c *AlertManagerCommander) GetCommandType() CommandType {
+	return CommandTypeP8s
+}
+
+func (c *AlertManagerCommander) ParseCommand(command *service.StepCommand) error {
+	mlist := strings.SplitN(command.Method, ".", 4)
+
+	if len(mlist) != 4 {
+		return fmt.Errorf("there is not enough method(%s) for alertmanager. want(3) but got(%d)", command.Method, len(mlist))
+	}
+
+	c.api = mlist[1]
+	c.verb = mlist[2]
+	c.apiVersion = mlist[3]
+	c.params = command.Args
+
+	url, ok := macro.MapString(command.Args, "url")
+	if !ok || len(url) == 0 {
+		return fmt.Errorf("alertmanager url is empty")
+	}
+
+	client, err := alertmanager.NewClient(url)
+	if err != nil {
+		return err
+	}
+
+	c.client = client
+
+	return nil
+}
+
+func (c *AlertManagerCommander) Run() (string, error) {
+	return c.client.ApiRequest(c.apiVersion, c.api, c.verb, c.params)
 }

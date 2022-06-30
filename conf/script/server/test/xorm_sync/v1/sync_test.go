@@ -6,7 +6,7 @@ import (
 	channelv1 "github.com/NexClipper/sudory/pkg/server/model/channel/v1"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	clsttknv1 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v1"
-	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variant/v1"
+	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variables/v1"
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
