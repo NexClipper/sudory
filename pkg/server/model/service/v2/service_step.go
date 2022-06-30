@@ -12,7 +12,7 @@ type ServiceStep_essential struct {
 	Name         string             `column:"name"          json:"name,omitempty"`
 	Summary      vanilla.NullString `column:"summary"       json:"summary,omitempty"`
 	Method       string             `column:"method"        json:"method,omitempty"`
-	Args         vanilla.NullJson   `column:"args"          json:"args,omitempty"`
+	Args         vanilla.NullObject `column:"args"          json:"args,omitempty"`
 	ResultFilter vanilla.NullString `column:"result_filter" json:"result_filter,omitempty"`
 }
 

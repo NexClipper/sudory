@@ -336,10 +336,10 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	stepMessage := func() vanilla.NullString {
 		// 상태가 실패인 경우만
 		if body.Status == servicev2.StepStatusFail {
-			return (vanilla.NullString)(body.Result)
+			return *vanilla.NewNullString(body.Result)
 		}
 		//기본값; 공백 문자열
-		return ""
+		return vanilla.NullString{}
 	}
 
 	time_now := time.Now()
@@ -368,9 +368,9 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	}()
 	// step status
 	step_status := func() servicev2.ServiceStepStatus {
-		step.ServiceStepStatus_essential.Status = body.Status                       // Status
-		step.ServiceStepStatus_essential.Started = (vanilla.NullTime)(body.Started) // Started
-		step.ServiceStepStatus_essential.Ended = (vanilla.NullTime)(body.Ended)     // Ended
+		step.ServiceStepStatus_essential.Status = body.Status                         // Status
+		step.ServiceStepStatus_essential.Started = *vanilla.NewNullTime(body.Started) // Started
+		step.ServiceStepStatus_essential.Ended = *vanilla.NewNullTime(body.Ended)     // Ended
 		return servicev2.ServiceStepStatus{
 			Uuid:                        step.Uuid,
 			Sequence:                    step.Sequence, // missing
@@ -410,7 +410,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 				}
 				// 채널이 등록되어 있는 경우
 				// 서비스 결과를 저장 하지 않는다
-				if 0 < len(service.SubscribedChannel) {
+				if 0 < len(service.SubscribedChannel.String) {
 					return
 				}
 
@@ -469,7 +469,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		m["result"] = service_result.Result.String()
 		// }
 		// if 0 < len(service_status.Message) {
-		m["message"] = service_status.Message.String()
+		m["message"] = service_status.Message.String
 		// }
 		m["step_count"] = service.StepCount
 		m["step_position"] = service_status.StepPosition
@@ -478,8 +478,8 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 			log.Debugf("channel(poll-in-service): %+v", m)
 		}
 
-		event.Invoke(service.SubscribedChannel.String(), m)         //Subscribe 등록된 구독 이벤트 이름으로 호출
-		managed_event.Invoke(service.SubscribedChannel.String(), m) //Subscribe 등록된 구독 이벤트 이름으로 호출
+		event.Invoke(service.SubscribedChannel.String, m)         //Subscribe 등록된 구독 이벤트 이름으로 호출
+		managed_event.Invoke(service.SubscribedChannel.String, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
 
 		return
 	})

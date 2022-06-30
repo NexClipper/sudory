@@ -207,11 +207,11 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 			Created: time.Now(),
 		}
 		service.Name = body.Name
-		service.Summary = vanilla.NullString(body.Summary)
+		service.Summary = *vanilla.NewNullString(body.Summary)
 		service.ClusterUuid = body.ClusterUuid
 		service.TemplateUuid = body.TemplateUuid
 		service.StepCount = len(body.Steps)
-		service.SubscribedChannel = vanilla.NullString(body.SubscribedChannel)
+		service.SubscribedChannel = *vanilla.NewNullString(body.SubscribedChannel)
 
 		//create steps
 		for i := range body.Steps {
@@ -234,11 +234,11 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 				Sequence: i,
 				Created:  time.Now(),
 			}
-			step.Name = command.Name                 //
-			step.Summary = command.Summary           //
-			step.Method = string(command.Method)     // command method
-			step.Args = body.Args                    //
-			step.ResultFilter = command.ResultFilter // command result filter
+			step.Name = command.Name                      //
+			step.Summary = command.Summary                //
+			step.Method = command.Method.String           // command method
+			step.Args = *vanilla.NewNullObject(body.Args) //
+			step.ResultFilter = command.ResultFilter      // command result filter
 
 			// save step
 			rsp.Steps = append(rsp.Steps, step)

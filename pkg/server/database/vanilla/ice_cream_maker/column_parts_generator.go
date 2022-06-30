@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	AllParts = []FuncPart{
+	Ingredients = []FuncPart{
 		PrintWarning,
 		ColumnPackage,
 		ColumnNames,

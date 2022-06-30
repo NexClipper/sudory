@@ -12,7 +12,7 @@ type TemplateCommand_essential struct {
 	TemplateUuid string             `column:"template_uuid" json:"template_uuid"`
 	Sequence     vanilla.NullInt    `column:"sequence"      json:"sequence,omitempty"`
 	Method       vanilla.NullString `column:"method"        json:"method,omitempty"`
-	Args         vanilla.NullJson   `column:"args"          json:"args,omitempty"`
+	Args         vanilla.NullObject `column:"args"          json:"args,omitempty"`
 	ResultFilter vanilla.NullString `column:"result_filter" json:"result_filter,omitempty"`
 }
 

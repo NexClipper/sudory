@@ -195,12 +195,12 @@ func TestInsertServcie(t *testing.T) {
 	service1.Uuid = "b9809f912c54483cb324b6e5e8b058a8"
 	service1.Created = time.Now()
 	service1.Name = "created by vanilla1"
-	service1.Summary = "summary of created by vanilla1"
+	service1.Summary = *vanilla.NewNullString("summary of created by vanilla1")
 	service2 := servicev2.Service{}
 	service2.Uuid = "97f80887254e4636a2255c188a06dc36"
 	service2.Created = time.Now()
 	service2.Name = "created by vanilla2"
-	service2.Summary = "summary of created by vanilla2"
+	service2.Summary = *vanilla.NewNullString("summary of created by vanilla2")
 
 	stmt, err := vanilla.Stmt.Insert(service1.TableName(), service1.ColumnNames(), append(service1.Values(), service2.Values()...))
 	if err != nil {

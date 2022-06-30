@@ -9,7 +9,7 @@ import (
 type Cluster_essential struct {
 	Name          string             `column:"name"           json:"name,omitempty"`
 	Summary       vanilla.NullString `column:"summary"        json:"summary,omitempty"`
-	PollingOption vanilla.NullJson   `column:"polling_option" json:"polling_option,omitempty"`
+	PollingOption vanilla.NullObject `column:"polling_option" json:"polling_option,omitempty"`
 	PoliingLimit  int                `column:"polling_limit"  json:"polling_limit,omitempty"`
 }
 

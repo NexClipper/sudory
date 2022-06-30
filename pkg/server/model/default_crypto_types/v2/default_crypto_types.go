@@ -34,7 +34,6 @@ func (cs CryptoString) String() string {
 }
 
 func (cs *CryptoString) Scan(value interface{}) error {
-
 	var i sql.NullString
 	if err := i.Scan(value); err != nil {
 		return err
