@@ -17,7 +17,7 @@ COPY /conf/script/server/entrypoint.sh /app/
 #COPY /conf/script/server/init-db.sh /app/
 COPY /conf/sudory-server.yml /app/conf/
 COPY /conf/enigma.yml /app/conf/rules/
-COPY /conf/events.yml /app/conf/rules/
+#COPY /conf/events.yml /app/conf/rules/
 ADD  /conf/script/migrations/sudory /app/conf/migrations/sudory
 
 #RUN chmod +x /app/init-db.sh
