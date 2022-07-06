@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
-	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variant/v1"
+	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variables/v1"
 )
 
 type defaultValue struct {
@@ -64,8 +64,8 @@ var defaultValueSet = map[Key]defaultValue{
 	}},
 }
 
-func Convert(gv Key, value defaultValue) globvarv1.GlobalVariant {
-	globvar := globvarv1.GlobalVariant{}
+func Convert(gv Key, value defaultValue) globvarv1.GlobalVariables {
+	globvar := globvarv1.GlobalVariables{}
 	globvar.Uuid = value.Uuid
 	globvar.Name = gv.String()
 	globvar.Summary = newist.String(fmt.Sprintf("%s (default='%s')", value.Summary, value.Value))

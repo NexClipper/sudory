@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 DB_HOST=$1
 DB_PORT=$2
 DB_SCHEME=$3
@@ -40,15 +38,7 @@ EXISTS=$(${CMD_PRE} --execute "show databases" | grep "${DB_SCHEME}")
 # fi
 
 
-if [[ ${EXISTS} != "" ]] ; then
-	cat > ${SQL_PATH}.execute <<- EOM
-		USE \`${DB_SCHEME}\`;
-	EOM
-	
-	cat ${SQL_PATH}.modify >> ${SQL_PATH}.execute
-	
-	SQL_PATH="${SQL_PATH}.execute"
-else
+if [[ ${EXISTS} == "" ]] ; then
 	cat > ${SQL_PATH}.execute <<- EOM
 		CREATE DATABASE IF NOT EXISTS \`${DB_SCHEME}\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 		USE \`${DB_SCHEME}\`;
@@ -56,28 +46,13 @@ else
 		GRANT ALL PRIVILEGES ON \`${DB_SCHEME}\`.* to \`${SERVER_USERNAME}\`@\`%\`;
 	EOM
 	
-	cat ${SQL_PATH}.create >> ${SQL_PATH}.execute
-	cat ${SQL_PATH}.truncate >> ${SQL_PATH}.execute
-	cat ${SQL_PATH}.template.insert >> ${SQL_PATH}.execute
-	cat ${SQL_PATH}.recipe.insert >> ${SQL_PATH}.execute
-	
 	SQL_PATH="${SQL_PATH}.execute"
-fi
 
-cat ${SQL_PATH} > ${EXPORT_PATH}/${DB_SCHEME}.execute.sql
-echo SQL_PATH=${SQL_PATH}
-echo ${EXPORT_PATH}/execute.sql
+	cat ${SQL_PATH} > ${EXPORT_PATH}/${DB_SCHEME}.execute.sql
+	echo SQL_PATH=${SQL_PATH}
+	echo ${EXPORT_PATH}/execute.sql
 
-
-if [ -s "${EXPORT_FILE}" ] ; then
-    echo "=============== start import scheme ==============="
-    CMD=$(${CMD_PRE} -f --execute "source ${SQL_PATH}")
-    echo "=============== complete import scheme ==============="
-elif [[ ${EXISTS} == "" || ${EXPORT_PATH} == "" ]] ; then
-	echo "=============== start import scheme ==============="
-    CMD=$(${CMD_PRE} -f --execute "source ${SQL_PATH}")
-    echo "=============== complete import scheme ==============="
-else
-	echo "Import failed due to schema export failed."
-	exit 1
+    	echo "=============== start create database ==============="
+    	CMD=$(${CMD_PRE} -f --execute "source ${SQL_PATH}")
+    	echo "=============== complete create database ==============="
 fi

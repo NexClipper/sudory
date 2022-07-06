@@ -15,7 +15,7 @@ import (
 	"xorm.io/xorm"
 )
 
-var Invoke func(cluster_uuid, pattern string, i ...interface{}) = func(cluster_uuid, pattern string, i ...interface{}) {}
+var Invoke func(pattern string, i ...interface{}) = func(pattern string, i ...interface{}) {}
 
 var _ EventPublisher = (*ManagedEvent)(nil)
 
@@ -43,14 +43,14 @@ func (me ManagedEvent) EventNotifierMultiplexer() HashsetEventNotifierMultiplexe
 	return me.HashsetEventNotifierMultiplexer
 }
 
-func (me ManagedEvent) Invoke(cluster_uuid, subscribed_channel string, v ...interface{}) {
+func (me ManagedEvent) Invoke(subscribed_channel string, v ...interface{}) {
 	clone := NewManagedEvent()
 	clone.engine = me.engine
 	clone.ErrorHandlers = me.ErrorHandlers
 	clone.NofitierErrorHandlers = me.NofitierErrorHandlers
 
 	//make notifier mux
-	if err := clone.BuildNotifierMuxer(cluster_uuid, subscribed_channel); err != nil {
+	if err := clone.BuildNotifierMuxer(subscribed_channel); err != nil {
 		clone.OnError(errors.Wrapf(err, "build managed event"))
 		return
 	}
@@ -134,13 +134,13 @@ func (me *ManagedEvent) OnNotifierError(notifier Notifier, err error) {
 	me.NofitierErrorHandlers.OnError(notifier, err)
 }
 
-func (me *ManagedEvent) BuildNotifierMuxer(cluster_uuid, subscribed_channel string) error {
+func (me *ManagedEvent) BuildNotifierMuxer(subscribed_channel string) error {
 	tx := me.Engine().NewSession()
 
 	//load config
-	events, err := vault.NewChannel(tx).Find("cluster_uuid = ?", cluster_uuid)
+	events, err := vault.NewChannel(tx).FindAll()
 	if err != nil {
-		return errors.Wrapf(err, "find channel by cluster_uuid")
+		return errors.Wrapf(err, "find channel")
 	}
 	//subscribed_channel match by regex(event name)
 	events_ := make([]channelv1.Channel, 0, len(events))

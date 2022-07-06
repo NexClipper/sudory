@@ -6,17 +6,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
-	"github.com/NexClipper/sudory/pkg/server/database/prepare"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/error_compose"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/prepare"
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 
-	"github.com/NexClipper/sudory/pkg/server/control/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	clusterv2 "github.com/NexClipper/sudory/pkg/server/model/cluster/v2"
-	noxorm "github.com/NexClipper/sudory/pkg/server/model/noxorm/v2"
 	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
 	templatev2 "github.com/NexClipper/sudory/pkg/server/model/template/v2"
 
@@ -32,10 +31,10 @@ import (
 // @Tags        server/service
 // @Router      /server/service [post]
 // @Param       x_auth_token header string                   false "client session token"
-// @Param       service      body   v2.HttpReq_ServiceCreate true  "HttpReq_ServiceCreate"
-// @Success     200 {object} v2.HttpRsp_Service
+// @Param       service      body   v2.HttpReq_Service_create true  "HttpReq_Service_create"
+// @Success     200 {object} v2.HttpRsp_Service_create
 func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
-	body := new(servicev2.HttpReq_ServiceCreate)
+	body := new(servicev2.HttpReq_Service_create)
 	Do(&err, func() (err error) {
 		err = echoutil.Bind(ctx, body)
 		err = errors.Wrapf(err, "bind%s",
@@ -77,16 +76,16 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 
 	//valid cluster
 	Do(&err, func() (err error) {
-		cond := vanilla.NewCond(
-			"WHERE uuid = ? AND deleted IS NULL",
-			body.ClusterUuid,
-		)
+		q := vanilla.And(
+			vanilla.Equal("uuid", body.ClusterUuid),
+			vanilla.IsNull("deleted"),
+		).Parse()
 
 		cluster := clusterv2.Cluster{}
-		err = vanilla.QueryRow(ctl.DB(), cluster.TableName(), cluster.ColumnNames(), *cond)(func(s vanilla.Scanner) error {
+		stmt := vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), q, nil, nil)
+		err = stmt.QueryRow(ctl.DB())(func(s vanilla.Scanner) error {
 			return cluster.Scan(s)
 		})
-
 		err = errors.Wrapf(err, "valid: cluster is not exists")
 		return
 	})
@@ -94,12 +93,13 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 	//valid template
 	template := templatev2.Template{}
 	Do(&err, func() (err error) {
-		cond := vanilla.NewCond(
-			"WHERE uuid = ? AND deleted IS NULL",
-			body.TemplateUuid,
-		)
+		q := vanilla.And(
+			vanilla.Equal("uuid", body.TemplateUuid),
+			vanilla.IsNull("deleted"),
+		).Parse()
 
-		err = vanilla.QueryRow(ctl.DB(), template.TableName(), template.ColumnNames(), *cond)(func(s vanilla.Scanner) error {
+		stmt := vanilla.Stmt.Select(template.TableName(), template.ColumnNames(), q, nil, nil)
+		err = stmt.QueryRow(ctl.DB())(func(s vanilla.Scanner) error {
 			return template.Scan(s)
 		})
 
@@ -109,17 +109,15 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 
 	commands := make([]templatev2.TemplateCommand, 0, __INIT_RECORD_CAPACITY__)
 	Do(&err, func() (err error) {
+		q := vanilla.And(
+			vanilla.Equal("uuid", body.TemplateUuid),
+			vanilla.IsNull("deleted"),
+		).Parse()
+		o := vanilla.Asc("sequence").Parse()
+
 		command := templatev2.TemplateCommand{}
-
-		cond := vanilla.NewCond(
-			"WHERE template_uuid = ? AND deleted IS NULL",
-			body.TemplateUuid,
-		)
-		order := vanilla.NewCond(
-			"ORDER BY sequence",
-		)
-
-		err = vanilla.QueryRows(ctl.DB(), command.TableName(), command.ColumnNames(), *cond, *order)(func(s vanilla.Scanner) (err error) {
+		stmt := vanilla.Stmt.Select(command.TableName(), command.ColumnNames(), q, o, nil)
+		err = stmt.QueryRow(ctl.DB())(func(s vanilla.Scanner) (err error) {
 			err = command.Scan(s)
 			if err == nil {
 				commands = append(commands, command)
@@ -195,8 +193,8 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 		err = HttpError(err, http.StatusBadRequest)
 	}
 
-	rsp := servicev2.HttpRsp_Service{}
-	rsp.Steps = make([]servicev2.ServiceStep_tangled, 0, __INIT_RECORD_CAPACITY__)
+	rsp := servicev2.HttpRsp_Service_create{}
+	rsp.Steps = make([]servicev2.ServiceStep, 0, __INIT_RECORD_CAPACITY__)
 	Do(&err, func() (err error) {
 		uuid := body.Uuid
 		if len(uuid) == 0 {
@@ -209,12 +207,11 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 			Created: time.Now(),
 		}
 		service.Name = body.Name
-		service.Summary = noxorm.NullString(body.Summary)
+		service.Summary = vanilla.NullString(body.Summary)
 		service.ClusterUuid = body.ClusterUuid
 		service.TemplateUuid = body.TemplateUuid
 		service.StepCount = len(body.Steps)
-		service.SubscribedChannel = noxorm.NullString(body.SubscribedChannel)
-		// service.OnCompletion = body.OnCompletion
+		service.SubscribedChannel = vanilla.NullString(body.SubscribedChannel)
 
 		//create steps
 		for i := range body.Steps {
@@ -244,11 +241,11 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 			step.ResultFilter = command.ResultFilter // command result filter
 
 			// save step
-			rsp.Steps = append(rsp.Steps, servicev2.ServiceStep_tangled{ServiceStep: step})
+			rsp.Steps = append(rsp.Steps, step)
 		}
 
 		//save service
-		rsp.Service_tangled = servicev2.Service_tangled{Service: service}
+		rsp.Service = service
 
 		return
 	})
@@ -257,42 +254,45 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 		err = ctl.Scope(func(tx *sql.Tx) (err error) {
 			//save service
 			Do(&err, func() (err error) {
-				err = vanilla.InsertRow(tx, rsp.Service.TableName(), rsp.Service.ColumnNames())(func(e vanilla.Executor) (sql.Result, error) {
-					return e.Exec(rsp.Service.Values()...)
-				})
+				stmt, err := vanilla.Stmt.Insert(rsp.Service.TableName(), rsp.Service.ColumnNames(), rsp.Service.Values())
+				err = errors.Wrapf(err, "can not build a service insert statement")
+				if err != nil {
+					return
+				}
+
+				affected, err := stmt.Exec(tx)
 				err = errors.Wrapf(err, "failed to save service")
+				if affected == 0 {
+					err = error_compose.Compose(err, errors.New("no affected"))
+				}
 				return
 			})
 			//save steps
-			// Do(&err, func() (err error) {
-			// 	for i := range rsp.Steps {
-			// 		step := rsp.Steps[i].ServiceStep
-			// 		Do(&err, func() (err error) {
-			// 			err = create_service_step(tx, step)
-			// 			err = errors.Wrapf(err, "failed to save service step")
-			// 			return
-			// 		})
-			// 	}
-			// 	err = errors.Wrapf(err, "failed to create service step")
-			// 	return
-			// })
 			Do(&err, func() (err error) {
-				// for i := range rsp.Steps {
-				// 	step := rsp.Steps[i].ServiceStep
-				// 	Do(&err, func() (err error) {
-				// 		err = create_service_step(tx, rsp.Steps)
-				// 		err = errors.Wrapf(err, "failed to save service step")
-				// 		return
-				// 	})
-				// }
+				// flat values
+				var step servicev2.ServiceStep
+				values := make([][]interface{}, 0, len(step.ColumnNames())*len(rsp.Steps))
+				for i := range rsp.Steps {
+					step = rsp.Steps[i]
+					values = append(values, step.Values())
+				}
 
-				step := servicev2.ServiceStep{}
-				err = vanilla.InsertRows(tx, step.TableName(), step.ColumnNames())(func(i int) ([]interface{}, bool) {
-					if i == len(rsp.Steps) {
-						return nil, false
-					}
-					return rsp.Steps[i].ServiceStep.Values(), true
-				})
+				if len(values) == 0 {
+					return
+				}
+
+				stmt, err := vanilla.Stmt.Insert(step.TableName(), step.ColumnNames(), values...)
+				err = errors.Wrapf(err, "can not build a service_step insert statement")
+				if err != nil {
+					return
+				}
+
+				affected, err := stmt.Exec(tx)
+				err = errors.Wrapf(err, "failed to save service")
+				if affected == 0 {
+					err = error_compose.Compose(err, errors.New("no affected"))
+				}
+
 				err = errors.Wrapf(err, "failed to create service step")
 				return
 			})
@@ -322,45 +322,47 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 // @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
 // @Success     200 {array} v2.HttpRsp_Service_status
 func (ctl ControlVanilla) FindService(ctx echo.Context) (err error) {
-
-	conditions, args, err := ParseDecoration(echoutil.QueryParam(ctx))
+	q, o, p, err := ParseDecoration(echoutil.QueryParam(ctx))
 	err = errors.Wrapf(err, "ParseDecoration%v", logs.KVL(
 		"query", echoutil.QueryParamString(ctx),
 	))
-
 	if err != nil {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
 	rsps := make([]servicev2.HttpRsp_Service_status, 0, __INIT_RECORD_CAPACITY__)
 
-	Do(&err, func() (err error) {
-		cond := vanilla.NewCond(
-			strings.Join(conditions, "\n"),
-			args...,
-		)
-		var servcie_status []servicev2.Service_status
-		servcie_status, err = find_services_status(ctl.DB(), *cond)
-		err = errors.Wrapf(err, "find service")
+	var servcie_status servicev2.Service_status
+	err = vanilla.Stmt.Select(servcie_status.TableName(), servcie_status.ColumnNames(), q, o, p).
+		QueryRows(ctl.DB())(func(scan vanilla.Scanner, _ int) (err error) {
+		err = servcie_status.Scan(scan)
+		if err != nil {
+			return
+		}
 
-		Do(&err, func() (err error) {
-			for i := range servcie_status {
-				service_uuid := servcie_status[i].Service.Uuid
-				var service_steps []servicev2.ServiceStep_tangled
-				service_steps, err = get_service_steps(ctl.DB(), service_uuid)
-				err = errors.Wrapf(err, "get steps")
-				if err != nil {
-					break
-				}
+		rst := servicev2.HttpRsp_Service_status{
+			Service_status: servcie_status,
+			Steps:          make([]servicev2.ServiceStep_tangled, 0, __INIT_RECORD_CAPACITY__),
+		}
 
-				rsps = append(rsps, servicev2.HttpRsp_Service_status{
-					Service_status: servcie_status[i],
-					Steps:          service_steps,
-				})
+		eq_uuid := vanilla.Equal("uuid", servcie_status.Uuid).Parse()
+
+		step := servicev2.ServiceStep_tangled{}
+		stmt := vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), eq_uuid, nil, nil)
+		err = stmt.QueryRows(ctl.DB())(func(scan vanilla.Scanner, _ int) (err error) {
+			err = step.Scan(scan)
+			if err != nil {
+				return
 			}
+
+			rst.Steps = append(rst.Steps, step)
 			return
 		})
+		if err != nil {
+			return
+		}
 
+		rsps = append(rsps, rst)
 		return
 	})
 
@@ -382,24 +384,42 @@ func (ctl ControlVanilla) FindService(ctx echo.Context) (err error) {
 // @Success     200 {object} v2.HttpRsp_Service
 func (ctl ControlVanilla) GetService(ctx echo.Context) (err error) {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
-					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
-				)))
+		err = ErrorInvalidRequestParameter()
+	}
+	err = errors.Wrapf(err, "valid param%s",
+		logs.KVL(
+			ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
+		))
+
+	if err != nil {
+		return HttpError(err, http.StatusBadRequest)
 	}
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	var service *servicev2.Service_tangled
-	Do(&err, func() (err error) {
-		service, err = get_service(ctl.DB(), uuid)
-		return
-	})
+	eq_uuid := vanilla.Equal("uuid", uuid).Parse()
 
-	var steps []servicev2.ServiceStep_tangled
-	Do(&err, func() (err error) {
-		steps, err = get_service_steps(ctl.DB(), uuid)
+	rst := servicev2.HttpRsp_Service{}
+
+	var servcie servicev2.Service_tangled
+	err = vanilla.Stmt.Select(servcie.TableName(), servcie.ColumnNames(), eq_uuid, nil, nil).
+		QueryRow(ctl.DB())(func(s vanilla.Scanner) (err error) {
+		err = servcie.Scan(s)
+		if err == nil {
+			rst.Service_tangled = servcie
+			rst.Steps = make([]servicev2.ServiceStep_tangled, 0, __INIT_RECORD_CAPACITY__)
+
+			step := servicev2.ServiceStep_tangled{}
+			stmt := vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), eq_uuid, nil, nil)
+			err = stmt.QueryRows(ctl.DB())(func(scan vanilla.Scanner, _ int) (err error) {
+
+				err = step.Scan(scan)
+				if err == nil {
+					rst.Steps = append(rst.Steps, step)
+				}
+				return
+			})
+		}
 		return
 	})
 
@@ -407,190 +427,16 @@ func (ctl ControlVanilla) GetService(ctx echo.Context) (err error) {
 		return HttpError(err, http.StatusInternalServerError)
 	}
 
-	return ctx.JSON(http.StatusOK, servicev2.HttpRsp_Service{Service_tangled: *service, Steps: steps})
+	return ctx.JSON(http.StatusOK, rst)
 }
 
 const __DEFAULT_DECORATION_LIMIT__ = 20
 
-func ParseDecoration(m map[string]string) (conditions []string, args []interface{}, err error) {
-	conditions = make([]string, 0, 3)
-	args = make([]interface{}, 0, 3)
-
-	Do(&err, func() (err error) {
-		deco, err := prepare.NewDecoration(m)
-		Do(&err, func() (err error) {
-			if deco.Condition != nil {
-				cond := "WHERE " + deco.Condition.Query()
-				conditions = append(conditions, cond)
-				args = deco.Condition.Args()
-			}
-			if deco.Orders != nil {
-				order := ""
-				for i := range ([]prepare.Order)(*deco.Orders) {
-					if len(order) == 0 {
-						order += "ORDER BY "
-					}
-					order += ([]prepare.Order)(*deco.Orders)[i].Order()
-				}
-				conditions = append(conditions, order)
-			}
-			if deco.Pagination != nil {
-				page := fmt.Sprintf("LIMIT %v, %v", deco.Pagination.Offset(), deco.Pagination.Limit())
-				conditions = append(conditions, page)
-			}
-			if deco.Pagination == nil {
-				page := fmt.Sprintf("LIMIT %v", __DEFAULT_DECORATION_LIMIT__)
-				conditions = append(conditions, page)
-			}
-			return
-		})
-		return
-	})
-
-	return
-}
-
-func get_service_step(tx vanilla.Preparer, service_uuid string, sequence int) (step servicev2.ServiceStep_tangled, err error) {
-	cond := vanilla.Condition{
-		Condition: "WHERE uuid = ? AND sequence = ?",
-		Args: []interface{}{
-			service_uuid,
-			sequence,
-		},
+func ParseDecoration(m map[string]string) (q *prepare.Condition, o *prepare.Orders, p *prepare.Pagination, err error) {
+	q, o, p, err = prepare.NewParser(m)
+	if p == nil {
+		p = vanilla.Limit(__DEFAULT_DECORATION_LIMIT__).Parse()
 	}
 
-	err = vanilla.QueryRow(tx, step.TableName(), step.ColumnNames(), cond)(func(s vanilla.Scanner) (err error) {
-		err = step.Scan(s)
-		err = errors.Wrapf(err, "step Scan")
-		return
-	})
-
-	err = errors.Wrapf(err, "failed to get a step")
-	return
-}
-
-func get_service_steps(tx vanilla.Preparer, service_uuid string) (steps []servicev2.ServiceStep_tangled, err error) {
-	steps = make([]servicev2.ServiceStep_tangled, 0, __INIT_RECORD_CAPACITY__)
-
-	cond := vanilla.Condition{
-		Condition: "WHERE uuid = ?",
-		Args: []interface{}{
-			service_uuid,
-		},
-	}
-	step := servicev2.ServiceStep_tangled{}
-
-	err = vanilla.QueryRows(tx, step.TableName(), step.ColumnNames(), cond)(func(s vanilla.Scanner) (err error) {
-		err = step.Scan(s)
-		err = errors.Wrapf(err, "step Scan")
-		Do(&err, func() (err error) {
-			steps = append(steps, step)
-			return
-		})
-		return
-	})
-
-	err = errors.Wrapf(err, "failed to get step lists")
-	return
-}
-
-func find_services_status(tx vanilla.Preparer, condition ...vanilla.Condition) (rsps []servicev2.Service_status, err error) {
-	rsps = make([]servicev2.Service_status, 0, __INIT_RECORD_CAPACITY__)
-
-	// cond := vanilla.Condition{
-	// 	Condition: condition,
-	// 	Args:      args,
-	// }
-	service_status := servicev2.Service_status{}
-
-	err = vanilla.QueryRows(tx, service_status.TableName(), service_status.ColumnNames(), condition...)(func(s vanilla.Scanner) (err error) {
-		err = service_status.Scan(s)
-		err = errors.Wrapf(err, "service Scan")
-		Do(&err, func() (err error) {
-			rsps = append(rsps, service_status)
-			return
-		})
-		return
-	})
-
-	err = errors.Wrapf(err, "failed to find services")
-	return
-}
-
-func find_services_tangled(tx vanilla.Preparer, condition ...vanilla.Condition) (rsps []servicev2.Service_tangled, err error) {
-	rsps = make([]servicev2.Service_tangled, 0, __INIT_RECORD_CAPACITY__)
-
-	// cond := vanilla.Condition{
-	// 	Condition: condition,
-	// 	Args:      args,
-	// }
-	service := servicev2.Service_tangled{}
-
-	err = vanilla.QueryRows(tx, service.TableName(), service.ColumnNames(), condition...)(func(s vanilla.Scanner) (err error) {
-		err = service.Scan(s)
-		err = errors.Wrapf(err, "service Scan")
-		Do(&err, func() (err error) {
-			rsps = append(rsps, service)
-			return
-		})
-		return
-	})
-
-	err = errors.Wrapf(err, "failed to find services")
-	return
-}
-
-func find_service_steps(tx vanilla.Preparer, condition ...vanilla.Condition) (rsps []servicev2.HttpRsp_ServiceStep, err error) {
-	rsps = make([]servicev2.HttpRsp_ServiceStep, 0, __INIT_RECORD_CAPACITY__)
-
-	// cond := vanilla.Condition{
-	// 	Condition: condition,
-	// 	Args:      args,
-	// }
-	step := servicev2.ServiceStep_tangled{}
-
-	err = vanilla.QueryRows(tx, step.TableName(), step.ColumnNames(), condition...)(func(s vanilla.Scanner) (err error) {
-		err = step.Scan(s)
-		err = errors.Wrapf(err, "service step Scan")
-		Do(&err, func() (err error) {
-			rsps = append(rsps, servicev2.HttpRsp_ServiceStep{ServiceStep_tangled: step})
-			return
-		})
-		return
-	})
-
-	err = errors.Wrapf(err, "failed to find service steps")
-	return
-}
-
-func get_service(tx vanilla.Preparer, service_uuid string) (service *servicev2.Service_tangled, err error) {
-	cond := vanilla.NewCond(
-		"WHERE uuid = ?",
-		service_uuid,
-	)
-	service = &servicev2.Service_tangled{}
-	err = vanilla.QueryRow(tx, service.TableName(), service.ColumnNames(), *cond)(func(s vanilla.Scanner) (err error) {
-		err = service.Scan(s)
-		err = errors.Wrapf(err, "service Scan")
-		return
-	})
-
-	err = errors.Wrapf(err, "failed to get a service")
-	return
-}
-
-func get_cluster(tx vanilla.Preparer, cluster_uuid string) (cluster *clusterv2.Cluster, err error) {
-	cond := vanilla.NewCond(
-		"WHERE uuid = ?",
-		cluster_uuid,
-	)
-	cluster = &clusterv2.Cluster{}
-	err = vanilla.QueryRow(tx, cluster.TableName(), cluster.ColumnNames(), *cond)(func(s vanilla.Scanner) (err error) {
-		err = cluster.Scan(s)
-		err = errors.Wrapf(err, "cluster Scan")
-		return
-	})
-
-	err = errors.Wrapf(err, "faild to get a cluster")
 	return
 }

@@ -18,6 +18,9 @@ database:
   showsql: false
   loglevel: warn
 
+migrate:
+  source: '/app/conf/migrations/sudory'
+
 logger:
   severity: 'debug'
   system-event: false

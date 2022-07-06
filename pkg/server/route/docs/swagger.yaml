@@ -104,7 +104,7 @@ definitions:
       uuid:
         type: string
     type: object
-  v1.GlobalVariant:
+  v1.GlobalVariables:
     properties:
       created:
         type: string
@@ -175,7 +175,7 @@ definitions:
       summary:
         type: string
     type: object
-  v1.HttpReqGlobalVariant_Update:
+  v1.HttpReqGlobalVariables_update:
     properties:
       value:
         type: string
@@ -627,7 +627,7 @@ definitions:
         description: pk
         type: string
     type: object
-  v2.HttpReq_ServiceCreate:
+  v2.HttpReq_Service_create:
     properties:
       cluster_uuid:
         type: string
@@ -729,6 +729,31 @@ definitions:
         description: pk
         type: string
     type: object
+  v2.HttpRsp_Service_create:
+    properties:
+      cluster_uuid:
+        type: string
+      created:
+        description: pk
+        type: string
+      name:
+        type: string
+      step_count:
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/v2.ServiceStep'
+        type: array
+      subscribed_channel:
+        type: string
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      uuid:
+        description: pk
+        type: string
+    type: object
   v2.HttpRsp_Service_status:
     properties:
       assigned_client_uuid:
@@ -768,7 +793,7 @@ definitions:
   v2.HttpRsp_ServiceStep:
     properties:
       args:
-        $ref: '#/definitions/v2.NullJson'
+        $ref: '#/definitions/vanilla.NullJson'
       created:
         description: pk
         type: string
@@ -796,13 +821,32 @@ definitions:
         description: pk
         type: string
     type: object
-  v2.NullJson:
-    additionalProperties: true
+  v2.ServiceStep:
+    properties:
+      args:
+        $ref: '#/definitions/vanilla.NullJson'
+      created:
+        description: pk
+        type: string
+      method:
+        type: string
+      name:
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        description: pk
+        type: integer
+      summary:
+        type: string
+      uuid:
+        description: pk
+        type: string
     type: object
   v2.ServiceStep_tangled:
     properties:
       args:
-        $ref: '#/definitions/v2.NullJson'
+        $ref: '#/definitions/vanilla.NullJson'
       created:
         description: pk
         type: string
@@ -829,6 +873,9 @@ definitions:
       uuid:
         description: pk
         type: string
+    type: object
+  vanilla.NullJson:
+    additionalProperties: true
     type: object
 info:
   contact:
@@ -1957,11 +2004,11 @@ paths:
             $ref: '#/definitions/v1.ClusterToken'
       tags:
       - server/cluster_token
-  /server/global_variant:
+  /server/global_variables:
     get:
       consumes:
       - application/json
-      description: Find global_variant
+      description: Find GlobalVariables
       parameters:
       - description: client session token
         in: header
@@ -1986,21 +2033,21 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.GlobalVariant'
+              $ref: '#/definitions/v1.GlobalVariables'
             type: array
       tags:
-      - server/global_variant
-  /server/global_variant/{uuid}:
+      - server/global_variables
+  /server/global_variables/{uuid}:
     get:
       consumes:
       - application/json
-      description: Get a global_variant
+      description: Get a GlobalVariables
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: GlobalVariant 의 Uuid
+      - description: GlobalVariables 의 Uuid
         in: path
         name: uuid
         required: true
@@ -2011,37 +2058,37 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.GlobalVariant'
+            $ref: '#/definitions/v1.GlobalVariables'
       tags:
-      - server/global_variant
+      - server/global_variables
     put:
       consumes:
       - application/json
-      description: Update global_variant Value
+      description: Update GlobalVariables Value
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: GlobalVariant 의 Uuid
+      - description: GlobalVariables 의 Uuid
         in: path
         name: uuid
         required: true
         type: string
-      - description: HttpReqGlobalVariant_Update
+      - description: HttpReqGlobalVariables_update
         in: body
         name: enviroment
         schema:
-          $ref: '#/definitions/v1.HttpReqGlobalVariant_Update'
+          $ref: '#/definitions/v1.HttpReqGlobalVariables_update'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.GlobalVariant'
+            $ref: '#/definitions/v1.GlobalVariables'
       tags:
-      - server/global_variant
+      - server/global_variables
   /server/service:
     get:
       consumes:
@@ -2084,19 +2131,19 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: HttpReq_ServiceCreate
+      - description: HttpReq_Service_create
         in: body
         name: service
         required: true
         schema:
-          $ref: '#/definitions/v2.HttpReq_ServiceCreate'
+          $ref: '#/definitions/v2.HttpReq_Service_create'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v2.HttpRsp_Service'
+            $ref: '#/definitions/v2.HttpRsp_Service_create'
       tags:
       - server/service
   /server/service/{uuid}:

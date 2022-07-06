@@ -3,14 +3,14 @@ package v2
 import (
 	"time"
 
-	noxorm "github.com/NexClipper/sudory/pkg/server/model/noxorm/v2"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 )
 
 type Cluster_essential struct {
-	Name          string            `column:"name"           json:"name,omitempty"`
-	Summary       noxorm.NullString `column:"summary"        json:"summary,omitempty"`
-	PollingOption noxorm.NullJson   `column:"polling_option" json:"polling_option,omitempty"`
-	PoliingLimit  int               `column:"polling_limit"  json:"polling_limit,omitempty"`
+	Name          string             `column:"name"           json:"name,omitempty"`
+	Summary       vanilla.NullString `column:"summary"        json:"summary,omitempty"`
+	PollingOption vanilla.NullJson   `column:"polling_option" json:"polling_option,omitempty"`
+	PoliingLimit  int                `column:"polling_limit"  json:"polling_limit,omitempty"`
 }
 
 func (Cluster_essential) TableName() string {
@@ -23,7 +23,7 @@ type Cluster struct {
 
 	Cluster_essential `json:",inline"`
 
-	Created time.Time       `column:"created" json:"created,omitempty"`
-	Updated noxorm.NullTime `column:"updated" json:"updated,omitempty"`
-	Deleted noxorm.NullTime `column:"deleted" json:"deleted,omitempty"`
+	Created time.Time        `column:"created" json:"created,omitempty"`
+	Updated vanilla.NullTime `column:"updated" json:"updated,omitempty"`
+	Deleted vanilla.NullTime `column:"deleted" json:"deleted,omitempty"`
 }

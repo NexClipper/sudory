@@ -49,6 +49,16 @@ func (vault Channel) Find(where string, args ...interface{}) ([]channelv1.Channe
 	return models, nil
 }
 
+func (vault Channel) FindAll() ([]channelv1.Channel, error) {
+	models := make([]channelv1.Channel, 0)
+	if err := database.XormFind(
+		vault.tx, &models); err != nil {
+		return nil, errors.Wrapf(err, "find all %v", new(channelv1.Channel).TableName())
+	}
+
+	return models, nil
+}
+
 func (vault Channel) Query(query map[string]string) ([]channelv1.Channel, error) {
 	//parse query
 	preparer, err := prepare.NewParser(query)

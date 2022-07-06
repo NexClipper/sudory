@@ -15,7 +15,7 @@ type GlobalVariantUpdate struct {
 	offset time.Time //updated column
 }
 
-func NewGlobalVariantUpdate(tx *xorm.Session) *GlobalVariantUpdate {
+func NewGlobalVariablesUpdate(tx *xorm.Session) *GlobalVariantUpdate {
 	return &GlobalVariantUpdate{tx: tx}
 }
 
@@ -27,9 +27,9 @@ func (worker *GlobalVariantUpdate) Update() error {
 		worker.offset,
 	}
 
-	records, err := vault.NewGlobalVariant(worker.tx).Find(where, args...)
+	records, err := vault.NewGlobalVariables(worker.tx).Find(where, args...)
 	if err != nil {
-		return errors.Wrapf(err, "find global variant")
+		return errors.Wrapf(err, "find global_variables")
 	}
 
 	for i := range records {
@@ -42,7 +42,7 @@ func (worker *GlobalVariantUpdate) Update() error {
 		}
 
 		if err := storeManager.Call(gv, *records[i].Value); err != nil {
-			return errors.Wrapf(err, "store globalVariant%v",
+			return errors.Wrapf(err, "store global_variables%v",
 				logs.KVL(
 					"key", records[i].Name,
 					"value", *records[i].Value,
@@ -60,9 +60,9 @@ func (worker *GlobalVariantUpdate) Update() error {
 // WhiteListCheck
 //  리스트 체크
 func (worker *GlobalVariantUpdate) WhiteListCheck() error {
-	records, err := vault.NewGlobalVariant(worker.tx).Query(map[string]string{})
+	records, err := vault.NewGlobalVariables(worker.tx).Query(map[string]string{})
 	if err != nil {
-		return errors.Wrapf(err, "find global variant")
+		return errors.Wrapf(err, "find global_variables")
 	}
 
 	count := 0
@@ -82,16 +82,16 @@ func (worker *GlobalVariantUpdate) WhiteListCheck() error {
 		}
 	}
 	if 0 < count {
-		return errors.Errorf("not exists global_variant keys=['%s']", pop("', '"))
+		return errors.Errorf("not exists global_variables keys=['%s']", pop("', '"))
 	}
 
 	return nil
 }
 
 func (worker *GlobalVariantUpdate) Merge() error {
-	records, err := vault.NewGlobalVariant(worker.tx).Query(map[string]string{})
+	records, err := vault.NewGlobalVariables(worker.tx).Query(map[string]string{})
 	if err != nil {
-		return errors.Wrapf(err, "find global variant")
+		return errors.Wrapf(err, "find global_variables")
 	}
 
 	for _, key := range KeyNames() {
@@ -106,7 +106,7 @@ func (worker *GlobalVariantUpdate) Merge() error {
 		if !found {
 			env, err := ParseKey(key)
 			if err != nil {
-				return errors.Wrapf(err, "ParseGlobVar%s",
+				return errors.Wrapf(err, "ParseGlobVar%v",
 					logs.KVL(
 						"key", key,
 					))
@@ -114,15 +114,15 @@ func (worker *GlobalVariantUpdate) Merge() error {
 
 			value, ok := defaultValueSet[env]
 			if !ok {
-				return errors.Errorf("not found global_variant variant%s",
+				return errors.Errorf("not found global_variables%v",
 					logs.KVL(
 						"key", key,
 					))
 			}
 
 			value_ := Convert(env, value)
-			if _, err := vault.NewGlobalVariant(worker.tx).Create(value_); err != nil {
-				return errors.Wrapf(err, "create global variant")
+			if _, err := vault.NewGlobalVariables(worker.tx).Create(value_); err != nil {
+				return errors.Wrapf(err, "create global_variables")
 			}
 
 		}

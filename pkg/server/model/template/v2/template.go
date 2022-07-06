@@ -3,13 +3,13 @@ package v2
 import (
 	"time"
 
-	noxorm "github.com/NexClipper/sudory/pkg/server/model/noxorm/v2"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 )
 
 type Template_essential struct {
-	Name    string            `column:"name"    json:"name,omitempty"`
-	Summary noxorm.NullString `column:"summary" json:"summary,omitempty"`
-	Origin  string            `column:"origin"  json:"origin,omitempty"`
+	Name    string             `column:"name"    json:"name,omitempty"`
+	Summary vanilla.NullString `column:"summary" json:"summary,omitempty"`
+	Origin  string             `column:"origin"  json:"origin,omitempty"`
 }
 
 func (Template_essential) TableName() string {
@@ -22,7 +22,7 @@ type Template struct {
 
 	Template_essential `json:",inline"`
 
-	Created time.Time       `column:"created" json:"created,omitempty"`
-	Updated noxorm.NullTime `column:"updated" json:"updated,omitempty"`
-	Deleted noxorm.NullTime `column:"deleted" json:"deleted,omitempty"`
+	Created time.Time        `column:"created" json:"created,omitempty"`
+	Updated vanilla.NullTime `column:"updated" json:"updated,omitempty"`
+	Deleted vanilla.NullTime `column:"deleted" json:"deleted,omitempty"`
 }
