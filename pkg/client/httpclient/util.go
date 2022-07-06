@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	urlPkg "net/url"
+	neturl "net/url"
 	"strings"
 )
 
@@ -14,7 +14,7 @@ func ValidateURL(url string) error {
 		return fmt.Errorf("url is empty : got(%s)", url)
 	}
 
-	parsedURL, err := urlPkg.Parse(url)
+	parsedURL, err := neturl.Parse(url)
 	if err != nil {
 		return err
 	}
@@ -33,6 +33,29 @@ func ValidateURL(url string) error {
 	}
 
 	return nil
+}
+
+func DefaultURL(url string, defaultTLS bool) (*neturl.URL, error) {
+	if url == "" {
+		return nil, fmt.Errorf("url is empty : got(%s)", url)
+	}
+
+	parsedURL, err := neturl.Parse(url)
+	if err != nil || parsedURL.Scheme == "" || parsedURL.Host == "" {
+		scheme := "http://"
+		if defaultTLS {
+			scheme = "https://"
+		}
+		parsedURL, err = neturl.Parse(scheme + url)
+		if err != nil {
+			return nil, err
+		}
+		if parsedURL.Path != "" && parsedURL.Path != "/" {
+			return nil, fmt.Errorf("default url must not have a path: %s", url)
+		}
+	}
+
+	return parsedURL, nil
 }
 
 func RetryableHttpErrorHandler(resp *http.Response, err error, numTries int) (*http.Response, error) {

@@ -10,7 +10,7 @@ func (c *Client) Rules() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	body, err := c.client.Get(ctx, "/api/v1/rules", nil)
+	body, err := c.client.Get("/api/v1/rules").Do(ctx).Raw()
 	if err != nil {
 		return "", err
 	}

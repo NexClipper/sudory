@@ -2,7 +2,6 @@ package fetcher
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"time"
 
@@ -21,25 +20,20 @@ func (f *Fetcher) HandShake() error {
 		ClientVersion: version.Version,
 	}}
 
-	b, err := json.Marshal(body)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	_, err = f.client.PostJson(ctx, "/client/auth", nil, b)
-	if err != nil {
+	if err := f.sudoryAPI.Auth(ctx, body); err != nil {
 		return err
 	}
-	log.Debugf("Successed to handshake: received token(%s) for polling.", f.client.GetToken())
+	sessionToken := f.sudoryAPI.GetToken()
+	log.Debugf("Successed to handshake: received token(%s) for polling.", sessionToken)
 
 	f.ChangeClientConfigFromToken()
 
 	// save session_uuid from token
 	claims := new(sessionv1.ClientSessionPayload)
-	jwt_token, _, err := jwt.NewParser().ParseUnverified(f.client.GetToken(), claims)
+	jwt_token, _, err := jwt.NewParser().ParseUnverified(sessionToken, claims)
 	if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok || err != nil {
 		log.Warnf("Failed to bind payload : %v\n", err)
 		return err

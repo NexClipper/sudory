@@ -10,7 +10,7 @@ func (c *Client) Targets() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	body, err := c.client.Get(ctx, "/api/v1/targets", nil)
+	body, err := c.client.Get("/api/v1/targets").Do(ctx).Raw()
 	if err != nil {
 		return "", err
 	}
@@ -41,7 +41,7 @@ func (c *Client) TargetsMetadata(params map[string]interface{}) (string, error) 
 	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	body, err := c.client.Get(ctx, "/api/v1/targets/metadata", m)
+	body, err := c.client.Get("/api/v1/targets/metadata").Do(ctx).Raw()
 	if err != nil {
 		return "", err
 	}

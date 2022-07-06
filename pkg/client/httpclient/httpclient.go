@@ -3,130 +3,218 @@ package httpclient
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
-	urlPkg "net/url"
+	"net/url"
+	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/hashicorp/go-retryablehttp"
 
 	"github.com/NexClipper/sudory/pkg/client/log"
-	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 )
 
-const CustomHeaderClientToken = "x-sudory-client-token"
-
 type HttpClient struct {
-	url    string
-	token  string
+	root   *url.URL
 	client *retryablehttp.Client
 }
 
-func NewHttpClient(url, token string, retryMax, retryInterval int) *HttpClient {
+func NewHttpClient(address string, defaultTLS bool, retryMax, retryInterval int) (*HttpClient, error) {
+	defaultUrl, err := DefaultURL(address, defaultTLS)
+	if err != nil {
+		return nil, err
+	}
 	client := retryablehttp.NewClient()
 
 	client.HTTPClient.Transport.(*http.Transport).MaxIdleConns = 100
 	client.HTTPClient.Transport.(*http.Transport).MaxIdleConnsPerHost = 100
+
 	client.Logger = &log.RetryableHttpLogger{}
 	client.RetryMax = retryMax
 	client.Backoff = func(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration {
 		return time.Millisecond * time.Duration(retryInterval)
 	}
 	client.ErrorHandler = RetryableHttpErrorHandler
-	// client.HTTPClient.Timeout = time.Second
 
-	return &HttpClient{url: url, token: token, client: client}
+	return &HttpClient{root: defaultUrl, client: client}, nil
 }
 
-func (hc *HttpClient) GetToken() string {
-	return hc.token
+func (c *HttpClient) SetDisableKeepAlives() {
+	c.client.HTTPClient.Transport.(*http.Transport).DisableKeepAlives = true
 }
 
-func (hc *HttpClient) IsTokenExpired() bool {
-	claims := new(sessionv1.ClientSessionPayload)
-	jwt_token, _, err := jwt.NewParser().ParseUnverified(hc.token, claims)
-	if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok || err != nil {
-		log.Warnf("jwt.ParseUnverified error : %v\n", err)
-		return true
+func (c *HttpClient) Get(path string) *Request {
+	return NewRequest(c, "GET", path)
+}
+
+func (c *HttpClient) Post(path string) *Request {
+	return NewRequest(c, "POST", path)
+}
+
+func (c *HttpClient) Put(path string) *Request {
+	return NewRequest(c, "PUT", path)
+}
+
+func (c *HttpClient) Delete(path string) *Request {
+	return NewRequest(c, "DELETE", path)
+}
+
+type Request struct {
+	c       *HttpClient
+	method  string
+	path    string
+	params  url.Values
+	headers http.Header
+	body    interface{}
+}
+
+func NewRequest(c *HttpClient, method, path string) *Request {
+	r := &Request{
+		c:       c,
+		method:  method,
+		path:    path,
+		params:  make(url.Values),
+		headers: make(http.Header),
 	}
 
-	return !claims.VerifyExpiresAt(time.Now().Unix(), true)
+	return r
 }
 
-func (hc *HttpClient) Request(ctx context.Context, method, path string, params map[string][]string, bodyType string, rawBody []byte) ([]byte, error) {
-	req, err := retryablehttp.NewRequest(method, hc.url+path, rawBody)
+func (r *Request) SetHeader(key, value string) *Request {
+	if r.headers == nil {
+		r.headers = make(http.Header)
+	}
+	r.headers.Set(key, value)
+	return r
+}
+
+func (r *Request) SetParam(key string, values ...string) *Request {
+	if r.params == nil {
+		r.params = make(url.Values)
+	}
+	for _, v := range values {
+		r.params.Add(key, v)
+	}
+	return r
+}
+
+func (r *Request) SetBody(bodyType string, body interface{}) *Request {
+	r.SetHeader("Content-Type", bodyType)
+	r.body = body
+	return r
+}
+
+func (r *Request) URL() *url.URL {
+	u := new(url.URL)
+	if r.c.root != nil {
+		*u = *r.c.root
+	}
+	u.Path = r.path
+
+	if len(r.params) > 0 {
+		u.RawQuery = r.params.Encode()
+	}
+
+	return u
+}
+
+func (r *Request) Do(ctx context.Context) Result {
+	if r.c.client == nil {
+		return Result{err: fmt.Errorf("httpclient is nil")}
+	}
+
+	url := r.URL().String()
+	req, err := retryablehttp.NewRequest(r.method, url, r.body)
 	if err != nil {
-		return nil, err
+		return Result{err: err}
+	}
+	req = req.WithContext(ctx)
+	req.Header = r.headers
+
+	resp, err := r.c.client.Do(req)
+	defer r.closeBody(resp)
+
+	if err != nil {
+		return Result{err: err}
 	}
 
-	urlValues := urlPkg.Values{}
-	for k, v := range params {
-		for _, val := range v {
-			urlValues.Add(k, val)
+	return r.extractResultFrom(resp)
+}
+
+func (r *Request) closeBody(resp *http.Response) {
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+
+		const maxLimitBytes = int64(4096)
+		io.Copy(ioutil.Discard, io.LimitReader(resp.Body, maxLimitBytes))
+	}
+}
+
+func (r *Request) extractResultFrom(resp *http.Response) Result {
+	var result Result
+
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+
+		var buf bytes.Buffer
+		_, result.err = io.Copy(&buf, resp.Body)
+		result.body = buf.Bytes()
+
+		if result.err != nil {
+			return result
 		}
 	}
-	req.URL.RawQuery = urlValues.Encode()
 
-	if len(bodyType) > 0 {
-		req.Header.Set("Content-Type", bodyType)
+	result.statusCode = resp.StatusCode
+	result.headers = resp.Header
 
+	// check response status code
+	if result.statusCode < http.StatusOK || result.statusCode >= http.StatusBadRequest {
+		if len(result.body) > 0 {
+			result.err = fmt.Errorf("%s %s, status code : %d(%s), body : %s", resp.Request.Method, resp.Request.URL.String(), resp.StatusCode, resp.Status, strings.TrimSpace(string(result.body)))
+		} else {
+			result.err = fmt.Errorf("%s %s, status code : %d(%s)", resp.Request.Method, resp.Request.URL.String(), resp.StatusCode, resp.Status)
+		}
+		return result
 	}
 
-	if hc.token != "" {
-		req.Header.Set(CustomHeaderClientToken, hc.token)
+	return result
+}
+
+type Result struct {
+	body       []byte
+	err        error
+	statusCode int
+	headers    http.Header
+}
+
+func (r Result) Raw() ([]byte, error) {
+	return r.body, r.err
+}
+
+func (r Result) IntoJson(obj interface{}) error {
+	if r.err != nil {
+		return r.err
 	}
-
-	req = req.WithContext(ctx)
-
-	resp, err := hc.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if err := CheckHttpResponseError(resp); err != nil {
-		return nil, err
-	}
-
-	if recvToken := resp.Header.Get(CustomHeaderClientToken); recvToken != "" {
-		hc.token = recvToken
-	}
-
-	var result bytes.Buffer
-	io.Copy(&result, resp.Body)
-
-	return result.Bytes(), nil
+	return json.Unmarshal(r.body, obj)
 }
 
-func (c *HttpClient) Get(ctx context.Context, path string, params map[string][]string) ([]byte, error) {
-	return c.Request(ctx, "GET", path, params, "", nil)
+func (r Result) Headers() http.Header {
+	return r.headers
 }
 
-func (c *HttpClient) GetJson(ctx context.Context, path string, params map[string][]string) ([]byte, error) {
-	return c.Request(ctx, "GET", path, params, "application/json", nil)
+func (r Result) StatusCode() int {
+	return r.statusCode
 }
 
-func (c *HttpClient) Post(ctx context.Context, path string, params map[string][]string, rawBody []byte) ([]byte, error) {
-	return c.Request(ctx, "POST", path, params, "", rawBody)
+func (r Result) Error() error {
+	return r.err
 }
 
-func (c *HttpClient) PostJson(ctx context.Context, path string, params map[string][]string, rawBody []byte) ([]byte, error) {
-	return c.Request(ctx, "POST", path, params, "application/json", rawBody)
-}
-
-func (c *HttpClient) PostForm(ctx context.Context, path string, params map[string][]string, rawBody []byte) ([]byte, error) {
-	return c.Request(ctx, "POST", path, params, "application/x-www-form-urlencoded", rawBody)
-}
-
-func (c *HttpClient) Put(ctx context.Context, path string, params map[string][]string, rawBody []byte) ([]byte, error) {
-	return c.Request(ctx, "PUT", path, params, "", rawBody)
-}
-
-func (c *HttpClient) PutJson(ctx context.Context, path string, params map[string][]string, rawBody []byte) ([]byte, error) {
-	return c.Request(ctx, "PUT", path, params, "application/json", rawBody)
-}
-
-func (c *HttpClient) Delete(ctx context.Context, path string, params map[string][]string) ([]byte, error) {
-	return c.Request(ctx, "DELETE", path, params, "", nil)
+func (r Result) SetError(err error) Result {
+	r.err = err
+	return r
 }

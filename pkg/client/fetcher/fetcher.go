@@ -2,7 +2,6 @@ package fetcher
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -10,10 +9,10 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/panta/machineid"
 
-	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/client/scheduler"
 	"github.com/NexClipper/sudory/pkg/client/service"
+	"github.com/NexClipper/sudory/pkg/client/sudory"
 	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 )
@@ -27,14 +26,13 @@ type Fetcher struct {
 	bearerToken     string
 	machineID       string
 	clusterId       string
-	client          *httpclient.HttpClient
+	sudoryAPI       *sudory.SudoryAPI
 	ticker          *time.Ticker
 	pollingInterval int
 	scheduler       *scheduler.Scheduler
 	done            chan struct{}
 }
 
-// func NewFetcher(bearerToken, server, clusterId string, sch *scheduler.Scheduler) (*Fetcher, error) {
 func NewFetcher(bearerToken, server, clusterId string, scheduler *scheduler.Scheduler) (*Fetcher, error) {
 	id, err := machineid.ID()
 	if err != nil {
@@ -42,11 +40,16 @@ func NewFetcher(bearerToken, server, clusterId string, scheduler *scheduler.Sche
 	}
 	id = strings.ReplaceAll(id, "-", "")
 
+	api, err := sudory.NewSudoryAPI(server)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Fetcher{
 		bearerToken:     bearerToken,
 		machineID:       id,
 		clusterId:       clusterId,
-		client:          httpclient.NewHttpClient(server, "", 0, 0),
+		sudoryAPI:       api,
 		ticker:          time.NewTicker(defaultPollingInterval * time.Second),
 		pollingInterval: defaultPollingInterval,
 		scheduler:       scheduler,
@@ -86,6 +89,7 @@ func (f *Fetcher) Polling(ctx context.Context) error {
 		for {
 			select {
 			case <-ctx.Done():
+				log.Debugf("polling context done")
 				return
 			case <-f.ticker.C:
 				f.poll()
@@ -101,12 +105,12 @@ func (f *Fetcher) poll() {
 	defer cancel()
 
 	// get services from server
-	body, err := f.client.Get(ctx, "/client/service", nil)
+	respData, err := f.sudoryAPI.GetServices(ctx)
 	if err != nil {
 		log.Errorf(err.Error())
 
 		// if session token is expired, retry handshake
-		if f.client.IsTokenExpired() {
+		if f.sudoryAPI.IsTokenExpired() {
 			f.ticker.Stop()
 			f.RetryHandshake()
 		}
@@ -116,13 +120,6 @@ func (f *Fetcher) poll() {
 
 	f.ChangeClientConfigFromToken()
 
-	respData := []servicev2.HttpRsp_ClientServicePolling{}
-	if body != nil {
-		if err := json.Unmarshal(body, &respData); err != nil {
-			log.Errorf(err.Error())
-			return
-		}
-	}
 	log.Debugf("Recived %d service from server.", len(respData))
 
 	if len(respData) == 0 {
@@ -139,7 +136,7 @@ func (f *Fetcher) poll() {
 
 func (f *Fetcher) ChangeClientConfigFromToken() {
 	claims := new(sessionv1.ClientSessionPayload)
-	jwt_token, _, err := jwt.NewParser().ParseUnverified(f.client.GetToken(), claims)
+	jwt_token, _, err := jwt.NewParser().ParseUnverified(f.sudoryAPI.GetToken(), claims)
 	if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok || err != nil {
 		log.Warnf("Failed to bind payload : %v\n", err)
 		return
@@ -163,17 +160,16 @@ func (f *Fetcher) ChangeClientConfigFromToken() {
 func (f *Fetcher) UpdateServiceProcess() {
 	for update := range f.scheduler.NotifyServiceUpdate() {
 		reqServ := service.ConvertServiceStepUpdateClientToServer(update)
-		jsonb, err := json.Marshal(reqServ)
-		if err != nil {
-			log.Errorf(err.Error())
-			continue
-		}
+
 		<-time.After(time.Millisecond * 100)
 
-		go func() {
-			if _, err := f.client.PutJson(context.Background(), "/client/service", nil, jsonb); err != nil {
+		go func(serv *servicev2.HttpReq_ClientServiceUpdate) {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+			defer cancel()
+
+			if err := f.sudoryAPI.UpdateServices(ctx, serv); err != nil {
 				log.Errorf(err.Error())
 			}
-		}()
+		}(reqServ)
 	}
 }
