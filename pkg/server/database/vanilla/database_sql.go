@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const __DEBUG_PRINT_STATMENT__ = true
+const __DEBUG_PRINT_STATMENT__ = false
 
 type Preparer interface {
 	Prepare(query string) (*sql.Stmt, error)
