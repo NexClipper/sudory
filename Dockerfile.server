@@ -8,19 +8,13 @@ RUN mkdir -p /app/conf/migrations/sudory
 
 
 COPY /bin/server/sudory-server /app/
-#COPY /conf/script/server/sudory.sql.create /app/
-#COPY /conf/script/server/sudory.sql.modify /app/
-#COPY /conf/script/server/sudory.sql.recipe.insert /app/
-#COPY /conf/script/server/sudory.sql.template.insert /app/
-#COPY /conf/script/server/sudory.sql.truncate /app/
 COPY /conf/script/server/entrypoint.sh /app/
-#COPY /conf/script/server/init-db.sh /app/
+COPY /conf/script/server/init-db.sh /app/
 COPY /conf/sudory-server.yml /app/conf/
 COPY /conf/enigma.yml /app/conf/rules/
-#COPY /conf/events.yml /app/conf/rules/
 ADD  /conf/script/migrations/sudory /app/conf/migrations/sudory
 
-#RUN chmod +x /app/init-db.sh
+RUN chmod +x /app/init-db.sh
 
 ENTRYPOINT ["bash", "/app/entrypoint.sh"]
 EXPOSE 8099
