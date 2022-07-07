@@ -54,7 +54,7 @@ func (hc *HttpClient) IsTokenExpired() bool {
 	return !claims.VerifyExpiresAt(time.Now().Unix(), true)
 }
 
-func (hc *HttpClient) Request(ctx context.Context, method, path string, params map[string]string, bodyType string, rawBody []byte) ([]byte, error) {
+func (hc *HttpClient) Request(ctx context.Context, method, path string, params map[string][]string, bodyType string, rawBody []byte) ([]byte, error) {
 	req, err := retryablehttp.NewRequest(method, hc.url+path, rawBody)
 	if err != nil {
 		return nil, err
@@ -62,7 +62,9 @@ func (hc *HttpClient) Request(ctx context.Context, method, path string, params m
 
 	urlValues := urlPkg.Values{}
 	for k, v := range params {
-		urlValues.Set(k, v)
+		for _, val := range v {
+			urlValues.Add(k, val)
+		}
 	}
 	req.URL.RawQuery = urlValues.Encode()
 
@@ -97,34 +99,34 @@ func (hc *HttpClient) Request(ctx context.Context, method, path string, params m
 	return result.Bytes(), nil
 }
 
-func (c *HttpClient) Get(ctx context.Context, path string, params map[string]string) ([]byte, error) {
+func (c *HttpClient) Get(ctx context.Context, path string, params map[string][]string) ([]byte, error) {
 	return c.Request(ctx, "GET", path, params, "", nil)
 }
 
-func (c *HttpClient) GetJson(ctx context.Context, path string, params map[string]string) ([]byte, error) {
+func (c *HttpClient) GetJson(ctx context.Context, path string, params map[string][]string) ([]byte, error) {
 	return c.Request(ctx, "GET", path, params, "application/json", nil)
 }
 
-func (c *HttpClient) Post(ctx context.Context, path string, params map[string]string, rawBody []byte) ([]byte, error) {
+func (c *HttpClient) Post(ctx context.Context, path string, params map[string][]string, rawBody []byte) ([]byte, error) {
 	return c.Request(ctx, "POST", path, params, "", rawBody)
 }
 
-func (c *HttpClient) PostJson(ctx context.Context, path string, params map[string]string, rawBody []byte) ([]byte, error) {
+func (c *HttpClient) PostJson(ctx context.Context, path string, params map[string][]string, rawBody []byte) ([]byte, error) {
 	return c.Request(ctx, "POST", path, params, "application/json", rawBody)
 }
 
-func (c *HttpClient) PostForm(ctx context.Context, path string, params map[string]string, rawBody []byte) ([]byte, error) {
+func (c *HttpClient) PostForm(ctx context.Context, path string, params map[string][]string, rawBody []byte) ([]byte, error) {
 	return c.Request(ctx, "POST", path, params, "application/x-www-form-urlencoded", rawBody)
 }
 
-func (c *HttpClient) Put(ctx context.Context, path string, params map[string]string, rawBody []byte) ([]byte, error) {
+func (c *HttpClient) Put(ctx context.Context, path string, params map[string][]string, rawBody []byte) ([]byte, error) {
 	return c.Request(ctx, "PUT", path, params, "", rawBody)
 }
 
-func (c *HttpClient) PutJson(ctx context.Context, path string, params map[string]string, rawBody []byte) ([]byte, error) {
+func (c *HttpClient) PutJson(ctx context.Context, path string, params map[string][]string, rawBody []byte) ([]byte, error) {
 	return c.Request(ctx, "PUT", path, params, "application/json", rawBody)
 }
 
-func (c *HttpClient) Delete(ctx context.Context, path string, params map[string]string) ([]byte, error) {
+func (c *HttpClient) Delete(ctx context.Context, path string, params map[string][]string) ([]byte, error) {
 	return c.Request(ctx, "DELETE", path, params, "", nil)
 }

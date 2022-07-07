@@ -168,6 +168,7 @@ func (f *Fetcher) UpdateServiceProcess() {
 			log.Errorf(err.Error())
 			continue
 		}
+		<-time.After(time.Millisecond * 100)
 
 		go func() {
 			if _, err := f.client.PutJson(context.Background(), "/client/service", nil, jsonb); err != nil {

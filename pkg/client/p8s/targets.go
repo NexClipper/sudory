@@ -28,14 +28,14 @@ func (c *Client) Targets() (string, error) {
 }
 
 func (c *Client) TargetsMetadata(params map[string]interface{}) (string, error) {
-	m := make(map[string]string)
+	m := make(map[string][]string)
 
 	for k, v := range params {
 		str, ok := v.(string)
 		if !ok {
 			return "", fmt.Errorf("params['%s']'s type must be string, not %T", k, v)
 		}
-		m[k] = str
+		m[k] = []string{str}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
