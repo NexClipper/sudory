@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/event"
 	"github.com/NexClipper/sudory/pkg/server/event/managed_event"
@@ -234,11 +235,11 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 			m["step_count"] = service.StepCount
 			m["step_position"] = service.StepPosition
 
-			logs.KVL(
+			log.Debugf("%s", logs.KVL(
 				"channel(poll-out-service_uuid)", m["service_uuid"],
 				"channel(poll-out-status)", m["status"],
 				"channel(poll-out-result-length)", 0,
-			)
+			))
 
 			event.Invoke(event_name, m)
 			managed_event.Invoke(event_name, m)
@@ -478,11 +479,11 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		m["step_count"] = service.StepCount
 		m["step_position"] = service_status.StepPosition
 
-		logs.KVL(
+		log.Debugf("%s", logs.KVL(
 			"channel(poll-in-service_uuid)", m["service_uuid"],
 			"channel(poll-in-status)", m["status"],
 			"channel(poll-in-result-length)", len(service_result.Result.String()),
-		)
+		))
 
 		event.Invoke(service.SubscribedChannel.String(), m)         //Subscribe 등록된 구독 이벤트 이름으로 호출
 		managed_event.Invoke(service.SubscribedChannel.String(), m) //Subscribe 등록된 구독 이벤트 이름으로 호출
