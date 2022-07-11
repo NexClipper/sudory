@@ -461,13 +461,13 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		m["cluster_uuid"] = service.ClusterUuid
 		m["assigned_client_uuid"] = service_status.AssignedClientUuid
 		m["status"] = service_status.Status
-		if 0 < len(service_result.Result) {
-			m["result_type"] = service_result.ResultType.String()
-			m["result"] = service_result.Result.String()
-		}
-		if 0 < len(service_status.Message) {
-			m["message"] = service_status.Message.String()
-		}
+		// if 0 < len(service_result.Result) {
+		m["result_type"] = service_result.ResultType.String()
+		m["result"] = service_result.Result.String()
+		// }
+		// if 0 < len(service_status.Message) {
+		m["message"] = service_status.Message.String()
+		// }
 		m["step_count"] = service.StepCount
 		m["step_position"] = service_status.StepPosition
 
