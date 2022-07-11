@@ -106,7 +106,7 @@ func (r *Repos) hasRepoEntry(entry *repo.Entry) error {
 		}
 
 		// the same repo already exists
-		return nil
+		return errExistRepo
 	}
 
 	return nil
@@ -126,7 +126,7 @@ func (r *Repos) updateRepoEntry(entry *repo.Entry) error {
 	return nil
 }
 
-func (r *Repos) AddRepo(name, url string) error {
+func (r *Repos) Add(name, url string) error {
 	if err := checkDeprecatedRepos(url); err != nil {
 		return err
 	}
@@ -150,6 +150,11 @@ func (r *Repos) AddRepo(name, url string) error {
 		URL:  url,
 	}
 
+	// check if the repo name is legal
+	if strings.Contains(entry.Name, "/") {
+		return fmt.Errorf("repository name(%s) must not contain '/'", entry.Name)
+	}
+
 	// check if an entry exists in the repo file
 	if err := r.hasRepoEntry(entry); err != nil {
 		return err
@@ -169,6 +174,65 @@ func (r *Repos) AddRepo(name, url string) error {
 
 	// update and write entry to repo file
 	if err := r.updateRepoEntry(entry); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type RepoElem struct {
+	Name string `json:"name,omitempty"`
+	Url  string `json:"url,omitempty"`
+}
+
+func (r *Repos) List() ([]*RepoElem, error) {
+	f, err := repo.LoadFile(r.settings.RepositoryConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(f.Repositories) == 0 {
+		return nil, fmt.Errorf("repositories do not exist")
+	}
+
+	var list []*RepoElem
+	for _, re := range f.Repositories {
+		list = append(list, &RepoElem{re.Name, re.URL})
+	}
+
+	return list, nil
+}
+
+func (r *Repos) Update(name string) error {
+	f, err := repo.LoadFile(r.settings.RepositoryConfig)
+	if err != nil {
+		return err
+	}
+
+	if len(f.Repositories) == 0 {
+		return fmt.Errorf("repositories do not exist")
+	}
+
+	var cr *repo.ChartRepository
+	for _, re := range f.Repositories {
+		if re.Name == name {
+			ncr, err := repo.NewChartRepository(re, getter.All(r.settings))
+			if err != nil {
+				return err
+			}
+			if r.settings.RepositoryCache != "" {
+				ncr.CachePath = r.settings.RepositoryCache
+			}
+			cr = ncr
+			break
+		}
+	}
+
+	if cr == nil {
+		return fmt.Errorf("no repository found : %s", name)
+	}
+
+	if _, err := cr.DownloadIndexFile(); err != nil {
 		return err
 	}
 

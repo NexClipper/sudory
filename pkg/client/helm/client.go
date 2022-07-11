@@ -33,6 +33,12 @@ func (c *Client) Request(cmd string, args map[string]interface{}) (string, error
 		result, err = c.Upgrade(args)
 	case "get_values":
 		result, err = c.GetValues(args)
+	case "repo_add":
+		result, err = c.RepoAdd(args)
+	case "repo_list":
+		result, err = c.RepoList(args)
+	case "repo_update":
+		result, err = c.RepoUpdate(args)
 	default:
 		return "", fmt.Errorf("unknown command(%s)", cmd)
 	}

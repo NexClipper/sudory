@@ -28,7 +28,8 @@ func (c *Client) Upgrade(args map[string]interface{}) (string, error) {
 		Namespace    string                 `param:"namespace"`
 		Name         string                 `param:"name"`
 		ChartName    string                 `param:"chart_name"`
-		RepoURL      string                 `param:"repo_url"`
+		RepoURL      string                 `param:"repo_url,optional"`
+		RepoName     string                 `param:"repo_name,optional"`
 		ChartVersion string                 `param:"chart_version,optional"`
 		Values       map[string]interface{} `param:"values,optional"`
 	}
@@ -56,8 +57,17 @@ func (c *Client) Upgrade(args map[string]interface{}) (string, error) {
 	client.ChartPathOptions.RepoURL = params.RepoURL
 	client.Namespace = c.settings.Namespace()
 
+	chartName := params.ChartName
+	if params.RepoURL == "" {
+		if params.RepoName != "" {
+			chartName = params.RepoName + "/" + chartName
+		} else {
+			return "", fmt.Errorf("either repo_url or repo_name must exist")
+		}
+	}
+
 	// look for chart directory
-	chartPath, err := client.ChartPathOptions.LocateChart(params.ChartName, c.settings)
+	chartPath, err := client.ChartPathOptions.LocateChart(chartName, c.settings)
 	if err != nil {
 		return "", err
 	}
