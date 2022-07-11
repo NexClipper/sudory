@@ -18,6 +18,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/config"
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/event"
+	"github.com/NexClipper/sudory/pkg/server/event/managed_channel"
 	"github.com/NexClipper/sudory/pkg/server/event/managed_event"
 	"github.com/NexClipper/sudory/pkg/server/macro/enigma"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
@@ -26,8 +27,8 @@ import (
 	servicev1 "github.com/NexClipper/sudory/pkg/server/model/service/v1"
 	stepv1 "github.com/NexClipper/sudory/pkg/server/model/service_step/v1"
 	"github.com/NexClipper/sudory/pkg/server/route"
-	"github.com/NexClipper/sudory/pkg/server/status"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
+	"github.com/NexClipper/sudory/pkg/server/status/ticker"
 	"github.com/NexClipper/sudory/pkg/version"
 	"github.com/fsnotify/fsnotify"
 	"github.com/golang-migrate/migrate/v4"
@@ -101,15 +102,28 @@ func main() {
 		}
 		defer eventClose() //이벤트 종료
 	}
-	//init managed event
-	me := managed_event.NewManagedEvent()
-	me.SetEngine(db.Engine())
-	me.ErrorHandlers.Add(managed_event.DefaultErrorHandler)
-	me.NofitierErrorHandlers.Add(
-		managed_event.DefaultErrorHandler_nofitier(me),
-		func(n managed_event.Notifier, err error) { managed_event.DefaultErrorHandler(err) },
+	if true {
+		//init managed event
+		me := managed_event.NewManagedEvent()
+		me.SetEngine(db.Engine())
+		me.ErrorHandlers.Add(managed_event.DefaultErrorHandler)
+		me.NofitierErrorHandlers.Add(
+			managed_event.DefaultErrorHandler_notifier(me),
+			func(n managed_event.Notifier, err error) { managed_event.DefaultErrorHandler(err) },
+		)
+		managed_event.Invoke = me.Invoke
+	}
+
+	//init managed channel
+	mc := managed_channel.NewEvent(db.Engine().DB().DB)
+
+	mc.ErrorHandlers.Add(managed_event.DefaultErrorHandler)
+	mc.NofitierErrorHandlers.Add(
+		managed_channel.DefaultErrorHandler_notifier(mc),
+		func(n managed_channel.Notifier, err error) { managed_channel.DefaultErrorHandler(err) },
 	)
-	managed_event.Invoke = me.Invoke
+	managed_channel.InvokeByChannelUuid = mc.InvokeByChannelUuid
+	managed_channel.InvokeByEventCategory = mc.InvokeByEventCategory
 
 	//init global variant cron
 	cronGVClose, err := newGlobalVariablesCron(db.Engine())
@@ -412,7 +426,7 @@ func newGlobalVariablesCron(engine *xorm.Engine) (func(), error) {
 	}
 
 	//에러 핸들러 등록
-	errorHandlers := status.HashsetErrorHandlers{}
+	errorHandlers := ticker.HashsetErrorHandlers{}
 	errorHandlers.Add(func(err error) {
 		var stack string
 		logs.CauseIter(err, func(err error) {
@@ -427,7 +441,7 @@ func newGlobalVariablesCron(engine *xorm.Engine) (func(), error) {
 	})
 
 	//new ticker
-	tickerClose := status.NewTicker(interval,
+	tickerClose := ticker.NewTicker(interval,
 		//global variables update
 		func() {
 			if err := updator.Update(); err != nil {
@@ -511,7 +525,7 @@ func newPurgeDeletedDataCron(engine *xorm.Engine, respitePeriod time.Duration) (
 	}
 
 	//에러 핸들러 등록
-	errorHandlers := status.HashsetErrorHandlers{}
+	errorHandlers := ticker.HashsetErrorHandlers{}
 	errorHandlers.Add(func(err error) {
 		var stack string
 		logs.CauseIter(err, func(err error) {
@@ -526,7 +540,7 @@ func newPurgeDeletedDataCron(engine *xorm.Engine, respitePeriod time.Duration) (
 	})
 
 	//new ticker
-	tickerClose := status.NewTicker(60*time.Minute, taskWrapper(taskMapper(purgetables, purgeDeletedrecord), errorHandlers.OnError)...)
+	tickerClose := ticker.NewTicker(60*time.Minute, taskWrapper(taskMapper(purgetables, purgeDeletedrecord), errorHandlers.OnError)...)
 
 	return tickerClose, nil
 }

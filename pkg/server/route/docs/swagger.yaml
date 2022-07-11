@@ -609,6 +609,31 @@ definitions:
       updated:
         type: string
     type: object
+  v2.ChannelStatusOption_property:
+    properties:
+      created:
+        type: string
+      status_max_count:
+        type: integer
+      updated:
+        type: string
+    type: object
+  v2.Format_property:
+    properties:
+      created:
+        type: string
+      format_data:
+        type: string
+      format_type:
+        description: enums:"disable(0), fields(1), jq(2)"
+        enum:
+        - 0
+        - 1
+        - 2
+        type: integer
+      updated:
+        type: string
+    type: object
   v2.HttpReq_ClientServiceUpdate:
     properties:
       ended:
@@ -625,6 +650,136 @@ definitions:
         type: integer
       uuid:
         description: pk
+        type: string
+    type: object
+  v2.HttpReq_ManagedChannel_ChannelStatusOption_update:
+    properties:
+      status_max_count:
+        type: integer
+    type: object
+  v2.HttpReq_ManagedChannel_Format_update:
+    properties:
+      format_data:
+        type: string
+      format_type:
+        description: enums:"disable(0), fields(1), jq(2)"
+        enum:
+        - 0
+        - 1
+        - 2
+        type: integer
+    type: object
+  v2.HttpReq_ManagedChannel_NotifierConsole_update:
+    type: object
+  v2.HttpReq_ManagedChannel_NotifierRabbitMq_update:
+    properties:
+      channel_publish:
+        description: amqp.Channel.Publish
+        properties:
+          exchange:
+            type: string
+          immediate:
+            type: boolean
+          mandatory:
+            type: boolean
+          routing_key:
+            type: string
+        type: object
+      publishing:
+        description: amqp.Publishing
+        properties:
+          message_app_id:
+            description: application use - creating application
+            type: string
+          message_content_encoding:
+            description: MIME content encoding
+            type: string
+          message_content_type:
+            description: MIME content type
+            type: string
+          message_correlation_id:
+            description: application use - correlation identifier
+            type: string
+          message_delivery_mode:
+            description: queue implementation use - Transient (1) or Persistent (2)
+            type: integer
+          message_expiration:
+            description: implementation use - message expiration spec
+            type: string
+          message_headers:
+            description: Application or header exchange table
+            type: object
+          message_message_id:
+            description: application use - message identifier
+            type: string
+          message_priority:
+            description: queue implementation use - 0 to 9
+            type: integer
+          message_reply_to:
+            description: 'application use - address to to reply to (ex: RPC)'
+            type: string
+          message_timestamp:
+            description: application use - message timestamp
+            type: boolean
+          message_type:
+            description: application use - message type name
+            type: string
+          message_user_id:
+            description: application use - creating user id
+            type: string
+        type: object
+      url:
+        description: amqp Dial
+        type: string
+    type: object
+  v2.HttpReq_ManagedChannel_NotifierWebhook_update:
+    properties:
+      method:
+        description: http
+        type: string
+      request_headers:
+        type: object
+      request_timeout:
+        description: second
+        type: integer
+      url:
+        type: string
+    type: object
+  v2.HttpReq_ManagedChannel_create:
+    properties:
+      event_category:
+        description: enums:"NaV(0), nonspecified(1), client-auth(2), client-polling-out(3),
+          client-polling-in(4)"
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        type: integer
+      name:
+        type: string
+      summary:
+        type: string
+      uuid:
+        description: optional
+        type: string
+    type: object
+  v2.HttpReq_ManagedChannel_update:
+    properties:
+      event_category:
+        description: enums:"NaV(0), nonspecified(1), client-auth(2), client-polling-out(3),
+          client-polling-in(4)"
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        type: integer
+      name:
+        type: string
+      summary:
         type: string
     type: object
   v2.HttpReq_Service_create:
@@ -688,6 +843,104 @@ definitions:
       uuid:
         description: pk
         type: string
+    type: object
+  v2.HttpRsp_ManagedChannel:
+    properties:
+      created:
+        type: string
+      deleted:
+        type: string
+      event_category:
+        description: enums:"NaV(0), nonspecified(1), client-auth(2), client-polling-out(3),
+          client-polling-in(4)"
+        enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        type: integer
+      format:
+        $ref: '#/definitions/v2.Format_property'
+      name:
+        type: string
+      notifier:
+        properties:
+          console:
+            $ref: '#/definitions/v2.NotifierConsole_property'
+          created:
+            type: string
+          notifier_type:
+            description: enums:"NaV(0), console(1), webhook(2), rabbitmq(3)"
+            enum:
+            - "0"
+            - "1"
+            - "2"
+            - "3"
+            type: string
+          rabbitmq:
+            $ref: '#/definitions/v2.NotifierRabbitMq_property'
+          updated:
+            type: string
+          webhook:
+            $ref: '#/definitions/v2.NotifierWebhook_property'
+        type: object
+      status_option:
+        $ref: '#/definitions/v2.ChannelStatusOption_property'
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: pk
+        type: string
+    type: object
+  v2.HttpRsp_ManagedChannel_ChannelStatus:
+    properties:
+      created:
+        description: pk
+        type: string
+      message:
+        type: string
+      uuid:
+        description: pk
+        type: string
+    type: object
+  v2.HttpRsp_ManagedChannel_ChannelStatusOption:
+    properties:
+      created:
+        type: string
+      status_max_count:
+        type: integer
+      updated:
+        type: string
+      uuid:
+        description: pk
+        type: string
+    type: object
+  v2.HttpRsp_ManagedChannel_NotifierEdge:
+    properties:
+      console:
+        $ref: '#/definitions/v2.NotifierConsole_property'
+      created:
+        type: string
+      notifier_type:
+        description: enums:"NaV(0), console(1), webhook(2), rabbitmq(3)"
+        enum:
+        - "0"
+        - "1"
+        - "2"
+        - "3"
+        type: string
+      rabbitmq:
+        $ref: '#/definitions/v2.NotifierRabbitMq_property'
+      updated:
+        type: string
+      uuid:
+        description: pk
+        type: string
+      webhook:
+        $ref: '#/definitions/v2.NotifierWebhook_property'
     type: object
   v2.HttpRsp_Service:
     properties:
@@ -793,7 +1046,7 @@ definitions:
   v2.HttpRsp_ServiceStep:
     properties:
       args:
-        $ref: '#/definitions/vanilla.NullJson'
+        type: object
       created:
         description: pk
         type: string
@@ -821,10 +1074,118 @@ definitions:
         description: pk
         type: string
     type: object
+  v2.HttpRsq_ManagedChannel_Format:
+    properties:
+      created:
+        type: string
+      format_data:
+        type: string
+      format_type:
+        description: enums:"disable(0), fields(1), jq(2)"
+        enum:
+        - 0
+        - 1
+        - 2
+        type: integer
+      updated:
+        type: string
+      uuid:
+        description: pk
+        type: string
+    type: object
+  v2.NotifierConsole_property:
+    properties:
+      created:
+        type: string
+      updated:
+        type: string
+    type: object
+  v2.NotifierRabbitMq_property:
+    properties:
+      channel_publish:
+        description: amqp.Channel.Publish
+        properties:
+          exchange:
+            type: string
+          immediate:
+            type: boolean
+          mandatory:
+            type: boolean
+          routing_key:
+            type: string
+        type: object
+      created:
+        type: string
+      publishing:
+        description: amqp.Publishing
+        properties:
+          message_app_id:
+            description: application use - creating application
+            type: string
+          message_content_encoding:
+            description: MIME content encoding
+            type: string
+          message_content_type:
+            description: MIME content type
+            type: string
+          message_correlation_id:
+            description: application use - correlation identifier
+            type: string
+          message_delivery_mode:
+            description: queue implementation use - Transient (1) or Persistent (2)
+            type: integer
+          message_expiration:
+            description: implementation use - message expiration spec
+            type: string
+          message_headers:
+            description: Application or header exchange table
+            type: object
+          message_message_id:
+            description: application use - message identifier
+            type: string
+          message_priority:
+            description: queue implementation use - 0 to 9
+            type: integer
+          message_reply_to:
+            description: 'application use - address to to reply to (ex: RPC)'
+            type: string
+          message_timestamp:
+            description: application use - message timestamp
+            type: boolean
+          message_type:
+            description: application use - message type name
+            type: string
+          message_user_id:
+            description: application use - creating user id
+            type: string
+        type: object
+      updated:
+        type: string
+      url:
+        description: amqp Dial
+        type: string
+    type: object
+  v2.NotifierWebhook_property:
+    properties:
+      created:
+        type: string
+      method:
+        description: http
+        type: string
+      request_headers:
+        type: object
+      request_timeout:
+        description: second
+        type: integer
+      updated:
+        type: string
+      url:
+        type: string
+    type: object
   v2.ServiceStep:
     properties:
       args:
-        $ref: '#/definitions/vanilla.NullJson'
+        type: object
       created:
         description: pk
         type: string
@@ -846,7 +1207,7 @@ definitions:
   v2.ServiceStep_tangled:
     properties:
       args:
-        $ref: '#/definitions/vanilla.NullJson'
+        type: object
       created:
         description: pk
         type: string
@@ -873,9 +1234,6 @@ definitions:
       uuid:
         description: pk
         type: string
-    type: object
-  vanilla.NullJson:
-    additionalProperties: true
     type: object
 info:
   contact:
@@ -964,6 +1322,7 @@ paths:
     get:
       consumes:
       - application/json
+      deprecated: true
       description: Find channel
       parameters:
       - description: client session token
@@ -996,6 +1355,7 @@ paths:
     post:
       consumes:
       - application/json
+      deprecated: true
       description: Create a channel
       parameters:
       - description: client session token
@@ -1021,6 +1381,7 @@ paths:
     delete:
       consumes:
       - application/json
+      deprecated: true
       description: Delete a channel
       parameters:
       - description: client session token
@@ -1042,6 +1403,7 @@ paths:
     get:
       consumes:
       - application/json
+      deprecated: true
       description: Get a channel
       parameters:
       - description: client session token
@@ -1065,6 +1427,7 @@ paths:
     put:
       consumes:
       - application/json
+      deprecated: true
       description: Update a channel
       parameters:
       - description: client session token
@@ -1095,6 +1458,7 @@ paths:
     get:
       consumes:
       - application/json
+      deprecated: true
       description: Get channel edges
       parameters:
       - description: client session token
@@ -1121,6 +1485,7 @@ paths:
     put:
       consumes:
       - application/json
+      deprecated: true
       description: addtion channel notifier edge
       parameters:
       - description: client session token
@@ -1155,6 +1520,7 @@ paths:
     put:
       consumes:
       - application/json
+      deprecated: true
       description: subtraction channel sub notifier
       parameters:
       - description: client session token
@@ -1189,6 +1555,7 @@ paths:
     get:
       consumes:
       - application/json
+      deprecated: true
       description: Find channel notifier console
       parameters:
       - description: client session token
@@ -1221,6 +1588,7 @@ paths:
     post:
       consumes:
       - application/json
+      deprecated: true
       description: Create a channel notifier console
       parameters:
       - description: client session token
@@ -1246,6 +1614,7 @@ paths:
     delete:
       consumes:
       - application/json
+      deprecated: true
       description: Delete a channel notifier console
       parameters:
       - description: client session token
@@ -1267,6 +1636,7 @@ paths:
     get:
       consumes:
       - application/json
+      deprecated: true
       description: Get a channel notifier
       parameters:
       - description: client session token
@@ -1290,6 +1660,7 @@ paths:
     put:
       consumes:
       - application/json
+      deprecated: true
       description: Update a console channel notifier
       parameters:
       - description: client session token
@@ -1320,6 +1691,7 @@ paths:
     get:
       consumes:
       - application/json
+      deprecated: true
       description: Find channel notifier
       parameters:
       - description: client session token
@@ -1352,6 +1724,7 @@ paths:
     post:
       consumes:
       - application/json
+      deprecated: true
       description: Create a channel notifier rabbitmq
       parameters:
       - description: client session token
@@ -1377,6 +1750,7 @@ paths:
     delete:
       consumes:
       - application/json
+      deprecated: true
       description: Delete a channel notifier rabbitmq
       parameters:
       - description: client session token
@@ -1398,6 +1772,7 @@ paths:
     get:
       consumes:
       - application/json
+      deprecated: true
       description: Get a channel notifier rabbitmq
       parameters:
       - description: client session token
@@ -1421,6 +1796,7 @@ paths:
     put:
       consumes:
       - application/json
+      deprecated: true
       description: Update a rabbitmq channel notifier
       parameters:
       - description: client session token
@@ -1451,6 +1827,7 @@ paths:
     get:
       consumes:
       - application/json
+      deprecated: true
       description: Find channel notifier webhook
       parameters:
       - description: client session token
@@ -1483,6 +1860,7 @@ paths:
     post:
       consumes:
       - application/json
+      deprecated: true
       description: Create a channel notifier webhook
       parameters:
       - description: client session token
@@ -1508,6 +1886,7 @@ paths:
     delete:
       consumes:
       - application/json
+      deprecated: true
       description: Delete a channel notifier webhook
       parameters:
       - description: client session token
@@ -1529,6 +1908,7 @@ paths:
     get:
       consumes:
       - application/json
+      deprecated: true
       description: Get a channel notifier webhook
       parameters:
       - description: client session token
@@ -1552,6 +1932,7 @@ paths:
     put:
       consumes:
       - application/json
+      deprecated: true
       description: Update a webhook channel notifier
       parameters:
       - description: client session token
@@ -1582,6 +1963,7 @@ paths:
     get:
       consumes:
       - application/json
+      deprecated: true
       description: Find channel notifier status
       parameters:
       - description: client session token
@@ -1615,6 +1997,7 @@ paths:
     delete:
       consumes:
       - application/json
+      deprecated: true
       description: Delete a channel notifier status
       parameters:
       - description: client session token
@@ -1633,6 +2016,452 @@ paths:
           description: ""
       tags:
       - server/channel_notifier_status
+  /server/channels:
+    get:
+      consumes:
+      - application/json
+      description: Find channel
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: query  pkg/server/database/prepared/README.md
+        in: query
+        name: q
+        type: string
+      - description: order  pkg/server/database/prepared/README.md
+        in: query
+        name: o
+        type: string
+      - description: paging pkg/server/database/prepared/README.md
+        in: query
+        name: p
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v2.HttpRsp_ManagedChannel'
+            type: array
+      tags:
+      - server/channels
+    post:
+      consumes:
+      - application/json
+      description: Create a channel
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: HttpReq_ManagedChannel_create
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v2.HttpReq_ManagedChannel_create'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.HttpRsp_ManagedChannel'
+      tags:
+      - server/channels
+  /server/channels/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a channel
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Channel 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/channels
+    get:
+      consumes:
+      - application/json
+      description: Get a channel
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Channel 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.HttpRsp_ManagedChannel'
+      tags:
+      - server/channels
+    put:
+      consumes:
+      - application/json
+      description: Update a channel
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Channel 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: HttpReq_ManagedChannel_update
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v2.HttpReq_ManagedChannel_update'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/channels
+  /server/channels/{uuid}/format:
+    get:
+      consumes:
+      - application/json
+      description: Get a channel format
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Channel 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.HttpRsq_ManagedChannel_Format'
+      tags:
+      - server/channels
+    put:
+      consumes:
+      - application/json
+      description: Update a channel format
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Channel 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: HttpReq_ManagedChannel_Format_update
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v2.HttpReq_ManagedChannel_Format_update'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/channels
+  /server/channels/{uuid}/notifiers/console:
+    put:
+      consumes:
+      - application/json
+      description: Update a console channel notifier
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Channel 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: HttpReq_ManagedChannel_NotifierConsole_update
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v2.HttpReq_ManagedChannel_NotifierConsole_update'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/channels
+  /server/channels/{uuid}/notifiers/edge:
+    get:
+      consumes:
+      - application/json
+      description: Get a channel notifier edge
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Channel 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.HttpRsp_ManagedChannel_NotifierEdge'
+      tags:
+      - server/channels
+  /server/channels/{uuid}/notifiers/rabbitmq:
+    put:
+      consumes:
+      - application/json
+      description: Update a rabbitmq channel notifier
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Channel 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: HttpReq_ManagedChannel_NotifierRabbitMq_update
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v2.HttpReq_ManagedChannel_NotifierRabbitMq_update'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/channels
+  /server/channels/{uuid}/notifiers/webhook:
+    put:
+      consumes:
+      - application/json
+      description: Update a webhook channel notifier
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Channel 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: HttpReq_ManagedChannel_NotifierWebhook_update
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v2.HttpReq_ManagedChannel_NotifierWebhook_update'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/channels
+  /server/channels/{uuid}/status:
+    get:
+      consumes:
+      - application/json
+      description: List channel status
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: channel status 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v2.HttpRsp_ManagedChannel_ChannelStatus'
+            type: array
+      tags:
+      - server/channels
+    post:
+      consumes:
+      - application/json
+      description: Create a channel status
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: channel status 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: message
+        in: query
+        name: message
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/channels
+  /server/channels/{uuid}/status/option:
+    get:
+      consumes:
+      - application/json
+      description: Get a channel status option
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Channel 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.HttpRsp_ManagedChannel_ChannelStatusOption'
+      tags:
+      - server/channels
+    put:
+      consumes:
+      - application/json
+      description: Update a channel status option
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Channel 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: HttpReq_ManagedChannel_ChannelStatusOption_update
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v2.HttpReq_ManagedChannel_ChannelStatusOption_update'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/channels
+  /server/channels/{uuid}/status/purge:
+    delete:
+      consumes:
+      - application/json
+      description: Purge channel status
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: channel status 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/channels
+  /server/channels/status:
+    get:
+      consumes:
+      - application/json
+      description: Find channel status
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: query  pkg/server/database/prepared/README.md
+        in: query
+        name: q
+        type: string
+      - description: order  pkg/server/database/prepared/README.md
+        in: query
+        name: o
+        type: string
+      - description: paging pkg/server/database/prepared/README.md
+        in: query
+        name: p
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/v2.HttpRsp_ManagedChannel_ChannelStatus'
+            type: array
+      tags:
+      - server/channels
   /server/cluster:
     get:
       consumes:

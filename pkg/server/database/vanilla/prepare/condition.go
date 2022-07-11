@@ -5,9 +5,19 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/NexClipper/sudory/pkg/server/database/prepare/sexp"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/prepare/sexp"
 	"github.com/pkg/errors"
 )
+
+var quote = BackQuote
+
+func BackQuote(exp string) string {
+	return strings.ReplaceAll(fmt.Sprintf("`%s`", exp), "``", "`")
+}
+
+func NoneQuote(exp string) string {
+	return fmt.Sprintf("%s", exp)
+}
 
 type Condition struct {
 	query string
@@ -203,7 +213,7 @@ func (builder *conditionEngine) Equal(v interface{}) (*Condition, error) {
 		for exp = range value {
 			arg = value[exp]
 		}
-		return &Condition{query: fmt.Sprintf("%s = ?", exp), args: []interface{}{arg}}, nil
+		return &Condition{query: fmt.Sprintf("%s = ?", quote(exp)), args: []interface{}{arg}}, nil
 	default:
 		return nil, ErrorUnsupportedType(value)
 	}
@@ -218,7 +228,7 @@ func (builder *conditionEngine) GreaterThan(v interface{}) (*Condition, error) {
 		for exp = range value {
 			arg = value[exp]
 		}
-		return &Condition{query: fmt.Sprintf("%s > ?", exp), args: []interface{}{arg}}, nil
+		return &Condition{query: fmt.Sprintf("%s > ?", quote(exp)), args: []interface{}{arg}}, nil
 	default:
 		return nil, ErrorUnsupportedType(value)
 	}
@@ -232,7 +242,7 @@ func (builder *conditionEngine) LessThan(v interface{}) (*Condition, error) {
 		for exp = range value {
 			arg = value[exp]
 		}
-		return &Condition{query: fmt.Sprintf("%s < ?", exp), args: []interface{}{arg}}, nil
+		return &Condition{query: fmt.Sprintf("%s < ?", quote(exp)), args: []interface{}{arg}}, nil
 	default:
 		return nil, ErrorUnsupportedType(value)
 	}
@@ -247,7 +257,7 @@ func (builder *conditionEngine) GreaterThanOrEqual(v interface{}) (*Condition, e
 		for exp = range value {
 			arg = value[exp]
 		}
-		return &Condition{query: fmt.Sprintf("%s >= ?", exp), args: []interface{}{arg}}, nil
+		return &Condition{query: fmt.Sprintf("%s >= ?", quote(exp)), args: []interface{}{arg}}, nil
 	default:
 		return nil, ErrorUnsupportedType(value)
 	}
@@ -262,7 +272,7 @@ func (builder *conditionEngine) LessThanOrEqual(v interface{}) (*Condition, erro
 		for exp = range value {
 			arg = value[exp]
 		}
-		return &Condition{query: fmt.Sprintf("%s <= ?", exp), args: []interface{}{arg}}, nil
+		return &Condition{query: fmt.Sprintf("%s <= ?", quote(exp)), args: []interface{}{arg}}, nil
 	default:
 		return nil, ErrorUnsupportedType(value)
 	}
@@ -277,7 +287,7 @@ func (builder *conditionEngine) Like(v interface{}) (*Condition, error) {
 		for exp = range value {
 			arg = value[exp]
 		}
-		return &Condition{query: fmt.Sprintf("%s LIKE ?", exp), args: []interface{}{arg}}, nil
+		return &Condition{query: fmt.Sprintf("%s LIKE ?", quote(exp)), args: []interface{}{arg}}, nil
 	default:
 		return nil, ErrorUnsupportedType(value)
 	}
@@ -332,7 +342,7 @@ func (builder *conditionEngine) In(v interface{}) (*Condition, error) {
 			return nil, errors.Wrapf(err, "operator map")
 		}
 
-		return &Condition{query: fmt.Sprintf("%s IN (%s)", exp, makeQ(len(args))), args: args}, nil
+		return &Condition{query: fmt.Sprintf("%s IN (%s)", quote(exp), makeQ(len(args))), args: args}, nil
 	default:
 		return nil, ErrorUnsupportedType(value)
 	}
@@ -366,7 +376,7 @@ func (builder *conditionEngine) Between(v interface{}) (*Condition, error) {
 			return nil, errors.Wrapf(err, "operator map")
 		}
 
-		return &Condition{query: fmt.Sprintf("%s BETWEEN ? AND ?", exp), args: args}, nil
+		return &Condition{query: fmt.Sprintf("%s BETWEEN ? AND ?", quote(exp)), args: args}, nil
 	default:
 		return nil, ErrorUnsupportedType(value)
 	}

@@ -1,10 +1,16 @@
 package control
 
 import (
+	"database/sql"
+
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro/block"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
+
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/status/define"
+	"github.com/labstack/echo/v4"
 )
 
 type Control struct {
@@ -55,4 +61,22 @@ func (ctl Control) ScopeSession(fn func(tx *xorm.Session) (interface{}, error)) 
 
 func (ctl Control) NewSession() database.Context {
 	return database.NewXormContext(ctl.db.Engine().NewSession())
+}
+
+type ControlVanilla struct {
+	*vanilla.SqlDbEx
+}
+
+func NewVanilla(db *sql.DB) *ControlVanilla {
+	return &ControlVanilla{
+		SqlDbEx: vanilla.NewSqlDbEx(db, define.INTERNAL_TRANSACTIN_TIMEOUT),
+	}
+}
+
+// HttpError
+func HttpError(err error, code int) error {
+	if err == nil {
+		return nil
+	}
+	return echo.NewHTTPError(code).SetInternal(err)
 }

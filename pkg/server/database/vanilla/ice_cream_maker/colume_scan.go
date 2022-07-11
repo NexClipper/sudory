@@ -13,7 +13,7 @@ func ColumnScan(objs ...interface{}) (s string, err error) {
 	}
 
 	for i := range objs {
-		columninfos := ParseColumnTag(reflect.TypeOf(objs[i]), "")
+		columninfos := ParseColumnTag(reflect.TypeOf(objs[i]), ParseColumnTag_opt{})
 
 		refs := make([]string, 0)
 		for j := range columninfos {
@@ -58,14 +58,14 @@ type TemplateColumnScanDiscriptor struct {
 
 func (TemplateColumnScan) Text() string {
 	return `
-{{ $space := " " }}
+{{ $space := "" }}
 type Scanner interface {
 	Scan(dest ...interface{}) error
 }
 {{ range .Discriptors }} 
 func (row *{{ .StructName }}) Scan(scanner Scanner) error {
 	return scanner.Scan(
-		{{ range $index, $ref := .References -}}
+		{{- range $index, $ref := .References }}
 		{{ $ref }},{{ $space }}
 		{{- end }}
 	)

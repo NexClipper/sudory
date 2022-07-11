@@ -10,10 +10,10 @@ import (
 
 type ServiceStep_essential struct {
 	Name         string             `column:"name"          json:"name,omitempty"`
-	Summary      vanilla.NullString `column:"summary"       json:"summary,omitempty"`
+	Summary      vanilla.NullString `column:"summary"       json:"summary,omitempty"       swaggertype:"string"`
 	Method       string             `column:"method"        json:"method,omitempty"`
-	Args         vanilla.NullObject `column:"args"          json:"args,omitempty"`
-	ResultFilter vanilla.NullString `column:"result_filter" json:"result_filter,omitempty"`
+	Args         vanilla.NullObject `column:"args"          json:"args,omitempty"          swaggertype:"object"`
+	ResultFilter vanilla.NullString `column:"result_filter" json:"result_filter,omitempty" swaggertype:"string"`
 }
 
 func (ServiceStep_essential) TableName() string {
@@ -30,8 +30,8 @@ type ServiceStep struct {
 
 type ServiceStepStatus_essential struct {
 	Status  StepStatus       `column:"status"  json:"status,omitempty"`
-	Started vanilla.NullTime `column:"started" json:"started,omitempty"`
-	Ended   vanilla.NullTime `column:"ended"   json:"ended,omitempty"`
+	Started vanilla.NullTime `column:"started" json:"started,omitempty" swaggertype:"string"`
+	Ended   vanilla.NullTime `column:"ended"   json:"ended,omitempty"   swaggertype:"string"`
 }
 
 func (ServiceStepStatus_essential) TableName() string {
@@ -58,7 +58,7 @@ type ServiceStep_tangled struct {
 	ServiceStep                 `json:",inline"` //step
 	ServiceStepStatus_essential `json:",inline"` //status
 
-	Updated vanilla.NullTime `column:"updated" json:"updated,omitempty"` //pk
+	Updated vanilla.NullTime `column:"updated" json:"updated,omitempty" swaggertype:"string"` //pk
 }
 
 /* *

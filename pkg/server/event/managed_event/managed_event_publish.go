@@ -73,7 +73,7 @@ var (
 		logger.Error(fmt.Errorf("%w%s", err, stack))
 	}
 
-	DefaultErrorHandler_nofitier = func(me *ManagedEvent) func(notifier Notifier, err error) {
+	DefaultErrorHandler_notifier = func(me *ManagedEvent) func(notifier Notifier, err error) {
 		return func(notifier Notifier, err error) {
 			defer func() {
 				r := recover()
@@ -105,7 +105,7 @@ var (
 			record.Error = fmt.Sprintf("%s%s", err.Error(), stack)
 
 			//이벤트 알림 상태 테이블에 에러 메시지 저장
-			if err := vault.NewNotifierStatus(me.Engine().NewSession()).CreateAndRotate(record, globvar.EventNofitierStatusRotateLimit()); err != nil {
+			if err := vault.NewNotifierStatus(me.Engine().NewSession()).CreateAndRotate(record, int(globvar.EventNofitierStatusRotateLimit())); err != nil {
 				//저장 실패
 				me.OnError(errors.Wrapf(err, "save notifier status"))
 			}

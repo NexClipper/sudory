@@ -15,6 +15,7 @@ import (
 	"xorm.io/xorm"
 )
 
+// @deprecated
 // @Description Create a channel notifier console
 // @Accept      json
 // @Produce     json
@@ -68,6 +69,7 @@ func (ctl Control) CreateChannelNotifierConsole(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+// @deprecated
 // @Description Create a channel notifier webhook
 // @Accept      json
 // @Produce     json
@@ -129,6 +131,7 @@ func (ctl Control) CreateChannelNotifierWebhook(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+// @deprecated
 // @Description Create a channel notifier rabbitmq
 // @Accept      json
 // @Produce     json
@@ -194,6 +197,7 @@ func (ctl Control) CreateChannelNotifierRabbitMq(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+// @deprecated
 // @Description Find channel notifier console
 // @Accept      json
 // @Produce     json
@@ -214,6 +218,7 @@ func (ctl Control) FindChannelNotifierConsole(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+// @deprecated
 // @Description Find channel notifier webhook
 // @Accept      json
 // @Produce     json
@@ -234,6 +239,7 @@ func (ctl Control) FindChannelNotifierWebhook(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+// @deprecated
 // @Description Find channel notifier
 // @Accept      json
 // @Produce     json
@@ -254,6 +260,7 @@ func (ctl Control) FindChannelNotifierRabbitmq(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+// @deprecated
 // @Description Get a channel notifier
 // @Accept      json
 // @Produce     json
@@ -282,6 +289,7 @@ func (ctl Control) GetChannelNotifierConsole(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+// @deprecated
 // @Description Get a channel notifier webhook
 // @Accept      json
 // @Produce     json
@@ -310,6 +318,7 @@ func (ctl Control) GetChannelNotifierWebhook(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+// @deprecated
 // @Description Get a channel notifier rabbitmq
 // @Accept      json
 // @Produce     json
@@ -338,6 +347,7 @@ func (ctl Control) GetChannelNotifierRabbitmq(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+// @deprecated
 // @Description Update a console channel notifier
 // @Accept      json
 // @Produce     json
@@ -385,6 +395,7 @@ func (ctl Control) UpdateChannelNotifierConsole(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+// @deprecated
 // @Description Update a webhook channel notifier
 // @Accept      json
 // @Produce     json
@@ -432,6 +443,7 @@ func (ctl Control) UpdateChannelNotifierWebhook(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+// @deprecated
 // @Description Update a rabbitmq channel notifier
 // @Accept      json
 // @Produce     json
@@ -479,6 +491,7 @@ func (ctl Control) UpdateChannelNotifierRabbitMq(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+// @deprecated
 // @Description Delete a channel notifier console
 // @Accept json
 // @Produce json
@@ -512,6 +525,7 @@ func (ctl Control) DeleteChannelNotifierConsole(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, OK())
 }
 
+// @deprecated
 // @Description Delete a channel notifier webhook
 // @Accept json
 // @Produce json
@@ -545,6 +559,7 @@ func (ctl Control) DeleteChannelNotifierWebhook(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, OK())
 }
 
+// @deprecated
 // @Description Delete a channel notifier rabbitmq
 // @Accept json
 // @Produce json

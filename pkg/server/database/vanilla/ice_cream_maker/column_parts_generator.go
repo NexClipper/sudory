@@ -11,6 +11,7 @@ var (
 		PrintWarning,
 		ColumnPackage,
 		ColumnNames,
+		ColumnNamesWithAlias,
 		ColumnValues,
 		ColumnScan,
 		ColumnPtrs,

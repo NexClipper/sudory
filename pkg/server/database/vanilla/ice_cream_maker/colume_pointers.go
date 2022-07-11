@@ -14,7 +14,7 @@ func ColumnPtrs(objs ...interface{}) (s string, err error) {
 
 	for i := range objs {
 
-		columninfos := ParseColumnTag(reflect.TypeOf(objs[i]), "")
+		columninfos := ParseColumnTag(reflect.TypeOf(objs[i]), ParseColumnTag_opt{})
 
 		vals := make([]string, 0)
 		for j := range columninfos {
@@ -59,11 +59,11 @@ type TemplateColumnPtrDiscriptor struct {
 
 func (TemplateColumnPtr) Text() string {
 	return `
-{{ $space := " " }}
+{{ $space := "" }}
 {{- range .Discriptors }} 
 func (row *{{ .StructName }}) Ptrs() []interface{} {
 	return []interface{}{ 
-		{{ range $index, $value := .Ptrs -}}
+		{{- range $index, $value := .Ptrs }}
 		{{ $value }},{{ $space }}
 		{{- end }}
 	}

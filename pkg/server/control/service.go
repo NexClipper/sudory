@@ -13,6 +13,7 @@ import (
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
+	"github.com/NexClipper/sudory/pkg/server/status/define"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	clusterv2 "github.com/NexClipper/sudory/pkg/server/model/cluster/v2"
@@ -83,7 +84,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 
 		cluster := clusterv2.Cluster{}
 		stmt := vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), q, nil, nil)
-		err = stmt.QueryRow(ctl.DB())(func(s vanilla.Scanner) error {
+		err = stmt.QueryRow(ctl)(func(s vanilla.Scanner) error {
 			return cluster.Scan(s)
 		})
 		err = errors.Wrapf(err, "valid: cluster is not exists")
@@ -99,7 +100,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 		).Parse()
 
 		stmt := vanilla.Stmt.Select(template.TableName(), template.ColumnNames(), q, nil, nil)
-		err = stmt.QueryRow(ctl.DB())(func(s vanilla.Scanner) error {
+		err = stmt.QueryRow(ctl)(func(s vanilla.Scanner) error {
 			return template.Scan(s)
 		})
 
@@ -107,7 +108,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 		return
 	})
 
-	commands := make([]templatev2.TemplateCommand, 0, __INIT_RECORD_CAPACITY__)
+	commands := make([]templatev2.TemplateCommand, 0, define.INIT_RECORD_CAPACITY)
 	Do(&err, func() (err error) {
 		q := vanilla.And(
 			vanilla.Equal("uuid", body.TemplateUuid),
@@ -117,7 +118,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 
 		command := templatev2.TemplateCommand{}
 		stmt := vanilla.Stmt.Select(command.TableName(), command.ColumnNames(), q, o, nil)
-		err = stmt.QueryRow(ctl.DB())(func(s vanilla.Scanner) (err error) {
+		err = stmt.QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
 			err = command.Scan(s)
 			if err == nil {
 				commands = append(commands, command)
@@ -194,7 +195,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 	}
 
 	rsp := servicev2.HttpRsp_Service_create{}
-	rsp.Steps = make([]servicev2.ServiceStep, 0, __INIT_RECORD_CAPACITY__)
+	rsp.Steps = make([]servicev2.ServiceStep, 0, define.INIT_RECORD_CAPACITY)
 	Do(&err, func() (err error) {
 		uuid := body.Uuid
 		if len(uuid) == 0 {
@@ -330,11 +331,11 @@ func (ctl ControlVanilla) FindService(ctx echo.Context) (err error) {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	rsps := make([]servicev2.HttpRsp_Service_status, 0, __INIT_RECORD_CAPACITY__)
+	rsps := make([]servicev2.HttpRsp_Service_status, 0, define.INIT_RECORD_CAPACITY)
 
 	var servcie_status servicev2.Service_status
 	err = vanilla.Stmt.Select(servcie_status.TableName(), servcie_status.ColumnNames(), q, o, p).
-		QueryRows(ctl.DB())(func(scan vanilla.Scanner, _ int) (err error) {
+		QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
 		err = servcie_status.Scan(scan)
 		if err != nil {
 			return
@@ -342,14 +343,14 @@ func (ctl ControlVanilla) FindService(ctx echo.Context) (err error) {
 
 		rst := servicev2.HttpRsp_Service_status{
 			Service_status: servcie_status,
-			Steps:          make([]servicev2.ServiceStep_tangled, 0, __INIT_RECORD_CAPACITY__),
+			Steps:          make([]servicev2.ServiceStep_tangled, 0, define.INIT_RECORD_CAPACITY),
 		}
 
 		eq_uuid := vanilla.Equal("uuid", servcie_status.Uuid).Parse()
 
 		step := servicev2.ServiceStep_tangled{}
 		stmt := vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), eq_uuid, nil, nil)
-		err = stmt.QueryRows(ctl.DB())(func(scan vanilla.Scanner, _ int) (err error) {
+		err = stmt.QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
 			err = step.Scan(scan)
 			if err != nil {
 				return
@@ -403,15 +404,15 @@ func (ctl ControlVanilla) GetService(ctx echo.Context) (err error) {
 
 	var servcie servicev2.Service_tangled
 	err = vanilla.Stmt.Select(servcie.TableName(), servcie.ColumnNames(), eq_uuid, nil, nil).
-		QueryRow(ctl.DB())(func(s vanilla.Scanner) (err error) {
+		QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
 		err = servcie.Scan(s)
 		if err == nil {
 			rst.Service_tangled = servcie
-			rst.Steps = make([]servicev2.ServiceStep_tangled, 0, __INIT_RECORD_CAPACITY__)
+			rst.Steps = make([]servicev2.ServiceStep_tangled, 0, define.INIT_RECORD_CAPACITY)
 
 			step := servicev2.ServiceStep_tangled{}
 			stmt := vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), eq_uuid, nil, nil)
-			err = stmt.QueryRows(ctl.DB())(func(scan vanilla.Scanner, _ int) (err error) {
+			err = stmt.QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
 
 				err = step.Scan(scan)
 				if err == nil {

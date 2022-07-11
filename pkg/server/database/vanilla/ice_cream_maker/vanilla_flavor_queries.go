@@ -14,7 +14,7 @@ func VanillaFlavorQueries(objs ...interface{}) (s string, err error) {
 
 	for i := range objs {
 
-		columninfos := ParseColumnTag(reflect.TypeOf(objs[i]), "")
+		columninfos := ParseColumnTag(reflect.TypeOf(objs[i]), ParseColumnTag_opt{})
 
 		refs := make([]string, 0)
 		for j := range columninfos {

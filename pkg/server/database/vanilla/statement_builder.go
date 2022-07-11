@@ -19,6 +19,14 @@ type StmtBuild struct {
 	args  []interface{}
 }
 
+func (sb StmtBuild) Print() string {
+	buf := bytes.Buffer{}
+	fmt.Fprintf(&buf, "query=\"%v\"\n", sb.query)
+	fmt.Fprintf(&buf, "args=%+v\n", sb.args...)
+
+	return buf.String()
+}
+
 func (sb StmtBuild) Query() string {
 	return sb.query
 }
@@ -37,14 +45,6 @@ func (sb StmtBuild) QueryRows(tx Preparer) func(CallbackScannerWithIndex) error 
 
 func (sb StmtBuild) Exec(tx Preparer) (affected int64, err error) {
 	return Exec(tx, sb.Query(), sb.Args())
-}
-
-func (sb StmtBuild) Print() string {
-	buf := bytes.Buffer{}
-	fmt.Fprintf(&buf, "query=\"%v\"\n", sb.query)
-	fmt.Fprintf(&buf, "args=%+v\n", sb.args...)
-
-	return buf.String()
 }
 
 type stmt struct{}
@@ -91,6 +91,57 @@ func (stmt) Insert(table_name string, column_names []string, column_values ...[]
 	return
 }
 
+func (stmt) InsertOrUpdate(table_name string, column_names []string, update_column_names []string, column_values ...[]interface{}) (stmt *StmtBuild, err error) {
+	if len(column_names) == 0 {
+		err = errors.New("column_names length is not 0")
+		return
+	}
+	if len(column_values) == 0 {
+		err = errors.New("column_values length is not 0")
+		return
+	}
+
+	// flat column_values
+	var args []interface{}
+	for _, column_value := range column_values {
+		if len(column_value)%len(column_names) != 0 {
+			return stmt, errors.New("column_names and column_values do not match in length")
+		}
+
+		if args == nil {
+			args = make([]interface{}, 0, len(column_values)*len(column_value))
+		}
+		args = append(args, column_value...)
+	}
+
+	buf := bytes.Buffer{}
+	fmt.Fprintf(&buf, `INSERT INTO %v (%v) VALUES %v`,
+		table_name,
+		strings.Join(column_names, ","),
+		strings.Join(
+			Repeat(len(args)/len(column_names),
+				fmt.Sprintf("(%v)", strings.Join(
+					Repeat(len(column_names),
+						__SQL_PREPARED_STMT_PLACEHOLDER__ /*placeholder=?*/), ","))), ","),
+	)
+
+	if 0 < len(update_column_names) {
+		s := make([]string, 0, len(update_column_names))
+		for i := range update_column_names {
+			column := update_column_names[i]
+			s = append(s, fmt.Sprintf("%v = VALUES(%v)", column, column))
+		}
+		fmt.Fprintf(&buf, "\nON DUPLICATE KEY UPDATE %v", strings.Join(s, ", "))
+	}
+
+	stmt = &StmtBuild{
+		query: buf.String(),
+		args:  args,
+	}
+
+	return
+}
+
 func (stmt) Select(table_name string, column_names []string, q *prepare.Condition, o *prepare.Orders, p *prepare.Pagination) (stmt *StmtBuild) {
 	buf := bytes.Buffer{}
 	fmt.Fprintf(&buf, `SELECT %v FROM %v`,
@@ -117,6 +168,70 @@ func (stmt) Select(table_name string, column_names []string, q *prepare.Conditio
 	}
 
 	return
+}
+
+func (stmt) Count(table_name string, q *prepare.Condition, p *prepare.Pagination) func(tx Preparer) (int, error) {
+	buf := bytes.Buffer{}
+	fmt.Fprintf(&buf, `SELECT COUNT(1) FROM %v`,
+		table_name,
+	)
+
+	args := make([]interface{}, 0, __DEFAULT_ARGS_CAPACITY__)
+	if q != nil {
+		fmt.Fprintf(&buf, "\nWHERE %v", q.Query())
+
+		args = append(args, q.Args()...)
+	}
+
+	if p != nil {
+		fmt.Fprintf(&buf, "\nLIMIT %v, %v", p.Offset(), p.Limit())
+	}
+
+	stmt := &StmtBuild{
+		query: buf.String(),
+		args:  args,
+	}
+
+	return func(tx Preparer) (count int, err error) {
+		err = stmt.QueryRow(tx)(func(scan Scanner) (err error) {
+			err = scan.Scan(&count)
+			return
+		})
+		return
+	}
+}
+
+func (stmt) Exist(table_name string, q *prepare.Condition) func(tx Preparer) (bool, error) {
+	buf := bytes.Buffer{}
+	fmt.Fprintf(&buf, `SELECT COUNT(1) FROM %v`,
+		table_name,
+	)
+
+	args := make([]interface{}, 0, __DEFAULT_ARGS_CAPACITY__)
+	if q != nil {
+		fmt.Fprintf(&buf, "\nWHERE %v", q.Query())
+
+		args = append(args, q.Args()...)
+	}
+
+	fmt.Fprintf(&buf, "\nLIMIT %v", 1)
+
+	stmt := &StmtBuild{
+		query: buf.String(),
+		args:  args,
+	}
+
+	return func(tx Preparer) (exist bool, err error) {
+		var count int
+		err = stmt.QueryRow(tx)(func(scan Scanner) (err error) {
+			err = scan.Scan(&count)
+			return
+		})
+
+		exist = 0 < count
+
+		return
+	}
 }
 
 func (stmt) Update(table_name string, keys_values map[string]interface{}, q *prepare.Condition) (stmt *StmtBuild) {

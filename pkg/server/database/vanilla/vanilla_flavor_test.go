@@ -3,7 +3,6 @@ package vanilla_test
 import (
 	"database/sql"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -18,7 +17,7 @@ import (
 
 var (
 	db_conn = func() *sql.DB {
-		db, err := sql.Open("mysql", "root:verysecret@tcp(localhost:3306)/sudory?parseTime=true")
+		db, err := sql.Open("mysql", "root:verysecret@tcp(localhost:3306)/sudory?parseTime=true&multiStatements=true")
 		if err != nil {
 			panic(err)
 		}
@@ -105,7 +104,7 @@ func TestQueryMultiRows(t *testing.T) {
 
 	uuid := "b9809f912c54483cb324b6e5e8b058a8"
 
-	eq_uuid := vanilla.And(vanilla.Equal("uuid", uuid), vanilla.Equal("uuid", uuid)).Parse()
+	eq_uuid := vanilla.And(vanilla.Equal("uuid", uuid)).Parse()
 
 	steps := make([]servicev2.ServiceStep_tangled, 0, 10)
 	step := servicev2.ServiceStep_tangled{}
@@ -133,35 +132,79 @@ func TestQueryMultiRows(t *testing.T) {
 // 여러 테이블의 결과를 한번에 쿼리 하는 것은 기본 지원되는 사양이 아닌 것으로 보임
 func TestGetServiceMultiResultSet(t *testing.T) {
 
-	uuid := "b9809f912c54483cb324b6e5e8b058a8"
+	// uuid := "b9809f912c54483cb324b6e5e8b058a8"
 
-	eq_uuid := vanilla.Equal("uuid", uuid).Parse()
+	// eq_uuid := vanilla.Equal("uuid", uuid).Parse()
 
-	service := servicev2.Service_tangled{}
-	stmt1 := vanilla.Stmt.Select(service.TableName(), service.ColumnNames(), eq_uuid, nil, nil)
+	// service := servicev2.Service_tangled{}
+	// stmt1 := vanilla.Stmt.Select(service.TableName(), service.ColumnNames(), eq_uuid, nil, nil)
 
-	steps := make([]servicev2.ServiceStep_tangled, 0, 10)
-	step := servicev2.ServiceStep_tangled{}
-	stmt2 := vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), eq_uuid, nil, nil)
+	// steps := make([]servicev2.ServiceStep_tangled, 0, 10)
+	// step := servicev2.ServiceStep_tangled{}
+	// stmt2 := vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), eq_uuid, nil, nil)
 
-	query := strings.Join([]string{
-		stmt1.Query(), stmt2.Query(),
-	}, ";")
-	args := append(stmt1.Args(), stmt2.Args()...)
+	// query := strings.Join([]string{
+	// 	stmt1.Query(), stmt2.Query(),
+	// }, ";")
+	// args := append(stmt1.Args(), stmt2.Args()...)
 
-	err := vanilla.QueryRows(db_conn(), query, args)(func(s vanilla.Scanner, i int) (err error) {
-		err = step.Scan(s)
-		err = errors.Wrapf(err, "step Scan")
+	rows, err := db_conn().Query(`
+
+--	insert into managed_channel (uuid, name, event_category, created) values('5', '1', 0, NOW());
+--	insert into managed_channel (uuid, name, event_category, created) values('6', '2', 0, NOW());
+
+	SELECT uuid FROM managed_channel;
+
+	SELECT uuid FROM managed_channel;
+
+`)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+
+	// rows, err := stmt.Query()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+
+	var uuid string
+	for rows.Next() {
+		err = rows.Scan(&uuid)
+		err = errors.Wrapf(err, "sql.Row.Scan")
 		if err != nil {
-			steps = append(steps, step)
+			break
 		}
-		return
-	})
+		println(uuid)
+	}
+
+	if ok := rows.NextResultSet(); ok {
+		t.Log(ok)
+	}
+
+	for rows.Next() {
+		err = rows.Scan(&uuid)
+		err = errors.Wrapf(err, "sql.Row.Scan")
+		if err != nil {
+			break
+		}
+		println(uuid)
+	}
+
+	// err := vanilla.QueryRows(db_conn(), query, args)(func(s vanilla.Scanner, i int) (err error) {
+	// 	err = step.Scan(s)
+	// 	err = errors.Wrapf(err, "step Scan")
+	// 	if err != nil {
+	// 		steps = append(steps, step)
+	// 	}
+	// 	return
+	// })
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	println(fmt.Sprintf("%+v", servicev2.HttpRsp_Service{Service_tangled: service, Steps: steps}))
+	// println(fmt.Sprintf("%+v", servicev2.HttpRsp_Service{Service_tangled: service, Steps: steps}))
 
 	t.Error(err)
 }

@@ -41,7 +41,7 @@ type Route struct {
 func New(cfg *config.Config, db *database.DBManipulator) *Route {
 	e := echo.New()
 	controller := control.New(db)
-	vanilla := control.NewVanilla(db.Engine().DB().DB)
+	control := control.NewVanilla(db.Engine().DB().DB)
 
 	//echo cors config
 	e.Use(echoCORSConfig(cfg))
@@ -91,7 +91,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 						err = errors.Wrapf(err, "failed to verifing a client sesstion token")
 						return err
 					}
-					if err := vanilla.RefreshClientSessionToken(c); err != nil {
+					if err := control.RefreshClientSessionToken(c); err != nil {
 						err = errors.Wrapf(err, "failed to refreshing a client sesstion token")
 						return err
 					}
@@ -106,8 +106,8 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		})
 
 		//route /client/service*
-		group.GET("/service", vanilla.PollingService)
-		group.PUT("/service", vanilla.UpdateService)
+		group.GET("/service", control.PollingService)
+		group.PUT("/service", control.UpdateService)
 		//route /client/auth*
 		group.POST("/auth", controller.AuthClient)
 	}
@@ -170,15 +170,15 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		//route /server/template_recipe*
 		group.GET("/template_recipe", controller.FindTemplateRecipe)
 		//route /server/service*
-		group.GET("/service", vanilla.FindService)
-		group.GET("/service/:uuid", vanilla.GetService)
-		group.POST("/service", vanilla.CreateService)
+		group.GET("/service", control.FindService)
+		group.GET("/service/:uuid", control.GetService)
+		group.POST("/service", control.CreateService)
 		// router.e.PUT("/service/:uuid", controller.UpdateService)
 		// group.DELETE("/service/:uuid", vanilla.DeleteService)
 		//route /server/service_step*
-		group.GET("/service/step", vanilla.FindServiceStep)
-		group.GET("/service/:uuid/step", vanilla.GetServiceSteps)
-		group.GET("/service/:uuid/step/:sequence", vanilla.GetServiceStep)
+		group.GET("/service/step", control.FindServiceStep)
+		group.GET("/service/:uuid/step", control.GetServiceSteps)
+		group.GET("/service/:uuid/step/:sequence", control.GetServiceStep)
 		//route /server/global_variables*
 		group.GET("/global_variables", controller.FindGlobalVariables)
 		group.GET("/global_variables/:uuid", controller.GetGlobalVariables)
@@ -195,7 +195,8 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.POST("/cluster_token", controller.CreateClusterToken)
 		group.PUT("/cluster_token/:uuid/refresh", controller.RefreshClusterTokenTime)
 		group.PUT("/cluster_token/:uuid/expire", controller.ExpireClusterToken)
-		//server/event*
+
+		//server/channel*
 		group.POST("/channel", controller.CreateChannel)
 		group.GET("/channel", controller.FindChannel)
 		group.GET("/channel/:uuid", controller.GetChannel)
@@ -223,6 +224,30 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		//server/channel_notifier_status*
 		group.GET("/channel_notifier_status", controller.FindChannelNotifierStatus)
 		group.DELETE("/channel_notifier_status/:uuid", controller.DeleteChannelNotifierStatus)
+
+		//server/channels*
+		group.POST("/channels", control.CreateChannel)
+		group.GET("/channels", control.FindChannel)
+		group.GET("/channels/:uuid", control.GetChannel)
+		group.PUT("/channels/:uuid", control.UpdateChannel)
+		group.DELETE("/channels/:uuid", control.UpdateChannel)
+		//server/channels/:uuid/notifiers/*
+		group.GET("/channels/:uuid/notifiers/edge", control.GetChannelNotifierEdge)
+		group.PUT("/channels/:uuid/notifiers/console", control.UpdateChannelNotifierConsole)
+		group.PUT("/channels/:uuid/notifiers/rabbitmq", control.UpdateChannelNotifierRabbitMq)
+		group.PUT("/channels/:uuid/notifiers/webhook", control.UpdateChannelNotifierWebhook)
+		//server/channels/status
+		group.GET("/channels/status", control.FindChannelStatus)
+		//server/channels/:uuid/status*
+		group.POST("/channels/:uuid/status", control.CreateChannelStatus)
+		group.GET("/channels/:uuid/status", control.ListChannelStatus)
+		group.DELETE("/channels/:uuid/status/purge", control.PurgeChannelStatus)
+		group.PUT("/channels/:uuid/status/option", control.UpdateChannelStatusOption)
+		group.GET("/channels/:uuid/status/option", control.GetChannelStatusOption)
+		//server/channels/:uuid/format*
+		group.GET("/channels/:uuid/format", control.GetChannelFormat)
+		group.PUT("/channels/:uuid/format", control.UpdateChannelFormat)
+
 	}
 
 	return &Route{e: e}

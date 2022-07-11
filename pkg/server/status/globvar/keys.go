@@ -115,7 +115,7 @@ var clientConfigLoglevel string = "debug"
 
 // EventNofitierStatusRotateLimit
 //  이벤트 알림 상태 rotate limit
-func EventNofitierStatusRotateLimit() int {
+func EventNofitierStatusRotateLimit() uint {
 	if eventNofitierStatusRotateLimit == 0 {
 		return math.MaxUint8 //max uint (255)
 	}
@@ -123,4 +123,4 @@ func EventNofitierStatusRotateLimit() int {
 	return eventNofitierStatusRotateLimit
 }
 
-var eventNofitierStatusRotateLimit int = 20
+var eventNofitierStatusRotateLimit uint = 20

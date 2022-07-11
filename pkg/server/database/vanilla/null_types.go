@@ -107,6 +107,7 @@ type NullBool struct {
 func NewNullBool(ok bool) *NullBool {
 	return &NullBool{NullBool: sql.NullBool{Bool: ok, Valid: true}}
 }
+
 func (nb NullBool) Ptr() (out *bool) {
 	if nb.Valid {
 		out = &nb.Bool
@@ -162,13 +163,14 @@ func (ns NullString) MarshalJSON() ([]byte, error) {
 	return []byte(strconv.Quote(ns.String)), nil
 }
 
-func (ns *NullString) UnmarshalJSON(data []byte) error {
+func (ns *NullString) UnmarshalJSON(data []byte) (err error) {
 	if IsJsonNull(data) {
 		return nil
 	}
 
-	ns.String = string(data)
-	ns.Valid = true
+	ns.String, err = strconv.Unquote(string(data))
+
+	ns.Valid = err == nil
 
 	return nil
 }
@@ -262,6 +264,65 @@ func (null *NullObject) UnmarshalJSON(data []byte) error {
 
 	null.Object = map[string]interface{}{}
 	err := json.Unmarshal(data, &null.Object)
+	null.Valid = err == nil
+
+	return err
+}
+
+type NullKeyValue struct {
+	KeyValue map[string]string
+	Valid    bool
+}
+
+func NewNullMapStringString(object map[string]string) *NullKeyValue {
+	return &NullKeyValue{KeyValue: object, Valid: true}
+}
+
+func (null *NullKeyValue) Scan(value interface{}) error {
+	null.KeyValue = map[string]string{}
+	var i sql.NullString
+	if err := i.Scan(value); err != nil {
+		return err
+	}
+	// if nil the make Valid false
+	if reflect.TypeOf(value) != nil {
+		if err := json.Unmarshal([]byte(i.String), &null.KeyValue); err != nil {
+			return err
+		}
+		null.Valid = true
+	}
+
+	return nil
+}
+
+func (null NullKeyValue) Value() (driver.Value, error) {
+	if !null.Valid {
+		return nil, nil
+	}
+
+	b, err := json.Marshal(null.KeyValue)
+	if err != nil {
+		return string(b), err
+	}
+
+	return string(b), err
+}
+
+func (null NullKeyValue) MarshalJSON() ([]byte, error) {
+	if !null.Valid {
+		return json_null, nil
+	}
+
+	return json.Marshal(null.KeyValue)
+}
+
+func (null *NullKeyValue) UnmarshalJSON(data []byte) error {
+	if IsJsonNull(data) {
+		return nil
+	}
+
+	null.KeyValue = map[string]string{}
+	err := json.Unmarshal(data, &null.KeyValue)
 	null.Valid = err == nil
 
 	return err

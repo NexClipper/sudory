@@ -15,7 +15,7 @@ import (
 	"xorm.io/xorm"
 )
 
-// Create Channel
+// @deprecated
 // @Description Create a channel
 // @Accept      json
 // @Produce     json
@@ -102,7 +102,7 @@ func (ctl Control) CreateChannel(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
-// Find Channel
+// @deprecated
 // @Description Find channel
 // @Accept      json
 // @Produce     json
@@ -125,7 +125,7 @@ func (ctl Control) FindChannel(ctx echo.Context) error {
 
 }
 
-// Get Channel
+// @deprecated
 // @Description Get a channel
 // @Accept      json
 // @Produce     json
@@ -155,7 +155,7 @@ func (ctl Control) GetChannel(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, channel)
 }
 
-// Get Channel Edges
+// @deprecated
 // @Description Get channel edges
 // @Accept      json
 // @Produce     json
@@ -192,6 +192,7 @@ func (ctl Control) ListChannelNotifierEdges(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, edges)
 }
 
+// @deprecated
 // @Description Update a channel
 // @Accept      json
 // @Produce     json
@@ -235,6 +236,7 @@ func (ctl Control) UpdateChannel(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+// @deprecated
 // @Description addtion channel notifier edge
 // @Accept      json
 // @Produce     json
@@ -284,6 +286,7 @@ func (ctl Control) AddChannelNotifierEdge(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, edges)
 }
 
+// @deprecated
 // @Description subtraction channel sub notifier
 // @Accept      json
 // @Produce     json
@@ -336,7 +339,7 @@ func (ctl Control) SubChannelNotifierEdge(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, edges)
 }
 
-// Delete Channel
+// @deprecated
 // @Description Delete a channel
 // @Accept json
 // @Produce json
