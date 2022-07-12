@@ -22,10 +22,12 @@ var objs = []interface{}{
 	// notifier
 	v2.NotifierConsole{},
 	// v2.NotifierConsole_property{},
-	v2.NotifierRabbitMq{},
-	v2.NotifierRabbitMq_property{},
 	v2.NotifierWebhook{},
 	v2.NotifierWebhook_property{},
+	v2.NotifierRabbitMq{},
+	v2.NotifierRabbitMq_property{},
+	v2.NotifierSlackhook{},
+	v2.NotifierSlackhook_property{},
 
 	// notifier status option
 	v2.ChannelStatusOption{},

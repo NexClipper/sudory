@@ -236,6 +236,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.PUT("/channels/:uuid/notifiers/console", control.UpdateChannelNotifierConsole)
 		group.PUT("/channels/:uuid/notifiers/rabbitmq", control.UpdateChannelNotifierRabbitMq)
 		group.PUT("/channels/:uuid/notifiers/webhook", control.UpdateChannelNotifierWebhook)
+		group.PUT("/channels/:uuid/notifiers/slackhook", control.UpdateChannelNotifierSlackhook)
 		//server/channels/status
 		group.GET("/channels/status", control.FindChannelStatus)
 		//server/channels/:uuid/status*
@@ -246,7 +247,6 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		//server/channels/:uuid/format*
 		group.GET("/channels/:uuid/format", control.GetChannelFormat)
 		group.PUT("/channels/:uuid/format", control.UpdateChannelFormat)
-
 	}
 
 	return &Route{e: e}

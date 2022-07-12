@@ -1651,6 +1651,49 @@ var doc = `{
                 }
             }
         },
+        "/server/channels/{uuid}/notifiers/slackhook": {
+            "put": {
+                "description": "Update a slackhook channel notifier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "HttpReq_ManagedChannel_NotifierSlackhook_update",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v2.HttpReq_ManagedChannel_NotifierSlackhook_update"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/server/channels/{uuid}/notifiers/webhook": {
             "put": {
                 "description": "Update a webhook channel notifier",
@@ -4467,6 +4510,18 @@ var doc = `{
                 }
             }
         },
+        "v2.HttpReq_ManagedChannel_NotifierSlackhook_update": {
+            "type": "object",
+            "properties": {
+                "request_timeout": {
+                    "description": "second",
+                    "type": "integer"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
         "v2.HttpReq_ManagedChannel_NotifierWebhook_update": {
             "type": "object",
             "properties": {
@@ -4652,17 +4707,20 @@ var doc = `{
                 "name": {
                     "type": "string"
                 },
-                "notifier": {
+                "notifier_edge": {
+                    "$ref": "#/definitions/v2.NotifierEdge_property"
+                },
+                "notifiers": {
                     "type": "object",
                     "properties": {
                         "console": {
                             "$ref": "#/definitions/v2.NotifierConsole_property"
                         },
-                        "edge": {
-                            "$ref": "#/definitions/v2.NotifierEdge_property"
-                        },
                         "rabbitmq": {
                             "$ref": "#/definitions/v2.NotifierRabbitMq_property"
+                        },
+                        "slackhook": {
+                            "$ref": "#/definitions/v2.NotifierSlackhook_property"
                         },
                         "webhook": {
                             "$ref": "#/definitions/v2.NotifierWebhook_property"
@@ -4728,17 +4786,21 @@ var doc = `{
                     "type": "string"
                 },
                 "notifier_type": {
-                    "description": "enums:\"NaV(0), console(1), webhook(2), rabbitmq(3)\"",
+                    "description": "enums:\"NaV(0), console(1), webhook(2), rabbitmq(3), slackhook(4)\"",
                     "type": "string",
                     "enum": [
                         "0",
                         "1",
                         "2",
-                        "3"
+                        "3",
+                        "4"
                     ]
                 },
                 "rabbitmq": {
                     "$ref": "#/definitions/v2.NotifierRabbitMq_property"
+                },
+                "slackhook": {
+                    "$ref": "#/definitions/v2.NotifierSlackhook_property"
                 },
                 "updated": {
                     "type": "string"
@@ -4991,13 +5053,14 @@ var doc = `{
                     "type": "string"
                 },
                 "notifier_type": {
-                    "description": "enums:\"NaV(0), console(1), webhook(2), rabbitmq(3)\"",
+                    "description": "enums:\"NaV(0), console(1), webhook(2), rabbitmq(3), slackhook(4)\"",
                     "type": "string",
                     "enum": [
                         "0",
                         "1",
                         "2",
-                        "3"
+                        "3",
+                        "4"
                     ]
                 },
                 "updated": {
@@ -5092,6 +5155,24 @@ var doc = `{
                 },
                 "url": {
                     "description": "amqp Dial",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.NotifierSlackhook_property": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "request_timeout": {
+                    "description": "second",
+                    "type": "integer"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "url": {
                     "type": "string"
                 }
             }

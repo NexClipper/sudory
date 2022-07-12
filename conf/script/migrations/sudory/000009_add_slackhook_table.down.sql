@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS `managed_channel_notifier_slackhook`;

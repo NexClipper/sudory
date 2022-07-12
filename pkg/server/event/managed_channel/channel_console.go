@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"os"
 
-	channelv1 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
+	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
 	"github.com/pkg/errors"
 )
 
 type ChannelConsole struct {
 	uuid string
-	opt  *channelv1.NotifierConsole_property
+	opt  *channelv2.NotifierConsole_property
 	// sub event.EventNotifierMuxer
 }
 
-func NewChannelConsole(uuid string, opt channelv1.NotifierConsole_property) *ChannelConsole {
+func NewChannelConsole(uuid string, opt channelv2.NotifierConsole_property) *ChannelConsole {
 	notifier := &ChannelConsole{}
 	notifier.uuid = uuid
 	notifier.opt = &opt
@@ -38,10 +38,12 @@ func (channel ChannelConsole) Property() map[string]string {
 
 func (channel *ChannelConsole) Close() {}
 
-func (channel ChannelConsole) OnNotify(factory MarshalFactoryResult) error {
+func (channel ChannelConsole) OnNotify(factory *MarshalFactory) error {
+	const content_type = "application/json"
+
 	w := os.Stdout
 
-	b, err := factory("application/json")
+	b, err := factory.Marshal(content_type)
 	if err != nil {
 		return errors.Wrapf(err, "marshal factory")
 	}

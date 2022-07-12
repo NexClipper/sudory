@@ -318,6 +318,10 @@ func ValidNotifier(mc *channelv2.NotifierEdge_option) (err error) {
 		if len(mc.Webhook.Url) == 0 {
 			err = errors.Errorf("missing url")
 		}
+	case channelv2.NotifierTypeSlackhook:
+		if len(mc.Slackhook.Url) == 0 {
+			err = errors.Errorf("missing url")
+		}
 	default:
 		err = errors.Errorf("unsupported notifier config%v",
 			logs.KVL(
@@ -336,6 +340,8 @@ func NotifierFactory(uuid string, mc *channelv2.NotifierEdge_option) (notifier N
 		notifier = NewChannelRabbitMQ(uuid, mc.RabbitMq)
 	case channelv2.NotifierTypeWebhook:
 		notifier = NewChannelWebhook(uuid, mc.Webhook)
+	case channelv2.NotifierTypeSlackhook:
+		notifier = NewChannelSlackhook(uuid, mc.Slackhook)
 	default:
 		err = errors.Errorf("unsupported notifier option%v",
 			logs.KVL(

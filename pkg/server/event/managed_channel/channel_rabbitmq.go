@@ -6,20 +6,20 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	channelv1 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
+	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
 )
 
 type ChannelRabbitMQ struct {
 	uuid string
-	opt  *channelv1.NotifierRabbitMq_property
+	opt  *channelv2.NotifierRabbitMq_property
 
 	connection *amqp.Connection //RabbitMQ //amqp.Connection
 	channel    *amqp.Channel    //RabbitMQ //amqp.Channel
 }
 
-func NewChannelRabbitMQ(uuid string, opt channelv1.NotifierRabbitMq_property) *ChannelRabbitMQ {
+func NewChannelRabbitMQ(uuid string, opt channelv2.NotifierRabbitMq_property) *ChannelRabbitMQ {
 	notifier := &ChannelRabbitMQ{}
 	notifier.uuid = uuid
 	notifier.opt = &opt
@@ -51,7 +51,9 @@ func (channel *ChannelRabbitMQ) Close() {
 	}
 }
 
-func (channel *ChannelRabbitMQ) OnNotify(factory MarshalFactoryResult) error {
+func (channel *ChannelRabbitMQ) OnNotify(factory *MarshalFactory) error {
+	const content_type = "application/json"
+
 	var established bool = !(channel.connection == nil || channel.connection.IsClosed())
 	if !established {
 		conn, ch, err := channel.Dial(channel.opt.Url)
@@ -67,8 +69,8 @@ func (channel *ChannelRabbitMQ) OnNotify(factory MarshalFactoryResult) error {
 	opt := channel.opt
 	ch := channel.channel
 
-	opt.Publishing.MessageContentType = *vanilla.NewNullString("application/json")
-	b, err := factory("application/json")
+	opt.Publishing.MessageContentType = *vanilla.NewNullString(content_type)
+	b, err := factory.Marshal(content_type)
 	if err != nil {
 		return errors.Wrapf(err, "marshal factory")
 	}
@@ -97,7 +99,7 @@ func (ChannelRabbitMQ) Dial(url string) (*amqp.Connection, *amqp.Channel, error)
 	return conn, ch, nil
 }
 
-func (ChannelRabbitMQ) Publish(opt *channelv1.NotifierRabbitMq_property, ch *amqp.Channel, b []byte) error {
+func (ChannelRabbitMQ) Publish(opt *channelv2.NotifierRabbitMq_property, ch *amqp.Channel, b []byte) error {
 	publishing := amqp.Publishing{}
 	publishing.ContentType = opt.Publishing.MessageContentType.String
 	publishing.ContentEncoding = opt.Publishing.MessageContentEncoding.String

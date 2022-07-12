@@ -732,6 +732,14 @@ definitions:
         description: amqp Dial
         type: string
     type: object
+  v2.HttpReq_ManagedChannel_NotifierSlackhook_update:
+    properties:
+      request_timeout:
+        description: second
+        type: integer
+      url:
+        type: string
+    type: object
   v2.HttpReq_ManagedChannel_NotifierWebhook_update:
     properties:
       method:
@@ -864,14 +872,16 @@ definitions:
         $ref: '#/definitions/v2.Format_property'
       name:
         type: string
-      notifier:
+      notifier_edge:
+        $ref: '#/definitions/v2.NotifierEdge_property'
+      notifiers:
         properties:
           console:
             $ref: '#/definitions/v2.NotifierConsole_property'
-          edge:
-            $ref: '#/definitions/v2.NotifierEdge_property'
           rabbitmq:
             $ref: '#/definitions/v2.NotifierRabbitMq_property'
+          slackhook:
+            $ref: '#/definitions/v2.NotifierSlackhook_property'
           webhook:
             $ref: '#/definitions/v2.NotifierWebhook_property'
         type: object
@@ -915,15 +925,18 @@ definitions:
       created:
         type: string
       notifier_type:
-        description: enums:"NaV(0), console(1), webhook(2), rabbitmq(3)"
+        description: enums:"NaV(0), console(1), webhook(2), rabbitmq(3), slackhook(4)"
         enum:
         - "0"
         - "1"
         - "2"
         - "3"
+        - "4"
         type: string
       rabbitmq:
         $ref: '#/definitions/v2.NotifierRabbitMq_property'
+      slackhook:
+        $ref: '#/definitions/v2.NotifierSlackhook_property'
       updated:
         type: string
       uuid:
@@ -1095,12 +1108,13 @@ definitions:
       created:
         type: string
       notifier_type:
-        description: enums:"NaV(0), console(1), webhook(2), rabbitmq(3)"
+        description: enums:"NaV(0), console(1), webhook(2), rabbitmq(3), slackhook(4)"
         enum:
         - "0"
         - "1"
         - "2"
         - "3"
+        - "4"
         type: string
       updated:
         type: string
@@ -1168,6 +1182,18 @@ definitions:
         type: string
       url:
         description: amqp Dial
+        type: string
+    type: object
+  v2.NotifierSlackhook_property:
+    properties:
+      created:
+        type: string
+      request_timeout:
+        description: second
+        type: integer
+      updated:
+        type: string
+      url:
         type: string
     type: object
   v2.NotifierWebhook_property:
@@ -2274,6 +2300,34 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/v2.HttpReq_ManagedChannel_NotifierRabbitMq_update'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      tags:
+      - server/channels
+  /server/channels/{uuid}/notifiers/slackhook:
+    put:
+      consumes:
+      - application/json
+      description: Update a slackhook channel notifier
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Channel 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: HttpReq_ManagedChannel_NotifierSlackhook_update
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/v2.HttpReq_ManagedChannel_NotifierSlackhook_update'
       produces:
       - application/json
       responses:

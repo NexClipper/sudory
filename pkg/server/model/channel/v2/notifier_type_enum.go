@@ -20,15 +20,18 @@ const (
 	NotifierTypeWebhook
 	// NotifierTypeRabbitmq is a NotifierType of type Rabbitmq.
 	NotifierTypeRabbitmq
+	// NotifierTypeSlackhook is a NotifierType of type Slackhook.
+	NotifierTypeSlackhook
 )
 
-const _NotifierTypeName = "NaVconsolewebhookrabbitmq"
+const _NotifierTypeName = "NaVconsolewebhookrabbitmqslackhook"
 
 var _NotifierTypeNames = []string{
 	_NotifierTypeName[0:3],
 	_NotifierTypeName[3:10],
 	_NotifierTypeName[10:17],
 	_NotifierTypeName[17:25],
+	_NotifierTypeName[25:34],
 }
 
 // NotifierTypeNames returns a list of possible string values of NotifierType.
@@ -39,10 +42,11 @@ func NotifierTypeNames() []string {
 }
 
 var _NotifierTypeMap = map[NotifierType]string{
-	NotifierTypeNaV:      _NotifierTypeName[0:3],
-	NotifierTypeConsole:  _NotifierTypeName[3:10],
-	NotifierTypeWebhook:  _NotifierTypeName[10:17],
-	NotifierTypeRabbitmq: _NotifierTypeName[17:25],
+	NotifierTypeNaV:       _NotifierTypeName[0:3],
+	NotifierTypeConsole:   _NotifierTypeName[3:10],
+	NotifierTypeWebhook:   _NotifierTypeName[10:17],
+	NotifierTypeRabbitmq:  _NotifierTypeName[17:25],
+	NotifierTypeSlackhook: _NotifierTypeName[25:34],
 }
 
 // String implements the Stringer interface.
@@ -62,6 +66,8 @@ var _NotifierTypeValue = map[string]NotifierType{
 	strings.ToLower(_NotifierTypeName[10:17]): NotifierTypeWebhook,
 	_NotifierTypeName[17:25]:                  NotifierTypeRabbitmq,
 	strings.ToLower(_NotifierTypeName[17:25]): NotifierTypeRabbitmq,
+	_NotifierTypeName[25:34]:                  NotifierTypeSlackhook,
+	strings.ToLower(_NotifierTypeName[25:34]): NotifierTypeSlackhook,
 }
 
 // ParseNotifierType attempts to convert a string to a NotifierType.

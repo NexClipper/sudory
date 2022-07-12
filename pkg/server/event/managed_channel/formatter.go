@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"sync"
 
+	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
 	"github.com/itchyny/gojq"
 )
 
 type Formatter interface {
 	Format(map[string]interface{}) (interface{}, error)
+	Type() channelv2.FormatType
 }
 
 type Formatter_fields struct {
@@ -18,6 +20,10 @@ type Formatter_fields struct {
 	err error
 	sync.Once
 	field_names []string
+}
+
+func (format Formatter_fields) Type() channelv2.FormatType {
+	return channelv2.FormatTypeFields
 }
 
 func (format *Formatter_fields) Format(a map[string]interface{}) (interface{}, error) {
@@ -61,6 +67,10 @@ type Formatter_jq struct {
 	err error
 	sync.Once
 	query *gojq.Query
+}
+
+func (format Formatter_jq) Type() channelv2.FormatType {
+	return channelv2.FormatTypeJq
 }
 
 func (format *Formatter_jq) Format(a map[string]interface{}) (interface{}, error) {
