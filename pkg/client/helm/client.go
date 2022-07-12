@@ -31,6 +31,8 @@ func (c *Client) Request(cmd string, args map[string]interface{}) (string, error
 		result, err = c.Uninstall(args)
 	case "upgrade":
 		result, err = c.Upgrade(args)
+	case "get_values":
+		result, err = c.GetValues(args)
 	default:
 		return "", fmt.Errorf("unknown command(%s)", cmd)
 	}
