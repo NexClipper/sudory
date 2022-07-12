@@ -3,20 +3,11 @@ package vanilla
 import (
 	"database/sql"
 	"fmt"
-	"os"
-	"strconv"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/error_compose"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/prepare"
 	"github.com/pkg/errors"
 )
-
-var __VANILLA_DEBUG_PRINT_STATMENT__ = func() func() bool {
-	ok, _ := strconv.ParseBool(os.Getenv("VANILLA_DEBUG_PRINT_STATMENT"))
-	return func() bool {
-		return ok
-	}
-}()
 
 type Preparer interface {
 	Prepare(query string) (*sql.Stmt, error)

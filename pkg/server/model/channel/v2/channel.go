@@ -62,11 +62,10 @@ type ManagedChannel_tangled struct {
 	Format       Format_property              `alias:"FM,format"        json:"format,omitempty"`
 
 	Notifier struct {
-		NotifierEdge_property `alias:"EG,edge" json:",inline"`
-
-		Console  NotifierConsole_property  `alias:"CS,console"  json:"console,omitempty"`
-		Webhook  NotifierWebhook_property  `alias:"WH,webhook"  json:"webhook,omitempty"`
-		RabbitMq NotifierRabbitMq_property `alias:"RQ,rabbitmq" json:"rabbitmq,omitempty"`
+		Edge     NotifierEdge_property     `alias:"EG,notifier.edge"     json:"edge,inline"`
+		Console  NotifierConsole_property  `alias:"CS,notifier.console"  json:"console,omitempty"`
+		Webhook  NotifierWebhook_property  `alias:"WH,notifier.webhook"  json:"webhook,omitempty"`
+		RabbitMq NotifierRabbitMq_property `alias:"RQ,notifier.rabbitmq" json:"rabbitmq,omitempty"`
 	} `json:"notifier,omitempty"`
 }
 
@@ -91,7 +90,7 @@ func (record ManagedChannel_tangled) TableName() string {
 	CN := record.ManagedChannel.TableName()
 	SO := record.StatusOption.TableName()
 	FM := record.Format.TableName()
-	EG := record.Notifier.NotifierEdge_property.TableName()
+	EG := record.Notifier.Edge.TableName()
 	CS := record.Notifier.Console.TableName()
 	WH := record.Notifier.Webhook.TableName()
 	RQ := record.Notifier.RabbitMq.TableName()

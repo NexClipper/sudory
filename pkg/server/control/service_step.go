@@ -8,7 +8,6 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
-	"github.com/NexClipper/sudory/pkg/server/status/define"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 )
@@ -33,7 +32,7 @@ func (ctl ControlVanilla) FindServiceStep(ctx echo.Context) error {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	rsps := make([]servicev2.HttpRsp_ServiceStep, 0, define.INIT_RECORD_CAPACITY)
+	rsps := make([]servicev2.HttpRsp_ServiceStep, 0, __INIT_SLICE_CAPACITY__())
 
 	step := servicev2.ServiceStep_tangled{}
 	stmt := vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), q, o, p)
@@ -78,7 +77,7 @@ func (ctl ControlVanilla) GetServiceSteps(ctx echo.Context) (err error) {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	steps := make([]servicev2.HttpRsp_ServiceStep, 0, define.INIT_RECORD_CAPACITY)
+	steps := make([]servicev2.HttpRsp_ServiceStep, 0, __INIT_SLICE_CAPACITY__())
 
 	eq_uuid := vanilla.Equal("uuid", uuid).Parse()
 

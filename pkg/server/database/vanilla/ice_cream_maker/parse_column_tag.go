@@ -58,6 +58,10 @@ func ParseColumnTag(_type reflect.Type, opt ParseColumnTag_opt) []ColumnInfo {
 
 		tag_split := strings.Split(column_tag, ",")
 
+		for i := range tag_split {
+			tag_split[i] = strings.TrimSpace(tag_split[i])
+		}
+
 		if 0 < len(tag_split) {
 			tag = ColumnTag{
 				Name: tag_split[0],

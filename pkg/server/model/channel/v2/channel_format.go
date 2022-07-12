@@ -48,8 +48,7 @@ func (n FormatType) Value() (driver.Value, error) {
 }
 
 type Format_essential struct {
-	// enums:"disable(0), fields(1), jq(2)"
-	FormatType FormatType `column:"format_type,default(0)" json:"format_type,omitempty" enums:"0,1,2"`
+	FormatType FormatType `column:"format_type,default(0)"  json:"format_type,omitempty" enums:"0,1,2"` // enums:"disable(0), fields(1), jq(2)"
 	FormatData string     `column:"format_data,default('')" json:"format_data,omitempty"`
 }
 type Format_property struct {

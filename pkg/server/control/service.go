@@ -13,7 +13,6 @@ import (
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	"github.com/NexClipper/sudory/pkg/server/status/define"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	clusterv2 "github.com/NexClipper/sudory/pkg/server/model/cluster/v2"
@@ -108,7 +107,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 		return
 	})
 
-	commands := make([]templatev2.TemplateCommand, 0, define.INIT_RECORD_CAPACITY)
+	commands := make([]templatev2.TemplateCommand, 0, __INIT_SLICE_CAPACITY__())
 	Do(&err, func() (err error) {
 		q := vanilla.And(
 			vanilla.Equal("uuid", body.TemplateUuid),
@@ -195,7 +194,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 	}
 
 	rsp := servicev2.HttpRsp_Service_create{}
-	rsp.Steps = make([]servicev2.ServiceStep, 0, define.INIT_RECORD_CAPACITY)
+	rsp.Steps = make([]servicev2.ServiceStep, 0, __INIT_SLICE_CAPACITY__())
 	Do(&err, func() (err error) {
 		uuid := body.Uuid
 		if len(uuid) == 0 {
@@ -331,7 +330,7 @@ func (ctl ControlVanilla) FindService(ctx echo.Context) (err error) {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	rsps := make([]servicev2.HttpRsp_Service_status, 0, define.INIT_RECORD_CAPACITY)
+	rsps := make([]servicev2.HttpRsp_Service_status, 0, __INIT_SLICE_CAPACITY__())
 
 	var servcie_status servicev2.Service_status
 	err = vanilla.Stmt.Select(servcie_status.TableName(), servcie_status.ColumnNames(), q, o, p).
@@ -343,7 +342,7 @@ func (ctl ControlVanilla) FindService(ctx echo.Context) (err error) {
 
 		rst := servicev2.HttpRsp_Service_status{
 			Service_status: servcie_status,
-			Steps:          make([]servicev2.ServiceStep_tangled, 0, define.INIT_RECORD_CAPACITY),
+			Steps:          make([]servicev2.ServiceStep_tangled, 0, __INIT_SLICE_CAPACITY__()),
 		}
 
 		eq_uuid := vanilla.Equal("uuid", servcie_status.Uuid).Parse()
@@ -408,7 +407,7 @@ func (ctl ControlVanilla) GetService(ctx echo.Context) (err error) {
 		err = servcie.Scan(s)
 		if err == nil {
 			rst.Service_tangled = servcie
-			rst.Steps = make([]servicev2.ServiceStep_tangled, 0, define.INIT_RECORD_CAPACITY)
+			rst.Steps = make([]servicev2.ServiceStep_tangled, 0, __INIT_SLICE_CAPACITY__())
 
 			step := servicev2.ServiceStep_tangled{}
 			stmt := vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), eq_uuid, nil, nil)

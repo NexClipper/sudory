@@ -12,7 +12,6 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
-	"github.com/NexClipper/sudory/pkg/server/status/define"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/itchyny/gojq"
 	"github.com/labstack/echo/v4"
@@ -120,7 +119,7 @@ func (ctl ControlVanilla) FindChannel(ctx echo.Context) (err error) {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	rsp := make([]channelv2.HttpRsp_ManagedChannel, 0, define.INIT_RECORD_CAPACITY)
+	rsp := make([]channelv2.HttpRsp_ManagedChannel, 0, __INIT_SLICE_CAPACITY__())
 	channel_tangled := new(channelv2.ManagedChannel_tangled)
 	err = vanilla.Stmt.Select(channel_tangled.TableName(), channel_tangled.ColumnNames(), q, o, p).
 		QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
@@ -988,7 +987,7 @@ func (ctl ControlVanilla) ListChannelStatus(ctx echo.Context) (err error) {
 	).Parse()
 	order := vanilla.Asc("created").Parse()
 
-	rsp := make([]channelv2.HttpRsp_ManagedChannel_ChannelStatus, 0, define.INIT_RECORD_CAPACITY)
+	rsp := make([]channelv2.HttpRsp_ManagedChannel_ChannelStatus, 0, __INIT_SLICE_CAPACITY__())
 	var status channelv2.ChannelStatus
 	err = vanilla.Stmt.Select(status.TableName(), status.ColumnNames(), cond, order, nil).
 		QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
@@ -1136,7 +1135,7 @@ func (ctl ControlVanilla) FindChannelStatus(ctx echo.Context) error {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	rsp := make([]channelv2.HttpRsp_ManagedChannel_ChannelStatus, 0, define.INIT_RECORD_CAPACITY)
+	rsp := make([]channelv2.HttpRsp_ManagedChannel_ChannelStatus, 0, __INIT_SLICE_CAPACITY__())
 
 	var status channelv2.ChannelStatus
 	err = vanilla.Stmt.Select(status.TableName(), status.ColumnNames(), q, o, p).

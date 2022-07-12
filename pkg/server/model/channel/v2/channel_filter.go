@@ -35,9 +35,8 @@ type FilterOp int
 // }
 
 type Filter struct {
-	Uuid string `column:"uuid"         json:"uuid,omitempty"` // pk
-	// enums:"NaV(0), EQ(1), NOT(2), GT(3), GTE(4), LT(5), LTE(6)"
-	FilterOp    FilterOp         `column:"filter_op"    json:"filter_op,omitempty"   enums:"0,1,2,3,4,5,6"`
+	Uuid        string           `column:"uuid"         json:"uuid,omitempty"`                              // pk
+	FilterOp    FilterOp         `column:"filter_op"    json:"filter_op,omitempty"   enums:"0,1,2,3,4,5,6"` // enums:"NaV(0), EQ(1), NOT(2), GT(3), GTE(4), LT(5), LTE(6)"
 	FilterKey   string           `column:"filter_key"   json:"filter_key,omitempty"`
 	FilterValue string           `column:"filter_value" json:"filter_value,omitempty"`
 	Created     time.Time        `column:"created"      json:"created,omitempty"`

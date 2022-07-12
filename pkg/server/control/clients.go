@@ -29,7 +29,6 @@ import (
 	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	sessionv2 "github.com/NexClipper/sudory/pkg/server/model/session/v2"
-	"github.com/NexClipper/sudory/pkg/server/status/define"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/golang-jwt/jwt/v4"
 
@@ -73,7 +72,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 	Do(&err, func() (err error) {
 		condition := pollingServiceCondition(cluster.Uuid)
 		limit := pollingServiceLimit(cluster.PoliingLimit)
-		service_statuses := make([]servicev2.Service_status, 0, define.INIT_RECORD_CAPACITY)
+		service_statuses := make([]servicev2.Service_status, 0, __INIT_SLICE_CAPACITY__())
 
 		service_status := servicev2.Service_status{}
 		err = vanilla.Stmt.Select(service_status.TableName(), service_status.ColumnNames(), condition, nil, limit).
