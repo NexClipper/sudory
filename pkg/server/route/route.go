@@ -381,15 +381,27 @@ func echoErrorHandlerLogger(err error, ctx echo.Context) {
 
 func echoLogger(w io.Writer) echo.MiddlewareFunc {
 	//echo logger
-	format := `{"time":"${time_rfc3339_nano}","id":"${id}","remote_ip":"${remote_ip}",` +
-		`"host":"${host}","method":"${method}","uri":"${uri}",` +
-		`"status":${status},"error":"${error}","latency":${latency},"latency_human":"${latency_human}",` +
-		`"bytes_in":${bytes_in},"bytes_out":${bytes_out}}` + "\n"
-	logconfig := middleware.DefaultLoggerConfig
+	format := fmt.Sprintf("{%v}\n",
+		strings.Join([]string{
+			`"time":"${time_rfc3339_nano}"`,
+			`"id":"${id}"`,
+			`"remote_ip":"${remote_ip}"`,
+			`"host":"${host}"`,
+			`"method":"${method}"`,
+			`"uri":"${uri}"`,
+			`"status":${status}`,
+			`"error":"${error}"`,
+			`"latency":${latency}`,
+			`"latency_human":"${latency_human}"`,
+			`"bytes_in":${bytes_in}`,
+			`"bytes_out":${bytes_out}`,
+		}, ","))
+
+	logconfig := DefaultLoggerConfig
 	logconfig.Output = w
 	logconfig.Format = format
 
-	return middleware.LoggerWithConfig(logconfig)
+	return LoggerWithConfig(logconfig)
 }
 
 func echoRecover(skipper ...middleware.Skipper) func(next echo.HandlerFunc) echo.HandlerFunc {
