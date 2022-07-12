@@ -31,7 +31,7 @@ func (c *Client) Query(params map[string]interface{}) (string, []string, error) 
 	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	body, err := c.client.PostForm(ctx, "/api/v1/query", nil, []byte(urlValues.Encode()))
+	body, err := c.client.Post("/api/v1/query").SetBody("application/x-www-form-urlencoded", []byte(urlValues.Encode())).Do(ctx).Raw()
 	if err != nil {
 		return "", nil, err
 	}
@@ -71,7 +71,7 @@ func (c *Client) QueryRange(params map[string]interface{}) (string, []string, er
 	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	body, err := c.client.PostForm(ctx, "/api/v1/query_range", nil, []byte(urlValues.Encode()))
+	body, err := c.client.Post("/api/v1/query_range").SetBody("application/x-www-form-urlencoded", []byte(urlValues.Encode())).Do(ctx).Raw()
 	if err != nil {
 		return "", nil, err
 	}

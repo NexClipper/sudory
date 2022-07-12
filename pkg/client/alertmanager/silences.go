@@ -24,7 +24,7 @@ func (c *Client) GetSilence(apiPath string, params map[string]interface{}) (stri
 	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	body, err := c.client.Get(ctx, apiPath+"/silence/"+silenceId, nil)
+	body, err := c.client.Get(apiPath + "/silence/" + silenceId).Do(ctx).Raw()
 	if err != nil {
 		return "", err
 	}
@@ -52,14 +52,7 @@ func (c *Client) GetSilences(apiPath string, params map[string]interface{}) (str
 	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	var pm map[string][]string
-
-	if len(filter) > 0 {
-		pm = make(map[string][]string)
-		pm["filter"] = filter
-	}
-
-	body, err := c.client.Get(ctx, apiPath+"/silences", pm)
+	body, err := c.client.Get(apiPath+"/silences").SetParam("filter", filter...).Do(ctx).Raw()
 	if err != nil {
 		return "", err
 	}
@@ -160,7 +153,7 @@ func (c *Client) CreateSilences(apiPath string, params map[string]interface{}) (
 	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	body, err := c.client.PostJson(ctx, apiPath+"/silences", nil, b)
+	body, err := c.client.Post(apiPath+"/silences").SetBody("application/json", b).Do(ctx).Raw()
 	if err != nil {
 		return "", err
 	}
@@ -183,7 +176,7 @@ func (c *Client) DeleteSilence(apiPath string, params map[string]interface{}) (s
 	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	body, err := c.client.Delete(ctx, apiPath+"/silence/"+silenceId, nil)
+	body, err := c.client.Delete(apiPath + "/silence/" + silenceId).Do(ctx).Raw()
 	if err != nil {
 		return "", err
 	}
@@ -273,7 +266,7 @@ func (c *Client) UpdateSilence(apiPath string, params map[string]interface{}) (s
 	ctx, cancel := context.WithTimeout(context.Background(), defaultQueryTimeout)
 	defer cancel()
 
-	body, err := c.client.PostJson(ctx, apiPath+"/silences", nil, b)
+	body, err := c.client.Post(apiPath+"/silences").SetBody("application/json", b).Do(ctx).Raw()
 	if err != nil {
 		return "", err
 	}

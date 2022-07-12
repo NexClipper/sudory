@@ -15,7 +15,12 @@ type Client struct {
 }
 
 func NewClient(url string) (*Client, error) {
-	return &Client{client: httpclient.NewHttpClient(url, "", 0, 0)}, nil
+	client, err := httpclient.NewHttpClient(url, false, 0, 0)
+	if err != nil {
+		return nil, err
+	}
+	client.SetDisableKeepAlives()
+	return &Client{client: client}, nil
 }
 
 func (c *Client) ApiRequest(apiVersion, apiName string, queryParams map[string]interface{}) (string, error) {
