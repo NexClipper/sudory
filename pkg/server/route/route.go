@@ -230,7 +230,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.GET("/channels", control.FindChannel)
 		group.GET("/channels/:uuid", control.GetChannel)
 		group.PUT("/channels/:uuid", control.UpdateChannel)
-		group.DELETE("/channels/:uuid", control.UpdateChannel)
+		group.DELETE("/channels/:uuid", control.DeleteChannel)
 		//server/channels/:uuid/notifiers/*
 		group.GET("/channels/:uuid/notifiers/edge", control.GetChannelNotifierEdge)
 		group.PUT("/channels/:uuid/notifiers/console", control.UpdateChannelNotifierConsole)

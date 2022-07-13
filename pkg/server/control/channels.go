@@ -310,36 +310,6 @@ func (ctl ControlVanilla) DeleteChannel(ctx echo.Context) (err error) {
 			}
 			return nil
 		},
-		// // managed_channel_notifier_console
-		// func(tx vanilla.Preparer) error {
-		// 	_, err := vanilla.Stmt.Update(new(channelv2.NotifierConsole).TableName(), set, cond).
-		// 		Exec(tx)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-
-		// 	return nil
-		// },
-		// // managed_channel_notifier_rabbitmq
-		// func(tx vanilla.Preparer) error {
-		// 	_, err := vanilla.Stmt.Update(new(channelv2.NotifierRabbitMq).TableName(), set, cond).
-		// 		Exec(tx)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-
-		// 	return nil
-		// },
-		// // managed_channel_notifier_webhook
-		// func(tx vanilla.Preparer) error {
-		// 	_, err := vanilla.Stmt.Update(new(channelv2.NotifierWebhook).TableName(), set, cond).
-		// 		Exec(tx)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-
-		// 	return nil
-		// },
 		// managed_channel_status
 		func(tx vanilla.Preparer) error {
 			status := channelv2.ChannelStatus{}
