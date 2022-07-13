@@ -794,7 +794,7 @@ func (ctl ControlVanilla) UpdateChannelFormat(ctx echo.Context) (err error) {
 	channel_format.FormatData = body.FormatData
 
 	update_columns := []string{
-		"format_type", "format_data",
+		"format_type", "format_data", "updated",
 	}
 
 	err = ctl.Scope(func(tx *sql.Tx) (err error) {
