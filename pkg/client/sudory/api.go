@@ -111,6 +111,7 @@ func (s *SudoryAPI) UpdateServices(ctx context.Context, service *servicev2.HttpR
 	if service == nil {
 		return fmt.Errorf("service is nil")
 	}
+	log.Debugf("request update_service: service{uuid:%s, status:%d, result_len:%d}\n", service.Uuid, service.Status, len(service.Result))
 
 	b, err := json.Marshal(service)
 	if err != nil {
