@@ -14,38 +14,45 @@ hex
 */
 type StrConv int
 
-func (conv StrConv) Encoder() func([]byte) string {
+func (conv StrConv) Encoder() func([]byte) []byte {
 	switch conv {
 	case StrConvBase64:
-		return func(b []byte) string {
-			return base64.StdEncoding.EncodeToString(b)
+		return func(src []byte) []byte {
+			var dst []byte
+			base64.StdEncoding.Encode(dst, src)
+			return dst
 		}
 	case StrConvHex:
-		return func(b []byte) string {
-			return hex.EncodeToString(b)
+		return func(src []byte) []byte {
+			var dst []byte
+			hex.Encode(dst, src)
+			return dst
 		}
 	default:
-		return func(b []byte) string {
-			dst := make([]byte, len(b))
-			copy(dst, b)
-			return string(dst)
+		return func(src []byte) []byte {
+			dst := make([]byte, len(src))
+			copy(dst, src)
+			return dst
 		}
 	}
 }
 
-func (conv StrConv) Decoder() func(string) ([]byte, error) {
+func (conv StrConv) Decoder() func([]byte) ([]byte, error) {
 	switch conv {
 	case StrConvBase64:
-		return func(s string) ([]byte, error) {
-			return base64.StdEncoding.DecodeString(s)
+		return func(src []byte) ([]byte, error) {
+			var dst []byte
+			_, err := base64.StdEncoding.Decode(dst, src)
+			return dst, err
 		}
 	case StrConvHex:
-		return func(s string) ([]byte, error) {
-			return hex.DecodeString(s)
+		return func(src []byte) ([]byte, error) {
+			var dst []byte
+			_, err := hex.Decode(dst, src)
+			return dst, err
 		}
 	default:
-		return func(s string) ([]byte, error) {
-			src := []byte(s)
+		return func(src []byte) ([]byte, error) {
 			dst := make([]byte, len(src))
 			copy(dst, src)
 			return dst, nil
