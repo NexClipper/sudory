@@ -9,14 +9,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-const __DEBUG_PRINT_STATMENT__ = false
-
 type Preparer interface {
 	Prepare(query string) (*sql.Stmt, error)
 }
 
+type Queryer interface {
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+}
+
 func Exec(tx Preparer, query string, args []interface{}) (affected int64, err error) {
-	if __DEBUG_PRINT_STATMENT__ {
+	if __VANILLA_DEBUG_PRINT_STATMENT__() {
 		println(fmt.Sprintf("query=%v", query))
 		println(fmt.Sprintf("args=%+v", args))
 	}
@@ -48,7 +50,7 @@ type CallbackScanner = func(scan Scanner) error
 type CallbackScannerWithIndex = func(scan Scanner, _ int) error
 
 func QueryRow(tx Preparer, query string, args []interface{}) func(CallbackScanner) error {
-	if __DEBUG_PRINT_STATMENT__ {
+	if __VANILLA_DEBUG_PRINT_STATMENT__() {
 		println(fmt.Sprintf("query=%v", query))
 		println(fmt.Sprintf("args=%+v", args))
 	}
@@ -77,7 +79,7 @@ func QueryRow(tx Preparer, query string, args []interface{}) func(CallbackScanne
 }
 
 func QueryRows(tx Preparer, query string, args []interface{}) func(CallbackScannerWithIndex) error {
-	if __DEBUG_PRINT_STATMENT__ {
+	if __VANILLA_DEBUG_PRINT_STATMENT__() {
 		println(fmt.Sprintf("query=%v", query))
 		println(fmt.Sprintf("args=%+v", args))
 	}
@@ -94,6 +96,51 @@ func QueryRows(tx Preparer, query string, args []interface{}) func(CallbackScann
 
 		var rows *sql.Rows
 		rows, err = stmt.Query(args...)
+		err = errors.Wrapf(err, "sql.Stmt.Query")
+		if err != nil {
+			return
+		}
+
+		defer func() {
+			err = error_compose.Composef(err, rows.Close(), "sql.Rows.Close")
+		}()
+		i := 0
+		for rows.Next() {
+			err = scan(rows, i)
+			err = errors.Wrapf(err, "sql.Row.Scan")
+			if err != nil {
+				break
+			}
+			i++
+		}
+		err = error_compose.Composef(err, rows.Err(), "sql.Rows; during scan")
+
+		err = errors.Wrapf(err, "faild to query rows\nquery=\"%v\"\nargs=\"%+v\"",
+			query,
+			args,
+		)
+		return
+	}
+}
+
+func QueryRows2(tx Queryer, query string, args []interface{}) func(CallbackScannerWithIndex) error {
+	if __VANILLA_DEBUG_PRINT_STATMENT__() {
+		println(fmt.Sprintf("query=%v", query))
+		println(fmt.Sprintf("args=%+v", args))
+	}
+
+	return func(scan CallbackScannerWithIndex) (err error) {
+		// stmt, err := tx.Prepare(query)
+		// err = errors.Wrapf(err, "sql.Tx.Prepare")
+		// if err != nil {
+		// 	return
+		// }
+		// defer func() {
+		// 	err = error_compose.Composef(err, stmt.Close(), "sql.Stmt.Close")
+		// }()
+
+		var rows *sql.Rows
+		rows, err = tx.Query(query, args...)
 		err = errors.Wrapf(err, "sql.Stmt.Query")
 		if err != nil {
 			return

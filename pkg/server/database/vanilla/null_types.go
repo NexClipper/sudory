@@ -1,161 +1,329 @@
 package vanilla
 
 import (
+	"bytes"
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"reflect"
+	"strconv"
 	"time"
 )
 
-// NullInt is an alias for sql.NullInt data type
-type NullInt int
+var json_null = []byte{'n', 'u', 'l', 'l'}
 
-func (ni NullInt) Int() int {
-	return (int)(ni)
+func IsJsonNull(data []byte) bool {
+	return bytes.Equal(json_null, data)
 }
 
-// Scan implements the Scanner interface for NullInt64
-func (ni *NullInt) Scan(value interface{}) error {
-	var i sql.NullInt64
-	if err := i.Scan(value); err != nil {
-		return err
+type NullInt struct {
+	sql.NullInt64
+}
+
+func NewNullInt(i int) *NullInt {
+	return &NullInt{NullInt64: sql.NullInt64{Int64: int64(i), Valid: true}}
+}
+
+func (null NullInt) Int() int {
+	return int(null.Int64)
+}
+
+func (null NullInt) Ptr() (out *int) {
+	if null.Valid {
+		i := int(null.Int64)
+		out = &i
 	}
-	// if nil the make Valid false
-	if reflect.TypeOf(value) == nil {
-		*ni = (NullInt)(int(i.Int64))
-	} else {
-		*ni = (NullInt)(int(i.Int64))
+
+	return
+}
+
+func (null NullInt) MarshalJSON() ([]byte, error) {
+	if !null.Valid {
+		return json_null, nil
 	}
-	return nil
+
+	return json.Marshal(null.Int64)
 }
 
-// // MarshalJSON for NullInt64
-// func (ni *NullInt) MarshalJSON() ([]byte, error) {
-// 	if !ni.Valid {
-// 		return []byte("null"), nil
-// 	}
-// 	return json.Marshal(ni.Int64)
-// }
-
-// func (b *NullInt) UnmarshalJSON(data []byte) error {
-
-// 	var v []interface{}
-// 	if err := json.Unmarshal(data, &v); err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }
-
-type NullString string
-
-func (ns NullString) String() string {
-	return (string)(ns)
-}
-
-// Scan implements the Scanner interface for NullString
-func (ns *NullString) Scan(value interface{}) error {
-	var i sql.NullString
-	if err := i.Scan(value); err != nil {
-		return err
+func (null *NullInt) UnmarshalJSON(data []byte) error {
+	if IsJsonNull(data) {
+		return nil
 	}
-	// if nil the make Valid false
-	if reflect.TypeOf(value) == nil {
-		*ns = (NullString)(i.String)
-	} else {
-		*ns = (NullString)(i.String)
-	}
-	return nil
-}
 
-// // MarshalJSON for NullInt64
-// func (ni *NullString) MarshalJSON() ([]byte, error) {
-// 	if !ni.Valid {
-// 		return []byte("null"), nil
-// 	}
-// 	return json.Marshal(ni.String)
-// }
+	var i int
+	err := json.Unmarshal(data, &i)
+	null.Int64 = int64(i)
+	null.Valid = err == nil
 
-// func (b *NullString) UnmarshalJSON(data []byte) error {
-// 	b.String = string(data)
-// 	return nil
-// }
-
-type NullTime time.Time
-
-func (nt NullTime) Time() time.Time {
-	return (time.Time)(nt)
-}
-
-// Scan implements the Scanner interface for NullTime
-func (nt *NullTime) Scan(value interface{}) error {
-	var i sql.NullTime
-	if err := i.Scan(value); err != nil {
-		return err
-	}
-	// if nil the make Valid false
-	if reflect.TypeOf(value) == nil {
-		*nt = (NullTime)(i.Time)
-	} else {
-		*nt = (NullTime)(i.Time)
-	}
-	return nil
-}
-
-func (nt NullTime) Value() (driver.Value, error) {
-	return time.Time(nt), nil
-}
-
-func (nt NullTime) MarshalJSON() ([]byte, error) {
-	t := (time.Time)(nt)
-	// if t.IsZero() {
-	// 	return []byte{}, nil
-	// }
-	return t.MarshalJSON()
-}
-
-func (nt *NullTime) UnmarshalJSON(data []byte) error {
-	t := (*time.Time)(nt)
-	err := t.UnmarshalJSON(data)
-	if err == nil {
-		*nt = *(*NullTime)(t)
-	}
 	return err
 }
 
-type NullJson map[string]interface{}
-
-func (nj NullJson) Json() map[string]interface{} {
-	return (map[string]interface{})(nj)
+type NullUint8 struct {
+	sql.NullByte
 }
 
-// Scan implements the Scanner interface for NullTime
-func (nj *NullJson) Scan(value interface{}) error {
-	m := map[string]interface{}{}
+func NewNullUint8(b uint8) *NullUint8 {
+	return &NullUint8{NullByte: sql.NullByte{Byte: b, Valid: true}}
+}
+
+func (null NullUint8) Uint8() uint8 {
+	return null.Byte
+}
+
+func (null NullUint8) Ptr() (out *uint8) {
+	if null.Valid {
+		i := null.Byte
+		out = &i
+	}
+
+	return
+}
+
+func (null NullUint8) MarshalJSON() ([]byte, error) {
+	if !null.Valid {
+		return json_null, nil
+	}
+
+	return json.Marshal(uint8(null.Byte))
+}
+
+func (null *NullUint8) UnmarshalJSON(data []byte) error {
+	if IsJsonNull(data) {
+		return nil
+	}
+
+	var i uint8
+	err := json.Unmarshal(data, &i)
+	null.Byte = i
+	null.Valid = err == nil
+
+	return err
+}
+
+type NullBool struct {
+	sql.NullBool
+}
+
+func NewNullBool(ok bool) *NullBool {
+	return &NullBool{NullBool: sql.NullBool{Bool: ok, Valid: true}}
+}
+
+func (nb NullBool) Ptr() (out *bool) {
+	if nb.Valid {
+		out = &nb.Bool
+	}
+
+	return
+}
+
+func (null NullBool) MarshalJSON() ([]byte, error) {
+	if !null.Valid {
+		return json_null, nil
+	}
+
+	if null.Bool {
+		return []byte("true"), nil
+	} else {
+		return []byte("false"), nil
+	}
+}
+
+func (null *NullBool) UnmarshalJSON(data []byte) error {
+	if IsJsonNull(data) {
+		return nil
+	}
+
+	null.Bool = bytes.Equal(data, []byte("true"))
+	null.Valid = true
+
+	return nil
+}
+
+type NullString struct {
+	sql.NullString
+}
+
+func NewNullString(s string) *NullString {
+	return &NullString{NullString: sql.NullString{String: s, Valid: true}}
+}
+
+func (ns NullString) Ptr() (out *string) {
+	if ns.Valid {
+		out = &ns.String
+	}
+
+	return
+}
+
+func (ns NullString) MarshalJSON() ([]byte, error) {
+	if !ns.Valid {
+		return json_null, nil
+	}
+
+	return []byte(strconv.Quote(ns.String)), nil
+}
+
+func (ns *NullString) UnmarshalJSON(data []byte) (err error) {
+	if IsJsonNull(data) {
+		return nil
+	}
+
+	ns.String, err = strconv.Unquote(string(data))
+
+	ns.Valid = err == nil
+
+	return nil
+}
+
+type NullTime struct {
+	sql.NullTime
+}
+
+func NewNullTime(t time.Time) *NullTime {
+	return &NullTime{NullTime: sql.NullTime{Time: t, Valid: true}}
+}
+
+func (nt NullTime) Ptr() (out *time.Time) {
+	if nt.Valid {
+		out = &nt.Time
+	}
+
+	return
+}
+
+func (nt NullTime) MarshalJSON() ([]byte, error) {
+	if !nt.Valid {
+		return json_null, nil
+	}
+
+	return nt.Time.MarshalJSON()
+}
+
+func (nt *NullTime) UnmarshalJSON(data []byte) error {
+	if IsJsonNull(data) {
+		return nil
+	}
+
+	err := nt.Time.UnmarshalJSON(data)
+	nt.Valid = err == nil
+
+	return err
+}
+
+type NullObject struct {
+	Object map[string]interface{}
+	Valid  bool
+}
+
+func NewNullObject(object map[string]interface{}) *NullObject {
+	return &NullObject{Object: object, Valid: true}
+}
+
+func (null *NullObject) Scan(value interface{}) error {
+	null.Object = map[string]interface{}{}
 	var i sql.NullString
 	if err := i.Scan(value); err != nil {
 		return err
 	}
 	// if nil the make Valid false
-	if reflect.TypeOf(value) == nil {
-		*nj = (NullJson)(m)
-	} else {
-
-		if err := json.Unmarshal([]byte(i.String), &m); err != nil {
+	if reflect.TypeOf(value) != nil {
+		if err := json.Unmarshal([]byte(i.String), &null.Object); err != nil {
 			return err
 		}
-
-		*nj = (NullJson)(m)
+		null.Valid = true
 	}
+
 	return nil
 }
 
-func (nj NullJson) Value() (driver.Value, error) {
-	b, err := json.Marshal(nj)
+func (null NullObject) Value() (driver.Value, error) {
+	if !null.Valid {
+		return nil, nil
+	}
+
+	b, err := json.Marshal(null.Object)
 	if err != nil {
 		return string(b), err
 	}
 
 	return string(b), err
+}
+
+func (null NullObject) MarshalJSON() ([]byte, error) {
+	if !null.Valid {
+		return json_null, nil
+	}
+
+	return json.Marshal(null.Object)
+}
+
+func (null *NullObject) UnmarshalJSON(data []byte) error {
+	if IsJsonNull(data) {
+		return nil
+	}
+
+	null.Object = map[string]interface{}{}
+	err := json.Unmarshal(data, &null.Object)
+	null.Valid = err == nil
+
+	return err
+}
+
+type NullKeyValue struct {
+	KeyValue map[string]string
+	Valid    bool
+}
+
+func NewNullMapStringString(object map[string]string) *NullKeyValue {
+	return &NullKeyValue{KeyValue: object, Valid: true}
+}
+
+func (null *NullKeyValue) Scan(value interface{}) error {
+	null.KeyValue = map[string]string{}
+	var i sql.NullString
+	if err := i.Scan(value); err != nil {
+		return err
+	}
+	// if nil the make Valid false
+	if reflect.TypeOf(value) != nil {
+		if err := json.Unmarshal([]byte(i.String), &null.KeyValue); err != nil {
+			return err
+		}
+		null.Valid = true
+	}
+
+	return nil
+}
+
+func (null NullKeyValue) Value() (driver.Value, error) {
+	if !null.Valid {
+		return nil, nil
+	}
+
+	b, err := json.Marshal(null.KeyValue)
+	if err != nil {
+		return string(b), err
+	}
+
+	return string(b), err
+}
+
+func (null NullKeyValue) MarshalJSON() ([]byte, error) {
+	if !null.Valid {
+		return json_null, nil
+	}
+
+	return json.Marshal(null.KeyValue)
+}
+
+func (null *NullKeyValue) UnmarshalJSON(data []byte) error {
+	if IsJsonNull(data) {
+		return nil
+	}
+
+	null.KeyValue = map[string]string{}
+	err := json.Unmarshal(data, &null.KeyValue)
+	null.Valid = err == nil
+
+	return err
 }

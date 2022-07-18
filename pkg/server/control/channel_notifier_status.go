@@ -11,6 +11,7 @@ import (
 	"xorm.io/xorm"
 )
 
+// @deprecated
 // @Description Find channel notifier status
 // @Accept      json
 // @Produce     json
@@ -33,6 +34,7 @@ func (ctl Control) FindChannelNotifierStatus(ctx echo.Context) error {
 
 }
 
+// @deprecated
 // @Description Delete a channel notifier status
 // @Accept json
 // @Produce json

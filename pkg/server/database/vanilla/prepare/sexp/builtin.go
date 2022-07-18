@@ -5,6 +5,16 @@ import (
 	"strings"
 )
 
+var quote = BackQuote
+
+func BackQuote(exp interface{}) string {
+	return strings.ReplaceAll(fmt.Sprintf("`%s`", exp), "``", "`")
+}
+
+func NoneQuote(exp interface{}) string {
+	return fmt.Sprintf("%s", exp)
+}
+
 type Builtin struct{}
 
 var builtin = Builtin{}
@@ -242,7 +252,7 @@ func (Builtin) Or(vars ...Value) (Value, error) {
 
 func (Builtin) Equal(vars ...Value) (Value, error) {
 	if len(vars) == 2 {
-		return NewArgsValue(fmt.Sprintf("%s = ?", vars[0].val), vars[1].val), nil
+		return NewArgsValue(fmt.Sprintf("%s = ?", quote(vars[0].val)), vars[1].val), nil
 	} else {
 		return Nil, fmt.Errorf("badly formatted arguments=%v", vars)
 	}
@@ -250,7 +260,7 @@ func (Builtin) Equal(vars ...Value) (Value, error) {
 
 func (Builtin) GreaterThan(vars ...Value) (Value, error) {
 	if len(vars) == 2 {
-		return NewArgsValue(fmt.Sprintf("%s > ?", vars[0].val), vars[1].val), nil
+		return NewArgsValue(fmt.Sprintf("%s > ?", quote(vars[0].val)), vars[1].val), nil
 	} else {
 		return Nil, fmt.Errorf("badly formatted arguments=%v", vars)
 	}
@@ -258,7 +268,7 @@ func (Builtin) GreaterThan(vars ...Value) (Value, error) {
 
 func (Builtin) LessThan(vars ...Value) (Value, error) {
 	if len(vars) == 2 {
-		return NewArgsValue(fmt.Sprintf("%s < ?", vars[0].val), vars[1].val), nil
+		return NewArgsValue(fmt.Sprintf("%s < ?", quote(vars[0].val)), vars[1].val), nil
 	} else {
 		return Nil, fmt.Errorf("badly formatted arguments=%v", vars)
 	}
@@ -266,7 +276,7 @@ func (Builtin) LessThan(vars ...Value) (Value, error) {
 
 func (Builtin) GreaterThanOrEqual(vars ...Value) (Value, error) {
 	if len(vars) == 2 {
-		return NewArgsValue(fmt.Sprintf("%s >= ?", vars[0].val), vars[1].val), nil
+		return NewArgsValue(fmt.Sprintf("%s >= ?", quote(vars[0].val)), vars[1].val), nil
 	} else {
 		return Nil, fmt.Errorf("badly formatted arguments=%v", vars)
 	}
@@ -274,7 +284,7 @@ func (Builtin) GreaterThanOrEqual(vars ...Value) (Value, error) {
 
 func (Builtin) LessThanOrEqual(vars ...Value) (Value, error) {
 	if len(vars) == 2 {
-		return NewArgsValue(fmt.Sprintf("%s <= ?", vars[0].val), vars[1].val), nil
+		return NewArgsValue(fmt.Sprintf("%s <= ?", quote(vars[0].val)), vars[1].val), nil
 	} else {
 		return Nil, fmt.Errorf("badly formatted arguments=%v", vars)
 	}
@@ -282,7 +292,7 @@ func (Builtin) LessThanOrEqual(vars ...Value) (Value, error) {
 
 func (Builtin) Like(vars ...Value) (Value, error) {
 	if len(vars) == 2 {
-		return NewArgsValue(fmt.Sprintf("%s LIKE ?", vars[0].val), vars[1].val), nil
+		return NewArgsValue(fmt.Sprintf("%s LIKE ?", quote(vars[0].val)), vars[1].val), nil
 	} else {
 		return Nil, fmt.Errorf("badly formatted arguments=%v", vars)
 	}
@@ -290,7 +300,7 @@ func (Builtin) Like(vars ...Value) (Value, error) {
 
 func (Builtin) IsNull(vars ...Value) (Value, error) {
 	if len(vars) == 1 {
-		return NewArgsValue(fmt.Sprintf("%s IS ?", vars[0].val), nil), nil
+		return NewArgsValue(fmt.Sprintf("%s IS ?", quote(vars[0].val)), nil), nil
 	} else {
 		return Nil, fmt.Errorf("badly formatted arguments=%v", vars)
 	}
@@ -332,7 +342,7 @@ func (Builtin) In(vars ...Value) (Value, error) {
 				args = append(args, iter.val)
 			}
 		}
-		return NewArgsValue(fmt.Sprintf("%s IN (%s)", vars[0].val, makeQ(len(args))), args...), nil
+		return NewArgsValue(fmt.Sprintf("%s IN (%s)", quote(vars[0].val), makeQ(len(args))), args...), nil
 	} else {
 		return Nil, fmt.Errorf("badly formatted arguments=%v", vars)
 	}
@@ -365,7 +375,7 @@ func (Builtin) Between(vars ...Value) (Value, error) {
 				args = append(args, iter.val)
 			}
 		}
-		return NewArgsValue(fmt.Sprintf("%s BETWEEN ? AND ?", vars[0].val), args...), nil
+		return NewArgsValue(fmt.Sprintf("%s BETWEEN ? AND ?", quote(vars[0].val)), args...), nil
 	} else {
 		return Nil, fmt.Errorf("badly formatted arguments=%v", vars)
 	}

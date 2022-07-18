@@ -12,7 +12,7 @@ func TestGenerateParts(t *testing.T) {
 		ServiceStep{},
 	}
 
-	s, err := vanilla.GenerateParts(objs, vanilla.AllParts)
+	s, err := vanilla.GenerateParts(objs, vanilla.Ingredients)
 	if err != nil {
 		t.Fatal(err)
 	}

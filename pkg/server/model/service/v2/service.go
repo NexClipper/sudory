@@ -11,11 +11,11 @@ import (
 
 type Service_essential struct {
 	Name              string             `column:"name"               json:"name,omitempty"`
-	Summary           vanilla.NullString `column:"summary"            json:"summary,omitempty"`
+	Summary           vanilla.NullString `column:"summary"            json:"summary,omitempty"            swaggertype:"string"`
 	ClusterUuid       string             `column:"cluster_uuid"       json:"cluster_uuid,omitempty"`
 	TemplateUuid      string             `column:"template_uuid"      json:"template_uuid,omitempty"`
 	StepCount         int                `column:"step_count"         json:"step_count,omitempty"`
-	SubscribedChannel vanilla.NullString `column:"subscribed_channel" json:"subscribed_channel,omitempty"`
+	SubscribedChannel vanilla.NullString `column:"subscribed_channel" json:"subscribed_channel,omitempty" swaggertype:"string"`
 	// OnCompletion      OnCompletion      `column:"on_completion"      json:"on_completion,omitempty"`
 }
 
@@ -33,7 +33,7 @@ type ServiceStatus_essential struct {
 	AssignedClientUuid string             `column:"assigned_client_uuid" json:"assigned_client_uuid,omitempty"`
 	StepPosition       int                `column:"step_position"        json:"step_position,omitempty"`
 	Status             StepStatus         `column:"status"               json:"status,omitempty"`
-	Message            vanilla.NullString `column:"message"              json:"message,omitempty"`
+	Message            vanilla.NullString `column:"message"              json:"message,omitempty"              swaggertype:"string"`
 }
 
 func (ServiceStatus_essential) TableName() string {
@@ -68,7 +68,7 @@ type Service_tangled struct {
 	ServiceStatus_essential  `json:",inline"` //status
 	ServiceResults_essential `json:",inline"` //result
 
-	Updated vanilla.NullTime `column:"updated" json:"updated"` //pk
+	Updated vanilla.NullTime `column:"updated" json:"updated,omitempty" swaggertype:"string"` //pk
 }
 
 /*
@@ -140,7 +140,7 @@ type Service_status struct {
 	Service                 `json:",inline"` //service
 	ServiceStatus_essential `json:",inline"` //status
 
-	Updated vanilla.NullTime `column:"updated" json:"updated"` //pk
+	Updated vanilla.NullTime `column:"updated" json:"updated,omitempty" swaggertype:"string"` //pk
 }
 
 /*

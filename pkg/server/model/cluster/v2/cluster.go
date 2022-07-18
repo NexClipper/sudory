@@ -8,8 +8,8 @@ import (
 
 type Cluster_essential struct {
 	Name          string             `column:"name"           json:"name,omitempty"`
-	Summary       vanilla.NullString `column:"summary"        json:"summary,omitempty"`
-	PollingOption vanilla.NullJson   `column:"polling_option" json:"polling_option,omitempty"`
+	Summary       vanilla.NullString `column:"summary"        json:"summary,omitempty"        swaggertype:"string"`
+	PollingOption vanilla.NullObject `column:"polling_option" json:"polling_option,omitempty" swaggertype:"object"`
 	PoliingLimit  int                `column:"polling_limit"  json:"polling_limit,omitempty"`
 }
 
@@ -24,6 +24,6 @@ type Cluster struct {
 	Cluster_essential `json:",inline"`
 
 	Created time.Time        `column:"created" json:"created,omitempty"`
-	Updated vanilla.NullTime `column:"updated" json:"updated,omitempty"`
-	Deleted vanilla.NullTime `column:"deleted" json:"deleted,omitempty"`
+	Updated vanilla.NullTime `column:"updated" json:"updated,omitempty" swaggertype:"string"`
+	Deleted vanilla.NullTime `column:"deleted" json:"deleted,omitempty" swaggertype:"string"`
 }

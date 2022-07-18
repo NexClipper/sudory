@@ -10,6 +10,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/event"
+	"github.com/NexClipper/sudory/pkg/server/event/managed_channel"
 	"github.com/NexClipper/sudory/pkg/server/event/managed_event"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
@@ -20,6 +21,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	authv1 "github.com/NexClipper/sudory/pkg/server/model/auth/v1"
+	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
 	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	clusterv2 "github.com/NexClipper/sudory/pkg/server/model/cluster/v2"
 	clustertokenv1 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v1"
@@ -56,7 +58,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 		eq_uuid := vanilla.Equal("uuid", claims.ClusterUuid).Parse()
 
 		err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid, nil, nil).
-			QueryRow(ctl.DB())(func(s vanilla.Scanner) (err error) {
+			QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
 			err = cluster.Scan(s)
 			err = errors.Wrapf(err, "scan cluster")
 			return
@@ -70,11 +72,11 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 	Do(&err, func() (err error) {
 		condition := pollingServiceCondition(cluster.Uuid)
 		limit := pollingServiceLimit(cluster.PoliingLimit)
-		service_statuses := make([]servicev2.Service_status, 0, __INIT_RECORD_CAPACITY__)
+		service_statuses := make([]servicev2.Service_status, 0, __INIT_SLICE_CAPACITY__())
 
 		service_status := servicev2.Service_status{}
 		err = vanilla.Stmt.Select(service_status.TableName(), service_status.ColumnNames(), condition, nil, limit).
-			QueryRows(ctl.DB())(func(scan vanilla.Scanner, _ int) (err error) {
+			QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
 			err = service_status.Scan(scan)
 			err = errors.Wrapf(err, "scan service_status")
 			if err != nil {
@@ -97,7 +99,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 				eq_uuid := vanilla.Equal("uuid", service_uuid).Parse()
 				step := servicev2.ServiceStep_tangled{}
 				err = vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), eq_uuid, nil, nil).
-					QueryRows(ctl.DB())(func(scan vanilla.Scanner, _ int) (err error) {
+					QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
 					err = step.Scan(scan)
 					err = errors.Wrapf(err, "scan service_step")
 					if err != nil {
@@ -238,6 +240,8 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 
 			event.Invoke(event_name, m)
 			managed_event.Invoke(event_name, m)
+			// invoke event by event category
+			managed_channel.InvokeByEventCategory(channelv2.EventCategoryServicePollingOut, m)
 		}
 		return
 	})
@@ -284,7 +288,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		eq_uuid := vanilla.Equal("uuid", body.Uuid).Parse()
 
 		err = vanilla.Stmt.Select(service.TableName(), service.ColumnNames(), eq_uuid, nil, nil).
-			QueryRow(ctl.DB())(func(s vanilla.Scanner) (err error) {
+			QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
 			err = service.Scan(s)
 			err = errors.Wrapf(err, "scan service")
 			return
@@ -303,7 +307,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		).Parse()
 
 		err = vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), unique_step, nil, nil).
-			QueryRow(ctl.DB())(func(s vanilla.Scanner) (err error) {
+			QueryRow(ctl.DB)(func(s vanilla.Scanner) (err error) {
 			err = step.Scan(s)
 			err = errors.Wrapf(err, "scan service_step")
 			return
@@ -336,10 +340,10 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	stepMessage := func() vanilla.NullString {
 		// 상태가 실패인 경우만
 		if body.Status == servicev2.StepStatusFail {
-			return (vanilla.NullString)(body.Result)
+			return *vanilla.NewNullString(body.Result)
 		}
 		//기본값; 공백 문자열
-		return ""
+		return vanilla.NullString{}
 	}
 
 	time_now := time.Now()
@@ -368,9 +372,9 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	}()
 	// step status
 	step_status := func() servicev2.ServiceStepStatus {
-		step.ServiceStepStatus_essential.Status = body.Status                       // Status
-		step.ServiceStepStatus_essential.Started = (vanilla.NullTime)(body.Started) // Started
-		step.ServiceStepStatus_essential.Ended = (vanilla.NullTime)(body.Ended)     // Ended
+		step.ServiceStepStatus_essential.Status = body.Status                         // Status
+		step.ServiceStepStatus_essential.Started = *vanilla.NewNullTime(body.Started) // Started
+		step.ServiceStepStatus_essential.Ended = *vanilla.NewNullTime(body.Ended)     // Ended
 		return servicev2.ServiceStepStatus{
 			Uuid:                        step.Uuid,
 			Sequence:                    step.Sequence, // missing
@@ -410,7 +414,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 				}
 				// 채널이 등록되어 있는 경우
 				// 서비스 결과를 저장 하지 않는다
-				if 0 < len(service.SubscribedChannel) {
+				if 0 < len(service.SubscribedChannel.String) {
 					return
 				}
 
@@ -469,7 +473,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		m["result"] = service_result.Result.String()
 		// }
 		// if 0 < len(service_status.Message) {
-		m["message"] = service_status.Message.String()
+		m["message"] = service_status.Message.String
 		// }
 		m["step_count"] = service.StepCount
 		m["step_position"] = service_status.StepPosition
@@ -478,9 +482,14 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 			log.Debugf("channel(poll-in-service): %+v", m)
 		}
 
-		event.Invoke(service.SubscribedChannel.String(), m)         //Subscribe 등록된 구독 이벤트 이름으로 호출
-		managed_event.Invoke(service.SubscribedChannel.String(), m) //Subscribe 등록된 구독 이벤트 이름으로 호출
-
+		event.Invoke(service.SubscribedChannel.String, m)         //Subscribe 등록된 구독 이벤트 이름으로 호출
+		managed_event.Invoke(service.SubscribedChannel.String, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
+		// invoke event by channel uuid
+		if 0 < len(service.SubscribedChannel.String) {
+			managed_channel.InvokeByChannelUuid(service.SubscribedChannel.String, m)
+		}
+		// invoke event by event category
+		managed_channel.InvokeByEventCategory(channelv2.EventCategoryServicePollingIn, m)
 		return
 	})
 	if err != nil {
@@ -604,6 +613,8 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 	}
 	event.Invoke(event_name, m)
 	managed_event.Invoke(event_name, m)
+	// invoke event by event category
+	managed_channel.InvokeByEventCategory(channelv2.EventCategoryClientAuthAccept, m)
 
 	return ctx.JSON(http.StatusOK, OK())
 }
@@ -687,7 +698,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 	Do(&err, func() (err error) {
 		eq_uuid := vanilla.Equal("uuid", claims.ClusterUuid).Parse()
 		err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid, nil, nil).
-			QueryRow(ctl.DB())(func(s vanilla.Scanner) (err error) {
+			QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
 			err = cluster.Scan(s)
 			err = errors.Wrapf(err, "cluster Scan")
 			return
@@ -701,7 +712,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 	Do(&err, func() (err error) {
 		eq_uuid := pollingServiceCondition(claims.ClusterUuid)
 		service := servicev2.Service_tangled{}
-		service_count, err = vanilla.Count(ctl.DB(), service.TableName(), eq_uuid)
+		service_count, err = vanilla.Count(ctl, service.TableName(), eq_uuid)
 		err = errors.Wrapf(err, "failed to get cluster service count")
 		return
 	})
@@ -774,7 +785,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 		}
 		var count int
 		err = vanilla.Stmt.Select(session.TableName(), columns, condition_update_session, nil, nil).
-			QueryRow(ctl.DB())(func(s vanilla.Scanner) (err error) {
+			QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
 			err = s.Scan(&count)
 			err = errors.Wrapf(err, "session Scan")
 			return

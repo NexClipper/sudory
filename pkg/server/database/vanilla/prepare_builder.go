@@ -42,6 +42,10 @@ func IsNull(a string) PrepareCondition {
 	return map[string]interface{}{"isnull": a}
 }
 
+func In(a string, b ...interface{}) PrepareCondition {
+	return map[string]interface{}{"in": map[string]interface{}{a: b}}
+}
+
 type PrepareOrder []interface{}
 
 func (sl PrepareOrder) Parse() *prepare.Orders {
@@ -111,7 +115,9 @@ func (m *PreparePagination) Page(p int) PreparePagination {
 func Limit(limit int, page ...int) PreparePagination {
 	page_ := 1
 	if 0 < len(page) {
-		page_ = page[0]
+		if 0 < page[0] {
+			page_ = page[0]
+		}
 	}
 
 	return map[string]interface{}{

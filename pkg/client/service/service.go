@@ -87,8 +87,8 @@ func ConvertServiceListServerToClient(server []servicev2.HttpRsp_ClientServicePo
 			serv.Steps = append(serv.Steps, Step{
 				Id:           s.Uuid,
 				ParentId:     serv.Id,
-				Command:      &StepCommand{Method: s.Method, Args: s.Args},
-				ResultFilter: s.ResultFilter.String(),
+				Command:      &StepCommand{Method: s.Method, Args: s.Args.Object},
+				ResultFilter: s.ResultFilter.String,
 			})
 		}
 		client[v.Uuid] = serv

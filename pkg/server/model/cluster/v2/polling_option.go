@@ -3,6 +3,8 @@ package v2
 
 import (
 	"time"
+
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 )
 
 /* ENUM(
@@ -20,7 +22,7 @@ type PollingHandler interface {
 func (opt Cluster_essential) GetPollingOption() PollingHandler {
 	pollingType := PollingTypeRegular
 
-	if opt_type, ok := opt.PollingOption["type"]; ok {
+	if opt_type, ok := opt.PollingOption.Object["type"]; ok {
 		opt_type, _ := opt_type.(string)
 		if opt_type, err := ParsePollingType(opt_type); err == nil {
 			pollingType = opt_type
@@ -31,11 +33,11 @@ func (opt Cluster_essential) GetPollingOption() PollingHandler {
 	case PollingTypeSmart:
 		idle := 0
 		busy := 0
-		if opt, ok := opt.PollingOption["idle"]; ok {
+		if opt, ok := opt.PollingOption.Object["idle"]; ok {
 			opt, _ := opt.(float64) //json 숫자타입은 부동소수
 			idle = int(opt)
 		}
-		if opt, ok := opt.PollingOption["busy"]; ok {
+		if opt, ok := opt.PollingOption.Object["busy"]; ok {
 			opt, _ := opt.(float64) //json 숫자타입은 부동소수
 			busy = int(opt)
 		}
@@ -50,9 +52,9 @@ func (opt Cluster_essential) GetPollingOption() PollingHandler {
 func (opt *Cluster_essential) SetPollingOption(handle PollingHandler) {
 	switch handle := handle.(type) {
 	case *SmartPollingOption:
-		opt.PollingOption = handle.ToMap()
+		opt.PollingOption = *vanilla.NewNullObject(handle.ToMap())
 	case *RegularPollingOption:
-		opt.PollingOption = handle.ToMap()
+		opt.PollingOption = *vanilla.NewNullObject(handle.ToMap())
 	}
 }
 

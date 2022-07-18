@@ -15,7 +15,7 @@ func TestColumnTags(t *testing.T) {
 	}
 
 	for _, obj := range objs {
-		columninfo := vanilla.ParseColumnTag(reflect.TypeOf(obj), "")
+		columninfo := vanilla.ParseColumnTag(reflect.TypeOf(obj), vanilla.ParseColumnTag_opt{})
 		for _, columninfo := range columninfo {
 			println(columninfo.String())
 		}
@@ -72,11 +72,12 @@ func (ServiceStep_essential) TableName() string {
 }
 
 type ServiceStep struct {
-	Uuid     string    `column:"uuid"     json:"uuid,omitempty"`     //pk
-	Sequence string    `column:"sequence" json:"sequence,omitempty"` //pk
-	Created  time.Time `column:"created"  json:"created,omitempty"`  //pk
-
-	ServiceStep_essential `json:",inline"`
+	Uuid      string    `column:"uuid"     json:"uuid,omitempty"`     //pk
+	Sequence  string    `column:"sequence" json:"sequence,omitempty"` //pk
+	Created   time.Time `column:"created"  json:"created,omitempty"`  //pk
+	Essential struct {
+		*ServiceStep_essential `json:",inline"`
+	}
 }
 
 func (row *ServiceStep) Values() []interface{} {
@@ -84,11 +85,11 @@ func (row *ServiceStep) Values() []interface{} {
 		row.Uuid,
 		row.Sequence,
 		row.Created,
-		row.Name,
-		row.Summary,
-		row.Method,
-		row.Args,
-		row.Result_filter,
+		row.Essential.Name,
+		row.Essential.Summary,
+		row.Essential.Method,
+		row.Essential.Args,
+		row.Essential.Result_filter,
 	}
 }
 
@@ -97,10 +98,10 @@ func (row *ServiceStep) Dests() []interface{} {
 		&row.Uuid,
 		&row.Sequence,
 		&row.Created,
-		&row.Name,
-		&row.Summary,
-		&row.Method,
-		&row.Args,
-		&row.Result_filter,
+		&row.Essential.Name,
+		&row.Essential.Summary,
+		&row.Essential.Method,
+		&row.Essential.Args,
+		&row.Essential.Result_filter,
 	}
 }

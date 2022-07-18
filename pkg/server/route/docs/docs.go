@@ -155,6 +155,7 @@ var doc = `{
                 "tags": [
                     "server/channel"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -204,6 +205,7 @@ var doc = `{
                 "tags": [
                     "server/channel"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -243,6 +245,7 @@ var doc = `{
                 "tags": [
                     "server/channel"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -278,6 +281,7 @@ var doc = `{
                 "tags": [
                     "server/channel"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -322,6 +326,7 @@ var doc = `{
                 "tags": [
                     "server/channel"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -356,6 +361,7 @@ var doc = `{
                 "tags": [
                     "server/channel"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -396,6 +402,7 @@ var doc = `{
                 "tags": [
                     "server/channel"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -448,6 +455,7 @@ var doc = `{
                 "tags": [
                     "server/channel"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -500,6 +508,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -549,6 +558,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -588,6 +598,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -623,6 +634,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -667,6 +679,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -701,6 +714,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -750,6 +764,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -789,6 +804,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -824,6 +840,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -868,6 +885,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -902,6 +920,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -951,6 +970,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -990,6 +1010,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -1025,6 +1046,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -1069,6 +1091,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -1103,6 +1126,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier_status"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -1154,6 +1178,7 @@ var doc = `{
                 "tags": [
                     "server/channel_notifier_status"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -1164,6 +1189,651 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "EventNotifierStatus 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/channels": {
+            "get": {
+                "description": "Find channel",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v2.HttpRsp_ManagedChannel"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a channel",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "description": "HttpReq_ManagedChannel_create",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v2.HttpReq_ManagedChannel_create"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v2.HttpRsp_ManagedChannel"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/channels/status": {
+            "get": {
+                "description": "Find channel status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "query  pkg/server/database/prepared/README.md",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "order  pkg/server/database/prepared/README.md",
+                        "name": "o",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "paging pkg/server/database/prepared/README.md",
+                        "name": "p",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v2.HttpRsp_ManagedChannel_ChannelStatus"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/server/channels/{uuid}": {
+            "get": {
+                "description": "Get a channel",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v2.HttpRsp_ManagedChannel"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a channel",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "HttpReq_ManagedChannel_update",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v2.HttpReq_ManagedChannel_update"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a channel",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/channels/{uuid}/format": {
+            "get": {
+                "description": "Get a channel format",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v2.HttpRsq_ManagedChannel_Format"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a channel format",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "HttpReq_ManagedChannel_Format_update",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v2.HttpReq_ManagedChannel_Format_update"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/channels/{uuid}/notifiers/console": {
+            "put": {
+                "description": "Update a console channel notifier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "HttpReq_ManagedChannel_NotifierConsole_update",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v2.HttpReq_ManagedChannel_NotifierConsole_update"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/channels/{uuid}/notifiers/edge": {
+            "get": {
+                "description": "Get a channel notifier edge",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v2.HttpRsp_ManagedChannel_NotifierEdge"
+                        }
+                    }
+                }
+            }
+        },
+        "/server/channels/{uuid}/notifiers/rabbitmq": {
+            "put": {
+                "description": "Update a rabbitmq channel notifier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "HttpReq_ManagedChannel_NotifierRabbitMq_update",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v2.HttpReq_ManagedChannel_NotifierRabbitMq_update"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/channels/{uuid}/notifiers/webhook": {
+            "put": {
+                "description": "Update a webhook channel notifier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "HttpReq_ManagedChannel_NotifierWebhook_update",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v2.HttpReq_ManagedChannel_NotifierWebhook_update"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/channels/{uuid}/status": {
+            "get": {
+                "description": "List channel status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "channel status 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/v2.HttpRsp_ManagedChannel_ChannelStatus"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/server/channels/{uuid}/status/option": {
+            "get": {
+                "description": "Get a channel status option",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v2.HttpRsp_ManagedChannel_ChannelStatusOption"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a channel status option",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Channel 의 Uuid",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "HttpReq_ManagedChannel_ChannelStatusOption_update",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v2.HttpReq_ManagedChannel_ChannelStatusOption_update"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/server/channels/{uuid}/status/purge": {
+            "delete": {
+                "description": "Purge channel status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/channels"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "channel status 의 Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -3621,6 +4291,43 @@ var doc = `{
                 }
             }
         },
+        "v2.ChannelStatusOption_property": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "status_max_count": {
+                    "type": "integer"
+                },
+                "updated": {
+                    "type": "string"
+                }
+            }
+        },
+        "v2.Format_property": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "format_data": {
+                    "type": "string"
+                },
+                "format_type": {
+                    "description": "enums:\"disable(0), fields(1), jq(2)\"",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ]
+                },
+                "updated": {
+                    "type": "string"
+                }
+            }
+        },
         "v2.HttpReq_ClientServiceUpdate": {
             "type": "object",
             "properties": {
@@ -3643,6 +4350,186 @@ var doc = `{
                 },
                 "uuid": {
                     "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_ManagedChannel_ChannelStatusOption_update": {
+            "type": "object",
+            "properties": {
+                "status_max_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "v2.HttpReq_ManagedChannel_Format_update": {
+            "type": "object",
+            "properties": {
+                "format_data": {
+                    "type": "string"
+                },
+                "format_type": {
+                    "description": "enums:\"disable(0), fields(1), jq(2)\"",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ]
+                }
+            }
+        },
+        "v2.HttpReq_ManagedChannel_NotifierConsole_update": {
+            "type": "object"
+        },
+        "v2.HttpReq_ManagedChannel_NotifierRabbitMq_update": {
+            "type": "object",
+            "properties": {
+                "channel_publish": {
+                    "description": "amqp.Channel.Publish",
+                    "type": "object",
+                    "properties": {
+                        "exchange": {
+                            "type": "string"
+                        },
+                        "immediate": {
+                            "type": "boolean"
+                        },
+                        "mandatory": {
+                            "type": "boolean"
+                        },
+                        "routing_key": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "publishing": {
+                    "description": "amqp.Publishing",
+                    "type": "object",
+                    "properties": {
+                        "message_app_id": {
+                            "description": "application use - creating application",
+                            "type": "string"
+                        },
+                        "message_content_encoding": {
+                            "description": "MIME content encoding",
+                            "type": "string"
+                        },
+                        "message_content_type": {
+                            "description": "MIME content type",
+                            "type": "string"
+                        },
+                        "message_correlation_id": {
+                            "description": "application use - correlation identifier",
+                            "type": "string"
+                        },
+                        "message_delivery_mode": {
+                            "description": "queue implementation use - Transient (1) or Persistent (2)",
+                            "type": "integer"
+                        },
+                        "message_expiration": {
+                            "description": "implementation use - message expiration spec",
+                            "type": "string"
+                        },
+                        "message_headers": {
+                            "description": "Application or header exchange table",
+                            "type": "object"
+                        },
+                        "message_message_id": {
+                            "description": "application use - message identifier",
+                            "type": "string"
+                        },
+                        "message_priority": {
+                            "description": "queue implementation use - 0 to 9",
+                            "type": "integer"
+                        },
+                        "message_reply_to": {
+                            "description": "application use - address to to reply to (ex: RPC)",
+                            "type": "string"
+                        },
+                        "message_timestamp": {
+                            "description": "application use - message timestamp",
+                            "type": "boolean"
+                        },
+                        "message_type": {
+                            "description": "application use - message type name",
+                            "type": "string"
+                        },
+                        "message_user_id": {
+                            "description": "application use - creating user id",
+                            "type": "string"
+                        }
+                    }
+                },
+                "url": {
+                    "description": "amqp Dial",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_ManagedChannel_NotifierWebhook_update": {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "description": "http",
+                    "type": "string"
+                },
+                "request_headers": {
+                    "type": "object"
+                },
+                "request_timeout": {
+                    "description": "second",
+                    "type": "integer"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_ManagedChannel_create": {
+            "type": "object",
+            "properties": {
+                "event_category": {
+                    "description": "enums:\"NaV(0), nonspecified(1), client-auth(2), client-polling-out(3), client-polling-in(4)\"",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4
+                    ]
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "optional",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_ManagedChannel_update": {
+            "type": "object",
+            "properties": {
+                "event_category": {
+                    "description": "enums:\"NaV(0), nonspecified(1), client-auth(2), client-polling-out(3), client-polling-in(4)\"",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4
+                    ]
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
                     "type": "string"
                 }
             }
@@ -3739,6 +4626,132 @@ var doc = `{
                 }
             }
         },
+        "v2.HttpRsp_ManagedChannel": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "event_category": {
+                    "description": "enums:\"NaV(0), nonspecified(1), client-auth(2), client-polling-out(3), client-polling-in(4)\"",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4
+                    ]
+                },
+                "format": {
+                    "$ref": "#/definitions/v2.Format_property"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "notifier": {
+                    "type": "object",
+                    "properties": {
+                        "console": {
+                            "$ref": "#/definitions/v2.NotifierConsole_property"
+                        },
+                        "edge": {
+                            "$ref": "#/definitions/v2.NotifierEdge_property"
+                        },
+                        "rabbitmq": {
+                            "$ref": "#/definitions/v2.NotifierRabbitMq_property"
+                        },
+                        "webhook": {
+                            "$ref": "#/definitions/v2.NotifierWebhook_property"
+                        }
+                    }
+                },
+                "status_option": {
+                    "$ref": "#/definitions/v2.ChannelStatusOption_property"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_ManagedChannel_ChannelStatus": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "description": "pk",
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_ManagedChannel_ChannelStatusOption": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "status_max_count": {
+                    "type": "integer"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_ManagedChannel_NotifierEdge": {
+            "type": "object",
+            "properties": {
+                "console": {
+                    "$ref": "#/definitions/v2.NotifierConsole_property"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "notifier_type": {
+                    "description": "enums:\"NaV(0), console(1), webhook(2), rabbitmq(3)\"",
+                    "type": "string",
+                    "enum": [
+                        "0",
+                        "1",
+                        "2",
+                        "3"
+                    ]
+                },
+                "rabbitmq": {
+                    "$ref": "#/definitions/v2.NotifierRabbitMq_property"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk",
+                    "type": "string"
+                },
+                "webhook": {
+                    "$ref": "#/definitions/v2.NotifierWebhook_property"
+                }
+            }
+        },
         "v2.HttpRsp_Service": {
             "type": "object",
             "properties": {
@@ -3802,7 +4815,7 @@ var doc = `{
             "type": "object",
             "properties": {
                 "args": {
-                    "$ref": "#/definitions/vanilla.NullJson"
+                    "type": "object"
                 },
                 "created": {
                     "description": "pk",
@@ -3933,11 +4946,186 @@ var doc = `{
                 }
             }
         },
+        "v2.HttpRsq_ManagedChannel_Format": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "format_data": {
+                    "type": "string"
+                },
+                "format_type": {
+                    "description": "enums:\"disable(0), fields(1), jq(2)\"",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ]
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.NotifierConsole_property": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                }
+            }
+        },
+        "v2.NotifierEdge_property": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "notifier_type": {
+                    "description": "enums:\"NaV(0), console(1), webhook(2), rabbitmq(3)\"",
+                    "type": "string",
+                    "enum": [
+                        "0",
+                        "1",
+                        "2",
+                        "3"
+                    ]
+                },
+                "updated": {
+                    "type": "string"
+                }
+            }
+        },
+        "v2.NotifierRabbitMq_property": {
+            "type": "object",
+            "properties": {
+                "channel_publish": {
+                    "description": "amqp.Channel.Publish",
+                    "type": "object",
+                    "properties": {
+                        "exchange": {
+                            "type": "string"
+                        },
+                        "immediate": {
+                            "type": "boolean"
+                        },
+                        "mandatory": {
+                            "type": "boolean"
+                        },
+                        "routing_key": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "created": {
+                    "type": "string"
+                },
+                "publishing": {
+                    "description": "amqp.Publishing",
+                    "type": "object",
+                    "properties": {
+                        "message_app_id": {
+                            "description": "application use - creating application",
+                            "type": "string"
+                        },
+                        "message_content_encoding": {
+                            "description": "MIME content encoding",
+                            "type": "string"
+                        },
+                        "message_content_type": {
+                            "description": "MIME content type",
+                            "type": "string"
+                        },
+                        "message_correlation_id": {
+                            "description": "application use - correlation identifier",
+                            "type": "string"
+                        },
+                        "message_delivery_mode": {
+                            "description": "queue implementation use - Transient (1) or Persistent (2)",
+                            "type": "integer"
+                        },
+                        "message_expiration": {
+                            "description": "implementation use - message expiration spec",
+                            "type": "string"
+                        },
+                        "message_headers": {
+                            "description": "Application or header exchange table",
+                            "type": "object"
+                        },
+                        "message_message_id": {
+                            "description": "application use - message identifier",
+                            "type": "string"
+                        },
+                        "message_priority": {
+                            "description": "queue implementation use - 0 to 9",
+                            "type": "integer"
+                        },
+                        "message_reply_to": {
+                            "description": "application use - address to to reply to (ex: RPC)",
+                            "type": "string"
+                        },
+                        "message_timestamp": {
+                            "description": "application use - message timestamp",
+                            "type": "boolean"
+                        },
+                        "message_type": {
+                            "description": "application use - message type name",
+                            "type": "string"
+                        },
+                        "message_user_id": {
+                            "description": "application use - creating user id",
+                            "type": "string"
+                        }
+                    }
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "url": {
+                    "description": "amqp Dial",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.NotifierWebhook_property": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "method": {
+                    "description": "http",
+                    "type": "string"
+                },
+                "request_headers": {
+                    "type": "object"
+                },
+                "request_timeout": {
+                    "description": "second",
+                    "type": "integer"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
         "v2.ServiceStep": {
             "type": "object",
             "properties": {
                 "args": {
-                    "$ref": "#/definitions/vanilla.NullJson"
+                    "type": "object"
                 },
                 "created": {
                     "description": "pk",
@@ -3969,7 +5157,7 @@ var doc = `{
             "type": "object",
             "properties": {
                 "args": {
-                    "$ref": "#/definitions/vanilla.NullJson"
+                    "type": "object"
                 },
                 "created": {
                     "description": "pk",
@@ -4009,10 +5197,6 @@ var doc = `{
                     "type": "string"
                 }
             }
-        },
-        "vanilla.NullJson": {
-            "type": "object",
-            "additionalProperties": true
         }
     }
 }`

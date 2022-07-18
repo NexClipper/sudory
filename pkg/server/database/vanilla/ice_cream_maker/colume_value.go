@@ -13,7 +13,7 @@ func ColumnValues(objs ...interface{}) (s string, err error) {
 	}
 
 	for i := range objs {
-		columninfos := ParseColumnTag(reflect.TypeOf(objs[i]), "")
+		columninfos := ParseColumnTag(reflect.TypeOf(objs[i]), ParseColumnTag_opt{})
 
 		vals := make([]string, 0)
 		for j := range columninfos {
@@ -58,11 +58,11 @@ type TemplateColumnValueDiscriptor struct {
 
 func (TemplateColumnValue) Text() string {
 	return `
-{{ $space := " " }}
+{{ $space := "" }}
 {{- range .Discriptors }} 
 func (row {{ .StructName }}) Values() []interface{} {
 	return []interface{}{ 
-		{{ range $index, $value := .Values -}}
+		{{- range $index, $value := .Values }}
 		{{ $value }},{{ $space }}
 		{{- end }}
 	}

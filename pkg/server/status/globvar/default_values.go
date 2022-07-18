@@ -2,6 +2,7 @@ package globvar
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
@@ -59,7 +60,15 @@ var defaultValueSet = map[Key]defaultValue{
 		if err != nil {
 			return err
 		}
-		eventNofitierStatusRotateLimit = i
+		if i == 0 {
+			i = 20
+		} else if i < 0 {
+			i = 20
+		} else if math.MaxUint8 < i {
+			i = math.MaxUint8
+		}
+		eventNofitierStatusRotateLimit = uint(i)
+
 		return nil
 	}},
 }

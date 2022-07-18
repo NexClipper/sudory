@@ -32,11 +32,11 @@ func (ctl ControlVanilla) FindServiceStep(ctx echo.Context) error {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	rsps := make([]servicev2.HttpRsp_ServiceStep, 0, __INIT_RECORD_CAPACITY__)
+	rsps := make([]servicev2.HttpRsp_ServiceStep, 0, __INIT_SLICE_CAPACITY__())
 
 	step := servicev2.ServiceStep_tangled{}
 	stmt := vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), q, o, p)
-	err = stmt.QueryRows(ctl.DB())(func(scan vanilla.Scanner, _ int) (err error) {
+	err = stmt.QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
 		err = step.Scan(scan)
 		if err == nil {
 			rsps = append(rsps, servicev2.HttpRsp_ServiceStep{
@@ -77,13 +77,13 @@ func (ctl ControlVanilla) GetServiceSteps(ctx echo.Context) (err error) {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	steps := make([]servicev2.HttpRsp_ServiceStep, 0, __INIT_RECORD_CAPACITY__)
+	steps := make([]servicev2.HttpRsp_ServiceStep, 0, __INIT_SLICE_CAPACITY__())
 
 	eq_uuid := vanilla.Equal("uuid", uuid).Parse()
 
 	step := servicev2.ServiceStep_tangled{}
 	stmt := vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), eq_uuid, nil, nil)
-	err = stmt.QueryRows(ctl.DB())(func(scan vanilla.Scanner, _ int) (err error) {
+	err = stmt.QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
 		err = step.Scan(scan)
 		if err == nil {
 			steps = append(steps, servicev2.HttpRsp_ServiceStep{
@@ -153,7 +153,7 @@ func (ctl ControlVanilla) GetServiceStep(ctx echo.Context) (err error) {
 
 	step := servicev2.ServiceStep_tangled{}
 	stmt := vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), q, nil, nil)
-	err = stmt.QueryRow(ctl.DB())(func(s vanilla.Scanner) (err error) {
+	err = stmt.QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
 		err = step.Scan(s)
 		return
 	})
