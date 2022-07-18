@@ -1732,45 +1732,6 @@ var doc = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Create a channel status",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channels"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "client session token",
-                        "name": "x_auth_token",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
-                        "description": "channel status 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "message",
-                        "name": "message",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
             }
         },
         "/server/channels/{uuid}/status/option": {
@@ -4697,24 +4658,11 @@ var doc = `{
                         "console": {
                             "$ref": "#/definitions/v2.NotifierConsole_property"
                         },
-                        "created": {
-                            "type": "string"
-                        },
-                        "notifier_type": {
-                            "description": "enums:\"NaV(0), console(1), webhook(2), rabbitmq(3)\"",
-                            "type": "string",
-                            "enum": [
-                                "0",
-                                "1",
-                                "2",
-                                "3"
-                            ]
+                        "edge": {
+                            "$ref": "#/definitions/v2.NotifierEdge_property"
                         },
                         "rabbitmq": {
                             "$ref": "#/definitions/v2.NotifierRabbitMq_property"
-                        },
-                        "updated": {
-                            "type": "string"
                         },
                         "webhook": {
                             "$ref": "#/definitions/v2.NotifierWebhook_property"
@@ -5030,6 +4978,27 @@ var doc = `{
             "properties": {
                 "created": {
                     "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                }
+            }
+        },
+        "v2.NotifierEdge_property": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "notifier_type": {
+                    "description": "enums:\"NaV(0), console(1), webhook(2), rabbitmq(3)\"",
+                    "type": "string",
+                    "enum": [
+                        "0",
+                        "1",
+                        "2",
+                        "3"
+                    ]
                 },
                 "updated": {
                     "type": "string"

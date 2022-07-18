@@ -64,13 +64,14 @@ func CreateChannelStatus(db *sql.DB, uuid, message string, created time.Time, ma
 	}
 
 	// insert
-	err = vanilla.Scope(db, func(tx *sql.Tx) (err error) {
+	// err = vanilla.Scope(db, func(tx *sql.Tx) (err error) {
+	err = func() (err error) {
 		stmt, err := vanilla.Stmt.Insert(channel_status.TableName(), channel_status.ColumnNames(), channel_status.Values())
 		if err != nil {
 			return
 		}
 
-		affected, err := stmt.Exec(tx)
+		affected, err := stmt.Exec(db)
 		if err != nil {
 			return
 		}
@@ -79,6 +80,13 @@ func CreateChannelStatus(db *sql.DB, uuid, message string, created time.Time, ma
 			return
 		}
 
+		return
+	}()
+	if err != nil {
+		return
+	}
+
+	err = func() (err error) {
 		// rotation; remove
 		for i := range uuids {
 			uuid, created := uuids[i], createds[i]
@@ -86,14 +94,18 @@ func CreateChannelStatus(db *sql.DB, uuid, message string, created time.Time, ma
 				vanilla.Equal("uuid", uuid),
 				vanilla.Equal("created", created),
 			).Parse()
-			_, err = vanilla.Stmt.Delete(channel_status.TableName(), rm_cond).Exec(tx)
+			_, err = vanilla.Stmt.Delete(channel_status.TableName(), rm_cond).Exec(db)
 			if err != nil {
 				return
 			}
 		}
 
 		return
-	})
+	}()
+	// })
+	if err != nil {
+		return
+	}
 
 	return
 }

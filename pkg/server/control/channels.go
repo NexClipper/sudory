@@ -916,15 +916,15 @@ func (ctl ControlVanilla) UpdateChannelStatusOption(ctx echo.Context) (err error
 	return ctx.JSON(http.StatusOK, OK())
 }
 
-// @Description Create a channel status
-// @Accept      json
-// @Produce     json
-// @Tags        server/channels
-// @Router      /server/channels/{uuid}/status [post]
-// @Param       x_auth_token header                           string false "client session token"
-// @Param       uuid    path                                  string true  "channel status 의 Uuid"
-// @Param       message query                                 string true  "message"
-// @Success     200
+// @@Description Create a channel status
+// @@Accept      json
+// @@Produce     json
+// @@Tags        server/channels
+// @@Router      /server/channels/{uuid}/status [post]
+// @@Param       x_auth_token header                           string false "client session token"
+// @@Param       uuid    path                                  string true  "channel status 의 Uuid"
+// @@Param       message query                                 string true  "message"
+// @@Success     200
 func (ctl ControlVanilla) CreateChannelStatus(ctx echo.Context) (err error) {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		err = ErrorInvalidRequestParameter()

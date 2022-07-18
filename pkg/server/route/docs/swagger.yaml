@@ -868,20 +868,10 @@ definitions:
         properties:
           console:
             $ref: '#/definitions/v2.NotifierConsole_property'
-          created:
-            type: string
-          notifier_type:
-            description: enums:"NaV(0), console(1), webhook(2), rabbitmq(3)"
-            enum:
-            - "0"
-            - "1"
-            - "2"
-            - "3"
-            type: string
+          edge:
+            $ref: '#/definitions/v2.NotifierEdge_property'
           rabbitmq:
             $ref: '#/definitions/v2.NotifierRabbitMq_property'
-          updated:
-            type: string
           webhook:
             $ref: '#/definitions/v2.NotifierWebhook_property'
         type: object
@@ -1096,6 +1086,21 @@ definitions:
   v2.NotifierConsole_property:
     properties:
       created:
+        type: string
+      updated:
+        type: string
+    type: object
+  v2.NotifierEdge_property:
+    properties:
+      created:
+        type: string
+      notifier_type:
+        description: enums:"NaV(0), console(1), webhook(2), rabbitmq(3)"
+        enum:
+        - "0"
+        - "1"
+        - "2"
+        - "3"
         type: string
       updated:
         type: string
@@ -2328,32 +2333,6 @@ paths:
             items:
               $ref: '#/definitions/v2.HttpRsp_ManagedChannel_ChannelStatus'
             type: array
-      tags:
-      - server/channels
-    post:
-      consumes:
-      - application/json
-      description: Create a channel status
-      parameters:
-      - description: client session token
-        in: header
-        name: x_auth_token
-        type: string
-      - description: channel status 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      - description: message
-        in: query
-        name: message
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
       tags:
       - server/channels
   /server/channels/{uuid}/status/option:

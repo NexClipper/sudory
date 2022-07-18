@@ -239,7 +239,6 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		//server/channels/status
 		group.GET("/channels/status", control.FindChannelStatus)
 		//server/channels/:uuid/status*
-		group.POST("/channels/:uuid/status", control.CreateChannelStatus)
 		group.GET("/channels/:uuid/status", control.ListChannelStatus)
 		group.DELETE("/channels/:uuid/status/purge", control.PurgeChannelStatus)
 		group.PUT("/channels/:uuid/status/option", control.UpdateChannelStatusOption)
