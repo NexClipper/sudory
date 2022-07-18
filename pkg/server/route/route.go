@@ -87,7 +87,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 				case "/client/auth":
 					//do noting
 				default:
-					if err := controller.VerifyClientSessionToken(c); err != nil {
+					if err := control.VerifyClientSessionToken(c); err != nil {
 						err = errors.Wrapf(err, "failed to verifing a client sesstion token")
 						return err
 					}
@@ -109,7 +109,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.GET("/service", control.PollingService)
 		group.PUT("/service", control.UpdateService)
 		//route /client/auth*
-		group.POST("/auth", controller.AuthClient)
+		group.POST("/auth", control.AuthClient)
 	}
 
 	//"/server"
@@ -184,17 +184,17 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.GET("/global_variables/:uuid", controller.GetGlobalVariables)
 		group.PUT("/global_variables/:uuid", controller.UpdateGlobalVariablesValue)
 		//route /server/session*
-		group.GET("/session", controller.FindSession)
-		group.GET("/session/:uuid", controller.GetSession)
-		group.DELETE("/session/:uuid", controller.DeleteSession)
+		group.GET("/session", control.FindSession)
+		group.GET("/session/:uuid", control.GetSession)
+		group.DELETE("/session/:uuid", control.DeleteSession)
 		//route /server/cluster_token*
-		group.GET("/cluster_token", controller.FindClusterToken)
-		group.GET("/cluster_token/:uuid", controller.GetClusterToken)
-		group.PUT("/cluster_token/:uuid/label", controller.UpdateClusterTokenLabel)
-		group.DELETE("/cluster_token/:uuid", controller.DeleteClusterToken)
-		group.POST("/cluster_token", controller.CreateClusterToken)
-		group.PUT("/cluster_token/:uuid/refresh", controller.RefreshClusterTokenTime)
-		group.PUT("/cluster_token/:uuid/expire", controller.ExpireClusterToken)
+		group.GET("/cluster_token", control.FindClusterToken)
+		group.GET("/cluster_token/:uuid", control.GetClusterToken)
+		group.PUT("/cluster_token/:uuid/label", control.UpdateClusterTokenLabel)
+		group.DELETE("/cluster_token/:uuid", control.DeleteClusterToken)
+		group.POST("/cluster_token", control.CreateClusterToken)
+		group.PUT("/cluster_token/:uuid/refresh", control.RefreshClusterTokenTime)
+		group.PUT("/cluster_token/:uuid/expire", control.ExpireClusterToken)
 
 		//server/channel*
 		group.POST("/channel", controller.CreateChannel)

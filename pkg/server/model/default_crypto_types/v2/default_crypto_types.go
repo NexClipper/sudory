@@ -34,28 +34,30 @@ func (cs CryptoString) String() string {
 }
 
 func (cs *CryptoString) Scan(value interface{}) error {
-	var i sql.NullString
+	if reflect.TypeOf(value) == nil {
+		return nil
+	}
+
 	var b []byte
 	switch value := value.(type) {
 	case string:
+		var i sql.NullString
 		if err := i.Scan(value); err != nil {
 			return err
 		}
 		b = []byte(i.String)
 	case []byte:
 		b = value
+	default:
+		return errors.New("invalid type")
 	}
 
-	// if nil the make Valid false
-	if reflect.TypeOf(value) == nil {
-		*cs = (CryptoString)(i.String)
-	} else {
-		bytes, err := EnigmaDecode(b)
-		if err != nil {
-			return errors.Wrapf(err, "default crypto string: decode")
-		}
-		*cs = CryptoString(bytes)
+	bytes, err := EnigmaDecode(b)
+	if err != nil {
+		return errors.Wrapf(err, "default crypto string: decode")
 	}
+	*cs = CryptoString(bytes)
+
 	return nil
 }
 func (cs CryptoString) Value() (driver.Value, error) {
@@ -67,35 +69,44 @@ func (cs CryptoString) Value() (driver.Value, error) {
 	return out, nil
 }
 
-// CryptoJson
-type CryptoJson map[string]interface{}
+// CryptoObject
+type CryptoObject map[string]interface{}
 
-func (cj CryptoJson) Json() map[string]interface{} {
+func (cj CryptoObject) Object() map[string]interface{} {
 	return (map[string]interface{})(cj)
 }
 
-func (cj *CryptoJson) Scan(value interface{}) error {
-
-	var i sql.NullString
-	if err := i.Scan(value); err != nil {
-		return err
-	}
-	// if nil the make Valid false
+func (cj *CryptoObject) Scan(value interface{}) error {
 	if reflect.TypeOf(value) == nil {
-		*cj = map[string]interface{}{}
-	} else {
-		bytes, err := EnigmaDecode([]byte(i.String))
-		if err != nil {
-			return errors.Wrapf(err, "default crypto hashset: decode")
-		}
-
-		if err := json.Unmarshal(bytes, cj); err != nil {
-			return errors.Wrapf(err, "default crypto hashset: json unmarshal")
-		}
+		return nil
 	}
+
+	var b []byte
+	switch value := value.(type) {
+	case string:
+		var i sql.NullString
+		if err := i.Scan(value); err != nil {
+			return err
+		}
+		b = []byte(i.String)
+	case []byte:
+		b = value
+	default:
+		return errors.New("invalid type")
+	}
+
+	bytes, err := EnigmaDecode(b)
+	if err != nil {
+		return errors.Wrapf(err, "default crypto hashset: decode")
+	}
+
+	if err := json.Unmarshal(bytes, cj); err != nil {
+		return errors.Wrapf(err, "default crypto hashset: json unmarshal")
+	}
+
 	return nil
 }
-func (cj CryptoJson) Value() (driver.Value, error) {
+func (cj CryptoObject) Value() (driver.Value, error) {
 	out, err := json.Marshal(cj)
 	if err != nil {
 		return string(out), errors.Wrapf(err, "default crypto hashset: json marshal")

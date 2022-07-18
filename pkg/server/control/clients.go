@@ -8,26 +8,24 @@ import (
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/client/log"
-	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/event"
 	"github.com/NexClipper/sudory/pkg/server/event/managed_channel"
 	"github.com/NexClipper/sudory/pkg/server/event/managed_event"
+	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/pkg/errors"
-	"xorm.io/xorm"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/prepare"
+
 	. "github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	authv1 "github.com/NexClipper/sudory/pkg/server/model/auth/v1"
+	authv2 "github.com/NexClipper/sudory/pkg/server/model/auth/v2"
 	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
-	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
 	clusterv2 "github.com/NexClipper/sudory/pkg/server/model/cluster/v2"
-	clustertokenv1 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v1"
-	crypto "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v2"
+	clustertokenv2 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v2"
+	cryptov2 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v2"
 	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
-	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	sessionv2 "github.com/NexClipper/sudory/pkg/server/model/session/v2"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/golang-jwt/jwt/v4"
@@ -334,10 +332,10 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		// 기본값; 처리중(Processing)
 		return servicev2.StepStatusProcessing
 	}
-	serviceResult := func() crypto.CryptoString {
-		// 상태가 성공인 경우만
+	serviceResult := func() cryptov2.CryptoString {
+		// 상태가 실패인 경우만
 		if body.Status == servicev2.StepStatusSuccess {
-			return (crypto.CryptoString)(body.Result)
+			return (cryptov2.CryptoString)(body.Result)
 		}
 		//기본값; 공백 문자열
 		return ""
@@ -517,59 +515,71 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 // @Produce     json
 // @Tags        client/auth
 // @Router      /client/auth [post]
-// @Param       body body v1.HttpReqAuth true "HttpReqAuth"
+// @Param       body body v2.HttpReqAuth true "HttpReqAuth"
 // @Success     200 {string} ok
 // @Header      200 {string} x-sudory-client-token
-func (ctl Control) AuthClient(ctx echo.Context) error {
-	auth := new(authv1.HttpReqAuth)
-	if err := echoutil.Bind(ctx, auth); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
+	auth := new(authv2.HttpReqAuth)
+	err = func() (err error) {
+		if err := echoutil.Bind(ctx, auth); err != nil {
+			return errors.Wrapf(err, "bind%s",
 				logs.KVL(
 					"type", TypeName(auth),
-				)))
+				))
+		}
+		return
+	}()
+	if err != nil {
+		return HttpError(err, http.StatusBadRequest)
 	}
 
-	//valid cluster
-	cluster := clusterv1.Cluster{}
-	if err := database.XormGet(
-		ctl.db.Engine().NewSession().
-			Where("uuid = ?", auth.ClusterUuid),
-		&cluster); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "valid cluster%s",
-				logs.KVL(
-					"cluster_uuid", auth.ClusterUuid,
-				)))
+	cluster := clusterv2.Cluster{}
+	cluster.Uuid = auth.ClusterUuid
+	cluster_eq_uuid := vanilla.Equal("uuid", cluster.Uuid)
+	cluster_found, err := vanilla.Stmt.Exist(cluster.TableName(), cluster_eq_uuid.Parse())(ctl)
+	if err != nil {
+		return HttpError(err, http.StatusInternalServerError)
+	}
+	if !cluster_found {
+		err = errors.Errorf("not found cluster%v",
+			logs.KVL(
+				"cluster_uuid", cluster.Uuid,
+			))
+		return HttpError(err, http.StatusBadRequest)
 	}
 
 	//valid token
-	cluster_token := clustertokenv1.ClusterToken{}
-	if err := database.XormGet(
-		ctl.db.Engine().NewSession().
-			Where("token = ? AND cluster_uuid = ?", auth.Assertion, auth.ClusterUuid),
-		&cluster_token); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "valid cluster token%s",
-				logs.KVL(
-					"cluster_uuid", auth.ClusterUuid,
-					"assertion", auth.Assertion,
-				)))
+	token := clustertokenv2.ClusterToken{}
+	token.ClusterUuid = auth.ClusterUuid
+	token.Token = cryptov2.CryptoString(auth.Assertion)
+
+	token_cond := vanilla.And(
+		vanilla.Equal("cluster_uuid", token.ClusterUuid),
+		vanilla.Equal("token", token.Token),
+	)
+
+	err = vanilla.Stmt.Select(token.TableName(), token.ColumnNames(), token_cond.Parse(), nil, nil).
+		QueryRow(ctl)(func(scan vanilla.Scanner) (err error) {
+		err = token.Scan(scan)
+		return
+	})
+	if err != nil {
+		return HttpError(err, http.StatusInternalServerError)
 	}
 
 	//만료 시간 검증
-	if time.Until(cluster_token.ExpirationTime) < 0 {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Errorf("token was expierd"))
+	if time.Until(token.ExpirationTime) < 0 {
+		return HttpError(errors.Errorf("token was expierd"), http.StatusBadRequest)
 	}
 
 	//new session
 	//make session payload
-	session_token_uuid := NewUuidString()
+	session_token_uuid := macro.NewUuidString()
+	created := time.Now()
 	iat := time.Now()
 	exp := globvar.ClientSessionExpirationTime(iat)
 
-	payload := &sessionv1.ClientSessionPayload{
+	payload := &sessionv2.ClientSessionPayload{
 		ExpiresAt:    exp.Unix(),
 		IssuedAt:     iat.Unix(),
 		Uuid:         session_token_uuid,
@@ -600,18 +610,30 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 			errors.Wrapf(err, "jwt New payload=%+v", payload))
 	}
 
-	session := newClientSession(*payload, token_string)
+	session := sessionv2.Session{}
+	session.Uuid = payload.Uuid
+	session.ClusterUuid = payload.ClusterUuid
+	session.Token = token_string
+	session.IssuedAtTime = *vanilla.NewNullTime(time.Unix(payload.IssuedAt, 0))
+	session.ExpirationTime = *vanilla.NewNullTime(time.Unix(payload.ExpiresAt, 0))
+	session.Created = created
 
-	_, err = ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
-		//save session
-		if _, err := tx.Insert(&session); err != nil {
-			return nil, errors.Wrapf(err, "session insert")
+	err = func() (err error) {
+		stmt, err := vanilla.Stmt.Insert(session.TableName(), session.ColumnNames(), session.Values())
+		if err != nil {
+			return err
 		}
-
-		return nil, nil
-	})
+		affected, err := stmt.Exec(ctl)
+		if err != nil {
+			return err
+		}
+		if affected == 0 {
+			return errors.New("no affected")
+		}
+		return
+	}()
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(err)
+		return HttpError(err, http.StatusInternalServerError)
 	}
 
 	//save token to header
@@ -632,39 +654,43 @@ func (ctl Control) AuthClient(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, OK())
 }
 
-func newClientSession(payload sessionv1.ClientSessionPayload, token string) sessionv1.Session {
-	session := sessionv1.Session{}
-	session.Uuid = payload.Uuid
-	session.ClusterUuid = payload.ClusterUuid
-	session.Token = token
-	session.IssuedAtTime = time.Unix(payload.IssuedAt, 0)
-	session.ExpirationTime = time.Unix(payload.ExpiresAt, 0)
-	return session
-}
+// func newClientSession(payload sessionv1.ClientSessionPayload, token string) sessionv1.Session {
+// 	session := sessionv1.Session{}
+// 	session.Uuid = payload.Uuid
+// 	session.ClusterUuid = payload.ClusterUuid
+// 	session.Token = token
+// 	session.IssuedAtTime = time.Unix(payload.IssuedAt, 0)
+// 	session.ExpirationTime = time.Unix(payload.ExpiresAt, 0)
+// 	return session
+// }
 
-func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
+func (ctl ControlVanilla) VerifyClientSessionToken(ctx echo.Context) (err error) {
 	token := ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
-	if len(token) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "missing request header%s",
-				logs.KVL(
-					"header", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
-				)))
+	err = func() (err error) {
+		if len(token) == 0 {
+			return errors.Wrapf(ErrorInvalidRequestParameter(), "missing request header%v", logs.KVL(
+				"header", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
+			))
+		}
 
-	}
+		claims := new(sessionv2.ClientSessionPayload)
+		jwt_token, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+			return []byte(globvar.ClientSessionSignatureSecret()), nil
+		})
+		if err != nil {
+			return errors.Wrapf(err, "jwt parse claims")
+		}
 
-	claims := new(sessionv1.ClientSessionPayload)
-	jwt_token, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(globvar.ClientSessionSignatureSecret()), nil
-	})
-
-	if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok || !jwt_token.Valid {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(err, "jwt verify%s",
-				logs.KVL(
-					"header", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
-					"token", token,
-				)))
+		if _, ok := jwt_token.Claims.(*sessionv2.ClientSessionPayload); !ok || !jwt_token.Valid {
+			return errors.Errorf("jwt verify%v", logs.KVL(
+				"header", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
+				"token", token,
+			))
+		}
+		return
+	}()
+	if err != nil {
+		return HttpError(err, http.StatusBadRequest)
 	}
 
 	return nil
@@ -672,34 +698,33 @@ func (ctl Control) VerifyClientSessionToken(ctx echo.Context) error {
 
 func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error) {
 	token := ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
-	Do(&err, func() (err error) {
+	var jwt_token *jwt.Token
+	claims := new(sessionv2.ClientSessionPayload)
+	err = func() (err error) {
 		if len(token) == 0 {
 			return errors.Wrapf(ErrorInvalidRequestParameter(), "missing request header%s",
 				logs.KVL(
 					"key", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
 				))
 		}
-		return
-	})
 
-	var jwt_token *jwt.Token
-	claims := new(sessionv1.ClientSessionPayload)
-	Do(&err, func() (err error) {
 		jwt_token, _, err = jwt.NewParser().ParseUnverified(token, claims)
-		err = errors.Wrapf(err, "failed to jwt.ParseUnverified%v", logs.KVL(
-			"token", token,
-		))
-		if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok {
-			return ErrorCompose(err, errors.Wrapf(err, "is not valid type%v",
+		if err != nil {
+			return errors.Wrapf(err, "failed to jwt.ParseUnverified%v", logs.KVL(
+				"token", token,
+			))
+		}
+
+		if _, ok := jwt_token.Claims.(*sessionv2.ClientSessionPayload); !ok {
+			return errors.Errorf("is not valid type%v",
 				logs.KVL(
 					"jwt.Token.Claims", TypeName(jwt_token.Claims),
 					"jwt.Token.Method.Alg", jwt_token.Method.Alg(),
 					"token", token,
-				)))
+				))
 		}
 		return
-	})
-
+	}()
 	if err != nil {
 		return HttpError(err, http.StatusBadRequest) // StatusBadRequest
 	}
@@ -708,7 +733,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 
 	// polling interval
 	cluster := clusterv2.Cluster{}
-	Do(&err, func() (err error) {
+	err = func() (err error) {
 		eq_uuid := vanilla.Equal("uuid", claims.ClusterUuid).Parse()
 		err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid, nil, nil).
 			QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
@@ -719,17 +744,22 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 
 		err = errors.Wrapf(err, "failed to get cluster")
 		return
-	})
+	}()
+	if err != nil {
+		return HttpError(err, http.StatusInternalServerError) // StatusInternalServerError
+	}
 
 	var service_count int
-	Do(&err, func() (err error) {
+	err = func() (err error) {
 		eq_uuid := pollingServiceCondition(claims.ClusterUuid)
 		service := servicev2.Service_tangled{}
-		service_count, err = vanilla.Count(ctl, service.TableName(), eq_uuid)
-		err = errors.Wrapf(err, "failed to get cluster service count")
-		return
-	})
+		service_count, err = vanilla.Stmt.Count(service.TableName(), eq_uuid, nil)(ctl)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get cluster service count")
+		}
 
+		return
+	}()
 	if err != nil {
 		return HttpError(err, http.StatusInternalServerError) // StatusInternalServerError
 	}
@@ -743,7 +773,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 	claims.Loglevel = globvar.ClientConfigLoglevel()
 
 	var new_token_string string
-	Do(&err, func() (err error) {
+	err = func() (err error) {
 		//client auth 에서 사용된 알고리즘 그대로 사용
 		new_token_string, err = jwt.NewWithClaims(usedJwtSigningMethod(*jwt_token, jwt.SigningMethodHS256), claims).
 			SignedString([]byte(globvar.ClientSessionSignatureSecret()))
@@ -751,67 +781,59 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 			return errors.Wrapf(err, "failed to make session token to formed jwt")
 		}
 		return
-	})
+	}()
+	if err != nil {
+		return HttpError(err, http.StatusInternalServerError) // StatusInternalServerError
+	}
 
-	Do(&err, func() (err error) {
-		//save client session-token to header
-		ctx.Response().Header().Set(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, new_token_string)
-		return
-	})
+	//save client session-token to header
+	ctx.Response().Header().Set(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, new_token_string)
 
 	session := sessionv2.Session{}
-	// uuid = ? AND deleted IS NULL
-	condition_update_session := vanilla.And(
-		vanilla.Equal("uuid", claims.Uuid),
-		vanilla.IsNull("deleted"),
-	).Parse()
-	var affected int64
-	Do(&err, func() (err error) {
-		err = ctl.Scope(func(tx *sql.Tx) (err error) {
-			keys_values := map[string]interface{}{
-				"token":           new_token_string,
-				"expiration_time": time.Unix(claims.ExpiresAt, 0),
-				"updated":         time_now,
-			}
+	session.Uuid = claims.Uuid
+	session.Token = new_token_string
+	session.ExpirationTime = *vanilla.NewNullTime(time.Unix(claims.ExpiresAt, 0))
+	session.Updated = *vanilla.NewNullTime(time_now)
 
-			affected, err = vanilla.Stmt.Update(session.TableName(), keys_values, condition_update_session).
-				Exec(tx)
-			err = errors.Wrapf(err, "failed to update client session for refresh client session%v", logs.KVL(
+	// uuid = ? AND deleted IS NULL
+	cond_session := vanilla.And(
+		vanilla.Equal("uuid", session.Uuid),
+		vanilla.IsNull("deleted"),
+	)
+	err = func() (err error) {
+		session_found, err := vanilla.Stmt.Exist(session.TableName(), cond_session.Parse())(ctl)
+		if err != nil {
+			return err
+		}
+		if !session_found {
+			return errors.Errorf("not found session%v", logs.KVL(
+				"uuid", session.Uuid,
+			))
+		}
+		return
+	}()
+	if err != nil {
+		return HttpError(err, http.StatusInternalServerError) // StatusInternalServerError
+	}
+
+	err = func() (err error) {
+		keys_values := map[string]interface{}{
+			"token":           session.Token,
+			"expiration_time": session.ExpirationTime,
+			"updated":         session.Updated,
+		}
+
+		_, err = vanilla.Stmt.Update(session.TableName(), keys_values, cond_session.Parse()).
+			Exec(ctl)
+		if err != nil {
+			return errors.Wrapf(err, "failed to refresh client session%v", logs.KVL(
 				"uuid", claims.Uuid,
 				"data", keys_values,
 			))
-			return
-		})
+		}
 
 		return
-	})
-
-	Do(&err, func() (err error) {
-		// check client session record
-		if 0 < affected {
-			// exists record
-			return
-		}
-
-		columns := []string{
-			"COUNT(1)",
-		}
-		var count int
-		err = vanilla.Stmt.Select(session.TableName(), columns, condition_update_session, nil, nil).
-			QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
-			err = s.Scan(&count)
-			err = errors.Wrapf(err, "session Scan")
-			return
-		})
-		err = errors.Wrapf(err, "not found session record%v", logs.KVL(
-			"claims_uuid", claims.Uuid,
-		))
-		if count == 0 {
-			err = ErrorCompose(err, errors.New("no affected"))
-		}
-		return
-	})
-
+	}()
 	if err != nil {
 		return HttpError(err, http.StatusInternalServerError) // StatusInternalServerError
 	}
@@ -829,7 +851,7 @@ func usedJwtSigningMethod(token jwt.Token, init jwt.SigningMethod) jwt.SigningMe
 	return init
 }
 
-func GetSudoryClisentTokenClaims(ctx echo.Context) (claims *sessionv1.ClientSessionPayload, err error) {
+func GetSudoryClisentTokenClaims(ctx echo.Context) (claims *sessionv2.ClientSessionPayload, err error) {
 	token := ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
 	if len(token) == 0 {
 		err = errors.Errorf("missing request header%s",
@@ -838,7 +860,7 @@ func GetSudoryClisentTokenClaims(ctx echo.Context) (claims *sessionv1.ClientSess
 			))
 	}
 
-	claims = new(sessionv1.ClientSessionPayload)
+	claims = new(sessionv2.ClientSessionPayload)
 	if true {
 		Do(&err, func() (err error) {
 			var jwt_token *jwt.Token
@@ -847,7 +869,7 @@ func GetSudoryClisentTokenClaims(ctx echo.Context) (claims *sessionv1.ClientSess
 			err = errors.Wrapf(err, "jwt.Parser.ParseUnverified")
 			Do(&err, func() (err error) {
 				var ok bool
-				claims, ok = jwt_token.Claims.(*sessionv1.ClientSessionPayload)
+				claims, ok = jwt_token.Claims.(*sessionv2.ClientSessionPayload)
 				if !ok {
 					err = errors.New("jwt.Token.Claims not matched")
 				}
@@ -865,7 +887,7 @@ func GetSudoryClisentTokenClaims(ctx echo.Context) (claims *sessionv1.ClientSess
 			err = errors.Wrapf(err, "jwt.Parser.ParseWithClaims")
 			Do(&err, func() (err error) {
 				var ok bool
-				claims, ok = jwt_token.Claims.(*sessionv1.ClientSessionPayload)
+				claims, ok = jwt_token.Claims.(*sessionv2.ClientSessionPayload)
 				if !ok {
 					err = errors.New("jwt.Token.Claims not matched")
 				}

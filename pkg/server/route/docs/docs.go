@@ -45,7 +45,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqAuth"
+                            "$ref": "#/definitions/v2.HttpReqAuth"
                         }
                     }
                 ],
@@ -2184,7 +2184,7 @@ var doc = `{
         },
         "/server/cluster_token": {
             "get": {
-                "description": "Find Token",
+                "description": "Find Cluster Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -2226,7 +2226,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.ClusterToken"
+                                "$ref": "#/definitions/v2.HttpRsp_ClusterToken"
                             }
                         }
                     }
@@ -2251,12 +2251,12 @@ var doc = `{
                         "in": "header"
                     },
                     {
-                        "description": "HttpReqClusterToken_Create",
+                        "description": "ClusterToken HttpReq_ClusterToken_create",
                         "name": "object",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqClusterToken_Create"
+                            "$ref": "#/definitions/v2.HttpReq_ClusterToken_create"
                         }
                     }
                 ],
@@ -2264,7 +2264,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ClusterToken"
+                            "$ref": "#/definitions/v2.HttpRsp_ClusterToken"
                         }
                     }
                 }
@@ -2272,7 +2272,7 @@ var doc = `{
         },
         "/server/cluster_token/{uuid}": {
             "get": {
-                "description": "Get a Token",
+                "description": "Get a Cluster Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -2291,7 +2291,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Token 의 Uuid",
+                        "description": "ClusterToken Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2301,13 +2301,13 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ClusterToken"
+                            "$ref": "#/definitions/v2.HttpRsp_ClusterToken"
                         }
                     }
                 }
             },
             "delete": {
-                "description": "Delete a Token",
+                "description": "Delete a Cluster Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -2326,7 +2326,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Token 의 Uuid",
+                        "description": "ClusterToken Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2360,7 +2360,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Token 의 Uuid",
+                        "description": "ClusterToken Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2370,7 +2370,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ClusterToken"
+                            "$ref": "#/definitions/v2.HttpRsp_ClusterToken"
                         }
                     }
                 }
@@ -2378,7 +2378,7 @@ var doc = `{
         },
         "/server/cluster_token/{uuid}/label": {
             "put": {
-                "description": "Update Token Label",
+                "description": "Update Label of Cluster Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -2397,18 +2397,18 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Token 의 Uuid",
+                        "description": "ClusterToken Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Token 의 HttpReqClusterToken_UpdateLabel",
+                        "description": "ClusterToken HttpReq_ClusterToken_update",
                         "name": "object",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqClusterToken_UpdateLabel"
+                            "$ref": "#/definitions/v2.HttpReq_ClusterToken_update"
                         }
                     }
                 ],
@@ -2416,7 +2416,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ClusterToken"
+                            "$ref": "#/definitions/v2.HttpRsp_ClusterToken"
                         }
                     }
                 }
@@ -2424,7 +2424,7 @@ var doc = `{
         },
         "/server/cluster_token/{uuid}/refresh": {
             "put": {
-                "description": "Refresh Cluster Token Time",
+                "description": "Refresh Time of Cluster Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -2443,7 +2443,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Token 의 Uuid",
+                        "description": "ClusterToken Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2453,7 +2453,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ClusterToken"
+                            "$ref": "#/definitions/v2.HttpRsp_ClusterToken"
                         }
                     }
                 }
@@ -2894,7 +2894,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.Session"
+                                "$ref": "#/definitions/v2.Session"
                             }
                         }
                     }
@@ -2922,7 +2922,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Session 의 Uuid",
+                        "description": "Session Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2932,7 +2932,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.Session"
+                            "$ref": "#/definitions/v2.Session"
                         }
                     }
                 }
@@ -2957,7 +2957,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Session 의 Uuid",
+                        "description": "Session Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -3549,44 +3549,6 @@ var doc = `{
                 }
             }
         },
-        "v1.ClusterToken": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "expiration_time": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "issued_at_time": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "token": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
         "v1.GlobalVariables": {
             "type": "object",
             "properties": {
@@ -3612,48 +3574,6 @@ var doc = `{
                     "type": "string"
                 },
                 "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqAuth": {
-            "type": "object",
-            "properties": {
-                "assertion": {
-                    "description": "\u003cbearer-token\u003e",
-                    "type": "string"
-                },
-                "client_version": {
-                    "description": "client version",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "cluster uuid",
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqClusterToken_Create": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqClusterToken_UpdateLabel": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
                     "type": "string"
                 }
             }
@@ -4189,38 +4109,6 @@ var doc = `{
         "v1.RegularPollingOption": {
             "type": "object"
         },
-        "v1.Session": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "expiration_time": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "issued_at_time": {
-                    "type": "string"
-                },
-                "token": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
         "v1.SmartPollingOption": {
             "type": "object",
             "properties": {
@@ -4371,6 +4259,23 @@ var doc = `{
                 }
             }
         },
+        "v2.HttpReqAuth": {
+            "type": "object",
+            "properties": {
+                "assertion": {
+                    "description": "\u003cbearer-token\u003e",
+                    "type": "string"
+                },
+                "client_version": {
+                    "description": "client version",
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "description": "cluster uuid",
+                    "type": "string"
+                }
+            }
+        },
         "v2.HttpReq_ClientServiceUpdate": {
             "type": "object",
             "properties": {
@@ -4393,6 +4298,35 @@ var doc = `{
                 },
                 "uuid": {
                     "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_ClusterToken_create": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "optional",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_ClusterToken_update": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
                     "type": "string"
                 }
             }
@@ -4677,6 +4611,46 @@ var doc = `{
                 },
                 "uuid": {
                     "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_ClusterToken": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "expiration_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "issued_at_time": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
                     "type": "string"
                 }
             }
@@ -5275,6 +5249,40 @@ var doc = `{
                 },
                 "uuid": {
                     "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.Session": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "object"
+                },
+                "expiration_time": {
+                    "type": "object"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "issued_at_time": {
+                    "type": "object"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "object"
+                },
+                "uuid": {
+                    "description": "uuid",
                     "type": "string"
                 }
             }
