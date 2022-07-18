@@ -57,7 +57,7 @@ func (mode CipherMode) CipherFactory(block cipher.Block, salt *Salt) (encoder En
 			salt.SetLen(block.BlockSize()) //set salt len
 
 			encoder = func(src, salt []byte) (dst []byte, err error) {
-				src = PKCS7Pad(src, block.BlockSize())
+				src = PKCS7Padding(src, block.BlockSize())
 
 				dst = make([]byte, len(src))
 				for i := 0; i < len(src); i += block.BlockSize() {
@@ -72,7 +72,7 @@ func (mode CipherMode) CipherFactory(block cipher.Block, salt *Salt) (encoder En
 					block.Decrypt(dst[i:i+block.BlockSize()], src[i:i+block.BlockSize()])
 				}
 
-				dst = PKCS7Unpad(dst)
+				dst = PKCS7Unpadding(dst)
 
 				return
 			}

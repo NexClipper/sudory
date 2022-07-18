@@ -35,15 +35,22 @@ func (cs CryptoString) String() string {
 
 func (cs *CryptoString) Scan(value interface{}) error {
 	var i sql.NullString
-	if err := i.Scan(value); err != nil {
-		return err
+	var b []byte
+	switch value := value.(type) {
+	case string:
+		if err := i.Scan(value); err != nil {
+			return err
+		}
+		b = []byte(i.String)
+	case []byte:
+		b = value
 	}
 
 	// if nil the make Valid false
 	if reflect.TypeOf(value) == nil {
 		*cs = (CryptoString)(i.String)
 	} else {
-		bytes, err := EnigmaDecode([]byte(i.String))
+		bytes, err := EnigmaDecode(b)
 		if err != nil {
 			return errors.Wrapf(err, "default crypto string: decode")
 		}
@@ -54,10 +61,10 @@ func (cs *CryptoString) Scan(value interface{}) error {
 func (cs CryptoString) Value() (driver.Value, error) {
 	out, err := EnigmaEncode([]byte(cs))
 	if err != nil {
-		return string(out), errors.Wrapf(err, "default crypto string: encode")
+		return out, errors.Wrapf(err, "default crypto string: encode")
 	}
 
-	return string(out), nil
+	return out, nil
 }
 
 // CryptoJson
