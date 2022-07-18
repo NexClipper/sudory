@@ -3,8 +3,10 @@ package vault
 import (
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/prepare"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	clustertokenv1 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v1"
+	clustertokenv2 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v2"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
 )
@@ -96,4 +98,22 @@ func (vault ClusterToken) Delete(uuid string) error {
 	}
 
 	return nil
+}
+
+func GetClusterToken(tx vanilla.Preparer, uuid string) (token clustertokenv2.ClusterToken, err error) {
+	token.Uuid = uuid
+	eq_uuid := vanilla.Equal("uuid", token.Uuid)
+	// cond := vanilla.And(
+	// 	eq_uuid,
+	// 	vanilla.Equal("deleted", token.Deleted),
+	// )
+
+	// token = new(clustertokenv2.ClusterToken)
+	err = vanilla.Stmt.Select(token.TableName(), token.ColumnNames(), eq_uuid.Parse(), nil, nil).
+		QueryRow(tx)(func(scan vanilla.Scanner) (err error) {
+		err = token.Scan(scan)
+		return
+	})
+
+	return
 }

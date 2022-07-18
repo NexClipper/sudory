@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/ice_cream_maker"
-	v2 "github.com/NexClipper/sudory/pkg/server/model/session/v2"
+	v2 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v2"
 )
 
 var objs = []interface{}{
-	v2.Session_essential{},
-	v2.Session{},
+	v2.ClusterToken_property{},
+	v2.ClusterToken{},
 }
 
 func TestNoXormColumns(t *testing.T) {
