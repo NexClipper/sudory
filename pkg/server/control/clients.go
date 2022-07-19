@@ -132,25 +132,28 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 		service_statuses = make([][]interface{}, 0, len(services))
 		service_step_statuses = make([][]interface{}, 0, len(services))
 		for i := range services {
-			service := services[i]
+			service := &services[i]
 
 			if service.ServiceStatus_essential.Status == servicev2.StepStatusRegist {
 				service_status := servicev2.ServiceStatus{}
 				service_status.ServiceStatus_essential = service.ServiceStatus_essential
 				//Uuid
-				service_status.Uuid = service.Service.Uuid
+				service_status.Uuid = service.Uuid
 				//Created
 				service_status.Created = time_now
 				//AssignedClientUuid
 				//할당된 클라이언트 정보 추가
 				service_status.AssignedClientUuid = claims.Uuid
 				service_status.Status = servicev2.StepStatusSend
+				service_status.Message = *vanilla.NewNullString(service_status.Status.String())
 
 				service_statuses = append(service_statuses, service_status.Values())
+
+				service.ServiceStatus_essential = service_status.ServiceStatus_essential
 			}
 
 			for i := range service.Steps {
-				step := service.Steps[i]
+				step := &service.Steps[i]
 
 				//Status
 				//StatusSend 보다 작으면 응답 전 업데이트
@@ -166,6 +169,8 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 					step_status.Status = servicev2.StepStatusSend
 
 					service_step_statuses = append(service_step_statuses, step_status.Values())
+
+					step.ServiceStepStatus_essential = step_status.ServiceStepStatus_essential
 				}
 			}
 		}
@@ -234,7 +239,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 			// 	m["result"] = service.Result
 			// }
 			m["result"] = ""
-			m["message"] = ""
+			m["status_description"] = service.Message.String
 			m["step_count"] = service.StepCount
 			m["step_position"] = service.StepPosition
 
@@ -330,7 +335,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		return servicev2.StepStatusProcessing
 	}
 	serviceResult := func() crypto.CryptoString {
-		// 상태가 실패인 경우만
+		// 상태가 성공인 경우만
 		if body.Status == servicev2.StepStatusSuccess {
 			return (crypto.CryptoString)(body.Result)
 		}
@@ -344,6 +349,14 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		}
 		//기본값; 공백 문자열
 		return vanilla.NullString{}
+	}
+	eventMessage := func() vanilla.NullString {
+		// 상태가 실패인 경우만
+		if body.Status == servicev2.StepStatusFail {
+			return *vanilla.NewNullString(body.Result)
+		}
+		//기본값; 공백 문자열
+		return *vanilla.NewNullString(body.Status.String())
 	}
 
 	time_now := time.Now()
@@ -473,7 +486,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		m["result"] = service_result.Result.String()
 		// }
 		// if 0 < len(service_status.Message) {
-		m["message"] = service_status.Message.String
+		m["status_description"] = eventMessage()
 		// }
 		m["step_count"] = service.StepCount
 		m["step_position"] = service_status.StepPosition
