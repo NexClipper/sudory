@@ -10,9 +10,9 @@ grep -v '^#' .sudory.env
 # Export env vars
 export $(grep -v '^#' .sudory.env | xargs)
 
-path="$(dirname "$0")"
+# path="$(dirname "$0")"
 echo $pwd
-echo $path
+# echo $path
 
 cd ../sudory
 

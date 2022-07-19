@@ -59,9 +59,9 @@ func (ManagedChannel_tangled) ColumnNames() []string {
  		"IFNULL(`format.format_data`, '') AS `format.format_data`",
  		"`format.created`",
  		"`format.updated`",
- 		"IFNULL(`notifier.edge.notifier_type`, 0) AS `notifier.edge.notifier_type`",
- 		"`notifier.edge.created`",
- 		"`notifier.edge.updated`",
+ 		"IFNULL(`notifier_edge.notifier_type`, 0) AS `notifier_edge.notifier_type`",
+ 		"`notifier_edge.created`",
+ 		"`notifier_edge.updated`",
  		"`notifier.console.created`",
  		"`notifier.console.updated`",
  		"IFNULL(`notifier.webhook.method`, '') AS `notifier.webhook.method`",
@@ -90,6 +90,10 @@ func (ManagedChannel_tangled) ColumnNames() []string {
  		"`notifier.rabbitmq.message_app_id`",
  		"`notifier.rabbitmq.created`",
  		"`notifier.rabbitmq.updated`",
+ 		"IFNULL(`notifier.slackhook.url`, '') AS `notifier.slackhook.url`",
+ 		"IFNULL(`notifier.slackhook.request_timeout`, 0) AS `notifier.slackhook.request_timeout`",
+ 		"`notifier.slackhook.created`",
+ 		"`notifier.slackhook.updated`",
 	}
 }
  
@@ -144,12 +148,39 @@ func (NotifierEdge_option) ColumnNames() []string {
  		"`rabbitmq.message_app_id`",
  		"`rabbitmq.created`",
  		"`rabbitmq.updated`",
+ 		"IFNULL(`slackhook.url`, '') AS `slackhook.url`",
+ 		"IFNULL(`slackhook.request_timeout`, 0) AS `slackhook.request_timeout`",
+ 		"`slackhook.created`",
+ 		"`slackhook.updated`",
 	}
 }
  
 func (NotifierConsole) ColumnNames() []string {
 	return []string{
  		"uuid",
+ 		"created",
+ 		"updated",
+	}
+}
+ 
+func (NotifierWebhook) ColumnNames() []string {
+	return []string{
+ 		"method",
+ 		"url",
+ 		"request_headers",
+ 		"request_timeout",
+ 		"created",
+ 		"updated",
+ 		"uuid",
+	}
+}
+ 
+func (NotifierWebhook_property) ColumnNames() []string {
+	return []string{
+ 		"method",
+ 		"url",
+ 		"request_headers",
+ 		"request_timeout",
  		"created",
  		"updated",
 	}
@@ -206,11 +237,9 @@ func (NotifierRabbitMq_property) ColumnNames() []string {
 	}
 }
  
-func (NotifierWebhook) ColumnNames() []string {
+func (NotifierSlackhook) ColumnNames() []string {
 	return []string{
- 		"method",
  		"url",
- 		"request_headers",
  		"request_timeout",
  		"created",
  		"updated",
@@ -218,11 +247,9 @@ func (NotifierWebhook) ColumnNames() []string {
 	}
 }
  
-func (NotifierWebhook_property) ColumnNames() []string {
+func (NotifierSlackhook_property) ColumnNames() []string {
 	return []string{
- 		"method",
  		"url",
- 		"request_headers",
  		"request_timeout",
  		"created",
  		"updated",
@@ -335,9 +362,9 @@ func (ManagedChannel_tangled) ColumnNamesWithAlias() []string {
  		"IFNULL(FM.format_data, '') AS `format.format_data`",
  		"FM.created AS `format.created`",
  		"FM.updated AS `format.updated`",
- 		"IFNULL(EG.notifier_type, 0) AS `notifier.edge.notifier_type`",
- 		"EG.created AS `notifier.edge.created`",
- 		"EG.updated AS `notifier.edge.updated`",
+ 		"IFNULL(EG.notifier_type, 0) AS `notifier_edge.notifier_type`",
+ 		"EG.created AS `notifier_edge.created`",
+ 		"EG.updated AS `notifier_edge.updated`",
  		"CS.created AS `notifier.console.created`",
  		"CS.updated AS `notifier.console.updated`",
  		"IFNULL(WH.method, '') AS `notifier.webhook.method`",
@@ -366,6 +393,10 @@ func (ManagedChannel_tangled) ColumnNamesWithAlias() []string {
  		"RQ.message_app_id AS `notifier.rabbitmq.message_app_id`",
  		"RQ.created AS `notifier.rabbitmq.created`",
  		"RQ.updated AS `notifier.rabbitmq.updated`",
+ 		"IFNULL(SH.url, '') AS `notifier.slackhook.url`",
+ 		"IFNULL(SH.request_timeout, 0) AS `notifier.slackhook.request_timeout`",
+ 		"SH.created AS `notifier.slackhook.created`",
+ 		"SH.updated AS `notifier.slackhook.updated`",
 	}
 }
  
@@ -420,12 +451,39 @@ func (NotifierEdge_option) ColumnNamesWithAlias() []string {
  		"RQ.message_app_id AS `rabbitmq.message_app_id`",
  		"RQ.created AS `rabbitmq.created`",
  		"RQ.updated AS `rabbitmq.updated`",
+ 		"IFNULL(SH.url, '') AS `slackhook.url`",
+ 		"IFNULL(SH.request_timeout, 0) AS `slackhook.request_timeout`",
+ 		"SH.created AS `slackhook.created`",
+ 		"SH.updated AS `slackhook.updated`",
 	}
 }
  
 func (NotifierConsole) ColumnNamesWithAlias() []string {
 	return []string{
  		"uuid",
+ 		"created",
+ 		"updated",
+	}
+}
+ 
+func (NotifierWebhook) ColumnNamesWithAlias() []string {
+	return []string{
+ 		"method",
+ 		"url",
+ 		"request_headers",
+ 		"request_timeout",
+ 		"created",
+ 		"updated",
+ 		"uuid",
+	}
+}
+ 
+func (NotifierWebhook_property) ColumnNamesWithAlias() []string {
+	return []string{
+ 		"method",
+ 		"url",
+ 		"request_headers",
+ 		"request_timeout",
  		"created",
  		"updated",
 	}
@@ -482,11 +540,9 @@ func (NotifierRabbitMq_property) ColumnNamesWithAlias() []string {
 	}
 }
  
-func (NotifierWebhook) ColumnNamesWithAlias() []string {
+func (NotifierSlackhook) ColumnNamesWithAlias() []string {
 	return []string{
- 		"method",
  		"url",
- 		"request_headers",
  		"request_timeout",
  		"created",
  		"updated",
@@ -494,11 +550,9 @@ func (NotifierWebhook) ColumnNamesWithAlias() []string {
 	}
 }
  
-func (NotifierWebhook_property) ColumnNamesWithAlias() []string {
+func (NotifierSlackhook_property) ColumnNamesWithAlias() []string {
 	return []string{
- 		"method",
  		"url",
- 		"request_headers",
  		"request_timeout",
  		"created",
  		"updated",
@@ -611,37 +665,41 @@ func (row ManagedChannel_tangled) Values() []interface{} {
 		row.Format.FormatData,
 		row.Format.Created,
 		row.Format.Updated,
-		row.Notifier.Edge.NotifierType,
-		row.Notifier.Edge.Created,
-		row.Notifier.Edge.Updated,
-		row.Notifier.Console.Created,
-		row.Notifier.Console.Updated,
-		row.Notifier.Webhook.Method,
-		row.Notifier.Webhook.Url,
-		row.Notifier.Webhook.RequestHeaders,
-		row.Notifier.Webhook.RequestTimeout,
-		row.Notifier.Webhook.Created,
-		row.Notifier.Webhook.Updated,
-		row.Notifier.RabbitMq.Url,
-		row.Notifier.RabbitMq.ChannelPublish.Exchange,
-		row.Notifier.RabbitMq.ChannelPublish.RoutingKey,
-		row.Notifier.RabbitMq.ChannelPublish.Mandatory,
-		row.Notifier.RabbitMq.ChannelPublish.Immediate,
-		row.Notifier.RabbitMq.Publishing.MessageHeaders,
-		row.Notifier.RabbitMq.Publishing.MessageContentType,
-		row.Notifier.RabbitMq.Publishing.MessageContentEncoding,
-		row.Notifier.RabbitMq.Publishing.MessageDeliveryMode,
-		row.Notifier.RabbitMq.Publishing.MessagePriority,
-		row.Notifier.RabbitMq.Publishing.MessageCorrelationId,
-		row.Notifier.RabbitMq.Publishing.MessageReplyTo,
-		row.Notifier.RabbitMq.Publishing.MessageExpiration,
-		row.Notifier.RabbitMq.Publishing.MessageMessageId,
-		row.Notifier.RabbitMq.Publishing.MessageTimestamp,
-		row.Notifier.RabbitMq.Publishing.MessageType,
-		row.Notifier.RabbitMq.Publishing.MessageUserId,
-		row.Notifier.RabbitMq.Publishing.MessageAppId,
-		row.Notifier.RabbitMq.Created,
-		row.Notifier.RabbitMq.Updated,
+		row.Edge.NotifierType,
+		row.Edge.Created,
+		row.Edge.Updated,
+		row.Notifiers.Console.Created,
+		row.Notifiers.Console.Updated,
+		row.Notifiers.Webhook.Method,
+		row.Notifiers.Webhook.Url,
+		row.Notifiers.Webhook.RequestHeaders,
+		row.Notifiers.Webhook.RequestTimeout,
+		row.Notifiers.Webhook.Created,
+		row.Notifiers.Webhook.Updated,
+		row.Notifiers.RabbitMq.Url,
+		row.Notifiers.RabbitMq.ChannelPublish.Exchange,
+		row.Notifiers.RabbitMq.ChannelPublish.RoutingKey,
+		row.Notifiers.RabbitMq.ChannelPublish.Mandatory,
+		row.Notifiers.RabbitMq.ChannelPublish.Immediate,
+		row.Notifiers.RabbitMq.Publishing.MessageHeaders,
+		row.Notifiers.RabbitMq.Publishing.MessageContentType,
+		row.Notifiers.RabbitMq.Publishing.MessageContentEncoding,
+		row.Notifiers.RabbitMq.Publishing.MessageDeliveryMode,
+		row.Notifiers.RabbitMq.Publishing.MessagePriority,
+		row.Notifiers.RabbitMq.Publishing.MessageCorrelationId,
+		row.Notifiers.RabbitMq.Publishing.MessageReplyTo,
+		row.Notifiers.RabbitMq.Publishing.MessageExpiration,
+		row.Notifiers.RabbitMq.Publishing.MessageMessageId,
+		row.Notifiers.RabbitMq.Publishing.MessageTimestamp,
+		row.Notifiers.RabbitMq.Publishing.MessageType,
+		row.Notifiers.RabbitMq.Publishing.MessageUserId,
+		row.Notifiers.RabbitMq.Publishing.MessageAppId,
+		row.Notifiers.RabbitMq.Created,
+		row.Notifiers.RabbitMq.Updated,
+		row.Notifiers.Slackhook.Url,
+		row.Notifiers.Slackhook.RequestTimeout,
+		row.Notifiers.Slackhook.Created,
+		row.Notifiers.Slackhook.Updated,
 	}
 }
  
@@ -696,12 +754,39 @@ func (row NotifierEdge_option) Values() []interface{} {
 		row.RabbitMq.Publishing.MessageAppId,
 		row.RabbitMq.Created,
 		row.RabbitMq.Updated,
+		row.Slackhook.Url,
+		row.Slackhook.RequestTimeout,
+		row.Slackhook.Created,
+		row.Slackhook.Updated,
 	}
 }
  
 func (row NotifierConsole) Values() []interface{} {
 	return []interface{}{
 		row.Uuid,
+		row.Created,
+		row.Updated,
+	}
+}
+ 
+func (row NotifierWebhook) Values() []interface{} {
+	return []interface{}{
+		row.Method,
+		row.Url,
+		row.RequestHeaders,
+		row.RequestTimeout,
+		row.Created,
+		row.Updated,
+		row.Uuid,
+	}
+}
+ 
+func (row NotifierWebhook_property) Values() []interface{} {
+	return []interface{}{
+		row.Method,
+		row.Url,
+		row.RequestHeaders,
+		row.RequestTimeout,
 		row.Created,
 		row.Updated,
 	}
@@ -758,11 +843,9 @@ func (row NotifierRabbitMq_property) Values() []interface{} {
 	}
 }
  
-func (row NotifierWebhook) Values() []interface{} {
+func (row NotifierSlackhook) Values() []interface{} {
 	return []interface{}{
-		row.Method,
 		row.Url,
-		row.RequestHeaders,
 		row.RequestTimeout,
 		row.Created,
 		row.Updated,
@@ -770,11 +853,9 @@ func (row NotifierWebhook) Values() []interface{} {
 	}
 }
  
-func (row NotifierWebhook_property) Values() []interface{} {
+func (row NotifierSlackhook_property) Values() []interface{} {
 	return []interface{}{
-		row.Method,
 		row.Url,
-		row.RequestHeaders,
 		row.RequestTimeout,
 		row.Created,
 		row.Updated,
@@ -891,37 +972,41 @@ func (row *ManagedChannel_tangled) Scan(scanner Scanner) error {
 		&row.Format.FormatData,
 		&row.Format.Created,
 		&row.Format.Updated,
-		&row.Notifier.Edge.NotifierType,
-		&row.Notifier.Edge.Created,
-		&row.Notifier.Edge.Updated,
-		&row.Notifier.Console.Created,
-		&row.Notifier.Console.Updated,
-		&row.Notifier.Webhook.Method,
-		&row.Notifier.Webhook.Url,
-		&row.Notifier.Webhook.RequestHeaders,
-		&row.Notifier.Webhook.RequestTimeout,
-		&row.Notifier.Webhook.Created,
-		&row.Notifier.Webhook.Updated,
-		&row.Notifier.RabbitMq.Url,
-		&row.Notifier.RabbitMq.ChannelPublish.Exchange,
-		&row.Notifier.RabbitMq.ChannelPublish.RoutingKey,
-		&row.Notifier.RabbitMq.ChannelPublish.Mandatory,
-		&row.Notifier.RabbitMq.ChannelPublish.Immediate,
-		&row.Notifier.RabbitMq.Publishing.MessageHeaders,
-		&row.Notifier.RabbitMq.Publishing.MessageContentType,
-		&row.Notifier.RabbitMq.Publishing.MessageContentEncoding,
-		&row.Notifier.RabbitMq.Publishing.MessageDeliveryMode,
-		&row.Notifier.RabbitMq.Publishing.MessagePriority,
-		&row.Notifier.RabbitMq.Publishing.MessageCorrelationId,
-		&row.Notifier.RabbitMq.Publishing.MessageReplyTo,
-		&row.Notifier.RabbitMq.Publishing.MessageExpiration,
-		&row.Notifier.RabbitMq.Publishing.MessageMessageId,
-		&row.Notifier.RabbitMq.Publishing.MessageTimestamp,
-		&row.Notifier.RabbitMq.Publishing.MessageType,
-		&row.Notifier.RabbitMq.Publishing.MessageUserId,
-		&row.Notifier.RabbitMq.Publishing.MessageAppId,
-		&row.Notifier.RabbitMq.Created,
-		&row.Notifier.RabbitMq.Updated,
+		&row.Edge.NotifierType,
+		&row.Edge.Created,
+		&row.Edge.Updated,
+		&row.Notifiers.Console.Created,
+		&row.Notifiers.Console.Updated,
+		&row.Notifiers.Webhook.Method,
+		&row.Notifiers.Webhook.Url,
+		&row.Notifiers.Webhook.RequestHeaders,
+		&row.Notifiers.Webhook.RequestTimeout,
+		&row.Notifiers.Webhook.Created,
+		&row.Notifiers.Webhook.Updated,
+		&row.Notifiers.RabbitMq.Url,
+		&row.Notifiers.RabbitMq.ChannelPublish.Exchange,
+		&row.Notifiers.RabbitMq.ChannelPublish.RoutingKey,
+		&row.Notifiers.RabbitMq.ChannelPublish.Mandatory,
+		&row.Notifiers.RabbitMq.ChannelPublish.Immediate,
+		&row.Notifiers.RabbitMq.Publishing.MessageHeaders,
+		&row.Notifiers.RabbitMq.Publishing.MessageContentType,
+		&row.Notifiers.RabbitMq.Publishing.MessageContentEncoding,
+		&row.Notifiers.RabbitMq.Publishing.MessageDeliveryMode,
+		&row.Notifiers.RabbitMq.Publishing.MessagePriority,
+		&row.Notifiers.RabbitMq.Publishing.MessageCorrelationId,
+		&row.Notifiers.RabbitMq.Publishing.MessageReplyTo,
+		&row.Notifiers.RabbitMq.Publishing.MessageExpiration,
+		&row.Notifiers.RabbitMq.Publishing.MessageMessageId,
+		&row.Notifiers.RabbitMq.Publishing.MessageTimestamp,
+		&row.Notifiers.RabbitMq.Publishing.MessageType,
+		&row.Notifiers.RabbitMq.Publishing.MessageUserId,
+		&row.Notifiers.RabbitMq.Publishing.MessageAppId,
+		&row.Notifiers.RabbitMq.Created,
+		&row.Notifiers.RabbitMq.Updated,
+		&row.Notifiers.Slackhook.Url,
+		&row.Notifiers.Slackhook.RequestTimeout,
+		&row.Notifiers.Slackhook.Created,
+		&row.Notifiers.Slackhook.Updated,
 	)
 }
  
@@ -976,12 +1061,39 @@ func (row *NotifierEdge_option) Scan(scanner Scanner) error {
 		&row.RabbitMq.Publishing.MessageAppId,
 		&row.RabbitMq.Created,
 		&row.RabbitMq.Updated,
+		&row.Slackhook.Url,
+		&row.Slackhook.RequestTimeout,
+		&row.Slackhook.Created,
+		&row.Slackhook.Updated,
 	)
 }
  
 func (row *NotifierConsole) Scan(scanner Scanner) error {
 	return scanner.Scan(
 		&row.Uuid,
+		&row.Created,
+		&row.Updated,
+	)
+}
+ 
+func (row *NotifierWebhook) Scan(scanner Scanner) error {
+	return scanner.Scan(
+		&row.Method,
+		&row.Url,
+		&row.RequestHeaders,
+		&row.RequestTimeout,
+		&row.Created,
+		&row.Updated,
+		&row.Uuid,
+	)
+}
+ 
+func (row *NotifierWebhook_property) Scan(scanner Scanner) error {
+	return scanner.Scan(
+		&row.Method,
+		&row.Url,
+		&row.RequestHeaders,
+		&row.RequestTimeout,
 		&row.Created,
 		&row.Updated,
 	)
@@ -1038,11 +1150,9 @@ func (row *NotifierRabbitMq_property) Scan(scanner Scanner) error {
 	)
 }
  
-func (row *NotifierWebhook) Scan(scanner Scanner) error {
+func (row *NotifierSlackhook) Scan(scanner Scanner) error {
 	return scanner.Scan(
-		&row.Method,
 		&row.Url,
-		&row.RequestHeaders,
 		&row.RequestTimeout,
 		&row.Created,
 		&row.Updated,
@@ -1050,11 +1160,9 @@ func (row *NotifierWebhook) Scan(scanner Scanner) error {
 	)
 }
  
-func (row *NotifierWebhook_property) Scan(scanner Scanner) error {
+func (row *NotifierSlackhook_property) Scan(scanner Scanner) error {
 	return scanner.Scan(
-		&row.Method,
 		&row.Url,
-		&row.RequestHeaders,
 		&row.RequestTimeout,
 		&row.Created,
 		&row.Updated,
@@ -1167,37 +1275,41 @@ func (row *ManagedChannel_tangled) Ptrs() []interface{} {
 		&row.Format.FormatData,
 		&row.Format.Created,
 		&row.Format.Updated,
-		&row.Notifier.Edge.NotifierType,
-		&row.Notifier.Edge.Created,
-		&row.Notifier.Edge.Updated,
-		&row.Notifier.Console.Created,
-		&row.Notifier.Console.Updated,
-		&row.Notifier.Webhook.Method,
-		&row.Notifier.Webhook.Url,
-		&row.Notifier.Webhook.RequestHeaders,
-		&row.Notifier.Webhook.RequestTimeout,
-		&row.Notifier.Webhook.Created,
-		&row.Notifier.Webhook.Updated,
-		&row.Notifier.RabbitMq.Url,
-		&row.Notifier.RabbitMq.ChannelPublish.Exchange,
-		&row.Notifier.RabbitMq.ChannelPublish.RoutingKey,
-		&row.Notifier.RabbitMq.ChannelPublish.Mandatory,
-		&row.Notifier.RabbitMq.ChannelPublish.Immediate,
-		&row.Notifier.RabbitMq.Publishing.MessageHeaders,
-		&row.Notifier.RabbitMq.Publishing.MessageContentType,
-		&row.Notifier.RabbitMq.Publishing.MessageContentEncoding,
-		&row.Notifier.RabbitMq.Publishing.MessageDeliveryMode,
-		&row.Notifier.RabbitMq.Publishing.MessagePriority,
-		&row.Notifier.RabbitMq.Publishing.MessageCorrelationId,
-		&row.Notifier.RabbitMq.Publishing.MessageReplyTo,
-		&row.Notifier.RabbitMq.Publishing.MessageExpiration,
-		&row.Notifier.RabbitMq.Publishing.MessageMessageId,
-		&row.Notifier.RabbitMq.Publishing.MessageTimestamp,
-		&row.Notifier.RabbitMq.Publishing.MessageType,
-		&row.Notifier.RabbitMq.Publishing.MessageUserId,
-		&row.Notifier.RabbitMq.Publishing.MessageAppId,
-		&row.Notifier.RabbitMq.Created,
-		&row.Notifier.RabbitMq.Updated,
+		&row.Edge.NotifierType,
+		&row.Edge.Created,
+		&row.Edge.Updated,
+		&row.Notifiers.Console.Created,
+		&row.Notifiers.Console.Updated,
+		&row.Notifiers.Webhook.Method,
+		&row.Notifiers.Webhook.Url,
+		&row.Notifiers.Webhook.RequestHeaders,
+		&row.Notifiers.Webhook.RequestTimeout,
+		&row.Notifiers.Webhook.Created,
+		&row.Notifiers.Webhook.Updated,
+		&row.Notifiers.RabbitMq.Url,
+		&row.Notifiers.RabbitMq.ChannelPublish.Exchange,
+		&row.Notifiers.RabbitMq.ChannelPublish.RoutingKey,
+		&row.Notifiers.RabbitMq.ChannelPublish.Mandatory,
+		&row.Notifiers.RabbitMq.ChannelPublish.Immediate,
+		&row.Notifiers.RabbitMq.Publishing.MessageHeaders,
+		&row.Notifiers.RabbitMq.Publishing.MessageContentType,
+		&row.Notifiers.RabbitMq.Publishing.MessageContentEncoding,
+		&row.Notifiers.RabbitMq.Publishing.MessageDeliveryMode,
+		&row.Notifiers.RabbitMq.Publishing.MessagePriority,
+		&row.Notifiers.RabbitMq.Publishing.MessageCorrelationId,
+		&row.Notifiers.RabbitMq.Publishing.MessageReplyTo,
+		&row.Notifiers.RabbitMq.Publishing.MessageExpiration,
+		&row.Notifiers.RabbitMq.Publishing.MessageMessageId,
+		&row.Notifiers.RabbitMq.Publishing.MessageTimestamp,
+		&row.Notifiers.RabbitMq.Publishing.MessageType,
+		&row.Notifiers.RabbitMq.Publishing.MessageUserId,
+		&row.Notifiers.RabbitMq.Publishing.MessageAppId,
+		&row.Notifiers.RabbitMq.Created,
+		&row.Notifiers.RabbitMq.Updated,
+		&row.Notifiers.Slackhook.Url,
+		&row.Notifiers.Slackhook.RequestTimeout,
+		&row.Notifiers.Slackhook.Created,
+		&row.Notifiers.Slackhook.Updated,
 	}
 }
  
@@ -1252,12 +1364,39 @@ func (row *NotifierEdge_option) Ptrs() []interface{} {
 		&row.RabbitMq.Publishing.MessageAppId,
 		&row.RabbitMq.Created,
 		&row.RabbitMq.Updated,
+		&row.Slackhook.Url,
+		&row.Slackhook.RequestTimeout,
+		&row.Slackhook.Created,
+		&row.Slackhook.Updated,
 	}
 }
  
 func (row *NotifierConsole) Ptrs() []interface{} {
 	return []interface{}{
 		&row.Uuid,
+		&row.Created,
+		&row.Updated,
+	}
+}
+ 
+func (row *NotifierWebhook) Ptrs() []interface{} {
+	return []interface{}{
+		&row.Method,
+		&row.Url,
+		&row.RequestHeaders,
+		&row.RequestTimeout,
+		&row.Created,
+		&row.Updated,
+		&row.Uuid,
+	}
+}
+ 
+func (row *NotifierWebhook_property) Ptrs() []interface{} {
+	return []interface{}{
+		&row.Method,
+		&row.Url,
+		&row.RequestHeaders,
+		&row.RequestTimeout,
 		&row.Created,
 		&row.Updated,
 	}
@@ -1314,11 +1453,9 @@ func (row *NotifierRabbitMq_property) Ptrs() []interface{} {
 	}
 }
  
-func (row *NotifierWebhook) Ptrs() []interface{} {
+func (row *NotifierSlackhook) Ptrs() []interface{} {
 	return []interface{}{
-		&row.Method,
 		&row.Url,
-		&row.RequestHeaders,
 		&row.RequestTimeout,
 		&row.Created,
 		&row.Updated,
@@ -1326,11 +1463,9 @@ func (row *NotifierWebhook) Ptrs() []interface{} {
 	}
 }
  
-func (row *NotifierWebhook_property) Ptrs() []interface{} {
+func (row *NotifierSlackhook_property) Ptrs() []interface{} {
 	return []interface{}{
-		&row.Method,
 		&row.Url,
-		&row.RequestHeaders,
 		&row.RequestTimeout,
 		&row.Created,
 		&row.Updated,

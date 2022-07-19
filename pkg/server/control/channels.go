@@ -595,8 +595,8 @@ func (ctl ControlVanilla) UpdateChannelNotifierRabbitMq(ctx echo.Context) (err e
 // @Produce     json
 // @Tags        server/channels
 // @Router      /server/channels/{uuid}/notifiers/webhook [put]
-// @Param       x_auth_token header string                         false "client session token"
-// @Param       uuid         path   string                         true  "Channel 의 Uuid"
+// @Param       x_auth_token header string                                           false "client session token"
+// @Param       uuid         path   string                                           true  "Channel 의 Uuid"
 // @Param       object       body   v2.HttpReq_ManagedChannel_NotifierWebhook_update true  "HttpReq_ManagedChannel_NotifierWebhook_update"
 // @Success     200
 func (ctl ControlVanilla) UpdateChannelNotifierWebhook(ctx echo.Context) (err error) {
@@ -687,6 +687,81 @@ func (ctl ControlVanilla) UpdateChannelNotifierWebhook(ctx echo.Context) (err er
 	// if err != nil {
 	// 	return HttpError(err, http.StatusInternalServerError)
 	// }
+
+	return ctx.JSON(http.StatusOK, OK())
+}
+
+// @Description Update a slackhook channel notifier
+// @Accept      json
+// @Produce     json
+// @Tags        server/channels
+// @Router      /server/channels/{uuid}/notifiers/slackhook [put]
+// @Param       x_auth_token header string                                             false "client session token"
+// @Param       uuid         path   string                                             true  "Channel 의 Uuid"
+// @Param       object       body   v2.HttpReq_ManagedChannel_NotifierSlackhook_update true  "HttpReq_ManagedChannel_NotifierSlackhook_update"
+// @Success     200
+func (ctl ControlVanilla) UpdateChannelNotifierSlackhook(ctx echo.Context) (err error) {
+	body := new(channelv2.HttpReq_ManagedChannel_NotifierSlackhook_update)
+	err = echoutil.Bind(ctx, body)
+	err = errors.Wrapf(err, "bind%s",
+		logs.KVL(
+			"type", TypeName(body),
+		))
+	if err != nil {
+		return HttpError(err, http.StatusBadRequest)
+	}
+
+	if len(body.Url) == 0 {
+		err = ErrorInvalidRequestParameter()
+	}
+	err = errors.Wrapf(err, "valid param%s",
+		logs.KVL(
+			ParamLog("Url", body.Url)...,
+		))
+	if err != nil {
+		return HttpError(err, http.StatusBadRequest)
+	}
+
+	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+		err = ErrorInvalidRequestParameter()
+	}
+	err = errors.Wrapf(err, "valid param%s",
+		logs.KVL(
+			ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
+		))
+	if err != nil {
+		return HttpError(err, http.StatusBadRequest)
+	}
+
+	uuid := echoutil.Param(ctx)[__UUID__]
+
+	updated := time.Now()
+
+	notifier := channelv2.NotifierSlackhook{}
+	notifier.Uuid = uuid
+	notifier.Created = *vanilla.NewNullTime(updated)
+	notifier.Updated = *vanilla.NewNullTime(updated)
+	notifier.Url = body.Url
+	notifier.RequestTimeout = func() uint {
+		if body.RequestTimeout == 0 {
+			return 3
+		}
+		return body.RequestTimeout
+	}()
+
+	update_columns := []string{
+		"updated",
+		"url",
+		"request_timeout",
+	}
+
+	err = ctl.Scope(func(tx *sql.Tx) (err error) {
+		return updateChannelNotifier(tx, uuid, notifier, update_columns)
+	})
+
+	if err != nil {
+		return HttpError(err, http.StatusInternalServerError)
+	}
 
 	return ctx.JSON(http.StatusOK, OK())
 }

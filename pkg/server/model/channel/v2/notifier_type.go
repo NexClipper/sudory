@@ -11,6 +11,7 @@ import (
 	console
 	webhook
 	rabbitmq
+	slackhook
 )
 */
 type NotifierType int

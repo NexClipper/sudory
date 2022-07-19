@@ -42,6 +42,10 @@ type HttpReq_ManagedChannel_NotifierWebhook_update struct {
 	NotifierWebhook_essential `json:",inline"`
 }
 
+type HttpReq_ManagedChannel_NotifierSlackhook_update struct {
+	NotifierSlackhook_essential `json:",inline"`
+}
+
 type HttpReq_ManagedChannel_Format_update struct {
 	Format_essential `json:",inline"`
 }

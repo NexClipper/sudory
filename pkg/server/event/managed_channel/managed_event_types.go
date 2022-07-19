@@ -88,11 +88,11 @@ type Notifier interface {
 	Uuid() string                //uuid
 	Property() map[string]string //요약
 	// PropertyString() string                                   //요약
-	OnNotify(MarshalFactoryResult) error //알림 발생
-	Close()                              //리스너 종료
+	OnNotify(*MarshalFactory) error //알림 발생
+	Close()                         //리스너 종료
 }
 
-func OnNotifyAsync(notifier Notifier, factory MarshalFactoryResult) <-chan NotifierFuture {
+func OnNotifyAsync(notifier Notifier, factory *MarshalFactory) <-chan NotifierFuture {
 	future := make(chan NotifierFuture)
 	go func() {
 		defer close(future)
@@ -120,62 +120,200 @@ type Publisher interface {
 	OnError(error)
 	OnNotifierError(Notifier, error)
 }
-type MarshalFactoryResult func(string) ([]byte, error)
 
-func NewMarshalFactory(v map[string]interface{}, formatter Formatter) func(string) ([]byte, error) {
-	mux := sync.Mutex{}
-	m := make(map[string][]byte)
+type MarshalFactory struct {
+	mux   sync.Mutex
+	cache map[string][]byte
 
-	var err error
-	var v_formated interface{}
-	if formatter != nil {
-		v_formated, err = formatter.Format(v)
-	} else {
-		v_formated = v
+	Value     map[string]interface{}
+	Formatter Formatter
+
+	format_once   sync.Once
+	formated_data interface{}
+}
+
+func NewMarshalFactory(v map[string]interface{}, format Formatter) *MarshalFactory {
+	return &MarshalFactory{
+		Value:     v,
+		Formatter: format,
+	}
+}
+
+func (ms *MarshalFactory) Marshal(mime string) (b []byte, err error) {
+	ms.mux.Lock()
+	defer ms.mux.Unlock()
+
+	if ms.cache == nil {
+		ms.cache = make(map[string][]byte)
 	}
 
+	// 이미 저장된 데이터가 있으면 저장된 데이터를 리턴
+	if _, ok := ms.cache[mime]; ok {
+		return ms.cache[mime], nil // hit
+	}
+
+	ms.format_once.Do(func() {
+		if ms.Formatter != nil {
+			ms.formated_data, err = ms.Formatter.Format(ms.Value)
+		} else {
+			ms.formated_data = ms.Value
+		}
+	})
+	err = errors.Wrapf(err, "format%v",
+		logs.KVL(
+			"format_type", ms.Formatter.Type(),
+		))
 	if err != nil {
-		return func(mime string) ([]byte, error) {
-			return nil, err
-		}
+		return
 	}
 
-	return func(mime string) ([]byte, error) {
-		mux.Lock()
-		defer mux.Unlock()
+	//저장된 데이터가 없으면 데이터 만들어서 저장
+	// m[mime] = make([]byte, len(v))
+	// for i, v := range v {
 
-		//이미 저장된 데이터가 있으면 저장된 데이터를 리턴
-		if _, ok := m[mime]; ok {
-			return m[mime], nil
+	switch strings.ToLower(mime) {
+	case "application/json":
+		b, err = json.Marshal(ms.formated_data)
+	case "application/xml":
+		b, err = xml.Marshal(ms.formated_data)
+	case "application/x-www-form-urlencoded":
+		b, err = urlencoded(ms.formated_data)
+	case "text/plain":
+		b, err = text_plain(ms.formated_data)
+	default:
+		err = errors.Errorf("unsupported Content-Type")
+	}
+	err = errors.Wrapf(err, "marshal factory%s",
+		logs.KVL(
+			"item", ms.formated_data,
+			"mime", mime,
+		))
+	if err != nil {
+		return
+	}
+	ms.cache[mime] = b
+	// }
+
+	return ms.cache[mime], nil
+}
+
+// type MarshalFactoryResult func(string) ([]byte, error)
+
+// func NewMarshalFactory(v map[string]interface{}, formatter Formatter) func(string) ([]byte, error) {
+// 	mux := sync.Mutex{}
+// 	m := make(map[string][]byte)
+
+// 	var err error
+// 	var v_formated interface{}
+// 	if formatter != nil {
+// 		v_formated, err = formatter.Format(v)
+// 	} else {
+// 		v_formated = v
+// 	}
+
+// 	if err != nil {
+// 		return func(mime string) ([]byte, error) {
+// 			return nil, err
+// 		}
+// 	}
+
+// 	return func(mime string) ([]byte, error) {
+// 		mux.Lock()
+// 		defer mux.Unlock()
+
+// 		//이미 저장된 데이터가 있으면 저장된 데이터를 리턴
+// 		if _, ok := m[mime]; ok {
+// 			return m[mime], nil
+// 		}
+
+// 		//저장된 데이터가 없으면 데이터 만들어서 저장
+// 		// m[mime] = make([]byte, len(v))
+// 		// for i, v := range v {
+// 		var (
+// 			b   []byte
+// 			err error
+// 		)
+// 		switch strings.ToLower(mime) {
+// 		case "application/json":
+// 			b, err = json.Marshal(v_formated)
+
+// 		case "application/xml":
+// 			b, err = xml.Marshal(v_formated)
+// 		case "application/x-www-form-urlencoded":
+// 			b, err = urlencoded(v_formated)
+// 		case "text/plain":
+// 			b, err = text_plain(v_formated)
+// 		default:
+// 			err = errors.Errorf("unsupported Content-Type")
+// 		}
+
+// 		if err != nil {
+// 			return nil, errors.Wrapf(err, "marshal factory%s",
+// 				logs.KVL(
+// 					"item", v_formated,
+// 					"mime", mime,
+// 				))
+// 		}
+// 		m[mime] = b
+// 		// }
+
+// 		return m[mime], nil
+// 	}
+// }
+
+// application/x-www-form-urlencoded
+func urlencoded(v interface{}) ([]byte, error) {
+	conv_map := func(v map[string]interface{}) string {
+		s := make([]string, 0, len(v))
+		for k, v := range v {
+			s = append(s, fmt.Sprintf("%v=%v", k, v))
 		}
+		return strings.Join(s, "&")
+	}
 
-		//저장된 데이터가 없으면 데이터 만들어서 저장
-		// m[mime] = make([]byte, len(v))
-		// for i, v := range v {
-		var (
-			b   []byte
-			err error
-		)
-		switch strings.ToLower(mime) {
-		case "application/json":
-			b, err = json.Marshal(v_formated)
-
-		case "application/xml":
-			b, err = xml.Marshal(v_formated)
-		default:
-			err = errors.Errorf("unsupported Content-Type")
+	conv_keyval := func(v map[string]string) string {
+		s := make([]string, 0, len(v))
+		for k, v := range v {
+			s = append(s, fmt.Sprintf("%v=%v", k, v))
 		}
+		return strings.Join(s, "&")
+	}
 
-		if err != nil {
-			return nil, errors.Wrapf(err, "marshal factory%s",
-				logs.KVL(
-					"item", v_formated,
-					"mime", mime,
-				))
+	switch v := v.(type) {
+	case map[string]interface{}:
+		return []byte(conv_map(v)), nil
+	case map[string]string:
+		return []byte(conv_keyval(v)), nil
+	default:
+		return []byte{}, fmt.Errorf("this type is not supported")
+	}
+}
+
+// text/plain
+//  sep by line
+func text_plain(v interface{}) ([]byte, error) {
+	conv_map := func(v map[string]interface{}) string {
+		s := make([]string, 0, len(v))
+		for k, v := range v {
+			s = append(s, fmt.Sprintf("%v=%v", k, v))
 		}
-		m[mime] = b
-		// }
+		return strings.Join(s, "\n")
+	}
 
-		return m[mime], nil
+	conv_keyval := func(v map[string]string) string {
+		s := make([]string, 0, len(v))
+		for k, v := range v {
+			s = append(s, fmt.Sprintf("%v=%v", k, v))
+		}
+		return strings.Join(s, "\n")
+	}
+
+	switch v := v.(type) {
+	case map[string]interface{}:
+		return []byte(conv_map(v)), nil
+	case map[string]string:
+		return []byte(conv_keyval(v)), nil
+	default:
+		return []byte(fmt.Sprintf("%v", v)), nil
 	}
 }
