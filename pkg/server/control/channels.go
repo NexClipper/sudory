@@ -761,6 +761,8 @@ func (ctl ControlVanilla) UpdateChannelFormat(ctx echo.Context) (err error) {
 	}
 
 	switch body.FormatType {
+	case channelv2.FormatTypeDisable:
+		body.FormatData = "" // remove data
 	case channelv2.FormatTypeFields:
 		var ss []string
 		err = json.Unmarshal([]byte(body.FormatData), &ss)
