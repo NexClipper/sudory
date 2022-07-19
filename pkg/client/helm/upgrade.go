@@ -32,6 +32,7 @@ func (c *Client) Upgrade(args map[string]interface{}) (string, error) {
 		RepoName     string                 `param:"repo_name,optional"`
 		ChartVersion string                 `param:"chart_version,optional"`
 		Values       map[string]interface{} `param:"values,optional"`
+		ReuseValues  bool                   `param:"reuse_values,optional"`
 	}
 
 	params := &UpgradeParams{}
@@ -56,6 +57,7 @@ func (c *Client) Upgrade(args map[string]interface{}) (string, error) {
 	client.ChartPathOptions.Version = params.ChartVersion
 	client.ChartPathOptions.RepoURL = params.RepoURL
 	client.Namespace = c.settings.Namespace()
+	client.ReuseValues = params.ReuseValues
 
 	chartName := params.ChartName
 	if params.RepoURL == "" {
