@@ -155,14 +155,15 @@ func (ms *MarshalFactory) Marshal(mime string) (b []byte, err error) {
 	ms.format_once.Do(func() {
 		if ms.Formatter != nil {
 			ms.formated_data, err = ms.Formatter.Format(ms.Value)
+			err = errors.Wrapf(err, "format%v",
+				logs.KVL(
+					"format_type", ms.Formatter.Type(),
+				))
 		} else {
 			ms.formated_data = ms.Value
 		}
 	})
-	err = errors.Wrapf(err, "format%v",
-		logs.KVL(
-			"format_type", ms.Formatter.Type(),
-		))
+
 	if err != nil {
 		return
 	}
