@@ -761,6 +761,8 @@ func (ctl ControlVanilla) UpdateChannelFormat(ctx echo.Context) (err error) {
 	}
 
 	switch body.FormatType {
+	case channelv2.FormatTypeDisable:
+		body.FormatData = "" // remove data
 	case channelv2.FormatTypeFields:
 		var ss []string
 		err = json.Unmarshal([]byte(body.FormatData), &ss)
@@ -794,7 +796,7 @@ func (ctl ControlVanilla) UpdateChannelFormat(ctx echo.Context) (err error) {
 	channel_format.FormatData = body.FormatData
 
 	update_columns := []string{
-		"format_type", "format_data",
+		"format_type", "format_data", "updated",
 	}
 
 	err = ctl.Scope(func(tx *sql.Tx) (err error) {
