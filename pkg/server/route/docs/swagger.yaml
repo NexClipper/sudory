@@ -79,25 +79,6 @@ definitions:
       uuid:
         type: string
     type: object
-  v1.GlobalVariables:
-    properties:
-      created:
-        type: string
-      deleted:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      summary:
-        type: string
-      updated:
-        type: string
-      uuid:
-        type: string
-      value:
-        type: string
-    type: object
   v1.HttpReqCluster_Create:
     properties:
       name:
@@ -120,11 +101,6 @@ definitions:
         additionalProperties: true
         type: object
       summary:
-        type: string
-    type: object
-  v1.HttpReqGlobalVariables_update:
-    properties:
-      value:
         type: string
     type: object
   v1.HttpReqTemplate_Create:
@@ -560,6 +536,27 @@ definitions:
       updated:
         type: string
     type: object
+  v2.GlobalVariables:
+    properties:
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      name:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
+        type: string
+      value:
+        type: string
+    type: object
   v2.HttpReq_ClientServiceUpdate:
     properties:
       ended:
@@ -595,6 +592,11 @@ definitions:
       name:
         type: string
       summary:
+        type: string
+    type: object
+  v2.HttpReq_GlobalVariables_update:
+    properties:
+      value:
         type: string
     type: object
   v2.HttpReq_ManagedChannel_ChannelStatusOption_update:
@@ -2902,7 +2904,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.GlobalVariables'
+              $ref: '#/definitions/v2.GlobalVariables'
             type: array
       tags:
       - server/global_variables
@@ -2916,7 +2918,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: GlobalVariables 의 Uuid
+      - description: GlobalVariables Uuid
         in: path
         name: uuid
         required: true
@@ -2927,7 +2929,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.GlobalVariables'
+            $ref: '#/definitions/v2.GlobalVariables'
       tags:
       - server/global_variables
     put:
@@ -2939,23 +2941,23 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: GlobalVariables 의 Uuid
+      - description: GlobalVariables Uuid
         in: path
         name: uuid
         required: true
         type: string
-      - description: HttpReqGlobalVariables_update
+      - description: HttpReq_GlobalVariables_update
         in: body
         name: enviroment
         schema:
-          $ref: '#/definitions/v1.HttpReqGlobalVariables_update'
+          $ref: '#/definitions/v2.HttpReq_GlobalVariables_update'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.GlobalVariables'
+            $ref: '#/definitions/v2.GlobalVariables'
       tags:
       - server/global_variables
   /server/service:

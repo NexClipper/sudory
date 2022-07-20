@@ -14,6 +14,7 @@ import (
 	clustertokenv2 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v2"
 	cryptov2 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v2"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
+	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 )
@@ -136,7 +137,7 @@ func (ctl ControlVanilla) FindClusterToken(ctx echo.Context) error {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	rsp := make([]clustertokenv2.HttpRsp_ClusterToken, 0, __INIT_SLICE_CAPACITY__())
+	rsp := make([]clustertokenv2.HttpRsp_ClusterToken, 0, state.ENV__INIT_SLICE_CAPACITY__())
 
 	var token clustertokenv2.ClusterToken
 	err = vanilla.Stmt.Select(token.TableName(), token.ColumnNames(), q, o, p).

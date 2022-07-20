@@ -8,6 +8,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	sessionv2 "github.com/NexClipper/sudory/pkg/server/model/session/v2"
+	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 )
@@ -32,7 +33,7 @@ func (ctl ControlVanilla) FindSession(ctx echo.Context) (err error) {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	rsp := make([]sessionv2.Session, 0, __INIT_SLICE_CAPACITY__())
+	rsp := make([]sessionv2.Session, 0, state.ENV__INIT_SLICE_CAPACITY__())
 	session := sessionv2.Session{}
 	err = vanilla.Stmt.Select(session.TableName(), session.ColumnNames(), q, o, p).QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
 		err = session.Scan(scan)

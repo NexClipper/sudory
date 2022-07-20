@@ -2503,7 +2503,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.GlobalVariables"
+                                "$ref": "#/definitions/v2.GlobalVariables"
                             }
                         }
                     }
@@ -2531,7 +2531,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "GlobalVariables 의 Uuid",
+                        "description": "GlobalVariables Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2541,7 +2541,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.GlobalVariables"
+                            "$ref": "#/definitions/v2.GlobalVariables"
                         }
                     }
                 }
@@ -2566,17 +2566,17 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "GlobalVariables 의 Uuid",
+                        "description": "GlobalVariables Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "HttpReqGlobalVariables_update",
+                        "description": "HttpReq_GlobalVariables_update",
                         "name": "enviroment",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqGlobalVariables_update"
+                            "$ref": "#/definitions/v2.HttpReq_GlobalVariables_update"
                         }
                     }
                 ],
@@ -2584,7 +2584,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.GlobalVariables"
+                            "$ref": "#/definitions/v2.GlobalVariables"
                         }
                     }
                 }
@@ -3549,35 +3549,6 @@ var doc = `{
                 }
             }
         },
-        "v1.GlobalVariables": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
         "v1.HttpReqCluster_Create": {
             "type": "object",
             "properties": {
@@ -3610,14 +3581,6 @@ var doc = `{
                     "additionalProperties": true
                 },
                 "summary": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqGlobalVariables_update": {
-            "type": "object",
-            "properties": {
-                "value": {
                     "type": "string"
                 }
             }
@@ -4259,6 +4222,37 @@ var doc = `{
                 }
             }
         },
+        "v2.GlobalVariables": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "v2.HttpReqAuth": {
             "type": "object",
             "properties": {
@@ -4327,6 +4321,14 @@ var doc = `{
                     "type": "string"
                 },
                 "summary": {
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_GlobalVariables_update": {
+            "type": "object",
+            "properties": {
+                "value": {
                     "type": "string"
                 }
             }

@@ -16,6 +16,31 @@ func Test_IsNull(t *testing.T) {
 	t.Log(c.Query(), c.Args())
 }
 
+func Test_In(t *testing.T) {
+	c := vanilla.In("foo", 1, 2, 3, 4).Parse()
+	t.Log(c.Query(), c.Args())
+}
+
+func Test_GreaterThan(t *testing.T) {
+	c := vanilla.GreaterThan("foo", 1).Parse()
+	t.Log(c.Query(), c.Args())
+}
+
+func Test_GreaterThanEqual(t *testing.T) {
+	c := vanilla.GreaterThanEqual("foo", 1).Parse()
+	t.Log(c.Query(), c.Args())
+}
+
+func Test_LessThan(t *testing.T) {
+	c := vanilla.LessThan("foo", 1).Parse()
+	t.Log(c.Query(), c.Args())
+}
+
+func Test_LessThanEqual(t *testing.T) {
+	c := vanilla.LessThanEqual("foo", 1).Parse()
+	t.Log(c.Query(), c.Args())
+}
+
 func Test_And(t *testing.T) {
 	c := vanilla.And(vanilla.Equal("c1", 1), vanilla.Equal("c2", 2)).Parse()
 	t.Log(c.Query(), c.Args())
