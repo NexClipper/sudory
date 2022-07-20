@@ -46,6 +46,22 @@ func In(a string, b ...interface{}) PrepareCondition {
 	return map[string]interface{}{"in": map[string]interface{}{a: b}}
 }
 
+func GreaterThan(a string, b interface{}) PrepareCondition {
+	return map[string]interface{}{"gt": map[string]interface{}{a: b}}
+}
+
+func GreaterThanEqual(a string, b interface{}) PrepareCondition {
+	return map[string]interface{}{"gte": map[string]interface{}{a: b}}
+}
+
+func LessThan(a string, b interface{}) PrepareCondition {
+	return map[string]interface{}{"lt": map[string]interface{}{a: b}}
+}
+
+func LessThanEqual(a string, b interface{}) PrepareCondition {
+	return map[string]interface{}{"lte": map[string]interface{}{a: b}}
+}
+
 type PrepareOrder []interface{}
 
 func (sl PrepareOrder) Parse() *prepare.Orders {

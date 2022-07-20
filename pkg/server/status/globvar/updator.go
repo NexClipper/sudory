@@ -1,51 +1,65 @@
 package globvar
 
 import (
+	"database/sql"
 	"time"
 
-	"github.com/NexClipper/sudory/pkg/server/control/vault"
+	// "github.com/NexClipper/sudory/pkg/server/control/vault"
+
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
+	globvarv2 "github.com/NexClipper/sudory/pkg/server/model/global_variables/v2"
+	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/pkg/errors"
-	"xorm.io/xorm"
 )
 
 type GlobalVariantUpdate struct {
-	tx     *xorm.Session
+	*vanilla.SqlDbEx
 	offset time.Time //updated column
 }
 
-func NewGlobalVariablesUpdate(tx *xorm.Session) *GlobalVariantUpdate {
-	return &GlobalVariantUpdate{tx: tx}
+func NewGlobalVariablesUpdate(db *sql.DB) *GlobalVariantUpdate {
+	return &GlobalVariantUpdate{SqlDbEx: vanilla.NewSqlDbEx(db, state.ENV__CONTROL_TRANSACTION_TIMEOUT__())}
 }
 
 // Update
-//  Update = read -> os.Setenv
-func (worker *GlobalVariantUpdate) Update() error {
-	where := "updated > ?"
-	args := []interface{}{
-		worker.offset,
-	}
+//  Update = read db -> global_variables
+func (worker *GlobalVariantUpdate) Update() (err error) {
+	records := make([]globvarv2.GlobalVariables, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	globvar := globvarv2.GlobalVariables{}
+	globvar.Updated = *vanilla.NewNullTime(worker.offset)
 
-	records, err := vault.NewGlobalVariables(worker.tx).Find(where, args...)
+	globvar_cond := vanilla.GreaterThan("updated", globvar.Updated)
+
+	err = vanilla.Stmt.Select(globvar.TableName(), globvar.ColumnNames(), globvar_cond.Parse(), nil, nil).
+		QueryRows(worker)(func(scan vanilla.Scanner, _ int) (err error) {
+		err = globvar.Scan(scan)
+		if err != nil {
+			return errors.Wrapf(err, "failed to scan")
+		}
+		records = append(records, globvar)
+		return
+	})
 	if err != nil {
-		return errors.Wrapf(err, "find global_variables")
+		return
 	}
 
 	for i := range records {
-		gv, err := ParseKey(records[i].Name)
+		record := &records[i]
+		gv, err := ParseKey(record.Name)
 		if err != nil {
 			return errors.Wrapf(err, "parse record name to key%v",
 				logs.KVL(
-					"key", records[i].Name,
+					"key", record.Name,
 				))
 		}
 
-		if err := storeManager.Call(gv, *records[i].Value); err != nil {
+		if err := storeManager.Call(gv, record.Value.String); err != nil {
 			return errors.Wrapf(err, "store global_variables%v",
 				logs.KVL(
-					"key", records[i].Name,
-					"value", *records[i].Value,
+					"key", record.Name,
+					"value", record.Value.String,
 				))
 		}
 
@@ -54,15 +68,29 @@ func (worker *GlobalVariantUpdate) Update() error {
 	//update offset
 	worker.offset = time.Now()
 
-	return nil
+	return
 }
 
 // WhiteListCheck
 //  리스트 체크
-func (worker *GlobalVariantUpdate) WhiteListCheck() error {
-	records, err := vault.NewGlobalVariables(worker.tx).Query(map[string]string{})
+func (worker *GlobalVariantUpdate) WhiteListCheck() (err error) {
+	records := make([]globvarv2.GlobalVariables, 0, state.ENV__INIT_SLICE_CAPACITY__())
+
+	globvar := globvarv2.GlobalVariables{}
+	globvar.Updated = *vanilla.NewNullTime(worker.offset)
+	globvar_cond := vanilla.IsNull("deleted")
+
+	err = vanilla.Stmt.Select(globvar.TableName(), globvar.ColumnNames(), globvar_cond.Parse(), nil, nil).
+		QueryRows(worker)(func(scan vanilla.Scanner, _ int) (err error) {
+		err = globvar.Scan(scan)
+		if err != nil {
+			return errors.Wrapf(err, "failed to scan")
+		}
+		records = append(records, globvar)
+		return
+	})
 	if err != nil {
-		return errors.Wrapf(err, "find global_variables")
+		return
 	}
 
 	count := 0
@@ -88,10 +116,25 @@ func (worker *GlobalVariantUpdate) WhiteListCheck() error {
 	return nil
 }
 
-func (worker *GlobalVariantUpdate) Merge() error {
-	records, err := vault.NewGlobalVariables(worker.tx).Query(map[string]string{})
+func (worker *GlobalVariantUpdate) Merge() (err error) {
+	records := make([]globvarv2.GlobalVariables, 0, state.ENV__INIT_SLICE_CAPACITY__())
+
+	globvar := globvarv2.GlobalVariables{}
+	globvar.Updated = *vanilla.NewNullTime(worker.offset)
+
+	globvar_cond := vanilla.IsNull("deleted")
+
+	err = vanilla.Stmt.Select(globvar.TableName(), globvar.ColumnNames(), globvar_cond.Parse(), nil, nil).
+		QueryRows(worker)(func(scan vanilla.Scanner, _ int) (err error) {
+		err = globvar.Scan(scan)
+		if err != nil {
+			return errors.Wrapf(err, "failed to scan")
+		}
+		records = append(records, globvar)
+		return
+	})
 	if err != nil {
-		return errors.Wrapf(err, "find global_variables")
+		return
 	}
 
 	for _, key := range KeyNames() {
@@ -104,7 +147,7 @@ func (worker *GlobalVariantUpdate) Merge() error {
 			}
 		}
 		if !found {
-			env, err := ParseKey(key)
+			globvar_key, err := ParseKey(key)
 			if err != nil {
 				return errors.Wrapf(err, "ParseGlobVar%v",
 					logs.KVL(
@@ -112,7 +155,7 @@ func (worker *GlobalVariantUpdate) Merge() error {
 					))
 			}
 
-			value, ok := defaultValueSet[env]
+			globvar, updated_columns, ok := GetDefaultGlobalVariable(globvar_key, time.Now())
 			if !ok {
 				return errors.Errorf("not found global_variables%v",
 					logs.KVL(
@@ -120,11 +163,15 @@ func (worker *GlobalVariantUpdate) Merge() error {
 					))
 			}
 
-			value_ := Convert(env, value)
-			if _, err := vault.NewGlobalVariables(worker.tx).Create(value_); err != nil {
-				return errors.Wrapf(err, "create global_variables")
+			stmt, err := vanilla.Stmt.InsertOrUpdate(globvar.TableName(), globvar.ColumnNames(), updated_columns, globvar.Values())
+			if err != nil {
+				return errors.Wrapf(err, "failed to make create or update statement")
 			}
 
+			_, err = stmt.Exec(worker)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create or update global_variables")
+			}
 		}
 	}
 

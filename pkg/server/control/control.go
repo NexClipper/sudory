@@ -5,6 +5,7 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro/block"
+	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
 
@@ -68,7 +69,7 @@ type ControlVanilla struct {
 
 func NewVanilla(db *sql.DB) *ControlVanilla {
 	return &ControlVanilla{
-		SqlDbEx: vanilla.NewSqlDbEx(db, __CONTROL_TRANSACTION_TIMEOUT__()),
+		SqlDbEx: vanilla.NewSqlDbEx(db,  state.ENV__CONTROL_TRANSACTION_TIMEOUT__()),
 	}
 }
 

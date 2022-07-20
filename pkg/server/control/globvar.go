@@ -2,17 +2,17 @@ package control
 
 import (
 	"net/http"
+	"time"
 
-	"github.com/NexClipper/sudory/pkg/server/control/vault"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variables/v1"
+	globvarv2 "github.com/NexClipper/sudory/pkg/server/model/global_variables/v2"
+	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"xorm.io/xorm"
 )
 
-// Find GlobalVariables
 // @Description Find GlobalVariables
 // @Accept      json
 // @Produce     json
@@ -22,93 +22,151 @@ import (
 // @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
 // @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
 // @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
-// @Success 200 {array} v1.GlobalVariables
-func (ctl Control) FindGlobalVariables(ctx echo.Context) error {
-	env, err := vault.NewGlobalVariables(ctl.db.Engine().NewSession()).Query(echoutil.QueryParam(ctx))
+// @Success 200 {array} v2.GlobalVariables
+func (ctl ControlVanilla) FindGlobalVariables(ctx echo.Context) (err error) {
+	q, o, p, err := ParseDecoration(echoutil.QueryParam(ctx))
+	err = errors.Wrapf(err, "ParseDecoration%v", logs.KVL(
+		"query", echoutil.QueryParamString(ctx),
+	))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "find environment"))
+		return HttpError(err, http.StatusBadRequest)
 	}
 
-	return ctx.JSON(http.StatusOK, env)
+	rsp := make([]globvarv2.GlobalVariables, 0, state.ENV__INIT_SLICE_CAPACITY__())
+
+	globvar := globvarv2.GlobalVariables{}
+	err = vanilla.Stmt.Select(globvar.TableName(), globvar.ColumnNames(), q, o, p).
+		QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
+		err = globvar.Scan(scan)
+		if err != nil {
+			return errors.Wrapf(err, "failed to scan")
+		}
+		rsp = append(rsp, globvar)
+		return
+	})
+	if err != nil {
+		return
+	}
+
+	return ctx.JSON(http.StatusOK, rsp)
 }
 
-// Get GlobalVariables
 // @Description Get a GlobalVariables
 // @Accept      json
 // @Produce     json
 // @Tags        server/global_variables
 // @Router      /server/global_variables/{uuid} [get]
 // @Param       x_auth_token header string false "client session token"
-// @Param       uuid         path   string true  "GlobalVariables 의 Uuid"
-// @Success 200 {object} v1.GlobalVariables
-func (ctl Control) GetGlobalVariables(ctx echo.Context) error {
-	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
+// @Param       uuid         path   string true  "GlobalVariables Uuid"
+// @Success 200 {object} v2.GlobalVariables
+func (ctl ControlVanilla) GetGlobalVariables(ctx echo.Context) (err error) {
+	err = echoutil.WrapHttpError(http.StatusBadRequest,
+		func() (err error) {
+			if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+				return errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%v", logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
-				)))
+				))
+			}
+			return
+		})
+	if err != nil {
+		return
 	}
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	env, err := vault.NewGlobalVariables(ctl.db.Engine().NewSession()).Get(uuid)
+	globvar := globvarv2.GlobalVariables{}
+	globvar.Uuid = uuid
+	eq_uuid := vanilla.And(
+		vanilla.Equal("uuid", globvar.Uuid),
+		// vanilla.IsNull("deleted"),
+	)
+	err = vanilla.Stmt.Select(globvar.TableName(), globvar.ColumnNames(), eq_uuid.Parse(), nil, nil).
+		QueryRow(ctl)(func(scan vanilla.Scanner) (err error) {
+		err = globvar.Scan(scan)
+		if err != nil {
+			return errors.Wrapf(err, "failed to scan")
+		}
+		return
+	})
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "get environment"))
+		return
 	}
 
-	return ctx.JSON(http.StatusOK, env)
+	return ctx.JSON(http.StatusOK, globvar)
 }
 
-// Update GlobalVariables
 // @Description Update GlobalVariables Value
 // @Accept      json
 // @Produce     json
 // @Tags        server/global_variables
 // @Router      /server/global_variables/{uuid} [put]
 // @Param       x_auth_token header string                       false "client session token"
-// @Param       uuid         path   string                       true  "GlobalVariables 의 Uuid"
-// @Param       enviroment   body   v1.HttpReqGlobalVariables_update false "HttpReqGlobalVariables_update"
-// @Success 200 {object} v1.GlobalVariables
-func (ctl Control) UpdateGlobalVariablesValue(ctx echo.Context) error {
-	update_env := new(globvarv1.HttpReqGlobalVariables_update)
-	if err := echoutil.Bind(ctx, update_env); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+// @Param       uuid         path   string                       true  "GlobalVariables Uuid"
+// @Param       enviroment   body   v2.HttpReq_GlobalVariables_update false "HttpReq_GlobalVariables_update"
+// @Success 200 {object} v2.GlobalVariables
+func (ctl ControlVanilla) UpdateGlobalVariablesValue(ctx echo.Context) (err error) {
+	body := new(globvarv2.HttpReq_GlobalVariables_update)
+	err = echoutil.WrapHttpError(http.StatusBadRequest,
+		func() error {
+			err := echoutil.Bind(ctx, body)
+			err = errors.Wrapf(err, "bind%s",
 				logs.KVL(
-					"type", TypeName(update_env),
-				)))
-	}
-
-	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
+					"type", TypeName(body),
+				))
+			return err
+		},
+		func() error {
+			if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+				return errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%v", logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
-				)))
+				))
+			}
+			return nil
+		},
+	)
+	if err != nil {
+		return
 	}
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
 	//property
-	env := globvarv1.GlobalVariables{}
-	env.Uuid = uuid
-	env.Value = update_env.Value
+	globvar := globvarv2.GlobalVariables{}
+	globvar.Uuid = uuid
+	eq_uuid := vanilla.And(
+		vanilla.Equal("uuid", globvar.Uuid),
+		vanilla.IsNull("deleted"),
+	)
+	globvar.Value = *vanilla.NewNullString(body.Value)
+	globvar.Updated = *vanilla.NewNullTime(time.Now())
 
-	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
-		env, err := vault.NewGlobalVariables(tx).Update(env)
-		if err != nil {
-			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-				errors.Wrapf(err, "update environment"))
-		}
+	updateSet := map[string]interface{}{}
+	updateSet["value"] = globvar.Value
+	updateSet["updated"] = globvar.Updated
 
-		return env, err
-	})
+	affected, err := vanilla.Stmt.Update(globvar.TableName(), updateSet, eq_uuid.Parse()).
+		Exec(ctl)
 	if err != nil {
-		return err
+		return
+	}
+	if affected == 0 {
+		return errors.New("no affected")
 	}
 
-	return ctx.JSON(http.StatusOK, r)
+	err = vanilla.Stmt.Select(globvar.TableName(), globvar.ColumnNames(), eq_uuid.Parse(), nil, nil).
+		QueryRow(ctl)(func(scan vanilla.Scanner) (err error) {
+		err = globvar.Scan(scan)
+		if err != nil {
+			return errors.Wrapf(err, "failed to scan")
+		}
+		return
+	})
+	if err != nil {
+		return errors.Wrapf(err, "not found record%v", logs.KVL(
+			"table", globvar.TableName(),
+		))
+	}
+
+	return ctx.JSON(http.StatusOK, globvar)
 }

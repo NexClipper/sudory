@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"hash/crc32"
@@ -126,7 +127,7 @@ func main() {
 	managed_channel.InvokeByEventCategory = mc.InvokeByEventCategory
 
 	//init global variant cron
-	cronGVClose, err := newGlobalVariablesCron(db.Engine())
+	cronGVClose, err := newGlobalVariablesCron(db.Engine().DB().DB)
 	if err != nil {
 		panic(err)
 	}
@@ -408,11 +409,11 @@ func doMigration(cfg *config.Config) (err error) {
 	return
 }
 
-func newGlobalVariablesCron(engine *xorm.Engine) (func(), error) {
+func newGlobalVariablesCron(db *sql.DB) (func(), error) {
 	const interval = 10 * time.Second
 
 	//환경설정 updater 생성
-	updator := globvar.NewGlobalVariablesUpdate(engine.NewSession())
+	updator := globvar.NewGlobalVariablesUpdate(db)
 	//환경변수 리스트 검사
 	if err := updator.WhiteListCheck(); err != nil {
 		//빠져있는 환경변수 추가

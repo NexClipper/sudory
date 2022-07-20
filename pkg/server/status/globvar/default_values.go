@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"time"
 
-	"github.com/NexClipper/sudory/pkg/server/macro/newist"
-	globvarv1 "github.com/NexClipper/sudory/pkg/server/model/global_variables/v1"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	globvarv2 "github.com/NexClipper/sudory/pkg/server/model/global_variables/v2"
 )
 
 type defaultValue struct {
@@ -73,12 +74,27 @@ var defaultValueSet = map[Key]defaultValue{
 	}},
 }
 
-func Convert(gv Key, value defaultValue) globvarv1.GlobalVariables {
-	globvar := globvarv1.GlobalVariables{}
-	globvar.Uuid = value.Uuid
-	globvar.Name = gv.String()
-	globvar.Summary = newist.String(fmt.Sprintf("%s (default='%s')", value.Summary, value.Value))
-	globvar.Value = newist.String(value.Value)
+func GetDefaultValue(key Key) (defaultValue, bool) {
+	value, ok := defaultValueSet[key]
+	return value, ok
+}
 
-	return globvar
+func GetDefaultGlobalVariable(key Key, t time.Time) (globvarv2.GlobalVariables, []string, bool) {
+	on_dupe_update_columns := []string{
+		"summary",
+		"value",
+		"updated",
+	}
+
+	value, ok := GetDefaultValue(key)
+
+	globvar := globvarv2.GlobalVariables{}
+	globvar.Uuid = value.Uuid
+	globvar.Name = key.String()
+	globvar.Summary = *vanilla.NewNullString(fmt.Sprintf("%s (default='%s')", value.Summary, value.Value))
+	globvar.Value = *vanilla.NewNullString(value.Value)
+	globvar.Created = t
+	globvar.Updated = *vanilla.NewNullTime(t)
+
+	return globvar, on_dupe_update_columns, ok
 }
