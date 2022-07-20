@@ -234,11 +234,11 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 				Sequence: i,
 				Created:  time.Now(),
 			}
-			step.Name = command.Name                      //
-			step.Summary = command.Summary                //
-			step.Method = command.Method.String           // command method
-			step.Args = *vanilla.NewNullObject(body.Args) //
-			step.ResultFilter = command.ResultFilter      // command result filter
+			step.Name = command.Name                 //
+			step.Summary = command.Summary           //
+			step.Method = command.Method.String      // command method
+			step.Args = body.Args                    //
+			step.ResultFilter = command.ResultFilter // command result filter
 
 			// save step
 			rsp.Steps = append(rsp.Steps, step)

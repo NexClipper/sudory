@@ -6,14 +6,17 @@ import (
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	cryptov2 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v2"
 )
 
 type ServiceStep_essential struct {
-	Name         string             `column:"name"          json:"name,omitempty"`
-	Summary      vanilla.NullString `column:"summary"       json:"summary,omitempty"       swaggertype:"string"`
-	Method       string             `column:"method"        json:"method,omitempty"`
-	Args         vanilla.NullObject `column:"args"          json:"args,omitempty"          swaggertype:"object"`
-	ResultFilter vanilla.NullString `column:"result_filter" json:"result_filter,omitempty" swaggertype:"string"`
+	Name         string                `column:"name"          json:"name,omitempty"`
+	Summary      vanilla.NullString    `column:"summary"       json:"summary,omitempty"       swaggertype:"string"`
+	Method       string                `column:"method"        json:"method,omitempty"`
+	Args         cryptov2.CryptoObject `column:"args"          json:"args,omitempty"          swaggertype:"object"`
+	ResultFilter vanilla.NullString    `column:"result_filter" json:"result_filter,omitempty" swaggertype:"string"`
+
+	// Args    vanilla.NullObject `column:"args"          json:"args,omitempty"          swaggertype:"object"`
 }
 
 func (ServiceStep_essential) TableName() string {
