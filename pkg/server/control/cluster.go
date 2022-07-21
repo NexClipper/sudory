@@ -3,80 +3,101 @@ package control
 import (
 	"fmt"
 	"net/http"
+	"time"
 
-	"github.com/NexClipper/sudory/pkg/server/control/vault"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	"github.com/NexClipper/sudory/pkg/server/macro/newist"
-	clusterv1 "github.com/NexClipper/sudory/pkg/server/model/cluster/v1"
-	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
+	clusterv2 "github.com/NexClipper/sudory/pkg/server/model/cluster/v2"
+	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"xorm.io/xorm"
 )
 
-// Create Cluster
 // @Description Create a cluster
 // @Accept      json
 // @Produce     json
 // @Tags        server/cluster
 // @Router      /server/cluster [post]
-// @Param       x_auth_token header string                   false "client session token"
-// @Param       cluster      body   v1.HttpReqCluster_Create true  "HttpReqCluster_Create"
-// @Success     200 {object} v1.Cluster
-func (ctl Control) CreateCluster(ctx echo.Context) error {
-	body := new(clusterv1.HttpReqCluster_Create)
-	if err := echoutil.Bind(ctx, body); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
-				logs.KVL(
-					"type", TypeName(body),
-				)))
-	}
-
-	if len(body.Name) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
-					ParamLog(fmt.Sprintf("%s.Name", TypeName(body)), body.Name)...,
-				)))
-	}
-
-	//property
-	cluster := clusterv1.Cluster{}
-	cluster.UuidMeta = metav1.NewUuidMeta()
-	cluster.LabelMeta = metav1.NewLabelMeta(body.Name, body.Summary)
-	cluster.ClusterProperty = body.ClusterProperty
-
-	//polling option; nil check
-	if cluster.PollingOption == nil {
-		cluster.PollingOption = new(clusterv1.RegularPollingOption).ToMap()
-	}
-
-	//polling option; default(regular)
-	cluster.PollingOption = cluster.GetPollingOption().ToMap()
-
-	//polling limit; nil check
-	if cluster.PoliingLimit == nil {
-		cluster.PoliingLimit = newist.Int16(0)
-	}
-
-	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
-		cluster_, err := vault.NewCluster(tx).Create(cluster)
-		if err != nil {
-			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-				errors.Wrapf(err, "create cluster"))
-		}
-		return cluster_, err
-	})
+// @Param       x_auth_token header string                    false "client session token"
+// @Param       cluster      body   v2.HttpReq_Cluster_create true  "HttpReq_Cluster_create"
+// @Success     200 {object} v2.Cluster
+func (ctl ControlVanilla) CreateCluster(ctx echo.Context) (err error) {
+	body := new(clusterv2.HttpReq_Cluster_create)
+	err = echoutil.WrapHttpError(http.StatusBadRequest,
+		func() error {
+			err := echoutil.Bind(ctx, body)
+			return errors.Wrapf(err, "bind%v", logs.KVL(
+				"type", TypeName(body),
+			))
+		},
+		func() (err error) {
+			if len(body.Name) == 0 {
+				err = ErrorInvalidRequestParameter()
+			}
+			return errors.Wrapf(err, "valid param%v", logs.KVL(
+				ParamLog(fmt.Sprintf("%s.Name", TypeName(body)), body.Name)...,
+			))
+		},
+	)
 	if err != nil {
 		return err
 	}
 
-	return ctx.JSON(http.StatusOK, r)
+	//property
+	cluster := clusterv2.Cluster{}
+	cluster.Uuid = func() string {
+		if 0 < len(body.Uuid) {
+			return body.Uuid
+		}
+		return macro.NewUuidString()
+	}()
+	cluster.Name = body.Name
+	cluster.Summary = body.Summary
+
+	if body.PollingOption.Valid {
+		cluster.PollingOption = *vanilla.NewNullObject(body.GetPollingOption().ToMap())
+	}
+	cluster.PoliingLimit = body.PoliingLimit
+	cluster.Created = time.Now()
+
+	eq_uuid := vanilla.And(
+		vanilla.Equal("uuid", cluster.Uuid),
+		vanilla.IsNull("deleted"),
+	)
+
+	// insert
+	stmt, err := vanilla.Stmt.Insert(cluster.TableName(), cluster.ColumnNames(), cluster.Values())
+	if err != nil {
+		return err
+	}
+	affected, err := stmt.Exec(ctl)
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return errors.New("no affected")
+	}
+
+	// get
+	err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid.Parse(), nil, nil).
+		QueryRow(ctl)(func(scan vanilla.Scanner) (err error) {
+		err = cluster.Scan(scan)
+		if err != nil {
+			return errors.Wrapf(err, "failed to scan")
+		}
+		return
+	})
+	if err != nil {
+		return errors.Wrapf(err, "not found record%v", logs.KVL(
+			"table", cluster.TableName(),
+		))
+	}
+
+	return ctx.JSON(http.StatusOK, cluster)
 }
 
-// Find Cluster
 // @Description Find cluster
 // @Accept      json
 // @Produce     json
@@ -86,15 +107,33 @@ func (ctl Control) CreateCluster(ctx echo.Context) error {
 // @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
 // @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
 // @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
-// @Success     200 {array} v1.Cluster
-func (ctl Control) FindCluster(ctx echo.Context) error {
-	clusters, err := vault.NewCluster(ctl.db.Engine().NewSession()).Query(echoutil.QueryParam(ctx))
+// @Success     200 {array} v2.HttpRsp_Cluster
+func (ctl ControlVanilla) FindCluster(ctx echo.Context) (err error) {
+	q, o, p, err := ParseDecoration(echoutil.QueryParam(ctx))
+	err = errors.Wrapf(err, "ParseDecoration%v", logs.KVL(
+		"query", echoutil.QueryParamString(ctx),
+	))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "find cluster"))
+		return HttpError(err, http.StatusBadRequest)
 	}
 
-	return ctx.JSON(http.StatusOK, clusters)
+	rsp := make([]clusterv2.HttpRsp_Cluster, 0, state.ENV__INIT_SLICE_CAPACITY__())
+
+	cluster := clusterv2.Cluster{}
+	err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), q, o, p).
+		QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
+		err = cluster.Scan(scan)
+		if err != nil {
+			return errors.Wrapf(err, "failed to scan")
+		}
+		rsp = append(rsp, clusterv2.HttpRsp_Cluster{Cluster: cluster})
+		return
+	})
+	if err != nil {
+		return
+	}
+
+	return ctx.JSON(http.StatusOK, rsp)
 }
 
 // Get Cluster
@@ -104,212 +143,315 @@ func (ctl Control) FindCluster(ctx echo.Context) error {
 // @Tags        server/cluster
 // @Router      /server/cluster/{uuid} [get]
 // @Param       x_auth_token header string false "client session token"
-// @Param       uuid         path   string true  "Cluster 의 Uuid"
-// @Success     200 {object} v1.Cluster
-func (ctl Control) GetCluster(ctx echo.Context) error {
-	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
-					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
-				)))
+// @Param       uuid         path   string true  "Cluster Uuid"
+// @Success     200 {object} v2.HttpRsp_Cluster
+func (ctl ControlVanilla) GetCluster(ctx echo.Context) (err error) {
+	err = echoutil.WrapHttpError(http.StatusBadRequest,
+		func() (err error) {
+			if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+				err = ErrorInvalidRequestParameter()
+			}
+			return errors.Wrapf(err, "valid param%v", logs.KVL(
+				ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
+			))
+		})
+	if err != nil {
+		return
 	}
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	cluster, err := vault.NewCluster(ctl.db.Engine().NewSession()).Get(uuid)
+	cluster := clusterv2.Cluster{}
+	cluster.Uuid = uuid
+	eq_uuid := vanilla.And(
+		vanilla.Equal("uuid", cluster.Uuid),
+		// vanilla.IsNull("deleted"),
+	)
+
+	err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid.Parse(), nil, nil).
+		QueryRow(ctl)(func(scan vanilla.Scanner) (err error) {
+		err = cluster.Scan(scan)
+		if err != nil {
+			return errors.Wrapf(err, "failed to scan")
+		}
+		return
+	})
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "get cluster"))
+		return
 	}
 
-	return ctx.JSON(http.StatusOK, cluster)
+	return ctx.JSON(http.StatusOK, clusterv2.HttpRsp_Cluster{Cluster: cluster})
 }
 
-// Update Cluster
 // @Description Update a cluster
 // @Accept      json
 // @Produce     json
 // @Tags        server/cluster
 // @Router      /server/cluster/{uuid} [put]
-// @Param       x_auth_token header string                   false "client session token"
-// @Param       uuid         path   string                   true  "Cluster 의 Uuid"
-// @Param       cluster      body   v1.HttpReqCluster_Update true  "HttpReqCluster_Update"
-// @Success     200 {object} v1.Cluster
-func (ctl Control) UpdateCluster(ctx echo.Context) error {
-	body := new(clusterv1.HttpReqCluster_Update)
-	if err := echoutil.Bind(ctx, body); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+// @Param       x_auth_token header string                    false "client session token"
+// @Param       uuid         path   string                    true  "Cluster Uuid"
+// @Param       cluster      body   v2.HttpReq_Cluster_update true  "HttpReq_Cluster_update"
+// @Success     200 {object} v2.HttpRsp_Cluster
+func (ctl ControlVanilla) UpdateCluster(ctx echo.Context) (err error) {
+	body := new(clusterv2.HttpReq_Cluster_update)
+
+	err = echoutil.WrapHttpError(http.StatusBadRequest,
+		func() error {
+			err := echoutil.Bind(ctx, body)
+			return errors.Wrapf(err, "bind%s",
 				logs.KVL(
 					"type", TypeName(body),
-				)))
-	}
-
-	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
-					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
-				)))
+				))
+		},
+		func() (err error) {
+			if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+				err = ErrorInvalidRequestParameter()
+			}
+			return errors.Wrapf(err, "valid param%v", logs.KVL(
+				ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
+			))
+		},
+	)
+	if err != nil {
+		return
 	}
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
 	//property
-	cluster := clusterv1.Cluster{}
+	cluster := clusterv2.Cluster{}
 	cluster.Uuid = uuid //set uuid from path
-	cluster.LabelMeta = metav1.NewLabelMeta(body.Name, body.Summary)
-	cluster.ClusterProperty = body.ClusterProperty
+	cluster.Name = body.Name
+	cluster.Summary = body.Summary
+	if body.PollingOption.Valid {
+		cluster.PollingOption = *vanilla.NewNullObject(body.GetPollingOption().ToMap())
+	}
+	cluster.PoliingLimit = body.PoliingLimit
+	cluster.Updated = *vanilla.NewNullTime(time.Now())
 
-	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
-		cluster_, err := vault.NewCluster(tx).Update(cluster)
-		if err != nil {
-			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-				errors.Wrapf(err, "update cluster"))
-		}
+	eq_uuid := vanilla.And(
+		vanilla.Equal("uuid", cluster.Uuid),
+		vanilla.IsNull("deleted"),
+	)
 
-		return cluster_, nil
-	})
+	updateSet := map[string]interface{}{}
+	if 0 < len(body.Name) {
+		updateSet["name"] = cluster.Name
+	}
+	if cluster.Summary.Valid {
+		updateSet["summary"] = cluster.Summary
+	}
+	if cluster.PollingOption.Valid {
+		updateSet["polling_option"] = cluster.PollingOption
+	}
+	if 0 <= cluster.PoliingLimit {
+		updateSet["polling_limit"] = cluster.PoliingLimit
+	}
+	updateSet["updated"] = cluster.Updated
+
+	// update
+	affected, err := vanilla.Stmt.Update(cluster.TableName(), updateSet, eq_uuid.Parse()).
+		Exec(ctl)
 	if err != nil {
-		return err
+		return
+	}
+	if affected == 0 {
+		return errors.New("no affected")
 	}
 
-	return ctx.JSON(http.StatusOK, r)
+	// get
+	err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid.Parse(), nil, nil).
+		QueryRow(ctl)(func(scan vanilla.Scanner) (err error) {
+		err = cluster.Scan(scan)
+		if err != nil {
+			return errors.Wrapf(err, "failed to scan")
+		}
+		return
+	})
+	if err != nil {
+		return errors.Wrapf(err, "not found record%v", logs.KVL(
+			"table", cluster.TableName(),
+		))
+	}
+
+	return ctx.JSON(http.StatusOK, clusterv2.HttpRsp_Cluster{Cluster: cluster})
 }
 
-// UpdateClusterPollingRegular
 // @Description Update a cluster Polling Reguar
 // @Accept      json
 // @Produce     json
 // @Tags        server/cluster
 // @Router      /server/cluster/{uuid}/polling/regular [put]
 // @Param       x_auth_token   header string                  false "client session token"
-// @Param       uuid           path   string                  true  "Cluster 의 Uuid"
-// @Param       polling_option body   v1.RegularPollingOption true  "RegularPollingOption"
-// @Success     200 {object} v1.Cluster
-func (ctl Control) UpdateClusterPollingRegular(ctx echo.Context) error {
-	polling_option := new(clusterv1.RegularPollingOption)
-	if err := echoutil.Bind(ctx, polling_option); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+// @Param       uuid           path   string                  true  "Cluster Uuid"
+// @Param       polling_option body   v2.RegularPollingOption true  "RegularPollingOption"
+// @Success     200 {object} v2.HttpRsp_Cluster
+func (ctl ControlVanilla) UpdateClusterPollingRegular(ctx echo.Context) (err error) {
+	body := new(clusterv2.RegularPollingOption)
+	err = echoutil.WrapHttpError(http.StatusBadRequest,
+		func() error {
+			err := echoutil.Bind(ctx, body)
+			return errors.Wrapf(err, "bind%s",
 				logs.KVL(
-					"type", TypeName(polling_option),
-				)))
-	}
-
-	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
-					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
-				)))
+					"type", TypeName(body),
+				))
+		},
+		func() (err error) {
+			if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+				err = ErrorInvalidRequestParameter()
+			}
+			return errors.Wrapf(err, "valid param%v", logs.KVL(
+				ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
+			))
+		},
+	)
+	if err != nil {
+		return
 	}
 
 	uuid := echoutil.Param(ctx)[__UUID__]
-	//property
-	cluster := clusterv1.Cluster{}
-	cluster.Uuid = uuid                      //set uuid from path
-	cluster.SetPollingOption(polling_option) //update polling option
 
-	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
-		cluster_, err := vault.NewCluster(tx).Update(cluster)
-		if err != nil {
-			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-				errors.Wrapf(err, "update cluster"))
-		}
-
-		return cluster_, nil
-	})
+	cluster, err := ctl.updateClusterPollingOptions(uuid, body)
 	if err != nil {
 		return err
 	}
 
-	return ctx.JSON(http.StatusOK, r)
+	return ctx.JSON(http.StatusOK, clusterv2.HttpRsp_Cluster{Cluster: cluster})
 }
 
-// UpdateClusterPollingSmart
 // @Description Update a cluster Polling Smart
 // @Accept      json
 // @Produce     json
 // @Tags        server/cluster
 // @Router      /server/cluster/{uuid}/polling/smart [put]
 // @Param       x_auth_token   header string                false "client session token"
-// @Param       uuid           path   string                true  "Cluster 의 Uuid"
-// @Param       polling_option body   v1.SmartPollingOption true  "SmartPollingOption"
-// @Success     200 {object} v1.Cluster
-func (ctl Control) UpdateClusterPollingSmart(ctx echo.Context) error {
-	polling_option := new(clusterv1.SmartPollingOption)
-	if err := echoutil.Bind(ctx, polling_option); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+// @Param       uuid           path   string                true  "Cluster Uuid"
+// @Param       polling_option body   v2.SmartPollingOption true  "SmartPollingOption"
+// @Success     200 {object} v2.HttpRsp_Cluster
+func (ctl ControlVanilla) UpdateClusterPollingSmart(ctx echo.Context) (err error) {
+	body := new(clusterv2.SmartPollingOption)
+	err = echoutil.WrapHttpError(http.StatusBadRequest,
+		func() error {
+			err := echoutil.Bind(ctx, body)
+			return errors.Wrapf(err, "bind%s",
 				logs.KVL(
-					"type", TypeName(polling_option),
-				)))
-	}
-
-	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
-					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
-				)))
+					"type", TypeName(body),
+				))
+		},
+		func() (err error) {
+			if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+				err = ErrorInvalidRequestParameter()
+			}
+			return errors.Wrapf(err, "valid param%v", logs.KVL(
+				ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
+			))
+		},
+	)
+	if err != nil {
+		return
 	}
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	//property
-	cluster := clusterv1.Cluster{}
-	cluster.Uuid = uuid                      //set uuid from path
-	cluster.SetPollingOption(polling_option) //update polling option
-
-	r, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
-		cluster_, err := vault.NewCluster(tx).Update(cluster)
-		if err != nil {
-			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-				errors.Wrapf(err, "update cluster"))
-		}
-
-		return cluster_, nil
-	})
+	cluster, err := ctl.updateClusterPollingOptions(uuid, body)
 	if err != nil {
 		return err
 	}
 
-	return ctx.JSON(http.StatusOK, r)
+	return ctx.JSON(http.StatusOK, clusterv2.HttpRsp_Cluster{Cluster: cluster})
 }
 
-// Delete Cluster
 // @Description Delete a cluster
 // @Accept json
 // @Produce json
 // @Tags server/cluster
 // @Router /server/cluster/{uuid} [delete]
 // @Param       x_auth_token header string false "client session token"
-// @Param       uuid         path   string true  "Cluster 의 Uuid"
+// @Param       uuid         path   string true  "Cluster Uuid"
 // @Success 200
-func (ctl Control) DeleteCluster(ctx echo.Context) error {
-	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
-					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
-				)))
+func (ctl ControlVanilla) DeleteCluster(ctx echo.Context) (err error) {
+	err = echoutil.WrapHttpError(http.StatusBadRequest,
+		func() (err error) {
+			if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+				err = ErrorInvalidRequestParameter()
+			}
+			return errors.Wrapf(err, "valid param%v", logs.KVL(
+				ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
+			))
+		})
+	if err != nil {
+		return
 	}
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	_, err := ctl.ScopeSession(func(tx *xorm.Session) (interface{}, error) {
-		if err := vault.NewCluster(tx).Delete(uuid); err != nil {
-			return nil, echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-				errors.Wrapf(err, "delete cluster"))
-		}
+	channel := clusterv2.Cluster{}
+	channel.Uuid = uuid
+	channel.Deleted = *vanilla.NewNullTime(time.Now())
+	updateSet := map[string]interface{}{
+		"deleted": channel.Deleted,
+	}
+	eq_uuid := vanilla.And(
+		vanilla.Equal("uuid", uuid),
+	)
 
-		return nil, nil
-	})
+	affected, err := vanilla.Stmt.Update(channel.TableName(), updateSet, eq_uuid.Parse()).
+		Exec(ctl)
 	if err != nil {
 		return err
 	}
+	if affected == 0 {
+		return errors.Errorf("no affected")
+	}
 
 	return ctx.JSON(http.StatusOK, OK())
+}
+
+func (ctl ControlVanilla) updateClusterPollingOptions(uuid string, polling_option clusterv2.PollingHandler) (cluster clusterv2.Cluster, err error) {
+
+	//property
+	cluster.Uuid = uuid                      //set uuid from path
+	cluster.SetPollingOption(polling_option) //update polling option
+
+	cluster.Updated = *vanilla.NewNullTime(time.Now())
+
+	eq_uuid := vanilla.And(
+		vanilla.Equal("uuid", cluster.Uuid),
+		vanilla.IsNull("deleted"),
+	)
+
+	updateSet := map[string]interface{}{}
+
+	if cluster.PollingOption.Valid {
+		updateSet["polling_option"] = cluster.PollingOption
+	}
+
+	updateSet["updated"] = cluster.Updated
+
+	// update
+	affected, err := vanilla.Stmt.Update(cluster.TableName(), updateSet, eq_uuid.Parse()).
+		Exec(ctl)
+	if err != nil {
+		return
+	}
+	if affected == 0 {
+		return cluster, errors.New("no affected")
+	}
+
+	// get
+	err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid.Parse(), nil, nil).
+		QueryRow(ctl)(func(scan vanilla.Scanner) (err error) {
+		err = cluster.Scan(scan)
+		if err != nil {
+			return errors.Wrapf(err, "failed to scan")
+		}
+		return
+	})
+	if err != nil {
+		return cluster, errors.Wrapf(err, "not found record%v", logs.KVL(
+			"table", cluster.TableName(),
+		))
+	}
+
+	return
 }

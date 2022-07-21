@@ -145,6 +145,7 @@ func (ctl ControlVanilla) UpdateGlobalVariablesValue(ctx echo.Context) (err erro
 	updateSet["value"] = globvar.Value
 	updateSet["updated"] = globvar.Updated
 
+	// update
 	affected, err := vanilla.Stmt.Update(globvar.TableName(), updateSet, eq_uuid.Parse()).
 		Exec(ctl)
 	if err != nil {
@@ -154,6 +155,7 @@ func (ctl ControlVanilla) UpdateGlobalVariablesValue(ctx echo.Context) (err erro
 		return errors.New("no affected")
 	}
 
+	// get
 	err = vanilla.Stmt.Select(globvar.TableName(), globvar.ColumnNames(), eq_uuid.Parse(), nil, nil).
 		QueryRow(ctl)(func(scan vanilla.Scanner) (err error) {
 		err = globvar.Scan(scan)

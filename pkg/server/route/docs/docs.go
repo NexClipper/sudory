@@ -1933,7 +1933,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.Cluster"
+                                "$ref": "#/definitions/v2.HttpRsp_Cluster"
                             }
                         }
                     }
@@ -1958,12 +1958,12 @@ var doc = `{
                         "in": "header"
                     },
                     {
-                        "description": "HttpReqCluster_Create",
+                        "description": "HttpReq_Cluster_create",
                         "name": "cluster",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqCluster_Create"
+                            "$ref": "#/definitions/v2.HttpReq_Cluster_create"
                         }
                     }
                 ],
@@ -1971,7 +1971,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.Cluster"
+                            "$ref": "#/definitions/v2.Cluster"
                         }
                     }
                 }
@@ -1998,7 +1998,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Cluster 의 Uuid",
+                        "description": "Cluster Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2008,7 +2008,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.Cluster"
+                            "$ref": "#/definitions/v2.HttpRsp_Cluster"
                         }
                     }
                 }
@@ -2033,18 +2033,18 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Cluster 의 Uuid",
+                        "description": "Cluster Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "HttpReqCluster_Update",
+                        "description": "HttpReq_Cluster_update",
                         "name": "cluster",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqCluster_Update"
+                            "$ref": "#/definitions/v2.HttpReq_Cluster_update"
                         }
                     }
                 ],
@@ -2052,7 +2052,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.Cluster"
+                            "$ref": "#/definitions/v2.HttpRsp_Cluster"
                         }
                     }
                 }
@@ -2077,7 +2077,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Cluster 의 Uuid",
+                        "description": "Cluster Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2111,7 +2111,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Cluster 의 Uuid",
+                        "description": "Cluster Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2122,7 +2122,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.RegularPollingOption"
+                            "$ref": "#/definitions/v2.RegularPollingOption"
                         }
                     }
                 ],
@@ -2130,7 +2130,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.Cluster"
+                            "$ref": "#/definitions/v2.HttpRsp_Cluster"
                         }
                     }
                 }
@@ -2157,7 +2157,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Cluster 의 Uuid",
+                        "description": "Cluster Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2168,7 +2168,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.SmartPollingOption"
+                            "$ref": "#/definitions/v2.SmartPollingOption"
                         }
                     }
                 ],
@@ -2176,7 +2176,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.Cluster"
+                            "$ref": "#/definitions/v2.HttpRsp_Cluster"
                         }
                     }
                 }
@@ -3516,75 +3516,6 @@ var doc = `{
                 }
             }
         },
-        "v1.Cluster": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "polling_limit": {
-                    "type": "integer"
-                },
-                "polling_option": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqCluster_Create": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "polling_limit": {
-                    "type": "integer"
-                },
-                "polling_option": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "summary": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqCluster_Update": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "polling_limit": {
-                    "type": "integer"
-                },
-                "polling_option": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "summary": {
-                    "type": "string"
-                }
-            }
-        },
         "v1.HttpReqTemplateCommand_Create": {
             "type": "object",
             "properties": {
@@ -4069,22 +4000,6 @@ var doc = `{
                 }
             }
         },
-        "v1.RegularPollingOption": {
-            "type": "object"
-        },
-        "v1.SmartPollingOption": {
-            "type": "object",
-            "properties": {
-                "busy": {
-                    "description": "(초)",
-                    "type": "integer"
-                },
-                "idle": {
-                    "description": "(초)",
-                    "type": "integer"
-                }
-            }
-        },
         "v1.Template": {
             "type": "object",
             "properties": {
@@ -4195,6 +4110,40 @@ var doc = `{
                     "type": "integer"
                 },
                 "updated": {
+                    "type": "string"
+                }
+            }
+        },
+        "v2.Cluster": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "polling_limit": {
+                    "type": "integer"
+                },
+                "polling_option": {
+                    "type": "object"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
                     "type": "string"
                 }
             }
@@ -4319,6 +4268,44 @@ var doc = `{
             "properties": {
                 "name": {
                     "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_Cluster_create": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "polling_limit": {
+                    "type": "integer"
+                },
+                "polling_option": {
+                    "type": "object"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_Cluster_update": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "polling_limit": {
+                    "type": "integer"
+                },
+                "polling_option": {
+                    "type": "object"
                 },
                 "summary": {
                     "type": "string"
@@ -4613,6 +4600,40 @@ var doc = `{
                 },
                 "uuid": {
                     "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_Cluster": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "polling_limit": {
+                    "type": "integer"
+                },
+                "polling_option": {
+                    "type": "object"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
                     "type": "string"
                 }
             }
@@ -5178,6 +5199,9 @@ var doc = `{
                 }
             }
         },
+        "v2.RegularPollingOption": {
+            "type": "object"
+        },
         "v2.ServiceStep": {
             "type": "object",
             "properties": {
@@ -5286,6 +5310,19 @@ var doc = `{
                 "uuid": {
                     "description": "uuid",
                     "type": "string"
+                }
+            }
+        },
+        "v2.SmartPollingOption": {
+            "type": "object",
+            "properties": {
+                "busy": {
+                    "description": "(초)",
+                    "type": "integer"
+                },
+                "idle": {
+                    "description": "(초)",
+                    "type": "integer"
                 }
             }
         }

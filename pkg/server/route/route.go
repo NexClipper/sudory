@@ -148,13 +148,13 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		}
 
 		//route /server/cluster*
-		group.GET("/cluster", controller.FindCluster)
-		group.GET("/cluster/:uuid", controller.GetCluster)
-		group.POST("/cluster", controller.CreateCluster)
-		group.PUT("/cluster/:uuid", controller.UpdateCluster)
-		group.PUT("/cluster/:uuid/polling/regular", controller.UpdateClusterPollingRegular)
-		group.PUT("/cluster/:uuid/polling/smart", controller.UpdateClusterPollingSmart)
-		group.DELETE("/cluster/:uuid", controller.DeleteCluster)
+		group.GET("/cluster", control.FindCluster)
+		group.GET("/cluster/:uuid", control.GetCluster)
+		group.POST("/cluster", control.CreateCluster)
+		group.PUT("/cluster/:uuid", control.UpdateCluster)
+		group.PUT("/cluster/:uuid/polling/regular", control.UpdateClusterPollingRegular)
+		group.PUT("/cluster/:uuid/polling/smart", control.UpdateClusterPollingSmart)
+		group.DELETE("/cluster/:uuid", control.DeleteCluster)
 		//route /server/template*
 		group.GET("/template", controller.FindTemplate)
 		group.GET("/template/:uuid", controller.GetTemplate)
@@ -173,8 +173,6 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.GET("/service", control.FindService)
 		group.GET("/service/:uuid", control.GetService)
 		group.POST("/service", control.CreateService)
-		// router.e.PUT("/service/:uuid", controller.UpdateService)
-		// group.DELETE("/service/:uuid", vanilla.DeleteService)
 		//route /server/service_step*
 		group.GET("/service/step", control.FindServiceStep)
 		group.GET("/service/:uuid/step", control.GetServiceSteps)
