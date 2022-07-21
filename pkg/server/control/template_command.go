@@ -7,25 +7,28 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	"github.com/NexClipper/sudory/pkg/server/macro/nullable"
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
+	templatev2 "github.com/NexClipper/sudory/pkg/server/model/template/v2"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
+	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 )
 
-// Create Template Command
+// @deprecated
 // @Description Create a template command
 // @Accept      json
 // @Produce     json
 // @Tags        server/template_command
 // @Router      /server/template/{template_uuid}/command [post]
 // @Param       x_auth_token  header string                           false "client session token"
-// @Param       template_uuid path   string                           true  "HttpReqTemplate 의 Uuid"
+// @Param       template_uuid path   string                           true  "HttpReqTemplate Uuid"
 // @Param       command       body   v1.HttpReqTemplateCommand_Create true  "HttpReqTemplateCommand_Create"
 // @Success 200 {object} v1.TemplateCommand
 func (ctl Control) CreateTemplateCommand(ctx echo.Context) error {
@@ -158,93 +161,128 @@ func (ctl Control) CreateTemplateCommand(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
-// FindTemplateCommand
-// @Description Find template command
+// @Description List template command
 // @Accept      json
 // @Produce     json
 // @Tags        server/template_command
 // @Router      /server/template/{template_uuid}/command [get]
 // @Param       x_auth_token  header string false "client session token"
-// @Param       template_uuid path   string true  "HttpReqTemplate 의 Uuid"
-// @Success 200 {array} v1.TemplateCommand
-func (ctl Control) FindTemplateCommand(ctx echo.Context) error {
-	if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
-					ParamLog(__TEMPLATE_UUID__, echoutil.Param(ctx)[__TEMPLATE_UUID__])...,
-				)))
-	}
-
-	where := "template_uuid = ?"
+// @Param       template_uuid path   string true  "HttpReqTemplate Uuid"
+// @Success 200 {array} v2.HttpRsp_TemplateCommand
+func (ctl ControlVanilla) ListTemplateCommand(ctx echo.Context) (err error) {
 	template_uuid := echoutil.Param(ctx)[__TEMPLATE_UUID__]
 
-	r, err := vault.NewTemplateCommand(ctl.NewSession()).Find(where, template_uuid)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "find template_command%s",
+	err = echoutil.WrapHttpError(http.StatusBadRequest,
+		func() (err error) {
+			if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
+				err = ErrorInvalidRequestParameter()
+			}
+			return errors.Wrapf(err, "valid param%s",
 				logs.KVL(
-					"query", echoutil.QueryParamString(ctx),
-				)))
+					ParamLog(__TEMPLATE_UUID__, echoutil.Param(ctx)[__TEMPLATE_UUID__])...,
+				))
+		},
+	)
+	if err != nil {
+		return
 	}
 
-	return ctx.JSON(http.StatusOK, r)
+	commands, err := ListTemplateCommand(ctl, template_uuid)
+	if err != nil {
+		return
+	}
+
+	rsp := make([]templatev2.HttpRsp_TemplateCommand, len(commands))
+	for i := range commands {
+		rsp[i] = templatev2.HttpRsp_TemplateCommand(commands[i])
+	}
+
+	return ctx.JSON(http.StatusOK, rsp)
 
 }
 
-// Get Template Command
+func ListTemplateCommand(ctl ControlVanilla, template_uuid string) ([]templatev2.TemplateCommand, error) {
+	rsp := make([]templatev2.TemplateCommand, 0, state.ENV__INIT_SLICE_CAPACITY__())
+
+	command := templatev2.TemplateCommand{}
+	command.TemplateUuid = template_uuid
+
+	eq_uuid := vanilla.Equal("template_uuid", command.TemplateUuid)
+	order := vanilla.Asc("sequence")
+
+	err := vanilla.Stmt.Select(command.TableName(), command.ColumnNames(), eq_uuid.Parse(), order.Parse(), nil).
+		QueryRows(ctl)(func(scan vanilla.Scanner, _ int) error {
+		err := command.Scan(scan)
+		rsp = append(rsp, command)
+		return errors.Wrapf(err, "failed to scan")
+	})
+
+	return rsp, err
+}
+
 // @Description Get a template command
 // @Accept      json
 // @Produce     json
 // @Tags        server/template_command
 // @Router      /server/template/{template_uuid}/command/{uuid} [get]
 // @Param       x_auth_token  header string false "client session token"
-// @Param       template_uuid path   string true  "HttpReqTemplate 의 Uuid"
+// @Param       template_uuid path   string true  "HttpReqTemplate Uuid"
 // @Param       uuid          path   string true  "HttpReqTemplateCommand 의 Uuid"
-// @Success 200 {object} v1.TemplateCommand
-func (ctl Control) GetTemplateCommand(ctx echo.Context) error {
-	if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
-					ParamLog(__TEMPLATE_UUID__, echoutil.Param(ctx)[__TEMPLATE_UUID__])...,
-				)))
-	}
-	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
-					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
-				)))
-	}
-
+// @Success 200 {object} v2.HttpRsp_TemplateCommand
+func (ctl ControlVanilla) GetTemplateCommand(ctx echo.Context) (err error) {
 	_ = echoutil.Param(ctx)[__TEMPLATE_UUID__]
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	// r, err := ctl.Scope(func(db database.Context) (interface{}, error) {
-	r, err := vault.NewTemplateCommand(ctl.NewSession()).Get(uuid)
+	err = echoutil.WrapHttpError(http.StatusBadRequest,
+		func() (err error) {
+			if len(echoutil.Param(ctx)[__TEMPLATE_UUID__]) == 0 {
+				err = ErrorInvalidRequestParameter()
+			}
+			return errors.Wrapf(err, "valid param%s",
+				logs.KVL(
+					ParamLog(__TEMPLATE_UUID__, echoutil.Param(ctx)[__TEMPLATE_UUID__])...,
+				))
+		},
+		func() (err error) {
+			if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+				err = ErrorInvalidRequestParameter()
+			}
+			return errors.Wrapf(err, "valid param%s",
+				logs.KVL(
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
+				))
+		},
+	)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "get template command"))
+		return
 	}
-	// 	return commandv1.TemplateCommand{DbSchema: *r}, nil
-	// })
-	// if err != nil {
-	// 	return echo.NewHTTPError(http.StatusInternalServerError).SetInternal( err)
-	// }
 
-	return ctx.JSON(http.StatusOK, r)
+	command := templatev2.TemplateCommand{}
+	command.Uuid = uuid
+
+	eq_uuid := vanilla.Equal("uuid", command.Uuid)
+
+	err = vanilla.Stmt.Select(command.TableName(), command.ColumnNames(), eq_uuid.Parse(), nil, nil).
+		QueryRow(ctl)(func(scan vanilla.Scanner) error {
+		err := command.Scan(scan)
+		return errors.Wrapf(err, "failed to scan")
+	})
+	if err != nil {
+		return
+	}
+
+	return ctx.JSON(http.StatusOK, command)
 }
 
-// Update Template Command
+// @deprecated
 // @Description Update a template command
 // @Accept      json
 // @Produce     json
 // @Tags        server/template_command
 // @Router      /server/template/{template_uuid}/command/{uuid} [put]
 // @Param       x_auth_token  header string                           false "client session token"
-// @Param       template_uuid path   string                           true  "HttpReqTemplateCommand 의 TemplateUuid"
-// @Param       uuid          path   string                           true  "HttpReqTemplateCommand 의 Uuid"
+// @Param       template_uuid path   string                           true  "HttpReqTemplateCommand TemplateUuid"
+// @Param       uuid          path   string                           true  "HttpReqTemplateCommand Uuid"
 // @Param       command       body   v1.HttpReqTemplateCommand_Update true  "HttpReqTemplateCommand_Update"
 // @Success 200 {object} v1.TemplateCommand
 func (ctl Control) UpdateTemplateCommand(ctx echo.Context) error {
@@ -356,14 +394,14 @@ func (ctl Control) UpdateTemplateCommand(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
-// Delete Template Command
+// @deprecated
 // @Description Delete a template command
 // @Accept      json
 // @Produce     json
 // @Tags        server/template_command
 // @Router      /server/template/{template_uuid}/command/{uuid} [delete]
 // @Param       x_auth_token  header string false "client session token"
-// @Param       template_uuid path   string true  "HttpReqTemplate 의 Uuid"
+// @Param       template_uuid path   string true  "HttpReqTemplate Uuid"
 // @Param       uuid          path   string true  "HttpReqTemplateCommand 의 Uuid"
 // @Success 200
 func (ctl Control) DeleteTemplateCommand(ctx echo.Context) error {

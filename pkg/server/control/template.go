@@ -3,21 +3,23 @@ package control
 import (
 	"fmt"
 	"net/http"
-	"sort"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/macro/newist"
 	metav1 "github.com/NexClipper/sudory/pkg/server/model/meta/v1"
 	templatev1 "github.com/NexClipper/sudory/pkg/server/model/template/v1"
+	templatev2 "github.com/NexClipper/sudory/pkg/server/model/template/v2"
 	commandv1 "github.com/NexClipper/sudory/pkg/server/model/template_command/v1"
+	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 )
 
-// Create Template
+// @deprecated
 // @Description Create a template
 // @Accept      json
 // @Produce     json
@@ -142,54 +144,68 @@ func (ctl Control) CreateTemplate(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
-// Get Template
 // @Description Get a template
 // @Accept      json
 // @Produce     json
 // @Tags        server/template
 // @Router      /server/template/{uuid} [get]
 // @Param       x_auth_token header string false "client session token"
-// @Param       uuid         path   string true  "Template 의 Uuid"
-// @Success 200 {object} v1.HttpRspTemplate
-func (ctl Control) GetTemplate(ctx echo.Context) error {
-	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
-				logs.KVL(
-					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
-				)))
-	}
-
+// @Param       uuid         path   string true  "Template Uuid"
+// @Success 200 {object} v2.HttpRsp_Template
+func (ctl ControlVanilla) GetTemplate(ctx echo.Context) (err error) {
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	template, err := vault.NewTemplate(ctl.NewSession()).Get(uuid)
+	err = echoutil.WrapHttpError(http.StatusBadRequest,
+		func() (err error) {
+			if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+				err = ErrorInvalidRequestParameter()
+			}
+			return errors.Wrapf(err, "valid param%s",
+				logs.KVL(
+					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
+				))
+		},
+	)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "get template"))
+		return
 	}
 
-	where := "template_uuid = ?"
-	commands, err := vault.NewTemplateCommand(ctl.NewSession()).Find(where, uuid)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "find template command"))
-	}
+	template := templatev2.Template{}
+	template.Uuid = uuid
 
-	sort.Slice(commands, func(i, j int) bool {
-		var a, b int32 = 0, 0
-		if commands[i].Sequence != nil {
-			a = *commands[i].Sequence
-		}
-		if commands[j].Sequence != nil {
-			b = *commands[j].Sequence
-		}
-		return a < b
+	eq_uuid := vanilla.Equal("uuid", template.Uuid)
+
+	err = vanilla.Stmt.Select(template.TableName(), template.ColumnNames(), eq_uuid.Parse(), nil, nil).
+		QueryRow(ctl)(func(scan vanilla.Scanner) error {
+		err := template.Scan(scan)
+		return errors.Wrapf(err, "failed to scan")
 	})
+	if err != nil {
+		return
+	}
 
-	return ctx.JSON(http.StatusOK, templatev1.HttpRspTemplate{Template: *template, Commands: commands})
+	commands := make([]templatev2.TemplateCommand, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	command := templatev2.TemplateCommand{}
+	command.TemplateUuid = uuid
+
+	eq_uuid = vanilla.Equal("template_uuid", command.TemplateUuid)
+	order := vanilla.Asc("sequence")
+
+	err = vanilla.Stmt.Select(command.TableName(), command.ColumnNames(), eq_uuid.Parse(), order.Parse(), nil).
+		QueryRows(ctl)(func(scan vanilla.Scanner, _ int) error {
+		err := command.Scan(scan)
+		if err == nil {
+			commands = append(commands, command)
+		}
+		return errors.Wrapf(err, "failed to scan")
+	})
+	if err != nil {
+		return
+	}
+
+	return ctx.JSON(http.StatusOK, templatev2.HttpRsp_Template{Template: template, Commands: commands})
 }
 
-// Find []Template
 // @Description Find []template
 // @Accept      json
 // @Produce     json
@@ -199,64 +215,44 @@ func (ctl Control) GetTemplate(ctx echo.Context) error {
 // @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
 // @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
 // @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
-// @Success 200 {array} v1.HttpRspTemplate
-func (ctl Control) FindTemplate(ctx echo.Context) error {
-	foreach_template := func(elems []templatev1.Template, mapper func(int, templatev1.Template) error) error {
-		for n := range elems {
-			if err := mapper(n, elems[n]); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
-	tx := ctl.NewSession()
-	defer tx.Close()
-
-	templates, err := vault.NewTemplate(tx).Query(echoutil.QueryParam(ctx))
+// @Success 200 {array} v2.HttpRsp_Template
+func (ctl ControlVanilla) FindTemplate(ctx echo.Context) error {
+	q, o, p, err := ParseDecoration(echoutil.QueryParam(ctx))
+	err = errors.Wrapf(err, "ParseDecoration%v", logs.KVL(
+		"query", echoutil.QueryParamString(ctx),
+	))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-			errors.Wrapf(err, "find template"))
+		return HttpError(err, http.StatusBadRequest)
 	}
 
-	rsp := make([]templatev1.HttpRspTemplate, len(templates))
-	if err := foreach_template(templates, func(i int, t templatev1.Template) error {
-		where := "template_uuid = ?"
-		commands, err := vault.NewTemplateCommand(tx).Find(where, t.Uuid)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
-				errors.Wrapf(err, "find template command"))
+	rsp := make([]templatev2.HttpRsp_Template, 0, state.ENV__INIT_SLICE_CAPACITY__())
+
+	template := templatev2.Template{}
+	err = vanilla.Stmt.Select(template.TableName(), template.ColumnNames(), q, o, p).
+		QueryRows(ctl)(func(scan vanilla.Scanner, _ int) error {
+		if err = template.Scan(scan); err != nil {
+			return errors.Wrapf(err, "failed to scan")
 		}
 
-		sort.Slice(commands, func(i, j int) bool {
-			var a, b int32 = 0, 0
-			if commands[i].Sequence != nil {
-				a = *commands[i].Sequence
-			}
-			if commands[j].Sequence != nil {
-				b = *commands[j].Sequence
-			}
-			return a < b
-		})
-
-		rsp[i] = templatev1.HttpRspTemplate{Template: t, Commands: commands}
-
-		return nil
-	}); err != nil {
-		return err
+		commands, err := ListTemplateCommand(ctl, template.Uuid)
+		rsp = append(rsp, templatev2.HttpRsp_Template{Template: template, Commands: commands})
+		return errors.Wrapf(err, "failed to get list")
+	})
+	if err != nil {
+		return errors.Wrapf(err, "failed to find template")
 	}
 
 	return ctx.JSON(http.StatusOK, rsp)
 }
 
-// Update Template
+// @deprecated
 // @Description Update a template
 // @Accept      json
 // @Produce     json
 // @Tags        server/template
 // @Router      /server/template/{uuid} [put]
 // @Param       x_auth_token header string                    false "client session token"
-// @Param       uuid         path   string                    true  "Template 의 Uuid"
+// @Param       uuid         path   string                    true  "Template Uuid"
 // @Param       template     body   v1.HttpReqTemplate_Update true  "HttpReqTemplate_Update"
 // @Success 200 {object} v1.Template
 func (ctl Control) UpdateTemplate(ctx echo.Context) error {
@@ -303,7 +299,7 @@ func (ctl Control) UpdateTemplate(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
-// Delete Template
+// @deprecated
 // @Description Delete a template
 // @Accept      json
 // @Produce     json
