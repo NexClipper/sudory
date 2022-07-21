@@ -298,10 +298,10 @@ func (ctl ControlVanilla) DeleteChannel(ctx echo.Context) (err error) {
 		func(tx vanilla.Preparer) error {
 			channel := channelv2.ManagedChannel{}
 			channel.Deleted = *vanilla.NewNullTime(deleted)
-			set := map[string]interface{}{
+			updateSet := map[string]interface{}{
 				"deleted": channel.Deleted,
 			}
-			affected, err := vanilla.Stmt.Update(channel.TableName(), set, cond).
+			affected, err := vanilla.Stmt.Update(channel.TableName(), updateSet, cond).
 				Exec(tx)
 			if err != nil {
 				return err
