@@ -168,7 +168,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.PUT("/template/:template_uuid/command/:uuid", controller.UpdateTemplateCommand)
 		group.DELETE("/template/:template_uuid/command/:uuid", controller.DeleteTemplateCommand)
 		//route /server/template_recipe*
-		group.GET("/template_recipe", controller.FindTemplateRecipe)
+		group.GET("/template_recipe", control.FindTemplateRecipe)
 		//route /server/service*
 		group.GET("/service", control.FindService)
 		group.GET("/service/:uuid", control.GetService)
