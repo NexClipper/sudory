@@ -41,6 +41,11 @@ func Test_LessThanEqual(t *testing.T) {
 	t.Log(c.Query(), c.Args())
 }
 
+func Test_Like(t *testing.T) {
+	c := vanilla.Like("foo", "bar%").Parse()
+	t.Log(c.Query(), c.Args())
+}
+
 func Test_And(t *testing.T) {
 	c := vanilla.And(vanilla.Equal("c1", 1), vanilla.Equal("c2", 2)).Parse()
 	t.Log(c.Query(), c.Args())

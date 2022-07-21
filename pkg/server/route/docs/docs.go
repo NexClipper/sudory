@@ -3407,7 +3407,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Template Command 의 Method",
+                        "description": "Template Command Method",
                         "name": "method",
                         "in": "query"
                     }
@@ -3418,7 +3418,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.TemplateRecipe"
+                                "$ref": "#/definitions/v2.HttpRsp_TemplateRecipe"
                             }
                         }
                     }
@@ -4067,35 +4067,6 @@ var doc = `{
                     "type": "string"
                 },
                 "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.TemplateRecipe": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "method": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
                     "type": "string"
                 }
             }
@@ -5001,6 +4972,36 @@ var doc = `{
                 },
                 "uuid": {
                     "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_TemplateRecipe": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
                     "type": "string"
                 }
             }

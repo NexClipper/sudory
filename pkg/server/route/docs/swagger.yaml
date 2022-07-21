@@ -435,25 +435,6 @@ definitions:
       uuid:
         type: string
     type: object
-  v1.TemplateRecipe:
-    properties:
-      args:
-        type: string
-      created:
-        type: string
-      deleted:
-        type: string
-      id:
-        type: integer
-      method:
-        type: string
-      name:
-        type: string
-      summary:
-        type: string
-      updated:
-        type: string
-    type: object
   v2.ChannelStatusOption_property:
     properties:
       created:
@@ -1075,6 +1056,26 @@ definitions:
         type: string
       uuid:
         description: pk
+        type: string
+    type: object
+  v2.HttpRsp_TemplateRecipe:
+    properties:
+      args:
+        type: string
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      method:
+        type: string
+      name:
+        type: string
+      summary:
+        type: string
+      updated:
         type: string
     type: object
   v2.HttpRsq_ManagedChannel_Format:
@@ -3515,7 +3516,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: Template Command 의 Method
+      - description: Template Command Method
         in: query
         name: method
         type: string
@@ -3526,7 +3527,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.TemplateRecipe'
+              $ref: '#/definitions/v2.HttpRsp_TemplateRecipe'
             type: array
       tags:
       - server/template_recipe

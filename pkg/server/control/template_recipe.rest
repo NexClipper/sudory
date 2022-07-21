@@ -1,0 +1,40 @@
+
+@protocolver = HTTP/1.1
+@protocol    = http
+@hostname    = localhost
+@port        = 8099
+@url         = {{protocol}}://{{hostname}}:{{port}}
+
+@test_path   = /server/template_recipe
+
+@date = {{$datetime "YYYY-MM-DDThh:mm:ss"}}Z
+
+ 
+//<<<< GET >>>> 
+
+@method_1=kubernetes.pods.get.v1
+@method_2=kubernetes.pods.get
+@method_3=kubernetes.pods
+@method_4=kubernetes
+
+
+# @name get_template_recipe_method_1
+
+GET {{url}}{{test_path}}?method={{method_1}} {{protocolver}}
+
+###
+# @name get_template_recipe_method_2
+
+GET {{url}}{{test_path}}?method={{method_2}} {{protocolver}}
+
+###
+# @name get_template_recipe_method_3
+
+GET {{url}}{{test_path}}?method={{method_3}} {{protocolver}}
+
+###
+# @name get_template_recipe_method_4
+
+GET {{url}}{{test_path}}?method={{method_4}}&p={"limit":5, "page": 1} {{protocolver}}
+
+###
