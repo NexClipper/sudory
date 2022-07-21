@@ -156,14 +156,14 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.PUT("/cluster/:uuid/polling/smart", control.UpdateClusterPollingSmart)
 		group.DELETE("/cluster/:uuid", control.DeleteCluster)
 		//route /server/template*
-		group.GET("/template", controller.FindTemplate)
-		group.GET("/template/:uuid", controller.GetTemplate)
+		group.GET("/template", control.FindTemplate)
+		group.GET("/template/:uuid", control.GetTemplate)
 		group.POST("/template", controller.CreateTemplate)
 		group.PUT("/template/:uuid", controller.UpdateTemplate)
 		group.DELETE("/template/:uuid", controller.DeleteTemplate)
 		//route /server/template/:template_uuid/command*
-		group.GET("/template/:template_uuid/command", controller.FindTemplateCommand)
-		group.GET("/template/:template_uuid/command/:uuid", controller.GetTemplateCommand)
+		group.GET("/template/:template_uuid/command", control.ListTemplateCommand)
+		group.GET("/template/:template_uuid/command/:uuid", control.GetTemplateCommand)
 		group.POST("/template/:template_uuid/command", controller.CreateTemplateCommand)
 		group.PUT("/template/:template_uuid/command/:uuid", controller.UpdateTemplateCommand)
 		group.DELETE("/template/:template_uuid/command/:uuid", controller.DeleteTemplateCommand)

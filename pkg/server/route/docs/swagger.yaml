@@ -1058,6 +1058,60 @@ definitions:
         description: pk
         type: string
     type: object
+  v2.HttpRsp_Template:
+    properties:
+      commands:
+        items:
+          $ref: '#/definitions/v2.TemplateCommand'
+        type: array
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      name:
+        type: string
+      origin:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
+        type: string
+    type: object
+  v2.HttpRsp_TemplateCommand:
+    properties:
+      args:
+        type: object
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      method:
+        type: string
+      name:
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        type: integer
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
+        type: string
+    type: object
   v2.HttpRsp_TemplateRecipe:
     properties:
       args:
@@ -1300,6 +1354,35 @@ definitions:
       idle:
         description: (초)
         type: integer
+    type: object
+  v2.TemplateCommand:
+    properties:
+      args:
+        type: object
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      method:
+        type: string
+      name:
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        type: integer
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
+        type: string
     type: object
 info:
   contact:
@@ -3262,13 +3345,14 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.HttpRspTemplate'
+              $ref: '#/definitions/v2.HttpRsp_Template'
             type: array
       tags:
       - server/template
     post:
       consumes:
       - application/json
+      deprecated: true
       description: Create a template
       parameters:
       - description: client session token
@@ -3294,13 +3378,13 @@ paths:
     get:
       consumes:
       - application/json
-      description: Find template command
+      description: List template command
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: HttpReqTemplate 의 Uuid
+      - description: HttpReqTemplate Uuid
         in: path
         name: template_uuid
         required: true
@@ -3312,20 +3396,21 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.TemplateCommand'
+              $ref: '#/definitions/v2.HttpRsp_TemplateCommand'
             type: array
       tags:
       - server/template_command
     post:
       consumes:
       - application/json
+      deprecated: true
       description: Create a template command
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: HttpReqTemplate 의 Uuid
+      - description: HttpReqTemplate Uuid
         in: path
         name: template_uuid
         required: true
@@ -3349,13 +3434,14 @@ paths:
     delete:
       consumes:
       - application/json
+      deprecated: true
       description: Delete a template command
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: HttpReqTemplate 의 Uuid
+      - description: HttpReqTemplate Uuid
         in: path
         name: template_uuid
         required: true
@@ -3381,7 +3467,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: HttpReqTemplate 의 Uuid
+      - description: HttpReqTemplate Uuid
         in: path
         name: template_uuid
         required: true
@@ -3397,24 +3483,25 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.TemplateCommand'
+            $ref: '#/definitions/v2.HttpRsp_TemplateCommand'
       tags:
       - server/template_command
     put:
       consumes:
       - application/json
+      deprecated: true
       description: Update a template command
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: HttpReqTemplateCommand 의 TemplateUuid
+      - description: HttpReqTemplateCommand TemplateUuid
         in: path
         name: template_uuid
         required: true
         type: string
-      - description: HttpReqTemplateCommand 의 Uuid
+      - description: HttpReqTemplateCommand Uuid
         in: path
         name: uuid
         required: true
@@ -3438,6 +3525,7 @@ paths:
     delete:
       consumes:
       - application/json
+      deprecated: true
       description: Delete a template
       parameters:
       - description: client session token
@@ -3465,7 +3553,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: Template 의 Uuid
+      - description: Template Uuid
         in: path
         name: uuid
         required: true
@@ -3476,19 +3564,20 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspTemplate'
+            $ref: '#/definitions/v2.HttpRsp_Template'
       tags:
       - server/template
     put:
       consumes:
       - application/json
+      deprecated: true
       description: Update a template
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: Template 의 Uuid
+      - description: Template Uuid
         in: path
         name: uuid
         required: true

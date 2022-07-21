@@ -5,12 +5,4 @@ type HttpRsp_Template struct {
 	Commands []TemplateCommand `json:"commands,omitempty"`
 }
 
-type HttpReq_TemplateCreate struct {
-	Template_essential `json:",inline"`
-	Commands           []TemplateCommand_essential `json:"commands,omitempty"`
-}
-
-type HttpReq_TemplateUpdate struct {
-	Template_essential `json:",inline"`
-	Commands           []TemplateCommand_essential `json:"commands,omitempty"`
-}
+type HttpRsp_TemplateCommand TemplateCommand

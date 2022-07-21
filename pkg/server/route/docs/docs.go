@@ -3014,7 +3014,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.HttpRspTemplate"
+                                "$ref": "#/definitions/v2.HttpRsp_Template"
                             }
                         }
                     }
@@ -3031,6 +3031,7 @@ var doc = `{
                 "tags": [
                     "server/template"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -3060,7 +3061,7 @@ var doc = `{
         },
         "/server/template/{template_uuid}/command": {
             "get": {
-                "description": "Find template command",
+                "description": "List template command",
                 "consumes": [
                     "application/json"
                 ],
@@ -3079,7 +3080,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "HttpReqTemplate 의 Uuid",
+                        "description": "HttpReqTemplate Uuid",
                         "name": "template_uuid",
                         "in": "path",
                         "required": true
@@ -3091,7 +3092,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.TemplateCommand"
+                                "$ref": "#/definitions/v2.HttpRsp_TemplateCommand"
                             }
                         }
                     }
@@ -3108,6 +3109,7 @@ var doc = `{
                 "tags": [
                     "server/template_command"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -3117,7 +3119,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "HttpReqTemplate 의 Uuid",
+                        "description": "HttpReqTemplate Uuid",
                         "name": "template_uuid",
                         "in": "path",
                         "required": true
@@ -3163,7 +3165,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "HttpReqTemplate 의 Uuid",
+                        "description": "HttpReqTemplate Uuid",
                         "name": "template_uuid",
                         "in": "path",
                         "required": true
@@ -3180,7 +3182,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.TemplateCommand"
+                            "$ref": "#/definitions/v2.HttpRsp_TemplateCommand"
                         }
                     }
                 }
@@ -3196,6 +3198,7 @@ var doc = `{
                 "tags": [
                     "server/template_command"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -3205,14 +3208,14 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "HttpReqTemplateCommand 의 TemplateUuid",
+                        "description": "HttpReqTemplateCommand TemplateUuid",
                         "name": "template_uuid",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "HttpReqTemplateCommand 의 Uuid",
+                        "description": "HttpReqTemplateCommand Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -3247,6 +3250,7 @@ var doc = `{
                 "tags": [
                     "server/template_command"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -3256,7 +3260,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "HttpReqTemplate 의 Uuid",
+                        "description": "HttpReqTemplate Uuid",
                         "name": "template_uuid",
                         "in": "path",
                         "required": true
@@ -3297,7 +3301,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Template 의 Uuid",
+                        "description": "Template Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -3307,7 +3311,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpRspTemplate"
+                            "$ref": "#/definitions/v2.HttpRsp_Template"
                         }
                     }
                 }
@@ -3323,6 +3327,7 @@ var doc = `{
                 "tags": [
                     "server/template"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -3332,7 +3337,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Template 의 Uuid",
+                        "description": "Template Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -3367,6 +3372,7 @@ var doc = `{
                 "tags": [
                     "server/template"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -4976,6 +4982,86 @@ var doc = `{
                 }
             }
         },
+        "v2.HttpRsp_Template": {
+            "type": "object",
+            "properties": {
+                "commands": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v2.TemplateCommand"
+                    }
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "origin": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_TemplateCommand": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "object"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "result_filter": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
+                }
+            }
+        },
         "v2.HttpRsp_TemplateRecipe": {
             "type": "object",
             "properties": {
@@ -5324,6 +5410,49 @@ var doc = `{
                 "idle": {
                     "description": "(초)",
                     "type": "integer"
+                }
+            }
+        },
+        "v2.TemplateCommand": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "object"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "result_filter": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
                 }
             }
         }
