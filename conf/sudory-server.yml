@@ -33,9 +33,9 @@ logger:
   max-backups: 20
   compress: false
 
-encryption: /app/conf/rules/enigma.yml
+encryption: /vault/secrets/enigma.yml
 
-events: /app/conf/rules/events.yml
+events: /vault/secrets/events.yml
 
 # cors-config:
 #   allow-origins:  google.com, example.com
