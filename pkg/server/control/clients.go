@@ -374,8 +374,25 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	}()
 	// service result
 	service_result := func() servicev2.ServiceResult {
-		service.ServiceResults_essential.ResultType = servicev2.ResultTypeDatabase //default
-		service.ServiceResults_essential.Result = serviceResult()
+		service.ResultType = func() (resultType servicev2.ResultType) {
+			// 마지막 스탭의 결과만 저장 한다
+			if service.StepCount != stepPosition() {
+				return
+			}
+			// 상태 값이 성공이 아닌 경우
+			// 서비스 결과를 저장 하지 않는다
+			if !service.SubscribedChannel.Valid {
+				return
+			}
+			// 채널이 등록되어 있는 경우
+			// 서비스 결과를 저장 하지 않는다
+			if 0 < len(service.SubscribedChannel.String) {
+				return
+			}
+
+			return servicev2.ResultTypeDatabase
+		}()
+		service.Result = serviceResult()
 		return servicev2.ServiceResult{
 			Uuid:                     service.Uuid,
 			Created:                  time_now,
@@ -415,18 +432,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 				return
 			})
 			Do(&err, func() (err error) {
-				// 마지막 스탭의 결과만 저장 한다
-				if service.StepCount != stepPosition() {
-					return
-				}
-				// 상태 값이 성공이 아닌 경우
-				// 서비스 결과를 저장 하지 않는다
-				if service_status.Status != servicev2.StepStatusSuccess {
-					return
-				}
-				// 채널이 등록되어 있는 경우
-				// 서비스 결과를 저장 하지 않는다
-				if 0 < len(service.SubscribedChannel.String) {
+				if service.ResultType != servicev2.ResultTypeDatabase {
 					return
 				}
 
@@ -498,7 +504,20 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		managed_event.Invoke(service.SubscribedChannel.String, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
 		// invoke event by channel uuid
 		if 0 < len(service.SubscribedChannel.String) {
-			managed_channel.InvokeByChannelUuid(service.SubscribedChannel.String, m)
+			// find channel
+			mc := channelv2.ManagedChannel{}
+			mc.Uuid = service.SubscribedChannel.String
+			mc_cond := vanilla.And(
+				vanilla.Equal("uuid", mc.Uuid),
+				vanilla.IsNull("deleted"),
+			)
+			found, err := vanilla.Stmt.Exist(mc.TableName(), mc_cond.Parse())(ctl)
+			if err != nil {
+				return err
+			}
+			if found {
+				managed_channel.InvokeByChannelUuid(service.SubscribedChannel.String, m)
+			}
 		}
 		// invoke event by event category
 		managed_channel.InvokeByEventCategory(channelv2.EventCategoryServicePollingIn, m)
