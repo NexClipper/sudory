@@ -18,6 +18,7 @@ func setDefaultUpgradeSettings(client *action.Upgrade) {
 	client.Wait = true
 	client.WaitForJobs = true
 	client.Atomic = true
+	client.MaxHistory = defaultMaxHistory
 
 	// allow deletion of new resources created in this upgrade when upgrade fails
 	client.CleanupOnFail = true
