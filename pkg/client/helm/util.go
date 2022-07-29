@@ -99,3 +99,46 @@ func extractResultFrom(rel *release.Release) (map[string]interface{}, error) {
 
 	return res, nil
 }
+
+func extractHistoryResultFrom(rels []*release.Release) ([]map[string]interface{}, error) {
+	if rels == nil {
+		return nil, fmt.Errorf("release.Release is nil")
+	}
+
+	var results []map[string]interface{}
+
+	for _, rel := range rels {
+		res := make(map[string]interface{})
+
+		res["namespace"] = rel.Namespace
+		res["release_name"] = rel.Name
+		res["revision"] = rel.Version
+
+		if rel.Chart != nil {
+			res["app_version"] = rel.Chart.AppVersion()
+			res["chart_name"] = rel.Chart.Name()
+
+			if rel.Chart.Metadata != nil {
+				res["chart_version"] = rel.Chart.Metadata.Version
+			} else {
+				res["chart_version"] = "MISSING"
+			}
+		} else {
+			res["app_version"] = "MISSING"
+			res["chart_name"] = "MISSING"
+		}
+
+		if rel.Info != nil {
+			res["status"] = rel.Info.Status.String()
+			res["description"] = rel.Info.Description
+
+			if !rel.Info.LastDeployed.IsZero() {
+				res["updated"] = rel.Info.LastDeployed
+			}
+		}
+
+		results = append(results, res)
+	}
+
+	return results, nil
+}

@@ -10,6 +10,8 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/log"
 )
 
+const defaultMaxHistory = 20
+
 type Client struct {
 	settings *cli.EnvSettings
 }
@@ -39,6 +41,10 @@ func (c *Client) Request(cmd string, args map[string]interface{}) (string, error
 		result, err = c.RepoList(args)
 	case "repo_update":
 		result, err = c.RepoUpdate(args)
+	case "history":
+		result, err = c.History(args)
+	case "rollback":
+		result, err = c.Rollback(args)
 	default:
 		return "", fmt.Errorf("unknown command(%s)", cmd)
 	}
