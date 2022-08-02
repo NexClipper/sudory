@@ -56,9 +56,21 @@ func (ctl ControlVanilla) CreateCluster(ctx echo.Context) (err error) {
 	cluster.Name = body.Name
 	cluster.Summary = body.Summary
 
-	if body.PollingOption.Valid {
-		cluster.PollingOption = *vanilla.NewNullObject(body.GetPollingOption().ToMap())
-	}
+	// cluster.PollingOption = *vanilla.NewNullObject(new(clusterv2.RegularPollingOption).ToMap())
+	// if body.PollingOption.Valid {
+	// 	cluster.PollingOption = *vanilla.NewNullObject(body.GetPollingOption().ToMap())
+	// }
+	cluster.PollingOption = func() vanilla.NullObject {
+		type tomap interface {
+			ToMap() map[string]interface{}
+		}
+		var pollingOpt tomap = clusterv2.RegularPollingOption{} // default
+		if body.PollingOption.Valid {
+			pollingOpt = body.GetPollingOption()
+		}
+		return *vanilla.NewNullObject(pollingOpt.ToMap())
+	}()
+
 	cluster.PoliingLimit = body.PoliingLimit
 	cluster.Created = time.Now()
 
