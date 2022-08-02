@@ -6,6 +6,7 @@ import (
 
 	// "github.com/NexClipper/sudory/pkg/server/control/vault"
 
+	"github.com/NexClipper/logger"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
@@ -48,21 +49,21 @@ func (worker *GlobalVariantUpdate) Update() (err error) {
 	for i := range records {
 		record := &records[i]
 		gv, err := ParseKey(record.Name)
-		if err != nil {
-			return errors.Wrapf(err, "parse record name to key%v",
-				logs.KVL(
-					"key", record.Name,
-				))
-		}
 
-		if err := storeManager.Call(gv, record.Value.String); err != nil {
-			return errors.Wrapf(err, "store global_variables%v",
-				logs.KVL(
-					"key", record.Name,
-					"value", record.Value.String,
-				))
+		switch err {
+		case nil:
+			if err := storeManager.Call(gv, record.Value.String); err != nil {
+				return errors.Wrapf(err, "store global_variables%v",
+					logs.KVL(
+						"key", record.Name,
+						"value", record.Value.String,
+					))
+			}
+		default:
+			logger.Warningf("%w: parse record name to key%v", err, logs.KVL(
+				"key", record.Name,
+			))
 		}
-
 	}
 
 	//update offset
