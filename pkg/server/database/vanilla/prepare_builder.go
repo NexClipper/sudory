@@ -46,6 +46,26 @@ func In(a string, b ...interface{}) PrepareCondition {
 	return map[string]interface{}{"in": map[string]interface{}{a: b}}
 }
 
+func GreaterThan(a string, b interface{}) PrepareCondition {
+	return map[string]interface{}{"gt": map[string]interface{}{a: b}}
+}
+
+func GreaterThanEqual(a string, b interface{}) PrepareCondition {
+	return map[string]interface{}{"gte": map[string]interface{}{a: b}}
+}
+
+func LessThan(a string, b interface{}) PrepareCondition {
+	return map[string]interface{}{"lt": map[string]interface{}{a: b}}
+}
+
+func LessThanEqual(a string, b interface{}) PrepareCondition {
+	return map[string]interface{}{"lte": map[string]interface{}{a: b}}
+}
+
+func Like(a string, b interface{}) PrepareCondition {
+	return map[string]interface{}{"like": map[string]interface{}{a: b}}
+}
+
 type PrepareOrder []interface{}
 
 func (sl PrepareOrder) Parse() *prepare.Orders {
@@ -96,23 +116,23 @@ func (m PreparePagination) Parse() *prepare.Pagination {
 	return o
 }
 
-func (m *PreparePagination) Limit(l int) PreparePagination {
+func (m *PreparePagination) Limit(l int) *PreparePagination {
 	if l < 0 {
 		panic("limit is greater then equal zero")
 	}
 	(*m)["limit"] = l
-	return (*m)
+	return m
 }
 
-func (m *PreparePagination) Page(p int) PreparePagination {
+func (m *PreparePagination) Page(p int) *PreparePagination {
 	if p <= 0 {
 		panic("page is greater then zero")
 	}
 	(*m)["page"] = p
-	return (*m)
+	return m
 }
 
-func Limit(limit int, page ...int) PreparePagination {
+func Limit(limit int, page ...int) *PreparePagination {
 	page_ := 1
 	if 0 < len(page) {
 		if 0 < page[0] {
@@ -120,8 +140,9 @@ func Limit(limit int, page ...int) PreparePagination {
 		}
 	}
 
-	return map[string]interface{}{
+	m := PreparePagination(map[string]interface{}{
 		"limit": limit,
 		"page":  page_,
-	}
+	})
+	return &m
 }

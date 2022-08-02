@@ -13,6 +13,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
+	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/itchyny/gojq"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -119,7 +120,7 @@ func (ctl ControlVanilla) FindChannel(ctx echo.Context) (err error) {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	rsp := make([]channelv2.HttpRsp_ManagedChannel, 0, __INIT_SLICE_CAPACITY__())
+	rsp := make([]channelv2.HttpRsp_ManagedChannel, 0, state.ENV__INIT_SLICE_CAPACITY__())
 	channel_tangled := new(channelv2.ManagedChannel_tangled)
 	err = vanilla.Stmt.Select(channel_tangled.TableName(), channel_tangled.ColumnNames(), q, o, p).
 		QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
@@ -297,10 +298,10 @@ func (ctl ControlVanilla) DeleteChannel(ctx echo.Context) (err error) {
 		func(tx vanilla.Preparer) error {
 			channel := channelv2.ManagedChannel{}
 			channel.Deleted = *vanilla.NewNullTime(deleted)
-			set := map[string]interface{}{
+			updateSet := map[string]interface{}{
 				"deleted": channel.Deleted,
 			}
-			affected, err := vanilla.Stmt.Update(channel.TableName(), set, cond).
+			affected, err := vanilla.Stmt.Update(channel.TableName(), updateSet, cond).
 				Exec(tx)
 			if err != nil {
 				return err
@@ -1034,7 +1035,7 @@ func (ctl ControlVanilla) ListChannelStatus(ctx echo.Context) (err error) {
 	).Parse()
 	order := vanilla.Asc("created").Parse()
 
-	rsp := make([]channelv2.HttpRsp_ManagedChannel_ChannelStatus, 0, __INIT_SLICE_CAPACITY__())
+	rsp := make([]channelv2.HttpRsp_ManagedChannel_ChannelStatus, 0, state.ENV__INIT_SLICE_CAPACITY__())
 	var status channelv2.ChannelStatus
 	err = vanilla.Stmt.Select(status.TableName(), status.ColumnNames(), cond, order, nil).
 		QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
@@ -1182,7 +1183,7 @@ func (ctl ControlVanilla) FindChannelStatus(ctx echo.Context) error {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	rsp := make([]channelv2.HttpRsp_ManagedChannel_ChannelStatus, 0, __INIT_SLICE_CAPACITY__())
+	rsp := make([]channelv2.HttpRsp_ManagedChannel_ChannelStatus, 0, state.ENV__INIT_SLICE_CAPACITY__())
 
 	var status channelv2.ChannelStatus
 	err = vanilla.Stmt.Select(status.TableName(), status.ColumnNames(), q, o, p).

@@ -54,7 +54,7 @@ func (machine *Machine) EncodeDetail(src []byte, callback ...func(map[string]int
 	// salt, hasSalt := machine.salt().GenSalt(), machine.salt().Has()
 	err = machine.salt().Scope(func(ss *ScopeSalt) error {
 		//padding
-		src = machine.padding().Pader()(src, machine.block().BlockSize())
+		src = machine.padding().Padder()(src, machine.block().BlockSize())
 		//encode
 		dst, err = machine.Encoder(src, ss.GenSalt())
 		if err != nil {
@@ -80,7 +80,7 @@ func (machine *Machine) EncodeDetail(src []byte, callback ...func(map[string]int
 		//salt encode rule
 		dst = SaltEncodeRule(dst, ss.GenSalt(), ss.Has())
 		//string converter encode
-		dst = []byte(machine.strconv().Encoder()(dst))
+		dst = machine.strconv().Encoder()(dst)
 
 		return nil
 	})
@@ -114,7 +114,7 @@ func (machine *Machine) DecodeDetail(src []byte, callback ...func(map[string]int
 	//salt
 	err = machine.salt().Scope(func(ss *ScopeSalt) error {
 		//string converter decode
-		src, err = machine.strconv().Decoder()(string(src))
+		src, err = machine.strconv().Decoder()(src)
 		//salt decode rule
 		src, salt_ := SaltDecodeRule(src, ss.GenSalt(), ss.Has())
 		//decode
@@ -128,7 +128,7 @@ func (machine *Machine) DecodeDetail(src []byte, callback ...func(map[string]int
 		}
 
 		//unpadding
-		dst = machine.padding().Unpader()(dst)
+		dst = machine.padding().Unpadder()(dst)
 
 		for _, callback := range callback {
 			callback(map[string]interface{}{

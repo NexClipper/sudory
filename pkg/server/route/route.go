@@ -87,7 +87,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 				case "/client/auth":
 					//do noting
 				default:
-					if err := controller.VerifyClientSessionToken(c); err != nil {
+					if err := control.VerifyClientSessionToken(c); err != nil {
 						err = errors.Wrapf(err, "failed to verifing a client sesstion token")
 						return err
 					}
@@ -109,7 +109,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.GET("/service", control.PollingService)
 		group.PUT("/service", control.UpdateService)
 		//route /client/auth*
-		group.POST("/auth", controller.AuthClient)
+		group.POST("/auth", control.AuthClient)
 	}
 
 	//"/server"
@@ -148,53 +148,51 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		}
 
 		//route /server/cluster*
-		group.GET("/cluster", controller.FindCluster)
-		group.GET("/cluster/:uuid", controller.GetCluster)
-		group.POST("/cluster", controller.CreateCluster)
-		group.PUT("/cluster/:uuid", controller.UpdateCluster)
-		group.PUT("/cluster/:uuid/polling/regular", controller.UpdateClusterPollingRegular)
-		group.PUT("/cluster/:uuid/polling/smart", controller.UpdateClusterPollingSmart)
-		group.DELETE("/cluster/:uuid", controller.DeleteCluster)
+		group.GET("/cluster", control.FindCluster)
+		group.GET("/cluster/:uuid", control.GetCluster)
+		group.POST("/cluster", control.CreateCluster)
+		group.PUT("/cluster/:uuid", control.UpdateCluster)
+		group.PUT("/cluster/:uuid/polling/regular", control.UpdateClusterPollingRegular)
+		group.PUT("/cluster/:uuid/polling/smart", control.UpdateClusterPollingSmart)
+		group.DELETE("/cluster/:uuid", control.DeleteCluster)
 		//route /server/template*
-		group.GET("/template", controller.FindTemplate)
-		group.GET("/template/:uuid", controller.GetTemplate)
+		group.GET("/template", control.FindTemplate)
+		group.GET("/template/:uuid", control.GetTemplate)
 		group.POST("/template", controller.CreateTemplate)
 		group.PUT("/template/:uuid", controller.UpdateTemplate)
 		group.DELETE("/template/:uuid", controller.DeleteTemplate)
 		//route /server/template/:template_uuid/command*
-		group.GET("/template/:template_uuid/command", controller.FindTemplateCommand)
-		group.GET("/template/:template_uuid/command/:uuid", controller.GetTemplateCommand)
+		group.GET("/template/:template_uuid/command", control.ListTemplateCommand)
+		group.GET("/template/:template_uuid/command/:uuid", control.GetTemplateCommand)
 		group.POST("/template/:template_uuid/command", controller.CreateTemplateCommand)
 		group.PUT("/template/:template_uuid/command/:uuid", controller.UpdateTemplateCommand)
 		group.DELETE("/template/:template_uuid/command/:uuid", controller.DeleteTemplateCommand)
 		//route /server/template_recipe*
-		group.GET("/template_recipe", controller.FindTemplateRecipe)
+		group.GET("/template_recipe", control.FindTemplateRecipe)
 		//route /server/service*
 		group.GET("/service", control.FindService)
 		group.GET("/service/:uuid", control.GetService)
 		group.POST("/service", control.CreateService)
-		// router.e.PUT("/service/:uuid", controller.UpdateService)
-		// group.DELETE("/service/:uuid", vanilla.DeleteService)
 		//route /server/service_step*
 		group.GET("/service/step", control.FindServiceStep)
 		group.GET("/service/:uuid/step", control.GetServiceSteps)
 		group.GET("/service/:uuid/step/:sequence", control.GetServiceStep)
 		//route /server/global_variables*
-		group.GET("/global_variables", controller.FindGlobalVariables)
-		group.GET("/global_variables/:uuid", controller.GetGlobalVariables)
-		group.PUT("/global_variables/:uuid", controller.UpdateGlobalVariablesValue)
+		group.GET("/global_variables", control.FindGlobalVariables)
+		group.GET("/global_variables/:uuid", control.GetGlobalVariables)
+		group.PUT("/global_variables/:uuid", control.UpdateGlobalVariablesValue)
 		//route /server/session*
-		group.GET("/session", controller.FindSession)
-		group.GET("/session/:uuid", controller.GetSession)
-		group.DELETE("/session/:uuid", controller.DeleteSession)
+		group.GET("/session", control.FindSession)
+		group.GET("/session/:uuid", control.GetSession)
+		group.DELETE("/session/:uuid", control.DeleteSession)
 		//route /server/cluster_token*
-		group.GET("/cluster_token", controller.FindClusterToken)
-		group.GET("/cluster_token/:uuid", controller.GetClusterToken)
-		group.PUT("/cluster_token/:uuid/label", controller.UpdateClusterTokenLabel)
-		group.DELETE("/cluster_token/:uuid", controller.DeleteClusterToken)
-		group.POST("/cluster_token", controller.CreateClusterToken)
-		group.PUT("/cluster_token/:uuid/refresh", controller.RefreshClusterTokenTime)
-		group.PUT("/cluster_token/:uuid/expire", controller.ExpireClusterToken)
+		group.GET("/cluster_token", control.FindClusterToken)
+		group.GET("/cluster_token/:uuid", control.GetClusterToken)
+		group.PUT("/cluster_token/:uuid/label", control.UpdateClusterTokenLabel)
+		group.DELETE("/cluster_token/:uuid", control.DeleteClusterToken)
+		group.POST("/cluster_token", control.CreateClusterToken)
+		group.PUT("/cluster_token/:uuid/refresh", control.RefreshClusterTokenTime)
+		group.PUT("/cluster_token/:uuid/expire", control.ExpireClusterToken)
 
 		//server/channel*
 		group.POST("/channel", controller.CreateChannel)

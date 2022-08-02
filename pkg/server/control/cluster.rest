@@ -1,0 +1,155 @@
+
+@protocolver = HTTP/1.1
+@protocol    = http
+@hostname    = localhost
+@port        = 8099
+@url         = {{protocol}}://{{hostname}}:{{port}}
+
+@test_path   = /server/cluster
+
+@date = {{$datetime "YYYY-MM-DDThh:mm:ss"}}Z
+
+//<<<< POST >>>> 
+# @name create_cluster
+
+POST {{url}}{{test_path}} {{protocolver}}
+content-type: application/json
+
+{
+  "name": "test name"
+  ,"polling_limit": 5
+  ,"polling_option": {}
+  ,"summary": "test summary"
+#   ,"uuid": "test"
+}
+
+@created__id = {{create_cluster.response.body.$.id}}
+@created__uuid = {{create_cluster.response.body.$.uuid}}
+@create__name = {{create_cluster.response.body.$.name}}
+@created__summary = {{create_cluster.response.body.$.summary}}
+@create__created = {{create_cluster.response.body.$.created}}
+
+### 
+//<<<< GET >>>> 
+# @name get_cluster
+
+GET {{url}}{{test_path}}/{{created__uuid}} {{protocolver}}
+content-type: application/json
+
+###
+
+@match_id = (eq id "{{created__id}}")
+@match_uuid = (eq uuid "{{created__uuid}}")
+@match_name = (eq name "{{create__name}}")
+@match_summary = (eq summary "{{created__summary}}")
+@match_created = (eq created "{{create__created}}")
+
+@pagination={"limit": 999, "page": 1}
+@order=["created", "desc"]
+
+# @name find_cluster__match__id
+
+GET {{url}}{{test_path}}?q={{match_id}}&p={{pagination}}&o={{order}} {{protocolver}}
+content-type: application/json
+
+###
+# @name find_cluster__match__uuid
+
+GET {{url}}{{test_path}}?q={{match_uuid}}&p={{pagination}}&o={{order}} {{protocolver}}
+content-type: application/json
+
+###
+# @name find_cluster__match__name
+
+GET {{url}}{{test_path}}?q={{match_name}}&p={{pagination}}&o={{order}} {{protocolver}}
+content-type: application/json
+
+###
+# @name find_cluster__match__summary
+
+GET {{url}}{{test_path}}?q={{match_summary}}&p={{pagination}}&o={{order}} {{protocolver}}
+content-type: application/json
+
+###
+# @name find_cluster__match__created
+
+GET {{url}}{{test_path}}?q={{match_created}}&p={{pagination}}&o={{order}} {{protocolver}}
+content-type: application/json
+
+###
+//<<<< PUT >>>> 
+# @name update_cluster__name
+
+PUT {{url}}{{test_path}}/{{created__uuid}} {{protocolver}}
+content-type: application/json
+
+{
+    "name": "{{create__name}} {{created__uuid}}"
+}
+
+###
+# @name update_cluster__summary
+
+PUT {{url}}{{test_path}}/{{created__uuid}} {{protocolver}}
+content-type: application/json
+
+{
+    "summary": "{{created__summary}} {{created__uuid}}"
+}
+
+###
+# @name update_cluster__polling_option__regular_1
+
+PUT {{url}}{{test_path}}/{{created__uuid}} {{protocolver}}
+content-type: application/json
+
+{
+    "polling_option": {
+        "type":"regular"
+        }
+}
+
+###
+# @name update_cluster__polling_option__smart_1
+
+PUT {{url}}{{test_path}}/{{created__uuid}} {{protocolver}}
+content-type: application/json
+
+{
+    "polling_option": {
+        "type":"smart"
+        ,"busy":5
+        ,"idle":30
+        }
+}
+
+###
+# @name update_cluster__polling_option__regular_2
+
+PUT {{url}}{{test_path}}/{{created__uuid}}/polling/regular {{protocolver}}
+content-type: application/json
+
+{
+    "type":"regular"
+}
+
+###
+# @name update_cluster__polling_option__smart_2
+
+PUT {{url}}{{test_path}}/{{created__uuid}}/polling/smart {{protocolver}}
+content-type: application/json
+
+{
+    "type":"smart"
+    ,"busy":5
+    ,"idle":30
+}
+
+###
+//<<<< DELETE >>>> 
+# @name delete_cluster
+
+DELETE {{url}}{{test_path}}/{{created__uuid}} {{protocolver}}
+content-type: application/json
+
+###

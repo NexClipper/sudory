@@ -57,129 +57,6 @@ definitions:
       updated:
         type: string
     type: object
-  v1.Cluster:
-    properties:
-      created:
-        type: string
-      deleted:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      polling_limit:
-        type: integer
-      polling_option:
-        additionalProperties: true
-        type: object
-      summary:
-        type: string
-      updated:
-        type: string
-      uuid:
-        type: string
-    type: object
-  v1.ClusterToken:
-    properties:
-      cluster_uuid:
-        type: string
-      created:
-        type: string
-      deleted:
-        type: string
-      expiration_time:
-        type: string
-      id:
-        type: integer
-      issued_at_time:
-        type: string
-      name:
-        type: string
-      summary:
-        type: string
-      token:
-        type: string
-      updated:
-        type: string
-      uuid:
-        type: string
-    type: object
-  v1.GlobalVariables:
-    properties:
-      created:
-        type: string
-      deleted:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      summary:
-        type: string
-      updated:
-        type: string
-      uuid:
-        type: string
-      value:
-        type: string
-    type: object
-  v1.HttpReqAuth:
-    properties:
-      assertion:
-        description: <bearer-token>
-        type: string
-      client_version:
-        description: client version
-        type: string
-      cluster_uuid:
-        description: cluster uuid
-        type: string
-    type: object
-  v1.HttpReqCluster_Create:
-    properties:
-      name:
-        type: string
-      polling_limit:
-        type: integer
-      polling_option:
-        additionalProperties: true
-        type: object
-      summary:
-        type: string
-    type: object
-  v1.HttpReqCluster_Update:
-    properties:
-      name:
-        type: string
-      polling_limit:
-        type: integer
-      polling_option:
-        additionalProperties: true
-        type: object
-      summary:
-        type: string
-    type: object
-  v1.HttpReqClusterToken_Create:
-    properties:
-      cluster_uuid:
-        type: string
-      name:
-        type: string
-      summary:
-        type: string
-    type: object
-  v1.HttpReqClusterToken_UpdateLabel:
-    properties:
-      name:
-        type: string
-      summary:
-        type: string
-    type: object
-  v1.HttpReqGlobalVariables_update:
-    properties:
-      value:
-        type: string
-    type: object
   v1.HttpReqTemplate_Create:
     properties:
       commands:
@@ -511,38 +388,6 @@ definitions:
       url:
         type: string
     type: object
-  v1.RegularPollingOption:
-    type: object
-  v1.Session:
-    properties:
-      cluster_uuid:
-        type: string
-      created:
-        type: string
-      deleted:
-        type: string
-      expiration_time:
-        type: string
-      id:
-        type: integer
-      issued_at_time:
-        type: string
-      token:
-        type: string
-      updated:
-        type: string
-      uuid:
-        type: string
-    type: object
-  v1.SmartPollingOption:
-    properties:
-      busy:
-        description: (초)
-        type: integer
-      idle:
-        description: (초)
-        type: integer
-    type: object
   v1.Template:
     properties:
       created:
@@ -590,25 +435,6 @@ definitions:
       uuid:
         type: string
     type: object
-  v1.TemplateRecipe:
-    properties:
-      args:
-        type: string
-      created:
-        type: string
-      deleted:
-        type: string
-      id:
-        type: integer
-      method:
-        type: string
-      name:
-        type: string
-      summary:
-        type: string
-      updated:
-        type: string
-    type: object
   v2.ChannelStatusOption_property:
     properties:
       created:
@@ -616,6 +442,29 @@ definitions:
       status_max_count:
         type: integer
       updated:
+        type: string
+    type: object
+  v2.Cluster:
+    properties:
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      name:
+        type: string
+      polling_limit:
+        type: integer
+      polling_option:
+        type: object
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
         type: string
     type: object
   v2.Format_property:
@@ -634,6 +483,27 @@ definitions:
       updated:
         type: string
     type: object
+  v2.GlobalVariables:
+    properties:
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      name:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
+        type: string
+      value:
+        type: string
+    type: object
   v2.HttpReq_ClientServiceUpdate:
     properties:
       ended:
@@ -650,6 +520,55 @@ definitions:
         type: integer
       uuid:
         description: pk
+        type: string
+    type: object
+  v2.HttpReq_Cluster_create:
+    properties:
+      name:
+        type: string
+      polling_limit:
+        type: integer
+      polling_option:
+        type: object
+      summary:
+        type: string
+      uuid:
+        description: uuid
+        type: string
+    type: object
+  v2.HttpReq_Cluster_update:
+    properties:
+      name:
+        type: string
+      polling_limit:
+        type: integer
+      polling_option:
+        type: object
+      summary:
+        type: string
+    type: object
+  v2.HttpReq_ClusterToken_create:
+    properties:
+      cluster_uuid:
+        type: string
+      name:
+        type: string
+      summary:
+        type: string
+      uuid:
+        description: optional
+        type: string
+    type: object
+  v2.HttpReq_ClusterToken_update:
+    properties:
+      name:
+        type: string
+      summary:
+        type: string
+    type: object
+  v2.HttpReq_GlobalVariables_update:
+    properties:
+      value:
         type: string
     type: object
   v2.HttpReq_ManagedChannel_ChannelStatusOption_update:
@@ -816,6 +735,18 @@ definitions:
         additionalProperties: true
         type: object
     type: object
+  v2.HttpReqAuth:
+    properties:
+      assertion:
+        description: <bearer-token>
+        type: string
+      client_version:
+        description: client version
+        type: string
+      cluster_uuid:
+        description: cluster uuid
+        type: string
+    type: object
   v2.HttpRsp_ClientServicePolling:
     properties:
       assigned_client_uuid:
@@ -850,6 +781,56 @@ definitions:
         type: string
       uuid:
         description: pk
+        type: string
+    type: object
+  v2.HttpRsp_Cluster:
+    properties:
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      name:
+        type: string
+      polling_limit:
+        type: integer
+      polling_option:
+        type: object
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
+        type: string
+    type: object
+  v2.HttpRsp_ClusterToken:
+    properties:
+      cluster_uuid:
+        type: string
+      created:
+        type: string
+      deleted:
+        type: string
+      expiration_time:
+        type: string
+      id:
+        description: pk
+        type: integer
+      issued_at_time:
+        type: string
+      name:
+        type: string
+      summary:
+        type: string
+      token:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
         type: string
     type: object
   v2.HttpRsp_ManagedChannel:
@@ -1077,6 +1058,80 @@ definitions:
         description: pk
         type: string
     type: object
+  v2.HttpRsp_Template:
+    properties:
+      commands:
+        items:
+          $ref: '#/definitions/v2.TemplateCommand'
+        type: array
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      name:
+        type: string
+      origin:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
+        type: string
+    type: object
+  v2.HttpRsp_TemplateCommand:
+    properties:
+      args:
+        type: object
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      method:
+        type: string
+      name:
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        type: integer
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
+        type: string
+    type: object
+  v2.HttpRsp_TemplateRecipe:
+    properties:
+      args:
+        type: string
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      method:
+        type: string
+      name:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+    type: object
   v2.HttpRsq_ManagedChannel_Format:
     properties:
       created:
@@ -1213,6 +1268,8 @@ definitions:
       url:
         type: string
     type: object
+  v2.RegularPollingOption:
+    type: object
   v2.ServiceStep:
     properties:
       args:
@@ -1266,6 +1323,67 @@ definitions:
         description: pk
         type: string
     type: object
+  v2.Session:
+    properties:
+      cluster_uuid:
+        type: string
+      created:
+        type: string
+      deleted:
+        type: object
+      expiration_time:
+        type: object
+      id:
+        description: pk
+        type: integer
+      issued_at_time:
+        type: object
+      token:
+        type: string
+      updated:
+        type: object
+      uuid:
+        description: uuid
+        type: string
+    type: object
+  v2.SmartPollingOption:
+    properties:
+      busy:
+        description: (초)
+        type: integer
+      idle:
+        description: (초)
+        type: integer
+    type: object
+  v2.TemplateCommand:
+    properties:
+      args:
+        type: object
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      method:
+        type: string
+      name:
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        type: integer
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
+        type: string
+    type: object
 info:
   contact:
     email: jaehoon@nexclipper.io
@@ -1285,7 +1403,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqAuth'
+          $ref: '#/definitions/v2.HttpReqAuth'
       produces:
       - application/json
       responses:
@@ -2524,7 +2642,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.Cluster'
+              $ref: '#/definitions/v2.HttpRsp_Cluster'
             type: array
       tags:
       - server/cluster
@@ -2537,19 +2655,19 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: HttpReqCluster_Create
+      - description: HttpReq_Cluster_create
         in: body
         name: cluster
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqCluster_Create'
+          $ref: '#/definitions/v2.HttpReq_Cluster_create'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.Cluster'
+            $ref: '#/definitions/v2.Cluster'
       tags:
       - server/cluster
   /server/cluster/{uuid}:
@@ -2562,7 +2680,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: Cluster 의 Uuid
+      - description: Cluster Uuid
         in: path
         name: uuid
         required: true
@@ -2583,7 +2701,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: Cluster 의 Uuid
+      - description: Cluster Uuid
         in: path
         name: uuid
         required: true
@@ -2594,7 +2712,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.Cluster'
+            $ref: '#/definitions/v2.HttpRsp_Cluster'
       tags:
       - server/cluster
     put:
@@ -2606,24 +2724,24 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: Cluster 의 Uuid
+      - description: Cluster Uuid
         in: path
         name: uuid
         required: true
         type: string
-      - description: HttpReqCluster_Update
+      - description: HttpReq_Cluster_update
         in: body
         name: cluster
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqCluster_Update'
+          $ref: '#/definitions/v2.HttpReq_Cluster_update'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.Cluster'
+            $ref: '#/definitions/v2.HttpRsp_Cluster'
       tags:
       - server/cluster
   /server/cluster/{uuid}/polling/regular:
@@ -2636,7 +2754,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: Cluster 의 Uuid
+      - description: Cluster Uuid
         in: path
         name: uuid
         required: true
@@ -2646,14 +2764,14 @@ paths:
         name: polling_option
         required: true
         schema:
-          $ref: '#/definitions/v1.RegularPollingOption'
+          $ref: '#/definitions/v2.RegularPollingOption'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.Cluster'
+            $ref: '#/definitions/v2.HttpRsp_Cluster'
       tags:
       - server/cluster
   /server/cluster/{uuid}/polling/smart:
@@ -2666,7 +2784,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: Cluster 의 Uuid
+      - description: Cluster Uuid
         in: path
         name: uuid
         required: true
@@ -2676,21 +2794,21 @@ paths:
         name: polling_option
         required: true
         schema:
-          $ref: '#/definitions/v1.SmartPollingOption'
+          $ref: '#/definitions/v2.SmartPollingOption'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.Cluster'
+            $ref: '#/definitions/v2.HttpRsp_Cluster'
       tags:
       - server/cluster
   /server/cluster_token:
     get:
       consumes:
       - application/json
-      description: Find Token
+      description: Find Cluster Token
       parameters:
       - description: client session token
         in: header
@@ -2715,7 +2833,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.ClusterToken'
+              $ref: '#/definitions/v2.HttpRsp_ClusterToken'
             type: array
       tags:
       - server/cluster_token
@@ -2728,32 +2846,32 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: HttpReqClusterToken_Create
+      - description: ClusterToken HttpReq_ClusterToken_create
         in: body
         name: object
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqClusterToken_Create'
+          $ref: '#/definitions/v2.HttpReq_ClusterToken_create'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.ClusterToken'
+            $ref: '#/definitions/v2.HttpRsp_ClusterToken'
       tags:
       - server/cluster_token
   /server/cluster_token/{uuid}:
     delete:
       consumes:
       - application/json
-      description: Delete a Token
+      description: Delete a Cluster Token
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: Token 의 Uuid
+      - description: ClusterToken Uuid
         in: path
         name: uuid
         required: true
@@ -2768,13 +2886,13 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get a Token
+      description: Get a Cluster Token
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: Token 의 Uuid
+      - description: ClusterToken Uuid
         in: path
         name: uuid
         required: true
@@ -2785,7 +2903,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.ClusterToken'
+            $ref: '#/definitions/v2.HttpRsp_ClusterToken'
       tags:
       - server/cluster_token
   /server/cluster_token/{uuid}/expire:
@@ -2798,7 +2916,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: Token 의 Uuid
+      - description: ClusterToken Uuid
         in: path
         name: uuid
         required: true
@@ -2809,50 +2927,50 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.ClusterToken'
+            $ref: '#/definitions/v2.HttpRsp_ClusterToken'
       tags:
       - server/cluster_token
   /server/cluster_token/{uuid}/label:
     put:
       consumes:
       - application/json
-      description: Update Token Label
+      description: Update Label of Cluster Token
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: Token 의 Uuid
+      - description: ClusterToken Uuid
         in: path
         name: uuid
         required: true
         type: string
-      - description: Token 의 HttpReqClusterToken_UpdateLabel
+      - description: ClusterToken HttpReq_ClusterToken_update
         in: body
         name: object
         required: true
         schema:
-          $ref: '#/definitions/v1.HttpReqClusterToken_UpdateLabel'
+          $ref: '#/definitions/v2.HttpReq_ClusterToken_update'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.ClusterToken'
+            $ref: '#/definitions/v2.HttpRsp_ClusterToken'
       tags:
       - server/cluster_token
   /server/cluster_token/{uuid}/refresh:
     put:
       consumes:
       - application/json
-      description: Refresh Cluster Token Time
+      description: Refresh Time of Cluster Token
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: Token 의 Uuid
+      - description: ClusterToken Uuid
         in: path
         name: uuid
         required: true
@@ -2863,7 +2981,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.ClusterToken'
+            $ref: '#/definitions/v2.HttpRsp_ClusterToken'
       tags:
       - server/cluster_token
   /server/global_variables:
@@ -2895,7 +3013,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.GlobalVariables'
+              $ref: '#/definitions/v2.GlobalVariables'
             type: array
       tags:
       - server/global_variables
@@ -2909,7 +3027,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: GlobalVariables 의 Uuid
+      - description: GlobalVariables Uuid
         in: path
         name: uuid
         required: true
@@ -2920,7 +3038,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.GlobalVariables'
+            $ref: '#/definitions/v2.GlobalVariables'
       tags:
       - server/global_variables
     put:
@@ -2932,23 +3050,23 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: GlobalVariables 의 Uuid
+      - description: GlobalVariables Uuid
         in: path
         name: uuid
         required: true
         type: string
-      - description: HttpReqGlobalVariables_update
+      - description: HttpReq_GlobalVariables_update
         in: body
         name: enviroment
         schema:
-          $ref: '#/definitions/v1.HttpReqGlobalVariables_update'
+          $ref: '#/definitions/v2.HttpReq_GlobalVariables_update'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.GlobalVariables'
+            $ref: '#/definitions/v2.GlobalVariables'
       tags:
       - server/global_variables
   /server/service:
@@ -3149,7 +3267,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.Session'
+              $ref: '#/definitions/v2.Session'
             type: array
       tags:
       - server/session
@@ -3163,7 +3281,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: Session 의 Uuid
+      - description: Session Uuid
         in: path
         name: uuid
         required: true
@@ -3184,7 +3302,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: Session 의 Uuid
+      - description: Session Uuid
         in: path
         name: uuid
         required: true
@@ -3195,7 +3313,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.Session'
+            $ref: '#/definitions/v2.Session'
       tags:
       - server/session
   /server/template:
@@ -3227,13 +3345,14 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.HttpRspTemplate'
+              $ref: '#/definitions/v2.HttpRsp_Template'
             type: array
       tags:
       - server/template
     post:
       consumes:
       - application/json
+      deprecated: true
       description: Create a template
       parameters:
       - description: client session token
@@ -3259,13 +3378,13 @@ paths:
     get:
       consumes:
       - application/json
-      description: Find template command
+      description: List template command
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: HttpReqTemplate 의 Uuid
+      - description: HttpReqTemplate Uuid
         in: path
         name: template_uuid
         required: true
@@ -3277,20 +3396,21 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.TemplateCommand'
+              $ref: '#/definitions/v2.HttpRsp_TemplateCommand'
             type: array
       tags:
       - server/template_command
     post:
       consumes:
       - application/json
+      deprecated: true
       description: Create a template command
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: HttpReqTemplate 의 Uuid
+      - description: HttpReqTemplate Uuid
         in: path
         name: template_uuid
         required: true
@@ -3314,13 +3434,14 @@ paths:
     delete:
       consumes:
       - application/json
+      deprecated: true
       description: Delete a template command
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: HttpReqTemplate 의 Uuid
+      - description: HttpReqTemplate Uuid
         in: path
         name: template_uuid
         required: true
@@ -3346,7 +3467,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: HttpReqTemplate 의 Uuid
+      - description: HttpReqTemplate Uuid
         in: path
         name: template_uuid
         required: true
@@ -3362,24 +3483,25 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.TemplateCommand'
+            $ref: '#/definitions/v2.HttpRsp_TemplateCommand'
       tags:
       - server/template_command
     put:
       consumes:
       - application/json
+      deprecated: true
       description: Update a template command
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: HttpReqTemplateCommand 의 TemplateUuid
+      - description: HttpReqTemplateCommand TemplateUuid
         in: path
         name: template_uuid
         required: true
         type: string
-      - description: HttpReqTemplateCommand 의 Uuid
+      - description: HttpReqTemplateCommand Uuid
         in: path
         name: uuid
         required: true
@@ -3403,6 +3525,7 @@ paths:
     delete:
       consumes:
       - application/json
+      deprecated: true
       description: Delete a template
       parameters:
       - description: client session token
@@ -3430,7 +3553,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: Template 의 Uuid
+      - description: Template Uuid
         in: path
         name: uuid
         required: true
@@ -3441,19 +3564,20 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v1.HttpRspTemplate'
+            $ref: '#/definitions/v2.HttpRsp_Template'
       tags:
       - server/template
     put:
       consumes:
       - application/json
+      deprecated: true
       description: Update a template
       parameters:
       - description: client session token
         in: header
         name: x_auth_token
         type: string
-      - description: Template 의 Uuid
+      - description: Template Uuid
         in: path
         name: uuid
         required: true
@@ -3481,7 +3605,7 @@ paths:
         in: header
         name: x_auth_token
         type: string
-      - description: Template Command 의 Method
+      - description: Template Command Method
         in: query
         name: method
         type: string
@@ -3492,7 +3616,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v1.TemplateRecipe'
+              $ref: '#/definitions/v2.HttpRsp_TemplateRecipe'
             type: array
       tags:
       - server/template_recipe

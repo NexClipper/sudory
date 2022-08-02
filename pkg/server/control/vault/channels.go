@@ -6,6 +6,7 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
+	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/pkg/errors"
 )
 
@@ -47,7 +48,7 @@ func CreateChannelStatus(db *sql.DB, uuid, message string, created time.Time, ma
 	rotation_limit := vanilla.Limit(int(channel_opt.StatusOption.StatusMaxCount)-1, 2).Parse()
 	rotation_columns := []string{"uuid", "created"}
 
-	uuids, createds := make([]string, 0, __INIT_SLICE_CAPACITY__()), make([]vanilla.NullTime, 0, __INIT_SLICE_CAPACITY__())
+	uuids, createds := make([]string, 0, state.ENV__INIT_SLICE_CAPACITY__()), make([]vanilla.NullTime, 0, state.ENV__INIT_SLICE_CAPACITY__())
 	err = vanilla.Stmt.Select(channel_status.TableName(), rotation_columns, rotation_cond, rotation_order, rotation_limit).
 		QueryRows(db)(func(scan vanilla.Scanner, _ int) (err error) {
 		var uuid string

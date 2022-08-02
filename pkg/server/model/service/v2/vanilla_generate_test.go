@@ -1,6 +1,7 @@
 package v2_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/ice_cream_maker"
@@ -32,4 +33,16 @@ func TestNoXormColumns(t *testing.T) {
 	}
 
 	println(s)
+
+	if true {
+		filename := "vanilla_generated.go"
+		fd, err := os.Create(filename)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if _, err = fd.WriteString(s); err != nil {
+			t.Fatal(err)
+		}
+	}
 }

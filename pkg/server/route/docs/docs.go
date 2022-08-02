@@ -45,7 +45,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqAuth"
+                            "$ref": "#/definitions/v2.HttpReqAuth"
                         }
                     }
                 ],
@@ -1933,7 +1933,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.Cluster"
+                                "$ref": "#/definitions/v2.HttpRsp_Cluster"
                             }
                         }
                     }
@@ -1958,12 +1958,12 @@ var doc = `{
                         "in": "header"
                     },
                     {
-                        "description": "HttpReqCluster_Create",
+                        "description": "HttpReq_Cluster_create",
                         "name": "cluster",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqCluster_Create"
+                            "$ref": "#/definitions/v2.HttpReq_Cluster_create"
                         }
                     }
                 ],
@@ -1971,7 +1971,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.Cluster"
+                            "$ref": "#/definitions/v2.Cluster"
                         }
                     }
                 }
@@ -1998,7 +1998,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Cluster 의 Uuid",
+                        "description": "Cluster Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2008,7 +2008,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.Cluster"
+                            "$ref": "#/definitions/v2.HttpRsp_Cluster"
                         }
                     }
                 }
@@ -2033,18 +2033,18 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Cluster 의 Uuid",
+                        "description": "Cluster Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "HttpReqCluster_Update",
+                        "description": "HttpReq_Cluster_update",
                         "name": "cluster",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqCluster_Update"
+                            "$ref": "#/definitions/v2.HttpReq_Cluster_update"
                         }
                     }
                 ],
@@ -2052,7 +2052,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.Cluster"
+                            "$ref": "#/definitions/v2.HttpRsp_Cluster"
                         }
                     }
                 }
@@ -2077,7 +2077,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Cluster 의 Uuid",
+                        "description": "Cluster Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2111,7 +2111,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Cluster 의 Uuid",
+                        "description": "Cluster Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2122,7 +2122,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.RegularPollingOption"
+                            "$ref": "#/definitions/v2.RegularPollingOption"
                         }
                     }
                 ],
@@ -2130,7 +2130,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.Cluster"
+                            "$ref": "#/definitions/v2.HttpRsp_Cluster"
                         }
                     }
                 }
@@ -2157,7 +2157,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Cluster 의 Uuid",
+                        "description": "Cluster Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2168,7 +2168,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.SmartPollingOption"
+                            "$ref": "#/definitions/v2.SmartPollingOption"
                         }
                     }
                 ],
@@ -2176,7 +2176,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.Cluster"
+                            "$ref": "#/definitions/v2.HttpRsp_Cluster"
                         }
                     }
                 }
@@ -2184,7 +2184,7 @@ var doc = `{
         },
         "/server/cluster_token": {
             "get": {
-                "description": "Find Token",
+                "description": "Find Cluster Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -2226,7 +2226,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.ClusterToken"
+                                "$ref": "#/definitions/v2.HttpRsp_ClusterToken"
                             }
                         }
                     }
@@ -2251,12 +2251,12 @@ var doc = `{
                         "in": "header"
                     },
                     {
-                        "description": "HttpReqClusterToken_Create",
+                        "description": "ClusterToken HttpReq_ClusterToken_create",
                         "name": "object",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqClusterToken_Create"
+                            "$ref": "#/definitions/v2.HttpReq_ClusterToken_create"
                         }
                     }
                 ],
@@ -2264,7 +2264,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ClusterToken"
+                            "$ref": "#/definitions/v2.HttpRsp_ClusterToken"
                         }
                     }
                 }
@@ -2272,7 +2272,7 @@ var doc = `{
         },
         "/server/cluster_token/{uuid}": {
             "get": {
-                "description": "Get a Token",
+                "description": "Get a Cluster Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -2291,7 +2291,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Token 의 Uuid",
+                        "description": "ClusterToken Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2301,13 +2301,13 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ClusterToken"
+                            "$ref": "#/definitions/v2.HttpRsp_ClusterToken"
                         }
                     }
                 }
             },
             "delete": {
-                "description": "Delete a Token",
+                "description": "Delete a Cluster Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -2326,7 +2326,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Token 의 Uuid",
+                        "description": "ClusterToken Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2360,7 +2360,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Token 의 Uuid",
+                        "description": "ClusterToken Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2370,7 +2370,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ClusterToken"
+                            "$ref": "#/definitions/v2.HttpRsp_ClusterToken"
                         }
                     }
                 }
@@ -2378,7 +2378,7 @@ var doc = `{
         },
         "/server/cluster_token/{uuid}/label": {
             "put": {
-                "description": "Update Token Label",
+                "description": "Update Label of Cluster Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -2397,18 +2397,18 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Token 의 Uuid",
+                        "description": "ClusterToken Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Token 의 HttpReqClusterToken_UpdateLabel",
+                        "description": "ClusterToken HttpReq_ClusterToken_update",
                         "name": "object",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqClusterToken_UpdateLabel"
+                            "$ref": "#/definitions/v2.HttpReq_ClusterToken_update"
                         }
                     }
                 ],
@@ -2416,7 +2416,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ClusterToken"
+                            "$ref": "#/definitions/v2.HttpRsp_ClusterToken"
                         }
                     }
                 }
@@ -2424,7 +2424,7 @@ var doc = `{
         },
         "/server/cluster_token/{uuid}/refresh": {
             "put": {
-                "description": "Refresh Cluster Token Time",
+                "description": "Refresh Time of Cluster Token",
                 "consumes": [
                     "application/json"
                 ],
@@ -2443,7 +2443,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Token 의 Uuid",
+                        "description": "ClusterToken Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2453,7 +2453,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.ClusterToken"
+                            "$ref": "#/definitions/v2.HttpRsp_ClusterToken"
                         }
                     }
                 }
@@ -2503,7 +2503,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.GlobalVariables"
+                                "$ref": "#/definitions/v2.GlobalVariables"
                             }
                         }
                     }
@@ -2531,7 +2531,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "GlobalVariables 의 Uuid",
+                        "description": "GlobalVariables Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2541,7 +2541,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.GlobalVariables"
+                            "$ref": "#/definitions/v2.GlobalVariables"
                         }
                     }
                 }
@@ -2566,17 +2566,17 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "GlobalVariables 의 Uuid",
+                        "description": "GlobalVariables Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "HttpReqGlobalVariables_update",
+                        "description": "HttpReq_GlobalVariables_update",
                         "name": "enviroment",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpReqGlobalVariables_update"
+                            "$ref": "#/definitions/v2.HttpReq_GlobalVariables_update"
                         }
                     }
                 ],
@@ -2584,7 +2584,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.GlobalVariables"
+                            "$ref": "#/definitions/v2.GlobalVariables"
                         }
                     }
                 }
@@ -2894,7 +2894,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.Session"
+                                "$ref": "#/definitions/v2.Session"
                             }
                         }
                     }
@@ -2922,7 +2922,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Session 의 Uuid",
+                        "description": "Session Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -2932,7 +2932,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.Session"
+                            "$ref": "#/definitions/v2.Session"
                         }
                     }
                 }
@@ -2957,7 +2957,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Session 의 Uuid",
+                        "description": "Session Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -3014,7 +3014,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.HttpRspTemplate"
+                                "$ref": "#/definitions/v2.HttpRsp_Template"
                             }
                         }
                     }
@@ -3031,6 +3031,7 @@ var doc = `{
                 "tags": [
                     "server/template"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -3060,7 +3061,7 @@ var doc = `{
         },
         "/server/template/{template_uuid}/command": {
             "get": {
-                "description": "Find template command",
+                "description": "List template command",
                 "consumes": [
                     "application/json"
                 ],
@@ -3079,7 +3080,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "HttpReqTemplate 의 Uuid",
+                        "description": "HttpReqTemplate Uuid",
                         "name": "template_uuid",
                         "in": "path",
                         "required": true
@@ -3091,7 +3092,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.TemplateCommand"
+                                "$ref": "#/definitions/v2.HttpRsp_TemplateCommand"
                             }
                         }
                     }
@@ -3108,6 +3109,7 @@ var doc = `{
                 "tags": [
                     "server/template_command"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -3117,7 +3119,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "HttpReqTemplate 의 Uuid",
+                        "description": "HttpReqTemplate Uuid",
                         "name": "template_uuid",
                         "in": "path",
                         "required": true
@@ -3163,7 +3165,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "HttpReqTemplate 의 Uuid",
+                        "description": "HttpReqTemplate Uuid",
                         "name": "template_uuid",
                         "in": "path",
                         "required": true
@@ -3180,7 +3182,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.TemplateCommand"
+                            "$ref": "#/definitions/v2.HttpRsp_TemplateCommand"
                         }
                     }
                 }
@@ -3196,6 +3198,7 @@ var doc = `{
                 "tags": [
                     "server/template_command"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -3205,14 +3208,14 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "HttpReqTemplateCommand 의 TemplateUuid",
+                        "description": "HttpReqTemplateCommand TemplateUuid",
                         "name": "template_uuid",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "HttpReqTemplateCommand 의 Uuid",
+                        "description": "HttpReqTemplateCommand Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -3247,6 +3250,7 @@ var doc = `{
                 "tags": [
                     "server/template_command"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -3256,7 +3260,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "HttpReqTemplate 의 Uuid",
+                        "description": "HttpReqTemplate Uuid",
                         "name": "template_uuid",
                         "in": "path",
                         "required": true
@@ -3297,7 +3301,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Template 의 Uuid",
+                        "description": "Template Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -3307,7 +3311,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v1.HttpRspTemplate"
+                            "$ref": "#/definitions/v2.HttpRsp_Template"
                         }
                     }
                 }
@@ -3323,6 +3327,7 @@ var doc = `{
                 "tags": [
                     "server/template"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -3332,7 +3337,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Template 의 Uuid",
+                        "description": "Template Uuid",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -3367,6 +3372,7 @@ var doc = `{
                 "tags": [
                     "server/template"
                 ],
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -3407,7 +3413,7 @@ var doc = `{
                     },
                     {
                         "type": "string",
-                        "description": "Template Command 의 Method",
+                        "description": "Template Command Method",
                         "name": "method",
                         "in": "query"
                     }
@@ -3418,7 +3424,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v1.TemplateRecipe"
+                                "$ref": "#/definitions/v2.HttpRsp_TemplateRecipe"
                             }
                         }
                     }
@@ -3512,192 +3518,6 @@ var doc = `{
                     "type": "string"
                 },
                 "summary": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.Cluster": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "polling_limit": {
-                    "type": "integer"
-                },
-                "polling_option": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.ClusterToken": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "expiration_time": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "issued_at_time": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "token": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.GlobalVariables": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqAuth": {
-            "type": "object",
-            "properties": {
-                "assertion": {
-                    "description": "\u003cbearer-token\u003e",
-                    "type": "string"
-                },
-                "client_version": {
-                    "description": "client version",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "cluster uuid",
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqClusterToken_Create": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqClusterToken_UpdateLabel": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqCluster_Create": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "polling_limit": {
-                    "type": "integer"
-                },
-                "polling_option": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "summary": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqCluster_Update": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "polling_limit": {
-                    "type": "integer"
-                },
-                "polling_option": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "summary": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.HttpReqGlobalVariables_update": {
-            "type": "object",
-            "properties": {
-                "value": {
                     "type": "string"
                 }
             }
@@ -4186,54 +4006,6 @@ var doc = `{
                 }
             }
         },
-        "v1.RegularPollingOption": {
-            "type": "object"
-        },
-        "v1.Session": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "expiration_time": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "issued_at_time": {
-                    "type": "string"
-                },
-                "token": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.SmartPollingOption": {
-            "type": "object",
-            "properties": {
-                "busy": {
-                    "description": "(초)",
-                    "type": "integer"
-                },
-                "idle": {
-                    "description": "(초)",
-                    "type": "integer"
-                }
-            }
-        },
         "v1.Template": {
             "type": "object",
             "properties": {
@@ -4305,35 +4077,6 @@ var doc = `{
                 }
             }
         },
-        "v1.TemplateRecipe": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "method": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                }
-            }
-        },
         "v2.ChannelStatusOption_property": {
             "type": "object",
             "properties": {
@@ -4344,6 +4087,40 @@ var doc = `{
                     "type": "integer"
                 },
                 "updated": {
+                    "type": "string"
+                }
+            }
+        },
+        "v2.Cluster": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "polling_limit": {
+                    "type": "integer"
+                },
+                "polling_option": {
+                    "type": "object"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
                     "type": "string"
                 }
             }
@@ -4371,6 +4148,54 @@ var doc = `{
                 }
             }
         },
+        "v2.GlobalVariables": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReqAuth": {
+            "type": "object",
+            "properties": {
+                "assertion": {
+                    "description": "\u003cbearer-token\u003e",
+                    "type": "string"
+                },
+                "client_version": {
+                    "description": "client version",
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "description": "cluster uuid",
+                    "type": "string"
+                }
+            }
+        },
         "v2.HttpReq_ClientServiceUpdate": {
             "type": "object",
             "properties": {
@@ -4393,6 +4218,81 @@ var doc = `{
                 },
                 "uuid": {
                     "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_ClusterToken_create": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "optional",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_ClusterToken_update": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_Cluster_create": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "polling_limit": {
+                    "type": "integer"
+                },
+                "polling_option": {
+                    "type": "object"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_Cluster_update": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "polling_limit": {
+                    "type": "integer"
+                },
+                "polling_option": {
+                    "type": "object"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpReq_GlobalVariables_update": {
+            "type": "object",
+            "properties": {
+                "value": {
                     "type": "string"
                 }
             }
@@ -4677,6 +4577,80 @@ var doc = `{
                 },
                 "uuid": {
                     "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_Cluster": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "polling_limit": {
+                    "type": "integer"
+                },
+                "polling_option": {
+                    "type": "object"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_ClusterToken": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "expiration_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "issued_at_time": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
                     "type": "string"
                 }
             }
@@ -5008,6 +4982,116 @@ var doc = `{
                 }
             }
         },
+        "v2.HttpRsp_Template": {
+            "type": "object",
+            "properties": {
+                "commands": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v2.TemplateCommand"
+                    }
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "origin": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_TemplateCommand": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "object"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "result_filter": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.HttpRsp_TemplateRecipe": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                }
+            }
+        },
         "v2.HttpRsq_ManagedChannel_Format": {
             "type": "object",
             "properties": {
@@ -5202,6 +5286,9 @@ var doc = `{
                 }
             }
         },
+        "v2.RegularPollingOption": {
+            "type": "object"
+        },
         "v2.ServiceStep": {
             "type": "object",
             "properties": {
@@ -5275,6 +5362,96 @@ var doc = `{
                 },
                 "uuid": {
                     "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.Session": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "object"
+                },
+                "expiration_time": {
+                    "type": "object"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "issued_at_time": {
+                    "type": "object"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "object"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "v2.SmartPollingOption": {
+            "type": "object",
+            "properties": {
+                "busy": {
+                    "description": "(초)",
+                    "type": "integer"
+                },
+                "idle": {
+                    "description": "(초)",
+                    "type": "integer"
+                }
+            }
+        },
+        "v2.TemplateCommand": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "object"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "result_filter": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
                     "type": "string"
                 }
             }
