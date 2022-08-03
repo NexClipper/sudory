@@ -11,17 +11,11 @@ default:
   retry: 2
   image: docker:latest
 
-# cache:
-#   key: ${APP_IMAGE_NAME}
-#   paths:
-#     - bin/
-#     - pkg/
 
 stages:
   - build-code
   - dev
   - stg
-  - client-dev
 
 code-build-server:
   image: golang:1.18.1-alpine3.15
@@ -108,59 +102,59 @@ deploy-nexclipper-sudory-server-stg:
     - if: $CI_COMMIT_BRANCH == "staging"
 
 
-code-build-client:
-  image: golang:1.18.1-alpine3.15
-  stage: client-dev
-  before_script:
-    - apk add --no-cache make git
-    - go get -v -u github.com/swaggo/swag/cmd/swag
-    - make prep 
-    - make swagger
-  script:
-    - make go-build target=client
-  artifacts:
-    paths:
-      - bin/
-      - pkg/
-  rules:
-    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
-      when: manual
+# code-build-client:
+#   image: golang:1.18.1-alpine3.15
+#   stage: client-dev
+#   before_script:
+#     - apk add --no-cache make git
+#     - go get -v -u github.com/swaggo/swag/cmd/swag
+#     - make prep 
+#     - make swagger
+#   script:
+#     - make go-build target=client
+#   artifacts:
+#     paths:
+#       - bin/
+#       - pkg/
+#   rules:
+#     - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+#       when: manual
 
-docker-build-sudory-client-dev:
-  stage: client-dev
-  before_script:
-    - "apk add --no-cache git"
-  variables:
-    BUILD_TARGET_STAGE: build-stage
-    HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
-    APP_DOCKERFILE_LOCATION: "Dockerfile.client"
-    APP_IMAGE_NAME: "nexclipper-sudory-client"
-  needs:
-    - job: code-build-client
-  script:
-    - echo "building docker image for $APP_IMAGE_NAME "
-    - "source /data/scripts/build_v3.sh $APP_IMAGE_NAME"
-  rules:
-    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
-      when: manual
+# docker-build-sudory-client-dev:
+#   stage: client-dev
+#   before_script:
+#     - "apk add --no-cache git"
+#   variables:
+#     BUILD_TARGET_STAGE: build-stage
+#     HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
+#     APP_DOCKERFILE_LOCATION: "Dockerfile.client"
+#     APP_IMAGE_NAME: "nexclipper-sudory-client"
+#   needs:
+#     - job: code-build-client
+#   script:
+#     - echo "building docker image for $APP_IMAGE_NAME "
+#     - "source /data/scripts/build_v3.sh $APP_IMAGE_NAME"
+#   rules:
+#     - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+#       when: manual
 
 
-deploy-nexclipper-sudory-client-dev:
-  stage: client-dev
-  image: repo.nexclipper.io/nexclipper/helm-kubectl:latest
-  variables:
-    HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
-    APP_IMAGE_NAME: "nexclipper-sudory-client"
-  before_script:
-    - echo -e "\nLogin to Kubernetes"
-    - source /data/scripts/login-cluster.sh dev
-  script:
-    - echo "Retrieve uuid and token for sudory client"
-    - "source kube/getClientToken.sh $S_SERVER_URL"
-    - "source /data/scripts/deploy_v3.sh dev sudory"
-  needs:
-    - job: docker-build-sudory-client-dev
-  rules:
-    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
-      when: manual
-  allow_failure: true
+# deploy-nexclipper-sudory-client-dev:
+#   stage: client-dev
+#   image: repo.nexclipper.io/nexclipper/helm-kubectl:latest
+#   variables:
+#     HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
+#     APP_IMAGE_NAME: "nexclipper-sudory-client"
+#   before_script:
+#     - echo -e "\nLogin to Kubernetes"
+#     - source /data/scripts/login-cluster.sh dev
+#   script:
+#     - echo "Retrieve uuid and token for sudory client"
+#     - "source kube/getClientToken.sh $S_SERVER_URL"
+#     - "source /data/scripts/deploy_v3.sh dev sudory"
+#   needs:
+#     - job: docker-build-sudory-client-dev
+#   rules:
+#     - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+#       when: manual
+#   allow_failure: true
