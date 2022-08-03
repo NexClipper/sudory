@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sudory
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name:  ${APP_IMAGE_NAME}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${APP_IMAGE_NAME}-configmap
+  namespace: sudory
+data:
+  SUDORY_DB_HOST: "ncdb.prd.nexclipper.local"
+  SUDORY_DB_PORT: "3306"
+  SUDORY_DB_SCHEME: "nc_sudory"
+  SUDORY_DB_EXPORT_PATH: "."
+  SUDORY_LOG_SEVERITY: "info"
+  SUDORY_LOG_SYSTEM_EVENT: "false"
+  SUDORY_LOG_VERBOSE: "true"
+  SUDORY_LOG_VERBOSELEVEL: "9"
+  SUDORY_LOG_FILENAME: "./sudory.log"
+  SUDORY_LOG_MAXSIZE: "10"
+  SUDORY_LOG_MAXAGE: "5"
+  SUDORY_LOG_MAXBACKUPS: "10"
+  SUDORY_LOG_COMPRESS: "false"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${APP_IMAGE_NAME}-rules-configmap
+  labels:
+    sudory: server
+data:
+  enigma.yml: |
+    enigma:
+      sudory.default.crypto:
+        block-method: none
+        block-size: 0
+        block-key: 
+        cipher-mode: none
+        cipher-salt: null
+        padding: none
+        strconv: plain
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${APP_IMAGE_NAME}
+  namespace: sudory
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8099
+      targetPort: 8099
+  selector:
+    sudory: server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${APP_IMAGE_NAME}
+  namespace: sudory
+spec:
+  selector:
+    matchLabels:
+      sudory: server
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        vault.hashicorp.com/agent-inject: 'true'
+        vault.hashicorp.com/agent-inject-status: "update"
+        vault.hashicorp.com/role: 'nexclipper-app'
+        vault.hashicorp.com/agent-inject-secret-ncdb-admin-login: 'kv/database/ncdb'
+        vault.hashicorp.com/agent-inject-template-ncdb-admin-login: |
+          {{- with secret "kv/database/ncdb" -}}
+          SUDORY_DB_ROOT_USERNAME={{ .Data.data.username }}
+          SUDORY_DB_ROOT_PASSWORD={{ .Data.data.password }}
+          SUDORY_DB_SERVER_USERNAME={{ .Data.data.server_username }}
+          SUDORY_DB_SERVER_PASSWORD={{ .Data.data.server_password }}
+          {{- end -}}
+        vault.hashicorp.com/agent-inject-secret-events.yml: 'kv/sudory/server/events'
+        vault.hashicorp.com/agent-inject-template-events.yml: |
+          {{- with secret "kv/sudory/server/events" -}}
+          {{ .Data.data.events }}
+          {{- end -}}
+      labels:
+        sudory: server
+    spec:
+      serviceAccountName: ${APP_IMAGE_NAME}
+      containers:
+        - name: ${APP_IMAGE_NAME}
+          image: ${IMG_TAG_TO_DEPLOY}
+          ports:
+            - containerPort: 8099
+          resources: {}
+          envFrom:
+            - configMapRef:
+                name: ${APP_IMAGE_NAME}-configmap
+          livenessProbe:
+            tcpSocket:
+              port: 8099
+            initialDelaySeconds: 15
+            timeoutSeconds: 15
+          volumeMounts:
+            - mountPath: /vault/secrets/
+              name: server-rules-configmap
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: ${APP_IMAGE_NAME}-rules-configmap
+          name: server-rules-configmap

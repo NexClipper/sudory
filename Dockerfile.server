@@ -1,20 +1,40 @@
-FROM alpine:latest  as development-build-stage
-LABEL version=0.1.0
+FROM alpine:latest   as build-stage
+
+LABEL version=0.0.1
+
+ENV WORKDIR=/app \
+    NAME=sudory-server \
+    USER=nexclipperuser \
+    USER_ID=1002 \
+    GROUP=nexclipper
+
+WORKDIR ${WORKDIR}
 
 RUN apk update && apk add bash mariadb-client
 
-RUN mkdir -p /app/conf/rules
-RUN mkdir -p /app/conf/migrations/sudory
+RUN mkdir -p ${WORKDIR}/conf/rules
+RUN mkdir -p ${WORKDIR}/migrations/sudory
 
 
-COPY /bin/server/sudory-server /app/
-COPY /conf/script/server/entrypoint.sh /app/
-COPY /conf/script/server/init-db.sh /app/
-COPY /conf/sudory-server.yml /app/conf/
-COPY /conf/enigma.yml /app/conf/rules/
-ADD  /conf/script/migrations/sudory /app/conf/migrations/sudory
+COPY /bin/server/sudory-server ${WORKDIR}/
+COPY /conf/script/server/init-db.sh ${WORKDIR}/
+COPY /conf/sudory-server.yml ${WORKDIR}/conf/
+COPY /conf/enigma.yml ${WORKDIR}/conf/rules/
+COPY /conf/script/migrations/sudory  ${WORKDIR}/conf/migrations/sudory
+COPY docker-entrypoint.sh ${WORKDIR}/
 
-RUN chmod +x /app/init-db.sh
 
-ENTRYPOINT ["bash", "/app/entrypoint.sh"]
+RUN chmod +x  ${WORKDIR}/docker-entrypoint.sh
+RUN chmod +x  ${WORKDIR}/init-db.sh
+
+# RUN addgroup ${GROUP} && \
+#     adduser -D ${USER} -g ${GROUP} -u ${USER_ID} && \
+#     chown -R ${USER}:${GROUP} ${WORKDIR}/
+
+# USER ${USER}
+
 EXPOSE 8099
+
+ENTRYPOINT [ "sh","./docker-entrypoint.sh" ]
+
+

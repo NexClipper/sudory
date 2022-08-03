@@ -167,7 +167,7 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 15
           volumeMounts:
-            - mountPath: /app/conf/rules
+            - mountPath: /vault/secrets/
               name: server-rules-configmap
       volumes:
         - configMap:
