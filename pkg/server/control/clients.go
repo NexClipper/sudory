@@ -336,7 +336,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	serviceResult := func() cryptov2.CryptoString {
 		// 상태가 실패인 경우만
 		if body.Status == servicev2.StepStatusSuccess {
-			return (cryptov2.CryptoString)(body.Result)
+			return cryptov2.CryptoString(body.Result)
 		}
 		//기본값; 공백 문자열
 		return ""
@@ -357,42 +357,60 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		//기본값; 공백 문자열
 		return *vanilla.NewNullString(body.Status.String())
 	}
+	resultType := func() (resultType servicev2.ResultType) {
+		// 마지막 스탭의 결과만 저장 한다
+		if service.StepCount != stepPosition() {
+			return
+		}
+		// 상태 값이 성공이 아닌 경우
+		// 서비스 결과를 저장 하지 않는다
+		if servicev2.StepStatusSuccess != stepStatus() {
+			return
+		}
+		// 채널이 등록되어 있는 경우
+		// 서비스 결과를 저장 하지 않는다
+		if !service.SubscribedChannel.Valid || 0 < len(service.SubscribedChannel.String) {
+			return
+		}
+
+		return servicev2.ResultTypeDatabase
+	}
 
 	time_now := time.Now()
 
 	// service status
-	service_status := func() servicev2.ServiceStatus {
-		service.AssignedClientUuid = claims.Uuid
-		service.StepPosition = stepPosition()
-		service.Status = stepStatus()
-		service.Message = stepMessage()
-		return servicev2.ServiceStatus{
-			Uuid:                    service.Uuid,
-			Created:                 time_now,
-			ServiceStatus_essential: service.ServiceStatus_essential,
-		}
+	service_status := func() *servicev2.ServiceStatus {
+
+		service_status := new(servicev2.ServiceStatus)
+		service_status.Uuid = service.Uuid
+		service_status.Created = time_now
+		service_status.AssignedClientUuid = claims.Uuid
+		service_status.StepPosition = stepPosition()
+		service_status.Status = stepStatus()
+		service_status.Message = stepMessage()
+		return service_status
 	}()
 	// service result
-	service_result := func() servicev2.ServiceResult {
-		service.ServiceResults_essential.ResultType = servicev2.ResultTypeDatabase //default
-		service.ServiceResults_essential.Result = serviceResult()
-		return servicev2.ServiceResult{
-			Uuid:                     service.Uuid,
-			Created:                  time_now,
-			ServiceResults_essential: service.ServiceResults_essential,
-		}
+	service_result := func() *servicev2.ServiceResult {
+
+		service_result := new(servicev2.ServiceResult)
+		service_result.Uuid = service.Uuid
+		service_result.Created = time_now
+		service_result.Result = serviceResult()
+		service_result.ResultType = resultType()
+		return service_result
 	}()
 	// step status
-	step_status := func() servicev2.ServiceStepStatus {
-		step.ServiceStepStatus_essential.Status = body.Status                         // Status
-		step.ServiceStepStatus_essential.Started = *vanilla.NewNullTime(body.Started) // Started
-		step.ServiceStepStatus_essential.Ended = *vanilla.NewNullTime(body.Ended)     // Ended
-		return servicev2.ServiceStepStatus{
-			Uuid:                        step.Uuid,
-			Sequence:                    step.Sequence, // missing
-			Created:                     time_now,
-			ServiceStepStatus_essential: step.ServiceStepStatus_essential,
-		}
+	step_status := func() *servicev2.ServiceStepStatus {
+
+		step_status := new(servicev2.ServiceStepStatus)
+		step_status.Uuid = step.Uuid
+		step_status.Sequence = step.Sequence // missing
+		step_status.Created = time_now
+		step_status.Status = body.Status                         // Status
+		step_status.Started = *vanilla.NewNullTime(body.Started) // Started
+		step_status.Ended = *vanilla.NewNullTime(body.Ended)     // Ended
+		return step_status
 	}()
 
 	//save status
@@ -415,18 +433,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 				return
 			})
 			Do(&err, func() (err error) {
-				// 마지막 스탭의 결과만 저장 한다
-				if service.StepCount != stepPosition() {
-					return
-				}
-				// 상태 값이 성공이 아닌 경우
-				// 서비스 결과를 저장 하지 않는다
-				if service_status.Status != servicev2.StepStatusSuccess {
-					return
-				}
-				// 채널이 등록되어 있는 경우
-				// 서비스 결과를 저장 하지 않는다
-				if 0 < len(service.SubscribedChannel.String) {
+				if service_result.ResultType != servicev2.ResultTypeDatabase {
 					return
 				}
 
@@ -498,7 +505,20 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		managed_event.Invoke(service.SubscribedChannel.String, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
 		// invoke event by channel uuid
 		if 0 < len(service.SubscribedChannel.String) {
-			managed_channel.InvokeByChannelUuid(service.SubscribedChannel.String, m)
+			// find channel
+			mc := channelv2.ManagedChannel{}
+			mc.Uuid = service.SubscribedChannel.String
+			mc_cond := vanilla.And(
+				vanilla.Equal("uuid", mc.Uuid),
+				vanilla.IsNull("deleted"),
+			)
+			found, err := vanilla.Stmt.Exist(mc.TableName(), mc_cond.Parse())(ctl)
+			if err != nil {
+				return err
+			}
+			if found {
+				managed_channel.InvokeByChannelUuid(service.SubscribedChannel.String, m)
+			}
 		}
 		// invoke event by event category
 		managed_channel.InvokeByEventCategory(channelv2.EventCategoryServicePollingIn, m)
