@@ -89,7 +89,7 @@ deploy-nexclipper-sudory-server-stg:
   stage: stg
   image: repo.nexclipper.io/nexclipper/helm-kubectl:latest
   variables:
-    HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
+    HARBOR_NEXCLIPPER_PROJECT: "nexclipper"
     APP_IMAGE_NAME: "nexclipper-sudory-server"
   before_script:
     - echo -e "\nLogin to Kubernetes"
