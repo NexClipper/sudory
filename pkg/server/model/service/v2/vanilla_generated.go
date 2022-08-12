@@ -361,7 +361,7 @@ func (row ServiceStatus) Values() []interface{} {
  
 func (row ServiceResults_essential) Values() []interface{} {
 	return []interface{}{
-		row.ResultType,
+		row.ResultSaveType,
 		row.Result,
 	}
 }
@@ -370,7 +370,7 @@ func (row ServiceResult) Values() []interface{} {
 	return []interface{}{
 		row.Uuid,
 		row.Created,
-		row.ResultType,
+		row.ResultSaveType,
 		row.Result,
 	}
 }
@@ -389,7 +389,7 @@ func (row Service_tangled) Values() []interface{} {
 		row.StepPosition,
 		row.Status,
 		row.Message,
-		row.ResultType,
+		row.ResultSaveType,
 		row.Result,
 		row.Updated,
 	}
@@ -522,7 +522,7 @@ func (row *ServiceStatus) Scan(scanner Scanner) error {
  
 func (row *ServiceResults_essential) Scan(scanner Scanner) error {
 	return scanner.Scan(
-		&row.ResultType,
+		&row.ResultSaveType,
 		&row.Result,
 	)
 }
@@ -531,7 +531,7 @@ func (row *ServiceResult) Scan(scanner Scanner) error {
 	return scanner.Scan(
 		&row.Uuid,
 		&row.Created,
-		&row.ResultType,
+		&row.ResultSaveType,
 		&row.Result,
 	)
 }
@@ -550,7 +550,7 @@ func (row *Service_tangled) Scan(scanner Scanner) error {
 		&row.StepPosition,
 		&row.Status,
 		&row.Message,
-		&row.ResultType,
+		&row.ResultSaveType,
 		&row.Result,
 		&row.Updated,
 	)
@@ -679,7 +679,7 @@ func (row *ServiceStatus) Ptrs() []interface{} {
  
 func (row *ServiceResults_essential) Ptrs() []interface{} {
 	return []interface{}{
-		&row.ResultType,
+		&row.ResultSaveType,
 		&row.Result,
 	}
 }
@@ -688,7 +688,7 @@ func (row *ServiceResult) Ptrs() []interface{} {
 	return []interface{}{
 		&row.Uuid,
 		&row.Created,
-		&row.ResultType,
+		&row.ResultSaveType,
 		&row.Result,
 	}
 }
@@ -707,7 +707,7 @@ func (row *Service_tangled) Ptrs() []interface{} {
 		&row.StepPosition,
 		&row.Status,
 		&row.Message,
-		&row.ResultType,
+		&row.ResultSaveType,
 		&row.Result,
 		&row.Updated,
 	}

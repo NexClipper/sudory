@@ -233,12 +233,9 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 			m["cluster_uuid"] = service.ClusterUuid
 			m["assigned_client_uuid"] = service.AssignedClientUuid
 			m["status"] = service.Status
-			// if 0 < len(service.Result) {
-			// 	m["result_type"] = service.ResultType.String()
-			// 	m["result"] = service.Result
-			// }
+			m["status_description"] = service.Status.String()
+			m["result_type"] = servicev2.ResultSaveTypeNone.String()
 			m["result"] = ""
-			m["status_description"] = service.Message.String
 			m["step_count"] = service.StepCount
 			m["step_position"] = service.StepPosition
 
@@ -348,15 +345,15 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		//기본값; 공백 문자열
 		return vanilla.NullString{}
 	}
-	eventMessage := func() vanilla.NullString {
-		// 상태가 실패인 경우만
-		if body.Status == servicev2.StepStatusFail {
-			return *vanilla.NewNullString(body.Result)
-		}
-		//기본값; 공백 문자열
-		return *vanilla.NewNullString(body.Status.String())
-	}
-	resultType := func() (resultType servicev2.ResultType) {
+	// eventMessage := func() vanilla.NullString {
+	// 	// 상태가 실패인 경우만
+	// 	if body.Status == servicev2.StepStatusFail {
+	// 		return *vanilla.NewNullString(body.Result)
+	// 	}
+	// 	//기본값; 공백 문자열
+	// 	return *vanilla.NewNullString(body.Status.String())
+	// }
+	resultType := func() (resultType servicev2.ResultSaveType) {
 		// 마지막 스탭의 결과만 저장 한다
 		if service.StepCount != stepPosition() {
 			return
@@ -372,7 +369,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 			return
 		}
 
-		return servicev2.ResultTypeDatabase
+		return servicev2.ResultSaveTypeDatabase
 	}
 
 	time_now := time.Now()
@@ -396,7 +393,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		service_result.Uuid = service.Uuid
 		service_result.Created = time_now
 		service_result.Result = serviceResult()
-		service_result.ResultType = resultType()
+		service_result.ResultSaveType = resultType()
 		return service_result
 	}()
 	// step status
@@ -432,7 +429,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		return
 	}
 	save_service_result := func(tx *sql.Tx) (err error) {
-		if service_result.ResultType != servicev2.ResultTypeDatabase {
+		if service_result.ResultSaveType != servicev2.ResultSaveTypeDatabase {
 			return
 		}
 
@@ -503,13 +500,9 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	m["cluster_uuid"] = service.ClusterUuid
 	m["assigned_client_uuid"] = service_status.AssignedClientUuid
 	m["status"] = service_status.Status
-	// if 0 < len(service_result.Result) {
-	m["result_type"] = service_result.ResultType.String()
-	m["result"] = service_result.Result.String()
-	// }
-	// if 0 < len(service_status.Message) {
-	m["status_description"] = eventMessage()
-	// }
+	m["status_description"] = service_status.Status.String()
+	m["result_type"] = service_result.ResultSaveType.String()
+	m["result"] = body.Result
 	m["step_count"] = service.StepCount
 	m["step_position"] = service_status.StepPosition
 
