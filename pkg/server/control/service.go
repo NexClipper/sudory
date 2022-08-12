@@ -111,14 +111,14 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) (err error) {
 	commands := make([]templatev2.TemplateCommand, 0, state.ENV__INIT_SLICE_CAPACITY__())
 	Do(&err, func() (err error) {
 		q := vanilla.And(
-			vanilla.Equal("uuid", body.TemplateUuid),
+			vanilla.Equal("template_uuid", body.TemplateUuid),
 			vanilla.IsNull("deleted"),
 		).Parse()
 		o := vanilla.Asc("sequence").Parse()
 
 		command := templatev2.TemplateCommand{}
 		stmt := vanilla.Stmt.Select(command.TableName(), command.ColumnNames(), q, o, nil)
-		err = stmt.QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
+		err = stmt.QueryRows(ctl)(func(s vanilla.Scanner, _ int) (err error) {
 			err = command.Scan(s)
 			if err == nil {
 				commands = append(commands, command)
