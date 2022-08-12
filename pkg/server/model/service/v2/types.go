@@ -14,7 +14,7 @@ type OnCompletion int8
 	DigitalOcean:Spaces
 )
 */
-type ResultType int
+type ResultSaveType int
 
 /* ENUM(
 	regist 		= 0
