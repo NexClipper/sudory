@@ -182,7 +182,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 
 				service_status := servicev2.ServiceStatus{}
 				builder, err := vanilla.Stmt.Insert(service_status.TableName(), service_status.ColumnNames(), service_statuses...)
-				err = errors.Wrapf(err, "can not build a service_status insert statement")
+				err = errors.Wrapf(err, "cannot build a service_status insert statement")
 				if err != nil {
 					return err
 				}
@@ -202,7 +202,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 
 				service_step_status := servicev2.ServiceStepStatus{}
 				builder, err := vanilla.Stmt.Insert(service_step_status.TableName(), service_step_status.ColumnNames(), service_step_statuses...)
-				err = errors.Wrapf(err, "can not build a service_step_status insert statement")
+				err = errors.Wrapf(err, "cannot build a service_step_status insert statement")
 				if err != nil {
 					return err
 				}
@@ -268,14 +268,14 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 // @Header      200 {string} x-sudory-client-token
 func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	body := servicev2.HttpReq_ClientServiceUpdate{}
-	Do(&err, func() (err error) {
-		err = echoutil.Bind(ctx, &body)
-		err = errors.Wrapf(err, "bind%s",
-			logs.KVL(
-				"type", TypeName(body),
-			))
-		return
-	})
+	err = echoutil.Bind(ctx, &body)
+	err = errors.Wrapf(err, "bind%s",
+		logs.KVL(
+			"type", TypeName(body),
+		))
+	if err != nil {
+		return HttpError(err, http.StatusBadRequest)
+	}
 
 	claims, err := GetSudoryClisentTokenClaims(ctx)
 	err = errors.Wrapf(err, "failed to get client token")
@@ -287,38 +287,37 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 
 	//get service
 	service := servicev2.Service_tangled{}
-	Do(&err, func() (err error) {
-		// uuid = ?
-		eq_uuid := vanilla.Equal("uuid", body.Uuid).Parse()
+	// uuid = ?
+	eq_uuid := vanilla.Equal("uuid", body.Uuid).Parse()
 
-		err = vanilla.Stmt.Select(service.TableName(), service.ColumnNames(), eq_uuid, nil, nil).
-			QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
-			err = service.Scan(s)
-			err = errors.Wrapf(err, "scan service")
-			return
-
-		})
+	err = vanilla.Stmt.Select(service.TableName(), service.ColumnNames(), eq_uuid, nil, nil).
+		QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
+		err = service.Scan(s)
+		err = errors.Wrapf(err, "scan service")
 		return
+
 	})
+	if err != nil {
+		return err
+	}
 
 	step := servicev2.ServiceStep_tangled{}
-	Do(&err, func() (err error) {
 
-		// uuid = ? AND sequence = ?
-		unique_step := vanilla.And(
-			vanilla.Equal("uuid", body.Uuid),
-			vanilla.Equal("sequence", body.Sequence),
-		).Parse()
+	// uuid = ? AND sequence = ?
+	unique_step := vanilla.And(
+		vanilla.Equal("uuid", body.Uuid),
+		vanilla.Equal("sequence", body.Sequence),
+	).Parse()
 
-		err = vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), unique_step, nil, nil).
-			QueryRow(ctl.DB)(func(s vanilla.Scanner) (err error) {
-			err = step.Scan(s)
-			err = errors.Wrapf(err, "scan service_step")
-			return
-		})
-
+	err = vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), unique_step, nil, nil).
+		QueryRow(ctl.DB)(func(s vanilla.Scanner) (err error) {
+		err = step.Scan(s)
+		err = errors.Wrapf(err, "scan service_step")
 		return
 	})
+	if err != nil {
+		return err
+	}
 
 	stepPosition := func() int {
 		// 스템 포지션 값은
@@ -413,120 +412,132 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		return step_status
 	}()
 
-	//save status
-	Do(&err, func() (err error) {
-		err = ctl.Scope(func(tx *sql.Tx) (err error) {
-			Do(&err, func() (err error) {
-				// 서비스 상태 저장
-				builder, err := vanilla.Stmt.Insert(service_status.TableName(), service_status.ColumnNames(), service_status.Values())
-				err = errors.Wrapf(err, "can not build a service_status insert statement")
-				if err != nil {
-					return
-				}
+	save_service_status := func(tx *sql.Tx) (err error) {
+		// 서비스 상태 저장
+		builder, err := vanilla.Stmt.Insert(service_status.TableName(), service_status.ColumnNames(), service_status.Values())
+		err = errors.Wrapf(err, "cannot build a service_status insert statement")
+		if err != nil {
+			return err
+		}
 
-				affected, err := builder.Exec(tx)
-				if affected == 0 {
-					err = errors.Wrapf(err, "no affected")
-				}
+		affected, err := builder.Exec(tx)
+		err = errors.Wrapf(err, "exec insert statement")
+		if err != nil {
+			return err
+		}
+		if affected == 0 {
+			return errors.New("no affected")
+		}
 
-				err = errors.Wrapf(err, "faild to save service_status")
-				return
-			})
-			Do(&err, func() (err error) {
-				if service_result.ResultType != servicev2.ResultTypeDatabase {
-					return
-				}
-
-				// 서비스 결과 저장
-				builder, err := vanilla.Stmt.Insert(service_result.TableName(), service_result.ColumnNames(), service_result.Values())
-				err = errors.Wrapf(err, "can not build a service_result insert statement")
-				if err != nil {
-					return
-				}
-
-				affected, err := builder.Exec(tx)
-				if affected == 0 {
-					err = errors.Wrapf(err, "no affected")
-				}
-
-				err = errors.Wrapf(err, "faild to save service_result")
-				return
-			})
-			Do(&err, func() (err error) {
-				// 서비스 스탭 저장
-				builder, err := vanilla.Stmt.Insert(step_status.TableName(), step_status.ColumnNames(), step_status.Values())
-				err = errors.Wrapf(err, "can not build a service_step_status insert statement")
-				if err != nil {
-					return
-				}
-
-				affected, err := builder.Exec(tx)
-				if affected == 0 {
-					err = errors.Wrapf(err, "no affected")
-				}
-
-				err = errors.Wrapf(err, "faild to save service_step_status")
-				return
-			})
-
+		return
+	}
+	save_service_result := func(tx *sql.Tx) (err error) {
+		if service_result.ResultType != servicev2.ResultTypeDatabase {
 			return
-		})
+		}
 
-		err = errors.Wrapf(err, "failed to save updated service and service_step status")
+		// 서비스 결과 저장
+		builder, err := vanilla.Stmt.Insert(service_result.TableName(), service_result.ColumnNames(), service_result.Values())
+		err = errors.Wrapf(err, "cannot build a service_result insert statement")
+		if err != nil {
+			return err
+		}
+
+		affected, err := builder.Exec(tx)
+		err = errors.Wrapf(err, "exec insert statement")
+		if err != nil {
+			return err
+		}
+		if affected == 0 {
+			return errors.New("no affected")
+		}
+
+		return
+	}
+	save_service_step_status := func(tx *sql.Tx) (err error) {
+		// 서비스 스탭 저장
+		builder, err := vanilla.Stmt.Insert(step_status.TableName(), step_status.ColumnNames(), step_status.Values())
+		err = errors.Wrapf(err, "cannot build a service_step_status insert statement")
+		if err != nil {
+			return err
+		}
+
+		affected, err := builder.Exec(tx)
+		err = errors.Wrapf(err, "exec insert statement")
+		if err != nil {
+			return err
+		}
+		if affected == 0 {
+			return errors.New("no affected")
+		}
+
+		return
+	}
+
+	//save status
+	err = ctl.Scope(func(tx *sql.Tx) (err error) {
+		if err = save_service_status(tx); err != nil {
+			return errors.Wrapf(err, "failed to save service_status")
+		}
+		if err = save_service_result(tx); err != nil {
+			return errors.Wrapf(err, "failed to save service_result")
+		}
+		if err = save_service_step_status(tx); err != nil {
+			return errors.Wrapf(err, "failed to save service_step_status")
+		}
 		return
 	})
+
+	err = errors.Wrapf(err, "failed to save updated service and service_step status")
+	if err != nil {
+		return err
+	}
 
 	//invoke event (service-poll-in)
-	Do(&err, func() (err error) {
-		const event_name = "service-poll-in"
-		m := map[string]interface{}{}
-		m["event_name"] = event_name
-		m["service_uuid"] = service.Uuid
-		m["service_name"] = service.Name
-		m["template_uuid"] = service.TemplateUuid
-		m["cluster_uuid"] = service.ClusterUuid
-		m["assigned_client_uuid"] = service_status.AssignedClientUuid
-		m["status"] = service_status.Status
-		// if 0 < len(service_result.Result) {
-		m["result_type"] = service_result.ResultType.String()
-		m["result"] = service_result.Result.String()
-		// }
-		// if 0 < len(service_status.Message) {
-		m["status_description"] = eventMessage()
-		// }
-		m["step_count"] = service.StepCount
-		m["step_position"] = service_status.StepPosition
+	const event_name = "service-poll-in"
+	m := map[string]interface{}{}
+	m["event_name"] = event_name
+	m["service_uuid"] = service.Uuid
+	m["service_name"] = service.Name
+	m["template_uuid"] = service.TemplateUuid
+	m["cluster_uuid"] = service.ClusterUuid
+	m["assigned_client_uuid"] = service_status.AssignedClientUuid
+	m["status"] = service_status.Status
+	// if 0 < len(service_result.Result) {
+	m["result_type"] = service_result.ResultType.String()
+	m["result"] = service_result.Result.String()
+	// }
+	// if 0 < len(service_status.Message) {
+	m["status_description"] = eventMessage()
+	// }
+	m["step_count"] = service.StepCount
+	m["step_position"] = service_status.StepPosition
 
-		if service_status.Status == servicev2.StepStatusSuccess && len(service_result.Result.String()) == 0 {
-			log.Debugf("channel(poll-in-service): %+v", m)
-		}
-
-		event.Invoke(service.SubscribedChannel.String, m)         //Subscribe 등록된 구독 이벤트 이름으로 호출
-		managed_event.Invoke(service.SubscribedChannel.String, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
-		// invoke event by channel uuid
-		if 0 < len(service.SubscribedChannel.String) {
-			// find channel
-			mc := channelv2.ManagedChannel{}
-			mc.Uuid = service.SubscribedChannel.String
-			mc_cond := vanilla.And(
-				vanilla.Equal("uuid", mc.Uuid),
-				vanilla.IsNull("deleted"),
-			)
-			found, err := vanilla.Stmt.Exist(mc.TableName(), mc_cond.Parse())(ctl)
-			if err != nil {
-				return err
-			}
-			if found {
-				managed_channel.InvokeByChannelUuid(service.SubscribedChannel.String, m)
-			}
-		}
-		// invoke event by event category
-		managed_channel.InvokeByEventCategory(channelv2.EventCategoryServicePollingIn, m)
-		return
-	})
-	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
+	if service_status.Status == servicev2.StepStatusSuccess && len(service_result.Result.String()) == 0 {
+		log.Debugf("channel(poll-in-service): %+v", m)
 	}
+
+	event.Invoke(service.SubscribedChannel.String, m)         //Subscribe 등록된 구독 이벤트 이름으로 호출
+	managed_event.Invoke(service.SubscribedChannel.String, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
+	// invoke event by channel uuid
+	if 0 < len(service.SubscribedChannel.String) {
+		// find channel
+		mc := channelv2.ManagedChannel{}
+		mc.Uuid = service.SubscribedChannel.String
+		mc_cond := vanilla.And(
+			vanilla.Equal("uuid", mc.Uuid),
+			vanilla.IsNull("deleted"),
+		)
+		found, err := vanilla.Stmt.Exist(mc.TableName(), mc_cond.Parse())(ctl)
+		if err != nil {
+			return err
+		}
+		if found {
+			managed_channel.InvokeByChannelUuid(service.SubscribedChannel.String, m)
+		}
+	}
+	// invoke event by event category
+	managed_channel.InvokeByEventCategory(channelv2.EventCategoryServicePollingIn, m)
 
 	return ctx.JSON(http.StatusOK, OK())
 }
