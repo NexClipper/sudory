@@ -168,7 +168,7 @@ func (f *Fetcher) UpdateServiceProcess() {
 			defer cancel()
 
 			if err := f.sudoryAPI.UpdateServices(ctx, serv); err != nil {
-				log.Errorf(err.Error())
+				log.Errorf("Failed to update service on server : service_uuid:%s, error:%v", serv.Uuid, err.Error())
 			}
 		}(reqServ)
 	}

@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/itchyny/gojq"
 )
+
+const defaultJqTimeout = 10 * time.Second
 
 func Request(input map[string]interface{}, filter string) (string, error) {
 	res := &JqResult{Filter: filter}
@@ -43,7 +46,10 @@ func Process(input map[string]interface{}, filter string) (interface{}, error) {
 	var rootRes interface{}
 	var res []interface{}
 
-	iter := query.RunWithContext(context.TODO(), input)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultJqTimeout)
+	defer cancel()
+
+	iter := query.RunWithContext(ctx, input)
 	for {
 		v, ok := iter.Next()
 		if !ok {

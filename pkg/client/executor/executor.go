@@ -106,6 +106,7 @@ func NewStepExecutor(step service.Step) (*StepExecutor, error) {
 }
 
 func (se *StepExecutor) Execute() service.Result {
+	log.Debugf("Prepare to Execute method : %s, args{%+v}.\n", se.step.Command.Method, se.step.Command.Args)
 	res, err := se.commander.Run()
 	if err != nil {
 		log.Errorf("Failed to Execute method : %s.\n", se.step.Command.Method)

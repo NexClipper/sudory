@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	monitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -14,6 +15,8 @@ import (
 	"k8s.io/client-go/util/homedir"
 	aggregatorv1 "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
+
+const defaultK8sTimeout = 10 * time.Second
 
 var k8sClient *Client
 
