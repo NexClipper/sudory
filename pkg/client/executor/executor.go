@@ -41,6 +41,11 @@ func (se *ServiceExecutor) Execute() (err error) {
 	for i, step := range se.service.Steps {
 		var te *StepExecutor
 
+		// update execute result to service scheduler through returnChannel.
+		se.service.Steps[i].Status = service.StepStatusProcessing
+		se.service.Steps[i].StartTime = time.Now()
+		se.SendServiceStatusUpdate(i, service.StepStatusProcessing, "", se.service.Steps[i].StartTime, se.service.Steps[i].EndTime)
+
 		te, err = NewStepExecutor(step)
 		if err != nil {
 			se.service.Steps[i].Status = service.StepStatusFail
@@ -48,10 +53,7 @@ func (se *ServiceExecutor) Execute() (err error) {
 			se.SendServiceStatusUpdate(i, se.service.Steps[i].Status, err.Error(), se.service.Steps[i].StartTime, se.service.Steps[i].EndTime)
 			return err
 		}
-		// update execute result to service scheduler through returnChannel.
-		se.service.Steps[i].Status = service.StepStatusProcessing
-		se.service.Steps[i].StartTime = time.Now()
-		se.SendServiceStatusUpdate(i, service.StepStatusProcessing, "", se.service.Steps[i].StartTime, se.service.Steps[i].EndTime)
+
 		result = te.Execute()
 		if err = result.Err; err != nil {
 			se.service.Steps[i].Status = service.StepStatusFail

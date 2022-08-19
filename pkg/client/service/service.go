@@ -3,6 +3,7 @@ package service
 import (
 	"time"
 
+	"github.com/NexClipper/sudory/pkg/client/log"
 	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
 )
 
@@ -100,6 +101,12 @@ func ConvertServiceListServerToClient(server []servicev2.HttpRsp_ClientServicePo
 			Name:      v.Name,
 			ClusterId: v.ClusterUuid,
 		}
+
+		if len(v.Steps) <= 0 {
+			log.Warnf("service steps is empty: service_uuid: %s\n", v.Uuid)
+			continue
+		}
+
 		for _, s := range v.Steps {
 			serv.Steps = append(serv.Steps, Step{
 				Id:           s.Uuid,
