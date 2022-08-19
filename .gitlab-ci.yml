@@ -118,7 +118,6 @@ code-build-client:
       - pkg/
   rules:
     - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
-      when: manual
 
 docker-build-sudory-client-dev:
   stage: dev
@@ -136,25 +135,24 @@ docker-build-sudory-client-dev:
     - "source /data/scripts/build_v3.sh $APP_IMAGE_NAME"
   rules:
     - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
-      when: manual
 
 
-deploy-nexclipper-sudory-client-dev:
-  stage: dev
-  image: repo.nexclipper.io/nexclipper/helm-kubectl:latest
-  variables:
-    HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
-    APP_IMAGE_NAME: "nexclipper-sudory-client"
-  before_script:
-    - echo -e "\nLogin to Kubernetes"
-    - source /data/scripts/login-cluster.sh dev
-  script:
-    - echo "Retrieve uuid and token for sudory client"
-    - "source kube/getClientToken.sh $S_SERVER_URL"
-    - "source /data/scripts/deploy_v3.sh dev sudory"
-  needs:
-    - job: docker-build-sudory-client-dev
-  rules:
-    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
-      when: manual
-  allow_failure: true
+# deploy-nexclipper-sudory-client-dev:
+#   stage: dev
+#   image: repo.nexclipper.io/nexclipper/helm-kubectl:latest
+#   variables:
+#     HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
+#     APP_IMAGE_NAME: "nexclipper-sudory-client"
+#   before_script:
+#     - echo -e "\nLogin to Kubernetes"
+#     - source /data/scripts/login-cluster.sh dev
+#   script:
+#     - echo "Retrieve uuid and token for sudory client"
+#     - "source kube/getClientToken.sh $S_SERVER_URL"
+#     - "source /data/scripts/deploy_v3.sh dev sudory"
+#   needs:
+#     - job: docker-build-sudory-client-dev
+#   rules:
+#     - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+#       when: manual
+#   allow_failure: true
