@@ -45,6 +45,7 @@ func (se *ServiceExecutor) Execute() (err error) {
 		if err != nil {
 			se.service.Steps[i].Status = service.StepStatusFail
 			se.service.Steps[i].EndTime = time.Now()
+			se.SendServiceStatusUpdate(i, se.service.Steps[i].Status, err.Error(), se.service.Steps[i].StartTime, se.service.Steps[i].EndTime)
 			return err
 		}
 		// update execute result to service scheduler through returnChannel.
