@@ -23,6 +23,23 @@ const (
 	ServiceStatusFailed
 )
 
+func (s ServiceStatus) String() string {
+	switch s {
+	case ServiceStatusPreparing:
+		return "ServiceStatusPreparing"
+	case ServiceStatusStart:
+		return "ServiceStatusStart"
+	case ServiceStatusProcessing:
+		return "ServiceStatusProcessing"
+	case ServiceStatusSuccess:
+		return "ServiceStatusSuccess"
+	case ServiceStatusFailed:
+		return "ServiceStatusFailed"
+	default:
+		return "ServiceStatusUnknown"
+	}
+}
+
 type Service struct {
 	Id         string
 	Name       string
