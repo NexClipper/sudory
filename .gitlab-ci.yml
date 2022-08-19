@@ -102,23 +102,23 @@ deploy-nexclipper-sudory-server-stg:
     - if: $CI_COMMIT_BRANCH == "staging"
 
 
-code-build-client:
-  image: golang:1.18.1-alpine3.15
-  stage: client-dev
-  before_script:
-    - apk add --no-cache make git
-    - go get -v -u github.com/swaggo/swag/cmd/swag
-    - make prep 
-    - make swagger
-  script:
-    - make go-build target=client
-  artifacts:
-    paths:
-      - bin/
-      - pkg/
-  rules:
-    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
-      when: manual
+#code-build-client:
+#  image: golang:1.18.1-alpine3.15
+#  stage: client-dev
+#  before_script:
+#    - apk add --no-cache make git
+#    - go get -v -u github.com/swaggo/swag/cmd/swag
+#    - make prep 
+#    - make swagger
+#  script:
+#    - make go-build target=client
+#  artifacts:
+#    paths:
+#      - bin/
+#      - pkg/
+#  rules:
+#    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+#      when: manual
 
 #docker-build-sudory-client-dev:
 #  stage: client-dev
