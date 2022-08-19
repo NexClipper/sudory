@@ -24,7 +24,7 @@ func (se *ServiceExecutor) Execute() (err error) {
 	defer func() {
 		se.service.EndTime = time.Now()
 		if err != nil {
-			log.Errorf(err.Error())
+			log.Errorf("Failed to execute service: service_uuid: %s, error: %s\n", se.service.Id, err.Error())
 			se.service.Status = service.ServiceStatusFailed
 			se.service.Result.Err = err
 			// se.SendStatusUpdate()

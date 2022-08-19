@@ -13,7 +13,6 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/scheduler"
 	"github.com/NexClipper/sudory/pkg/client/service"
 	"github.com/NexClipper/sudory/pkg/client/sudory"
-	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 )
 
@@ -107,7 +106,7 @@ func (f *Fetcher) poll() {
 	// get services from server
 	respData, err := f.sudoryAPI.GetServices(ctx)
 	if err != nil {
-		log.Errorf(err.Error())
+		log.Errorf("Failed to polling: error: %s\n", err.Error())
 
 		// if session token is expired, retry handshake
 		if f.sudoryAPI.IsTokenExpired() {
@@ -120,7 +119,7 @@ func (f *Fetcher) poll() {
 
 	f.ChangeClientConfigFromToken()
 
-	log.Debugf("Recived %d service from server.", len(respData))
+	log.Debugf("Received %d service from server.", len(respData))
 
 	if len(respData) == 0 {
 		<-time.After(time.Duration(f.pollingInterval) * time.Second)
@@ -129,6 +128,11 @@ func (f *Fetcher) poll() {
 
 	// respData -> services
 	recvServices := service.ConvertServiceListServerToClient(respData)
+
+	// catch sudoryclient service (ex. method: sudoryclient.[shutdown/upgrade])
+	if ok := f.CatchSudoryClientService(recvServices); ok {
+		return
+	}
 
 	// Register new services.
 	f.scheduler.RegisterServices(recvServices)
@@ -159,17 +163,43 @@ func (f *Fetcher) ChangeClientConfigFromToken() {
 
 func (f *Fetcher) UpdateServiceProcess() {
 	for update := range f.scheduler.NotifyServiceUpdate() {
-		reqServ := service.ConvertServiceStepUpdateClientToServer(update)
-
 		<-time.After(time.Millisecond * 100)
 
-		go func(serv *servicev2.HttpReq_ClientServiceUpdate) {
+		go func(up service.UpdateServiceStep) {
+			serv := service.ConvertServiceStepUpdateClientToServer(up)
+
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 			defer cancel()
 
 			if err := f.sudoryAPI.UpdateServices(ctx, serv); err != nil {
 				log.Errorf("Failed to update service on server : service_uuid:%s, error:%s\n", serv.Uuid, err.Error())
 			}
-		}(reqServ)
+
+			f.scheduler.UpdateServiceStatus(up)
+		}(update)
 	}
+}
+
+func (f *Fetcher) CatchSudoryClientService(services map[string]*service.Service) bool {
+	exist := false
+
+	for _, svc := range services {
+		for _, step := range svc.Steps {
+			if step.Command != nil {
+				method := step.Command.Method
+
+				switch method {
+				case "sudoryclient.shutdown":
+					exist = true
+					f.Shutdown(svc.Id)
+				}
+			}
+		}
+	}
+
+	return exist
+}
+
+func (f *Fetcher) RemainServices() map[string]service.ServiceStatus {
+	return f.scheduler.CleanupRemainingServices()
 }
