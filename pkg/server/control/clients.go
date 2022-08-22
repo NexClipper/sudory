@@ -1,6 +1,7 @@
 package control
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"math"
@@ -331,7 +332,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	eq_uuid := vanilla.Equal("uuid", body.Uuid).Parse()
 
 	err = vanilla.Stmt.Select(service.TableName(), service.ColumnNames(), eq_uuid, nil, nil).
-		QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
+		QueryRowContext(context.Background(), ctl)(func(s vanilla.Scanner) (err error) {
 		err = service.Scan(s)
 		err = errors.Wrapf(err, "scan service")
 		return
@@ -349,7 +350,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		vanilla.Equal("sequence", body.Sequence),
 	).Parse()
 
-	exist, err := vanilla.Stmt.Exist(step.TableName(), step_eq_uuid)(ctx.Request().Context(), ctl)
+	exist, err := vanilla.Stmt.Exist(step.TableName(), step_eq_uuid)(context.Background(), ctl)
 	if err != nil {
 		return errors.Wrapf(err, "failed to found service step")
 	}
@@ -514,7 +515,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	}
 
 	//save status
-	err = ctl.ScopeTx(ctx.Request().Context(), func(tx *sql.Tx) (err error) {
+	err = ctl.ScopeTx(context.Background(), func(tx *sql.Tx) (err error) {
 		if err = save_service_status(tx); err != nil {
 			return errors.Wrapf(err, "failed to save service_status")
 		}
