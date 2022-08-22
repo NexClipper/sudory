@@ -99,7 +99,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.result_filter, 
        IFNULL(B.status, 0) AS status, B.started, B.ended, B.created AS updated
   FROM service_step A
-  JOIN (
+  LEFT JOIN (
 	   SELECT C.uuid, C.sequence, C.status, 
 			  C.started, C.ended, MAX(C.created) as created
 	     FROM service_step_status C
