@@ -3,6 +3,7 @@ package control
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"math"
 	"net/http"
 	"time"
@@ -349,7 +350,7 @@ SELECT A.uuid, A.created, A.name, A.summary, A.cluster_uuid, A.template_uuid, A.
 		}
 
 		// replace latest service
-		if service.Updated.Time.After(t.Updated.Time) {
+		if service.Updated.Time.Before(t.Updated.Time) {
 			service = &t
 		}
 
@@ -412,8 +413,11 @@ SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.res
 			step = &t
 		}
 
+		fmt.Println(step.Updated.Time)
+		fmt.Println(t.Updated.Time)
+
 		// replace latest service
-		if step.Updated.Time.After(t.Updated.Time) {
+		if step.Updated.Time.Before(t.Updated.Time) {
 			step = &t
 		}
 
@@ -459,7 +463,7 @@ SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.res
 		return servicev2.StepStatusProcessing
 	}
 	serviceResult := func() cryptov2.CryptoString {
-		// 상태가 실패인 경우만
+		// 상태가 성공인 경우만
 		if body.Status == servicev2.StepStatusSuccess {
 			return cryptov2.CryptoString(body.Result)
 		}
