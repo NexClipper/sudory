@@ -3,7 +3,6 @@ package control
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"math"
 	"net/http"
 	"time"
@@ -97,18 +96,17 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 				service_uuid := services[i].Service.Uuid
 
 				step_query := `
-SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.result_filter,
-       IFNULL(B.status, 0) as status, B.started, B.ended, B.created AS updated
+SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.result_filter, 
+       IFNULL(B.status, 0) AS status, B.started, B.ended, B.created AS updated
   FROM service_step A
-  LEFT JOIN service_step_status B
-      INNER JOIN (
-                 SELECT uuid, MAX(created) AS Max_created, sequence
-                   FROM service_step_status
-                  WHERE UUID = ?
-                  GROUP BY UUID, sequence
-            ) C
-        ON B.uuid = C.uuid AND B.created = C.Max_created AND B.sequence = C.sequence
-    ON A.uuid = B.uuid AND A.sequence = B.sequence
+  JOIN (
+	   SELECT C.uuid, C.sequence, C.status, 
+			  C.started, C.ended, MAX(C.created) as created
+	     FROM service_step_status C
+	    WHERE C.uuid = ?
+	    GROUP BY C.status, C.sequence
+	   ) B 
+	ON A.uuid = B.uuid AND A.sequence = B.sequence
  WHERE A.uuid = ?
 `
 
@@ -117,18 +115,30 @@ SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.res
 					service_uuid,
 				}
 
+				var stepSet = map[int]servicev2.ServiceStep_tangled{}
 				err = vanilla.QueryRowsContext(ctx.Request().Context(), ctl, step_query, step_args)(func(scan vanilla.Scanner, _ int) error {
-					step := servicev2.ServiceStep_tangled{}
-					err = step.Scan(scan)
+
+					step_ := servicev2.ServiceStep_tangled{}
+					err = step_.Scan(scan)
 					err = errors.Wrapf(err, "scan service_step")
 					if err != nil {
 						return err
 					}
 
-					services[i].Steps = append(services[i].Steps, step)
+					if _, ok := stepSet[step_.Sequence]; !ok {
+						stepSet[step_.Sequence] = step_
+					}
+
+					if stepSet[step_.Sequence].Updated.Time.Before(step_.Updated.Time) {
+						stepSet[step_.Sequence] = step_
+					}
+
 					return err
 				})
 
+				for _, step := range stepSet {
+					services[i].Steps = append(services[i].Steps, step)
+				}
 				// eq_uuid := vanilla.Equal("uuid", service_uuid).Parse()
 				// step := servicev2.ServiceStep_tangled{}
 				// err = vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), eq_uuid, nil, nil).
@@ -143,11 +153,10 @@ SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.res
 				// 	return
 				// })
 
-				err = errors.Wrapf(err, "failed to get steps%v", logs.KVL(
-					"service_uuid", service_uuid,
-				))
 				if err != nil {
-					return
+					return errors.Wrapf(err, "failed to get steps%v", logs.KVL(
+						"service_uuid", service_uuid,
+					))
 				}
 			}
 			return
@@ -208,7 +217,7 @@ SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.res
 			}
 		}
 
-		err = ctl.Scope(func(tx *sql.Tx) (err error) {
+		err = ctl.ScopeTx(ctx.Request().Context(), func(tx *sql.Tx) (err error) {
 			Do(&err, func() (err error) {
 				if len(service_statuses) == 0 {
 					return
@@ -221,7 +230,7 @@ SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.res
 					return err
 				}
 
-				affected, err := builder.ExecContext(ctx.Request().Context(), tx)
+				affected, err := builder.Exec(tx)
 				if affected == 0 {
 					err = errors.Wrapf(err, "no affected")
 				}
@@ -241,7 +250,7 @@ SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.res
 					return err
 				}
 
-				affected, err := builder.ExecContext(ctx.Request().Context(), tx)
+				affected, err := builder.Exec(tx)
 				if affected == 0 {
 					err = errors.Wrapf(err, "no affected")
 				}
@@ -316,138 +325,38 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	//get service
-	service_query := `
-SELECT A.uuid, A.created, A.name, A.summary, A.cluster_uuid, A.template_uuid, A.step_count, A.subscribed_channel,
-       IFNULL(B.assigned_client_uuid, '') AS assigned_client_uuid, IFNULL(B.step_position, 0) AS step_position, IFNULL(B.status, 0) AS status, B.message, B.created AS updated
-  FROM service A
-  LEFT JOIN (
-            SELECT C.uuid, C.created, C.assigned_client_uuid, C.step_position, C.status, C.message
-              FROM service_status C
-             WHERE C.uuid = ?
-       ) B 
-    ON A.uuid = B.uuid 
- WHERE A.uuid = ?
-`
+	// get service
+	service := servicev2.Service{}
+	// uuid = ?
+	eq_uuid := vanilla.Equal("uuid", body.Uuid).Parse()
 
-	service_args := []interface{}{
-		body.Uuid,
-		body.Uuid,
-	}
-
-	var service *servicev2.Service_status
-
-	err = vanilla.QueryRowsContext(ctx.Request().Context(), ctl, service_query, service_args)(func(scan vanilla.Scanner, _ int) error {
-		t := servicev2.Service_status{}
-		err := t.Scan(scan)
+	err = vanilla.Stmt.Select(service.TableName(), service.ColumnNames(), eq_uuid, nil, nil).
+		QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
+		err = service.Scan(s)
 		err = errors.Wrapf(err, "scan service")
-		if err != nil {
-			return err
-		}
+		return
 
-		if service == nil {
-			service = &t
-		}
-
-		// replace latest service
-		if service.Updated.Time.Before(t.Updated.Time) {
-			service = &t
-		}
-
-		return nil
 	})
 	if err != nil {
 		return errors.Wrapf(err, "failed to found service")
 	}
 
-	if service == nil {
-		return errors.New("cannot found service")
-	}
+	// check service
+	step := servicev2.ServiceStep{}
+	// uuid = ?
+	step_eq_uuid := vanilla.And(
+		vanilla.Equal("uuid", body.Uuid),
+		vanilla.Equal("sequence", body.Sequence),
+	).Parse()
 
-	// service := servicev2.Service_tangled{}
-	// // uuid = ?
-	// eq_uuid := vanilla.Equal("uuid", body.Uuid).Parse()
-
-	// err = vanilla.Stmt.Select(service.TableName(), service.ColumnNames(), eq_uuid, nil, nil).
-	// 	QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
-	// 	err = service.Scan(s)
-	// 	err = errors.Wrapf(err, "scan service")
-	// 	return
-
-	// })
-	// if err != nil {
-	// 	return err
-	// }
-
-	step_query := `
-SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.result_filter,
-       IFNULL(B.status, 0) AS status, B.started, B.ended, B.created AS updated
-  FROM service_step A
-  LEFT JOIN (
-            SELECT C.uuid, C.sequence, C.status,
-                   C.started, C.ended, C.created
-              FROM service_step_status C
-             WHERE C.uuid = ? AND C.sequence = ?
-       ) B
-    ON A.uuid = B.uuid
-   AND A.sequence = B.sequence
- WHERE A.uuid = ? AND A.sequence = ?
-`
-
-	step_args := []interface{}{
-		body.Uuid, body.Sequence,
-		body.Uuid, body.Sequence,
-	}
-
-	var step *servicev2.ServiceStep_tangled
-
-	err = vanilla.QueryRowsContext(ctx.Request().Context(), ctl, step_query, step_args)(func(scan vanilla.Scanner, _ int) error {
-		t := servicev2.ServiceStep_tangled{}
-		err := t.Scan(scan)
-		err = errors.Wrapf(err, "scan service step")
-		if err != nil {
-			return err
-		}
-
-		if step == nil {
-			step = &t
-		}
-
-		fmt.Println(step.Updated.Time)
-		fmt.Println(t.Updated.Time)
-
-		// replace latest service
-		if step.Updated.Time.Before(t.Updated.Time) {
-			step = &t
-		}
-
-		return nil
-	})
+	exist, err := vanilla.Stmt.Exist(step.TableName(), step_eq_uuid)(ctx.Request().Context(), ctl)
 	if err != nil {
 		return errors.Wrapf(err, "failed to found service step")
 	}
 
-	if step == nil {
-		return errors.New("cannot found service step")
+	if !exist {
+		return errors.New("service step does not exist")
 	}
-
-	// step := servicev2.ServiceStep_tangled{}
-
-	// // uuid = ? AND sequence = ?
-	// unique_step := vanilla.And(
-	// 	vanilla.Equal("uuid", body.Uuid),
-	// 	vanilla.Equal("sequence", body.Sequence),
-	// ).Parse()
-
-	// err = vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), unique_step, nil, nil).
-	// 	QueryRow(ctl.DB)(func(s vanilla.Scanner) (err error) {
-	// 	err = step.Scan(s)
-	// 	err = errors.Wrapf(err, "scan service_step")
-	// 	return
-	// })
-	// if err != nil {
-	// 	return err
-	// }
 
 	stepPosition := func() int {
 		// 스템 포지션 값은
@@ -533,8 +442,8 @@ SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.res
 	step_status := func() *servicev2.ServiceStepStatus {
 
 		step_status := new(servicev2.ServiceStepStatus)
-		step_status.Uuid = step.Uuid
-		step_status.Sequence = step.Sequence // missing
+		step_status.Uuid = body.Uuid
+		step_status.Sequence = body.Sequence // missing
 		step_status.Created = time_now
 		step_status.Status = body.Status                         // Status
 		step_status.Started = *vanilla.NewNullTime(body.Started) // Started
@@ -550,7 +459,7 @@ SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.res
 			return err
 		}
 
-		affected, err := builder.ExecContext(ctx.Request().Context(), tx)
+		affected, err := builder.Exec(tx)
 		err = errors.Wrapf(err, "exec insert statement")
 		if err != nil {
 			return err
@@ -573,7 +482,7 @@ SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.res
 			return err
 		}
 
-		affected, err := builder.ExecContext(ctx.Request().Context(), tx)
+		affected, err := builder.Exec(tx)
 		err = errors.Wrapf(err, "exec insert statement")
 		if err != nil {
 			return err
@@ -592,7 +501,7 @@ SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.res
 			return err
 		}
 
-		affected, err := builder.ExecContext(ctx.Request().Context(), tx)
+		affected, err := builder.Exec(tx)
 		err = errors.Wrapf(err, "exec insert statement")
 		if err != nil {
 			return err
@@ -605,7 +514,7 @@ SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.res
 	}
 
 	//save status
-	err = ctl.Scope(func(tx *sql.Tx) (err error) {
+	err = ctl.ScopeTx(ctx.Request().Context(), func(tx *sql.Tx) (err error) {
 		if err = save_service_status(tx); err != nil {
 			return errors.Wrapf(err, "failed to save service_status")
 		}
