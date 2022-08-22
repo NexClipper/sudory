@@ -114,5 +114,5 @@ func main() {
 		log.Infof("Received Fetcher Done")
 	}
 
-	log.Infof("sudory-client: shutdown\n")
+	log.Infof("sudory-client: end\n")
 }

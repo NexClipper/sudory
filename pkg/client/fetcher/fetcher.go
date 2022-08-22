@@ -129,7 +129,7 @@ func (f *Fetcher) poll() {
 	// respData -> services
 	recvServices := service.ConvertServiceListServerToClient(respData)
 
-	// catch sudoryclient service (ex. method: sudoryclient.[shutdown/upgrade])
+	// catch sudoryclient service
 	if ok := f.CatchSudoryClientService(recvServices); ok {
 		return
 	}
@@ -189,9 +189,9 @@ func (f *Fetcher) CatchSudoryClientService(services map[string]*service.Service)
 				method := step.Command.Method
 
 				switch method {
-				case "sudoryclient.shutdown":
+				case "sudory.client_pod.delete":
 					exist = true
-					f.Shutdown(svc.Id)
+					f.DeleteClientPod(svc.Id)
 				}
 			}
 		}
