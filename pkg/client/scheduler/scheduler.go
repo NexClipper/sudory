@@ -107,21 +107,45 @@ func (s *Scheduler) ExecuteService(serv *service.Service) error {
 func (s *Scheduler) RecvNotifyServiceStatus() {
 	// If you want to stop. close(s.ch).
 	for update := range s.updateChan {
-		serviceStatus := service.ServiceStatusProcessing
-		if update.StepCount == update.Sequence+1 {
-			if update.Status == service.StepStatusSuccess {
-				serviceStatus = service.ServiceStatusSuccess
-			} else if update.Status == service.StepStatusFail {
-				serviceStatus = service.ServiceStatusFailed
-			}
-		}
-		s.lock.Lock()
-		s.servicesStatusMap[update.Uuid] = service.ServiceStatus(serviceStatus)
-		s.lock.Unlock()
 		s.notifyUpdateChan <- update
 	}
 }
 
+func (s *Scheduler) UpdateServiceStatus(update service.UpdateServiceStep) {
+	serviceStatus := service.ServiceStatusProcessing
+	if update.StepCount == update.Sequence+1 {
+		if update.Status == service.StepStatusSuccess {
+			serviceStatus = service.ServiceStatusSuccess
+		} else if update.Status == service.StepStatusFail {
+			serviceStatus = service.ServiceStatusFailed
+		}
+	}
+	s.lock.Lock()
+	s.servicesStatusMap[update.Uuid] = service.ServiceStatus(serviceStatus)
+	s.lock.Unlock()
+}
+
 func (s *Scheduler) NotifyServiceUpdate() <-chan service.UpdateServiceStep {
 	return s.notifyUpdateChan
+}
+
+func (s *Scheduler) CleanupRemainingServices() map[string]service.ServiceStatus {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	if len(s.servicesStatusMap) == 0 {
+		return nil
+	}
+
+	services := make(map[string]service.ServiceStatus)
+
+	for uuid, status := range s.servicesStatusMap {
+		if status == service.ServiceStatusSuccess || status == service.ServiceStatusFailed {
+			delete(s.servicesStatusMap, uuid)
+			continue
+		}
+		services[uuid] = status
+	}
+
+	return services
 }
