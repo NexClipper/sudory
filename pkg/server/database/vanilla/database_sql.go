@@ -1,6 +1,7 @@
 package vanilla
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -18,6 +19,10 @@ type Queryer interface {
 }
 
 func Exec(tx Preparer, query string, args []interface{}) (affected int64, err error) {
+	return ExecContext(context.Background(), tx, query, args)
+}
+
+func ExecContext(ctx context.Context, tx Preparer, query string, args []interface{}) (affected int64, err error) {
 	if __VANILLA_DEBUG_PRINT_STATMENT__() {
 		println(fmt.Sprintf("query=%v", query))
 		println(fmt.Sprintf("args=%+v", args))
@@ -50,6 +55,10 @@ type CallbackScanner = func(scan Scanner) error
 type CallbackScannerWithIndex = func(scan Scanner, _ int) error
 
 func QueryRow(tx Preparer, query string, args []interface{}) func(CallbackScanner) error {
+	return QueryRowContext(context.Background(), tx, query, args)
+}
+
+func QueryRowContext(ctx context.Context, tx Preparer, query string, args []interface{}) func(CallbackScanner) error {
 	if __VANILLA_DEBUG_PRINT_STATMENT__() {
 		println(fmt.Sprintf("query=%v", query))
 		println(fmt.Sprintf("args=%+v", args))
@@ -65,7 +74,7 @@ func QueryRow(tx Preparer, query string, args []interface{}) func(CallbackScanne
 			err = error_compose.Composef(err, stmt.Close(), "sql.Stmt.Close")
 		}()
 
-		row := stmt.QueryRow(args...)
+		row := stmt.QueryRowContext(ctx, args...)
 		err = scan(row)
 		err = errors.Wrapf(err, "sql.Row.Scan")
 		err = error_compose.Composef(err, row.Err(), "sql.Row; during scan")
@@ -79,6 +88,10 @@ func QueryRow(tx Preparer, query string, args []interface{}) func(CallbackScanne
 }
 
 func QueryRows(tx Preparer, query string, args []interface{}) func(CallbackScannerWithIndex) error {
+	return QueryRowsContext(context.Background(), tx, query, args)
+}
+
+func QueryRowsContext(ctx context.Context, tx Preparer, query string, args []interface{}) func(CallbackScannerWithIndex) error {
 	if __VANILLA_DEBUG_PRINT_STATMENT__() {
 		println(fmt.Sprintf("query=%v", query))
 		println(fmt.Sprintf("args=%+v", args))
@@ -169,6 +182,10 @@ func QueryRows2(tx Queryer, query string, args []interface{}) func(CallbackScann
 }
 
 func Count(tx Preparer, table_name string, q *prepare.Condition) (count int, err error) {
+	return CountContext(context.Background(), tx, table_name, q)
+}
+
+func CountContext(ctx context.Context, tx Preparer, table_name string, q *prepare.Condition) (count int, err error) {
 	column_names := []string{
 		"COUNT(1)",
 	}

@@ -2,6 +2,7 @@ package vanilla
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 
@@ -39,12 +40,24 @@ func (sb StmtBuild) QueryRow(tx Preparer) func(CallbackScanner) error {
 	return QueryRow(tx, sb.Query(), sb.Args())
 }
 
+func (sb StmtBuild) QueryRowContext(ctx context.Context, tx Preparer) func(CallbackScanner) error {
+	return QueryRowContext(ctx, tx, sb.Query(), sb.Args())
+}
+
 func (sb StmtBuild) QueryRows(tx Preparer) func(CallbackScannerWithIndex) error {
 	return QueryRows(tx, sb.Query(), sb.Args())
 }
 
+func (sb StmtBuild) QueryRowsContext(ctx context.Context, tx Preparer) func(CallbackScannerWithIndex) error {
+	return QueryRowsContext(ctx, tx, sb.Query(), sb.Args())
+}
+
 func (sb StmtBuild) Exec(tx Preparer) (affected int64, err error) {
 	return Exec(tx, sb.Query(), sb.Args())
+}
+
+func (sb StmtBuild) ExecContext(ctx context.Context, tx Preparer) (affected int64, err error) {
+	return ExecContext(ctx, tx, sb.Query(), sb.Args())
 }
 
 type stmt struct{}
@@ -170,7 +183,7 @@ func (stmt) Select(table_name string, column_names []string, q *prepare.Conditio
 	return
 }
 
-func (stmt) Count(table_name string, q *prepare.Condition, p *prepare.Pagination) func(tx Preparer) (int, error) {
+func (stmt) Count(table_name string, q *prepare.Condition, p *prepare.Pagination) func(ctx context.Context, tx Preparer) (int, error) {
 	buf := bytes.Buffer{}
 	fmt.Fprintf(&buf, `SELECT COUNT(1) FROM %v`,
 		table_name,
@@ -192,8 +205,8 @@ func (stmt) Count(table_name string, q *prepare.Condition, p *prepare.Pagination
 		args:  args,
 	}
 
-	return func(tx Preparer) (count int, err error) {
-		err = stmt.QueryRow(tx)(func(scan Scanner) (err error) {
+	return func(ctx context.Context, tx Preparer) (count int, err error) {
+		err = stmt.QueryRowContext(ctx, tx)(func(scan Scanner) (err error) {
 			err = scan.Scan(&count)
 			return
 		})
@@ -201,7 +214,7 @@ func (stmt) Count(table_name string, q *prepare.Condition, p *prepare.Pagination
 	}
 }
 
-func (stmt) Exist(table_name string, q *prepare.Condition) func(tx Preparer) (bool, error) {
+func (stmt) Exist(table_name string, q *prepare.Condition) func(ctx context.Context, tx Preparer) (bool, error) {
 	buf := bytes.Buffer{}
 	fmt.Fprintf(&buf, `SELECT COUNT(1) FROM %v`,
 		table_name,
@@ -221,9 +234,9 @@ func (stmt) Exist(table_name string, q *prepare.Condition) func(tx Preparer) (bo
 		args:  args,
 	}
 
-	return func(tx Preparer) (exist bool, err error) {
+	return func(ctx context.Context, tx Preparer) (exist bool, err error) {
 		var count int
-		err = stmt.QueryRow(tx)(func(scan Scanner) (err error) {
+		err = stmt.QueryRowContext(ctx, tx)(func(scan Scanner) (err error) {
 			err = scan.Scan(&count)
 			return
 		})
