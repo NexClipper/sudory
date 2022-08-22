@@ -189,9 +189,9 @@ func (f *Fetcher) CatchSudoryClientService(services map[string]*service.Service)
 				method := step.Command.Method
 
 				switch method {
-				case "sudory.client_pod.delete":
+				case "sudory.client_pod.rebounce":
 					exist = true
-					f.DeleteClientPod(svc.Id)
+					f.RebounceClientPod(svc.Id)
 				}
 			}
 		}

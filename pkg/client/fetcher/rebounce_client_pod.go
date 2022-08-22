@@ -10,9 +10,9 @@ import (
 	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
 )
 
-func (f *Fetcher) DeleteClientPod(serviceId string) {
+func (f *Fetcher) RebounceClientPod(serviceId string) {
 	t := time.Now()
-	log.Debugf("SudoryClientPod Delete: start")
+	log.Debugf("SudoryClientPod Rebounce: start")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
@@ -23,11 +23,11 @@ func (f *Fetcher) DeleteClientPod(serviceId string) {
 		Status:   servicev2.StepStatusProcessing,
 		Started:  t,
 	}); err != nil {
-		log.Errorf("SudoryClientPod Delete: failed to update service status(processing): error: %s\n", err.Error())
+		log.Errorf("SudoryClientPod Rebounce: failed to update service status(processing): error: %s\n", err.Error())
 	}
 
 	f.ticker.Stop()
-	log.Debugf("SudoryClientPod Delete: polling stop")
+	log.Debugf("SudoryClientPod Rebounce: polling stop")
 
 	done := make(chan struct{})
 	go func() {
@@ -35,7 +35,7 @@ func (f *Fetcher) DeleteClientPod(serviceId string) {
 			done <- struct{}{}
 		}()
 
-		log.Debugf("SudoryClientPod Delete: waiting to process the remaining services(timeout:30s)")
+		log.Debugf("SudoryClientPod Rebounce: waiting to process the remaining services(timeout:30s)")
 
 		for {
 			<-time.After(time.Second * 3)
@@ -45,7 +45,7 @@ func (f *Fetcher) DeleteClientPod(serviceId string) {
 			}
 
 			buf := bytes.Buffer{}
-			buf.WriteString("SudoryClientPod Delete: remain services:")
+			buf.WriteString("SudoryClientPod Rebounce: waiting remain services:")
 			for uuid, status := range services {
 				buf.WriteString(fmt.Sprintf("\n\tuuid: %s, status: %s", uuid, status.String()))
 			}
@@ -55,9 +55,9 @@ func (f *Fetcher) DeleteClientPod(serviceId string) {
 
 	select {
 	case <-time.After(time.Second * 30):
-		log.Debugf("SudoryClientPod Delete: timeout")
+		log.Debugf("SudoryClientPod Rebounce: waiting timeout")
 	case <-done:
-		log.Debugf("SudoryClientPod Delete: done")
+		log.Debugf("SudoryClientPod Rebounce: waiting done")
 	}
 
 	ctx2, cancel2 := context.WithTimeout(context.Background(), time.Second*10)
@@ -67,11 +67,11 @@ func (f *Fetcher) DeleteClientPod(serviceId string) {
 		Uuid:     serviceId,
 		Sequence: 0,
 		Status:   servicev2.StepStatusSuccess,
-		Result:   "SudoryClient pod deletion will be complete",
+		Result:   "SudoryClient pod rebounce will be complete",
 		Started:  t,
 		Ended:    time.Now(),
 	}); err != nil {
-		log.Errorf("SudoryClientPod Delete: failed to update service status(success): error: %s\n", err.Error())
+		log.Errorf("SudoryClientPod Rebounce: failed to update service status(success): error: %s\n", err.Error())
 	}
 
 	f.Cancel()
