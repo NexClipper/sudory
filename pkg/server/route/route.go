@@ -369,7 +369,7 @@ func echoErrorHandlerLogger(err error, ctx echo.Context) {
 
 	reqbody := echoutil.Body(ctx)
 
-	logger.Error(fmt.Errorf("%w%v", err, logs.KVL(
+	logger.Error(fmt.Errorf("%v%v", err.Error(), logs.KVL(
 		"id", id,
 		"code", code,
 		"reqbody", reqbody,

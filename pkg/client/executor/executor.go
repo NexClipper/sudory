@@ -24,7 +24,7 @@ func (se *ServiceExecutor) Execute() (err error) {
 	defer func() {
 		se.service.EndTime = time.Now()
 		if err != nil {
-			log.Errorf(err.Error())
+			log.Errorf("Failed to execute service: service_uuid: %s, error: %s\n", se.service.Id, err.Error())
 			se.service.Status = service.ServiceStatusFailed
 			se.service.Result.Err = err
 			// se.SendStatusUpdate()
@@ -41,16 +41,19 @@ func (se *ServiceExecutor) Execute() (err error) {
 	for i, step := range se.service.Steps {
 		var te *StepExecutor
 
-		te, err = NewStepExecutor(step)
-		if err != nil {
-			se.service.Steps[i].Status = service.StepStatusFail
-			se.service.Steps[i].EndTime = time.Now()
-			return err
-		}
 		// update execute result to service scheduler through returnChannel.
 		se.service.Steps[i].Status = service.StepStatusProcessing
 		se.service.Steps[i].StartTime = time.Now()
 		se.SendServiceStatusUpdate(i, service.StepStatusProcessing, "", se.service.Steps[i].StartTime, se.service.Steps[i].EndTime)
+
+		te, err = NewStepExecutor(step)
+		if err != nil {
+			se.service.Steps[i].Status = service.StepStatusFail
+			se.service.Steps[i].EndTime = time.Now()
+			se.SendServiceStatusUpdate(i, se.service.Steps[i].Status, err.Error(), se.service.Steps[i].StartTime, se.service.Steps[i].EndTime)
+			return err
+		}
+
 		result = te.Execute()
 		if err = result.Err; err != nil {
 			se.service.Steps[i].Status = service.StepStatusFail
@@ -106,6 +109,7 @@ func NewStepExecutor(step service.Step) (*StepExecutor, error) {
 }
 
 func (se *StepExecutor) Execute() service.Result {
+	log.Debugf("Prepare to Execute method : %s, args{%+v}.\n", se.step.Command.Method, se.step.Command.Args)
 	res, err := se.commander.Run()
 	if err != nil {
 		log.Errorf("Failed to Execute method : %s.\n", se.step.Command.Method)

@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/NexClipper/sudory/pkg/client/fetcher"
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
@@ -80,15 +82,37 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	fCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	// polling
-	fetcher.Polling(ctx)
+	fetcher.Polling(fCtx)
 
 	select {
 	case <-ctx.Done():
-		log.Infof("Received Signal")
-		return
+		log.Infof("Received SIGINT or SIGTERM Signal")
+
+		// fetcher polling stop
+		cancel()
+
+		// clean up the remaining services before termination
+		for {
+			<-time.After(time.Second * 3)
+			services := fetcher.RemainServices()
+			if len(services) == 0 {
+				break
+			}
+
+			buf := bytes.Buffer{}
+			buf.WriteString("remain services:")
+			for uuid, status := range services {
+				buf.WriteString(fmt.Sprintf("\n\tuuid: %s, status: %s", uuid, status.String()))
+			}
+			log.Infof(buf.String() + "\n")
+		}
 	case <-fetcher.Done():
 		log.Infof("Received Fetcher Done")
-		return
 	}
+
+	log.Infof("sudory-client: end\n")
 }

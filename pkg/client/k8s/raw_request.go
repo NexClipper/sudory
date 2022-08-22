@@ -22,7 +22,10 @@ func (c *rawRequest) CheckApiServerStatus() error {
 
 	log.Debugf("Send request to the endpoint '%s' of the k8s api-server.\n", path)
 
-	result, err := c.c.client.RESTClient().Get().AbsPath(path).DoRaw(context.TODO())
+	ctx, cancel := context.WithTimeout(context.Background(), defaultK8sTimeout)
+	defer cancel()
+
+	result, err := c.c.client.RESTClient().Get().AbsPath(path).DoRaw(ctx)
 	if err != nil {
 		return fmt.Errorf("failed request to the endpoint '%s' of the k8s api-server", path)
 	}

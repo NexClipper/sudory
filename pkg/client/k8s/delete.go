@@ -8,7 +8,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// func (c *Client) ResourceDelete(gv schema.GroupVersion, resource, namespace, name string) error {
 func (c *Client) ResourceDelete(gv schema.GroupVersion, resource string, params map[string]interface{}) error {
 	var err error
 
@@ -25,11 +24,14 @@ func (c *Client) ResourceDelete(gv schema.GroupVersion, resource string, params 
 		return err
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), defaultK8sTimeout)
+	defer cancel()
+
 	switch gv.Identifier() {
 	case "v1":
 		switch resource {
 		case "pods":
-			err = c.client.CoreV1().Pods(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{})
+			err = c.client.CoreV1().Pods(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 			if err != nil {
 				break
 			}

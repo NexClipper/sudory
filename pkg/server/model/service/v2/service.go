@@ -48,8 +48,8 @@ type ServiceStatus struct {
 }
 
 type ServiceResults_essential struct {
-	ResultType ResultType          `column:"result_type" json:"result_type,omitempty"`
-	Result     crypto.CryptoString `column:"result"      json:"result,omitempty"`
+	ResultSaveType ResultSaveType      `column:"result_type" json:"result_type,omitempty"`
+	Result         crypto.CryptoString `column:"result"      json:"result,omitempty"`
 }
 
 func (ServiceResults_essential) TableName() string {
@@ -127,7 +127,7 @@ func (record Service_tangled) TableName() string {
 		fmt.Sprintf("IFNULL(step_position, %v) AS step_position", 0),
 		fmt.Sprintf("IFNULL(status, %v) AS status", int(StepStatusRegist)),
 		"message",
-		fmt.Sprintf("IFNULL(result_type, %v) AS result_type", int(ResultTypeNone)),
+		fmt.Sprintf("IFNULL(result_type, %v) AS result_type", int(ResultSaveTypeNone)),
 		"result",
 	}
 	A := record.Service.TableName()

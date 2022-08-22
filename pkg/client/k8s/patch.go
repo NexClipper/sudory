@@ -48,21 +48,24 @@ func (c *Client) ResourcePatch(gv schema.GroupVersion, resource string, params m
 		return "", err
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), defaultK8sTimeout)
+	defer cancel()
+
 	switch gv.Identifier() {
 	case "v1":
 		switch resource {
 		case "configmaps":
-			result, err = c.client.CoreV1().ConfigMaps(namespace).Patch(context.TODO(), name, pt, data, metav1.PatchOptions{})
+			result, err = c.client.CoreV1().ConfigMaps(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
 			if err != nil {
 				break
 			}
 		case "persistentvolumes":
-			result, err = c.client.CoreV1().PersistentVolumes().Patch(context.TODO(), name, pt, data, metav1.PatchOptions{})
+			result, err = c.client.CoreV1().PersistentVolumes().Patch(ctx, name, pt, data, metav1.PatchOptions{})
 			if err != nil {
 				break
 			}
 		case "persistentvolumeclaims":
-			result, err = c.client.CoreV1().PersistentVolumeClaims(namespace).Patch(context.TODO(), name, pt, data, metav1.PatchOptions{})
+			result, err = c.client.CoreV1().PersistentVolumeClaims(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
 			if err != nil {
 				break
 			}
