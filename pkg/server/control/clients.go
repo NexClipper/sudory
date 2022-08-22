@@ -1,6 +1,7 @@
 package control
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"math"
@@ -57,7 +58,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 		eq_uuid := vanilla.Equal("uuid", claims.ClusterUuid).Parse()
 
 		err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid, nil, nil).
-			QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
+			QueryRowContext(ctx.Request().Context(), ctl)(func(s vanilla.Scanner) (err error) {
 			err = cluster.Scan(s)
 			err = errors.Wrapf(err, "scan cluster")
 			return
@@ -75,7 +76,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 
 		service_status := servicev2.Service_status{}
 		err = vanilla.Stmt.Select(service_status.TableName(), service_status.ColumnNames(), condition, nil, limit).
-			QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
+			QueryRowsContext(ctx.Request().Context(), ctl)(func(scan vanilla.Scanner, _ int) (err error) {
 			err = service_status.Scan(scan)
 			err = errors.Wrapf(err, "scan service_status")
 			if err != nil {
@@ -95,25 +96,68 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 				services[i].Steps = make([]servicev2.ServiceStep_tangled, 0, services[i].Service.StepCount)
 				service_uuid := services[i].Service.Uuid
 
-				eq_uuid := vanilla.Equal("uuid", service_uuid).Parse()
-				step := servicev2.ServiceStep_tangled{}
-				err = vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), eq_uuid, nil, nil).
-					QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
-					err = step.Scan(scan)
+				step_query := `
+SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.result_filter, 
+       IFNULL(B.status, 0) AS status, B.started, B.ended, B.created AS updated
+  FROM service_step A
+  LEFT JOIN (
+	   SELECT C.uuid, C.sequence, C.status, 
+			  C.started, C.ended, MAX(C.created) as created
+	     FROM service_step_status C
+	    WHERE C.uuid = ?
+	    GROUP BY C.status, C.sequence
+	   ) B 
+	ON A.uuid = B.uuid AND A.sequence = B.sequence
+ WHERE A.uuid = ?
+`
+
+				step_args := []interface{}{
+					service_uuid,
+					service_uuid,
+				}
+
+				var stepSet = map[int]servicev2.ServiceStep_tangled{}
+				err = vanilla.QueryRowsContext(ctx.Request().Context(), ctl, step_query, step_args)(func(scan vanilla.Scanner, _ int) error {
+
+					step_ := servicev2.ServiceStep_tangled{}
+					err = step_.Scan(scan)
 					err = errors.Wrapf(err, "scan service_step")
 					if err != nil {
-						return
+						return err
 					}
 
-					services[i].Steps = append(services[i].Steps, step)
-					return
+					if _, ok := stepSet[step_.Sequence]; !ok {
+						stepSet[step_.Sequence] = step_
+					}
+
+					if stepSet[step_.Sequence].Updated.Time.Before(step_.Updated.Time) {
+						stepSet[step_.Sequence] = step_
+					}
+
+					return err
 				})
 
-				err = errors.Wrapf(err, "failed to get steps%v", logs.KVL(
-					"service_uuid", service_uuid,
-				))
+				for _, step := range stepSet {
+					services[i].Steps = append(services[i].Steps, step)
+				}
+				// eq_uuid := vanilla.Equal("uuid", service_uuid).Parse()
+				// step := servicev2.ServiceStep_tangled{}
+				// err = vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), eq_uuid, nil, nil).
+				// 	QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
+				// 	err = step.Scan(scan)
+				// 	err = errors.Wrapf(err, "scan service_step")
+				// 	if err != nil {
+				// 		return
+				// 	}
+
+				// 	services[i].Steps = append(services[i].Steps, step)
+				// 	return
+				// })
+
 				if err != nil {
-					return
+					return errors.Wrapf(err, "failed to get steps%v", logs.KVL(
+						"service_uuid", service_uuid,
+					))
 				}
 			}
 			return
@@ -174,7 +218,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 			}
 		}
 
-		err = ctl.Scope(func(tx *sql.Tx) (err error) {
+		err = ctl.ScopeTx(ctx.Request().Context(), func(tx *sql.Tx) (err error) {
 			Do(&err, func() (err error) {
 				if len(service_statuses) == 0 {
 					return
@@ -282,38 +326,37 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	//get service
-	service := servicev2.Service_tangled{}
+	// get service
+	service := servicev2.Service{}
 	// uuid = ?
 	eq_uuid := vanilla.Equal("uuid", body.Uuid).Parse()
 
 	err = vanilla.Stmt.Select(service.TableName(), service.ColumnNames(), eq_uuid, nil, nil).
-		QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
+		QueryRowContext(context.Background(), ctl)(func(s vanilla.Scanner) (err error) {
 		err = service.Scan(s)
 		err = errors.Wrapf(err, "scan service")
 		return
 
 	})
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to found service")
 	}
 
-	step := servicev2.ServiceStep_tangled{}
-
-	// uuid = ? AND sequence = ?
-	unique_step := vanilla.And(
+	// check service
+	step := servicev2.ServiceStep{}
+	// uuid = ?
+	step_eq_uuid := vanilla.And(
 		vanilla.Equal("uuid", body.Uuid),
 		vanilla.Equal("sequence", body.Sequence),
 	).Parse()
 
-	err = vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), unique_step, nil, nil).
-		QueryRow(ctl.DB)(func(s vanilla.Scanner) (err error) {
-		err = step.Scan(s)
-		err = errors.Wrapf(err, "scan service_step")
-		return
-	})
+	exist, err := vanilla.Stmt.Exist(step.TableName(), step_eq_uuid)(context.Background(), ctl)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to found service step")
+	}
+
+	if !exist {
+		return errors.New("service step does not exist")
 	}
 
 	stepPosition := func() int {
@@ -330,7 +373,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		return servicev2.StepStatusProcessing
 	}
 	serviceResult := func() cryptov2.CryptoString {
-		// 상태가 실패인 경우만
+		// 상태가 성공인 경우만
 		if body.Status == servicev2.StepStatusSuccess {
 			return cryptov2.CryptoString(body.Result)
 		}
@@ -400,8 +443,8 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	step_status := func() *servicev2.ServiceStepStatus {
 
 		step_status := new(servicev2.ServiceStepStatus)
-		step_status.Uuid = step.Uuid
-		step_status.Sequence = step.Sequence // missing
+		step_status.Uuid = body.Uuid
+		step_status.Sequence = body.Sequence // missing
 		step_status.Created = time_now
 		step_status.Status = body.Status                         // Status
 		step_status.Started = *vanilla.NewNullTime(body.Started) // Started
@@ -472,7 +515,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	}
 
 	//save status
-	err = ctl.Scope(func(tx *sql.Tx) (err error) {
+	err = ctl.ScopeTx(context.Background(), func(tx *sql.Tx) (err error) {
 		if err = save_service_status(tx); err != nil {
 			return errors.Wrapf(err, "failed to save service_status")
 		}
@@ -521,7 +564,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 			vanilla.Equal("uuid", mc.Uuid),
 			vanilla.IsNull("deleted"),
 		)
-		found, err := vanilla.Stmt.Exist(mc.TableName(), mc_cond.Parse())(ctl)
+		found, err := vanilla.Stmt.Exist(mc.TableName(), mc_cond.Parse())(ctx.Request().Context(), ctl)
 		if err != nil {
 			return err
 		}
@@ -561,7 +604,7 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	cluster := clusterv2.Cluster{}
 	cluster.Uuid = auth.ClusterUuid
 	cluster_eq_uuid := vanilla.Equal("uuid", cluster.Uuid)
-	cluster_found, err := vanilla.Stmt.Exist(cluster.TableName(), cluster_eq_uuid.Parse())(ctl)
+	cluster_found, err := vanilla.Stmt.Exist(cluster.TableName(), cluster_eq_uuid.Parse())(ctx.Request().Context(), ctl)
 	if err != nil {
 		return HttpError(err, http.StatusInternalServerError)
 	}
@@ -761,7 +804,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 	err = func() (err error) {
 		eq_uuid := vanilla.Equal("uuid", claims.ClusterUuid).Parse()
 		err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid, nil, nil).
-			QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
+			QueryRowContext(ctx.Request().Context(), ctl)(func(s vanilla.Scanner) (err error) {
 			err = cluster.Scan(s)
 			err = errors.Wrapf(err, "cluster Scan")
 			return
@@ -777,8 +820,8 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 	var service_count int
 	err = func() (err error) {
 		eq_uuid := pollingServiceCondition(claims.ClusterUuid)
-		service := servicev2.Service_tangled{}
-		service_count, err = vanilla.Stmt.Count(service.TableName(), eq_uuid, nil)(ctl)
+		service := servicev2.Service_status{}
+		service_count, err = vanilla.Stmt.Count(service.TableName(), eq_uuid, nil)(ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get cluster service count")
 		}
@@ -826,7 +869,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 		vanilla.IsNull("deleted"),
 	)
 	err = func() (err error) {
-		session_found, err := vanilla.Stmt.Exist(session.TableName(), cond_session.Parse())(ctl)
+		session_found, err := vanilla.Stmt.Exist(session.TableName(), cond_session.Parse())(ctx.Request().Context(), ctl)
 		if err != nil {
 			return err
 		}
@@ -964,14 +1007,20 @@ func pollingServiceCondition(cluster_uuid string) *prepare.Condition {
 	// 	servicev2.StepStatusProcessing,
 	// )
 
+	if false {
+		return vanilla.And(
+			vanilla.Equal("cluster_uuid", cluster_uuid),
+			vanilla.Or(
+				vanilla.Equal("status", servicev2.StepStatusRegist),
+				vanilla.Equal("status", servicev2.StepStatusSend),
+				vanilla.Equal("status", servicev2.StepStatusProcessing),
+			)).Parse()
+	}
+
 	return vanilla.And(
 		vanilla.Equal("cluster_uuid", cluster_uuid),
-		vanilla.Or(
-			vanilla.Equal("status", servicev2.StepStatusRegist),
-			vanilla.Equal("status", servicev2.StepStatusSend),
-			vanilla.Equal("status", servicev2.StepStatusProcessing),
-		)).Parse()
-
+		vanilla.LessThan("status", servicev2.StepStatusSuccess),
+	).Parse()
 }
 
 // pollingServiceLimit
