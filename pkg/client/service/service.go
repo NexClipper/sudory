@@ -17,7 +17,7 @@ const (
 type ServiceStatus int32
 
 const (
-	ServiceStatusPreparing = iota + 1
+	ServiceStatusPreparing ServiceStatus = iota + 1
 	ServiceStatusStart
 	ServiceStatusProcessing
 	ServiceStatusSuccess
