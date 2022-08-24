@@ -249,7 +249,7 @@ func main() {
 		service_result := &servicev2.ServiceResult{}
 		service_result.Uuid = service.Uuid
 		service_result.Created = created.Add(time.Duration(rand.Intn(1000)) * time.Millisecond)
-		service_result.ResultType = servicev2.ResultTypeDatabase
+		service_result.ResultSaveType = servicev2.ResultSaveTypeDatabase
 		service_result.Result = dctv2.CryptoString(fmt.Sprintf("%v", r))
 
 		return service_result
