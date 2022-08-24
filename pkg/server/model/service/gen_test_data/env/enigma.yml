@@ -1,0 +1,24 @@
+enigma:
+  sudory.default.crypto:
+    block-method: none
+    block-size: 0
+    block-key: 
+    cipher-mode: none
+    cipher-salt: null
+    padding: none
+    strconv: plain
+  # sudory.default.crypto:
+  #   # block-method: none
+  #   block-method: aes
+  #   # block-method: des
+  #   # block-size: 64
+  #   # block-size: 128
+  #   block-size: 256
+  #   block-key: YnJvd24gZm94IGp1bXBzIG92ZXIgdGhlIGxhenkgZG9n # brown fox jumps over the lazy dog
+  #   cipher-mode: gcm
+  #   cipher-salt: YWJjZGFiY2RhYmNkYWJjZGFiY2RhYmNkYWJjZGFiY2Q=
+  #   # padding: none    
+  #   padding: PKCS
+  #   # strconv: plain 
+  #   strconv: base64 
+  #   # strconv: hex
