@@ -126,8 +126,6 @@ func (s *Scheduler) UpdateServiceStatus(update service.UpdateServiceStep) {
 		if prevStatus < serviceStatus {
 			s.servicesStatusMap[update.Uuid] = service.ServiceStatus(serviceStatus)
 		}
-	} else {
-		s.servicesStatusMap[update.Uuid] = service.ServiceStatus(serviceStatus)
 	}
 	s.lock.Unlock()
 }
