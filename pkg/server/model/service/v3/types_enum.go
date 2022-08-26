@@ -65,62 +65,62 @@ func ParseOnCompletion(name string) (OnCompletion, error) {
 }
 
 const (
-	// ResultTypeNone is a ResultType of type None.
-	ResultTypeNone ResultType = iota
-	// ResultTypeDatabase is a ResultType of type Database.
-	ResultTypeDatabase
-	// ResultTypeDigitalOceanSpaces is a ResultType of type DigitalOcean:Spaces.
-	ResultTypeDigitalOceanSpaces
+	// ResultSaveTypeNone is a ResultSaveType of type None.
+	ResultSaveTypeNone ResultSaveType = iota
+	// ResultSaveTypeDatabase is a ResultSaveType of type Database.
+	ResultSaveTypeDatabase
+	// ResultSaveTypeDigitalOceanSpaces is a ResultSaveType of type DigitalOcean:Spaces.
+	ResultSaveTypeDigitalOceanSpaces
 )
 
-const _ResultTypeName = "nonedatabaseDigitalOcean:Spaces"
+const _ResultSaveTypeName = "nonedatabaseDigitalOcean:Spaces"
 
-var _ResultTypeNames = []string{
-	_ResultTypeName[0:4],
-	_ResultTypeName[4:12],
-	_ResultTypeName[12:31],
+var _ResultSaveTypeNames = []string{
+	_ResultSaveTypeName[0:4],
+	_ResultSaveTypeName[4:12],
+	_ResultSaveTypeName[12:31],
 }
 
-// ResultTypeNames returns a list of possible string values of ResultType.
-func ResultTypeNames() []string {
-	tmp := make([]string, len(_ResultTypeNames))
-	copy(tmp, _ResultTypeNames)
+// ResultSaveTypeNames returns a list of possible string values of ResultSaveType.
+func ResultSaveTypeNames() []string {
+	tmp := make([]string, len(_ResultSaveTypeNames))
+	copy(tmp, _ResultSaveTypeNames)
 	return tmp
 }
 
-var _ResultTypeMap = map[ResultType]string{
-	ResultTypeNone:               _ResultTypeName[0:4],
-	ResultTypeDatabase:           _ResultTypeName[4:12],
-	ResultTypeDigitalOceanSpaces: _ResultTypeName[12:31],
+var _ResultSaveTypeMap = map[ResultSaveType]string{
+	ResultSaveTypeNone:               _ResultSaveTypeName[0:4],
+	ResultSaveTypeDatabase:           _ResultSaveTypeName[4:12],
+	ResultSaveTypeDigitalOceanSpaces: _ResultSaveTypeName[12:31],
 }
 
 // String implements the Stringer interface.
-func (x ResultType) String() string {
-	if str, ok := _ResultTypeMap[x]; ok {
+func (x ResultSaveType) String() string {
+	if str, ok := _ResultSaveTypeMap[x]; ok {
 		return str
 	}
-	return fmt.Sprintf("ResultType(%d)", x)
+	return fmt.Sprintf("ResultSaveType(%d)", x)
 }
 
-var _ResultTypeValue = map[string]ResultType{
-	_ResultTypeName[0:4]:                    ResultTypeNone,
-	strings.ToLower(_ResultTypeName[0:4]):   ResultTypeNone,
-	_ResultTypeName[4:12]:                   ResultTypeDatabase,
-	strings.ToLower(_ResultTypeName[4:12]):  ResultTypeDatabase,
-	_ResultTypeName[12:31]:                  ResultTypeDigitalOceanSpaces,
-	strings.ToLower(_ResultTypeName[12:31]): ResultTypeDigitalOceanSpaces,
+var _ResultSaveTypeValue = map[string]ResultSaveType{
+	_ResultSaveTypeName[0:4]:                    ResultSaveTypeNone,
+	strings.ToLower(_ResultSaveTypeName[0:4]):   ResultSaveTypeNone,
+	_ResultSaveTypeName[4:12]:                   ResultSaveTypeDatabase,
+	strings.ToLower(_ResultSaveTypeName[4:12]):  ResultSaveTypeDatabase,
+	_ResultSaveTypeName[12:31]:                  ResultSaveTypeDigitalOceanSpaces,
+	strings.ToLower(_ResultSaveTypeName[12:31]): ResultSaveTypeDigitalOceanSpaces,
 }
 
-// ParseResultType attempts to convert a string to a ResultType.
-func ParseResultType(name string) (ResultType, error) {
-	if x, ok := _ResultTypeValue[name]; ok {
+// ParseResultSaveType attempts to convert a string to a ResultSaveType.
+func ParseResultSaveType(name string) (ResultSaveType, error) {
+	if x, ok := _ResultSaveTypeValue[name]; ok {
 		return x, nil
 	}
 	// Case insensitive parse, do a separate lookup to prevent unnecessary cost of lowercasing a string if we don't need to.
-	if x, ok := _ResultTypeValue[strings.ToLower(name)]; ok {
+	if x, ok := _ResultSaveTypeValue[strings.ToLower(name)]; ok {
 		return x, nil
 	}
-	return ResultType(0), fmt.Errorf("%s is not a valid ResultType, try [%s]", name, strings.Join(_ResultTypeNames, ", "))
+	return ResultSaveType(0), fmt.Errorf("%s is not a valid ResultSaveType, try [%s]", name, strings.Join(_ResultSaveTypeNames, ", "))
 }
 
 const (

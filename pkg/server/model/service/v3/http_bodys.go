@@ -29,39 +29,27 @@ type HttpRsp_Service struct {
 	Steps   []ServiceStep `json:"steps,omitempty"`
 }
 
-type HttpRsp_Service_status struct {
-	Service `json:",inline"`
-	Steps   []ServiceStep `json:"steps,omitempty"`
-}
-
 type HttpRsp_Service_create struct {
-	Service `json:",inline"`
-	Steps   []ServiceStep `json:"steps,omitempty"`
+	Service_create `json:",inline"`
+	Steps          []ServiceStep_create `json:"steps,omitempty"`
 }
 
-type reqServiceCreate struct {
+type HttpReq_Service_create struct {
+	Uuid              string `json:"uuid"` //pk
 	Name              string `json:"name,omitempty"`
 	Summary           string `json:"summary,omitempty"`
 	ClusterUuid       string `json:"cluster_uuid,omitempty"`
 	TemplateUuid      string `json:"template_uuid,omitempty"`
 	SubscribedChannel string `json:"subscribed_channel,omitempty"`
-}
-
-type reqServiceStepCreate struct {
-	Args map[string]interface{} `json:"args,omitempty"`
-}
-
-type HttpReq_Service_create struct {
-	Uuid             string `json:"uuid"` //pk
-	reqServiceCreate `json:",inline"`
-	Steps            []reqServiceStepCreate `json:"steps,omitempty"`
+	Steps             []struct {
+		Args map[string]interface{} `json:"args,omitempty"`
+	} `json:"steps,omitempty"`
 }
 
 type HttpRsp_ServiceStep struct {
 	ServiceStep `json:",inline"`
 }
 
-// type HttpReq_ServiceUpdate struct {
-// 	Service Service_essential       `json:",inline"`
-// 	Steps   []ServiceStep_essential `json:",inline"`
-// }
+type HttpRsp_ServiceResult struct {
+	ServiceResult `json:",inline"`
+}

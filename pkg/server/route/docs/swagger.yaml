@@ -504,24 +504,6 @@ definitions:
       value:
         type: string
     type: object
-  v2.HttpReq_ClientServiceUpdate:
-    properties:
-      ended:
-        type: string
-      result:
-        description: StepStatus 값에 따라; 결과 혹은 에러 메시지
-        type: string
-      sequence:
-        description: pk
-        type: integer
-      started:
-        type: string
-      status:
-        type: integer
-      uuid:
-        description: pk
-        type: string
-    type: object
   v2.HttpReq_Cluster_create:
     properties:
       name:
@@ -709,32 +691,6 @@ definitions:
       summary:
         type: string
     type: object
-  v2.HttpReq_Service_create:
-    properties:
-      cluster_uuid:
-        type: string
-      name:
-        type: string
-      steps:
-        items:
-          $ref: '#/definitions/v2.HttpReq_ServiceStep_Create'
-        type: array
-      subscribed_channel:
-        type: string
-      summary:
-        type: string
-      template_uuid:
-        type: string
-      uuid:
-        description: pk
-        type: string
-    type: object
-  v2.HttpReq_ServiceStep_Create:
-    properties:
-      args:
-        additionalProperties: true
-        type: object
-    type: object
   v2.HttpReqAuth:
     properties:
       assertion:
@@ -745,42 +701,6 @@ definitions:
         type: string
       cluster_uuid:
         description: cluster uuid
-        type: string
-    type: object
-  v2.HttpRsp_ClientServicePolling:
-    properties:
-      assigned_client_uuid:
-        type: string
-      cluster_uuid:
-        type: string
-      created:
-        description: pk
-        type: string
-      message:
-        type: string
-      name:
-        type: string
-      status:
-        type: integer
-      step_count:
-        type: integer
-      step_position:
-        type: integer
-      steps:
-        items:
-          $ref: '#/definitions/v2.ServiceStep_tangled'
-        type: array
-      subscribed_channel:
-        type: string
-      summary:
-        type: string
-      template_uuid:
-        type: string
-      updated:
-        description: pk
-        type: string
-      uuid:
-        description: pk
         type: string
     type: object
   v2.HttpRsp_Cluster:
@@ -925,138 +845,6 @@ definitions:
         type: string
       webhook:
         $ref: '#/definitions/v2.NotifierWebhook_property'
-    type: object
-  v2.HttpRsp_Service:
-    properties:
-      assigned_client_uuid:
-        type: string
-      cluster_uuid:
-        type: string
-      created:
-        description: pk
-        type: string
-      message:
-        type: string
-      name:
-        type: string
-      result:
-        type: string
-      result_type:
-        type: integer
-      status:
-        type: integer
-      step_count:
-        type: integer
-      step_position:
-        type: integer
-      steps:
-        items:
-          $ref: '#/definitions/v2.ServiceStep_tangled'
-        type: array
-      subscribed_channel:
-        type: string
-      summary:
-        type: string
-      template_uuid:
-        type: string
-      updated:
-        description: pk
-        type: string
-      uuid:
-        description: pk
-        type: string
-    type: object
-  v2.HttpRsp_Service_create:
-    properties:
-      cluster_uuid:
-        type: string
-      created:
-        description: pk
-        type: string
-      name:
-        type: string
-      step_count:
-        type: integer
-      steps:
-        items:
-          $ref: '#/definitions/v2.ServiceStep'
-        type: array
-      subscribed_channel:
-        type: string
-      summary:
-        type: string
-      template_uuid:
-        type: string
-      uuid:
-        description: pk
-        type: string
-    type: object
-  v2.HttpRsp_Service_status:
-    properties:
-      assigned_client_uuid:
-        type: string
-      cluster_uuid:
-        type: string
-      created:
-        description: pk
-        type: string
-      message:
-        type: string
-      name:
-        type: string
-      status:
-        type: integer
-      step_count:
-        type: integer
-      step_position:
-        type: integer
-      steps:
-        items:
-          $ref: '#/definitions/v2.ServiceStep_tangled'
-        type: array
-      subscribed_channel:
-        type: string
-      summary:
-        type: string
-      template_uuid:
-        type: string
-      updated:
-        description: pk
-        type: string
-      uuid:
-        description: pk
-        type: string
-    type: object
-  v2.HttpRsp_ServiceStep:
-    properties:
-      args:
-        type: object
-      created:
-        description: pk
-        type: string
-      ended:
-        type: string
-      method:
-        type: string
-      name:
-        type: string
-      result_filter:
-        type: string
-      sequence:
-        description: pk
-        type: integer
-      started:
-        type: string
-      status:
-        type: integer
-      summary:
-        type: string
-      updated:
-        description: pk
-        type: string
-      uuid:
-        description: pk
-        type: string
     type: object
   v2.HttpRsp_Template:
     properties:
@@ -1270,59 +1058,6 @@ definitions:
     type: object
   v2.RegularPollingOption:
     type: object
-  v2.ServiceStep:
-    properties:
-      args:
-        type: object
-      created:
-        description: pk
-        type: string
-      method:
-        type: string
-      name:
-        type: string
-      result_filter:
-        type: string
-      sequence:
-        description: pk
-        type: integer
-      summary:
-        type: string
-      uuid:
-        description: pk
-        type: string
-    type: object
-  v2.ServiceStep_tangled:
-    properties:
-      args:
-        type: object
-      created:
-        description: pk
-        type: string
-      ended:
-        type: string
-      method:
-        type: string
-      name:
-        type: string
-      result_filter:
-        type: string
-      sequence:
-        description: pk
-        type: integer
-      started:
-        type: string
-      status:
-        type: integer
-      summary:
-        type: string
-      updated:
-        description: pk
-        type: string
-      uuid:
-        description: pk
-        type: string
-    type: object
   v2.Session:
     properties:
       cluster_uuid:
@@ -1384,6 +1119,284 @@ definitions:
         description: uuid
         type: string
     type: object
+  v3.HttpReq_ClientServiceUpdate:
+    properties:
+      ended:
+        type: string
+      result:
+        description: StepStatus 값에 따라; 결과 혹은 에러 메시지
+        type: string
+      sequence:
+        description: pk
+        type: integer
+      started:
+        type: string
+      status:
+        type: integer
+      uuid:
+        description: pk
+        type: string
+    type: object
+  v3.HttpReq_Service_create:
+    properties:
+      cluster_uuid:
+        type: string
+      name:
+        type: string
+      steps:
+        items:
+          properties:
+            args:
+              additionalProperties: true
+              type: object
+          type: object
+        type: array
+      subscribed_channel:
+        type: string
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      uuid:
+        description: pk
+        type: string
+    type: object
+  v3.HttpRsp_ClientServicePolling:
+    properties:
+      assigned_client_uuid:
+        type: string
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      created:
+        type: string
+      message:
+        type: string
+      name:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      status:
+        type: integer
+      step_count:
+        type: integer
+      step_position:
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/v3.ServiceStep'
+        type: array
+      subscribed_channel:
+        type: string
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      timestamp:
+        description: pk datetime(6)
+        type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  v3.HttpRsp_Service:
+    properties:
+      assigned_client_uuid:
+        type: string
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      created:
+        type: string
+      message:
+        type: string
+      name:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      status:
+        type: integer
+      step_count:
+        type: integer
+      step_position:
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/v3.ServiceStep'
+        type: array
+      subscribed_channel:
+        type: string
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      timestamp:
+        description: pk datetime(6)
+        type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  v3.HttpRsp_Service_create:
+    properties:
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      created:
+        type: string
+      name:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      status:
+        type: integer
+      step_count:
+        type: integer
+      step_position:
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/v3.ServiceStep_create'
+        type: array
+      subscribed_channel:
+        type: string
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      timestamp:
+        description: pk datetime(6)
+        type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  v3.HttpRsp_ServiceResult:
+    properties:
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      result:
+        type: string
+      result_type:
+        type: integer
+      timestamp:
+        description: pk datetime(6)
+        type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  v3.HttpRsp_ServiceStep:
+    properties:
+      args:
+        type: object
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      created:
+        type: string
+      ended:
+        type: string
+      method:
+        type: string
+      name:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        description: pk tinyint
+        type: integer
+      started:
+        type: string
+      status:
+        type: integer
+      summary:
+        type: string
+      timestamp:
+        description: pk datetime(6)
+        type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  v3.ServiceStep:
+    properties:
+      args:
+        type: object
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      created:
+        type: string
+      ended:
+        type: string
+      method:
+        type: string
+      name:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        description: pk tinyint
+        type: integer
+      started:
+        type: string
+      status:
+        type: integer
+      summary:
+        type: string
+      timestamp:
+        description: pk datetime(6)
+        type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  v3.ServiceStep_create:
+    properties:
+      args:
+        type: object
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      created:
+        type: string
+      method:
+        type: string
+      name:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        description: pk tinyint
+        type: integer
+      status:
+        type: integer
+      summary:
+        type: string
+      timestamp:
+        description: pk datetime(6)
+        type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
 info:
   contact:
     email: jaehoon@nexclipper.io
@@ -1437,7 +1450,7 @@ paths:
               type: string
           schema:
             items:
-              $ref: '#/definitions/v2.HttpRsp_ClientServicePolling'
+              $ref: '#/definitions/v3.HttpRsp_ClientServicePolling'
             type: array
       tags:
       - client/service
@@ -1456,7 +1469,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v2.HttpReq_ClientServiceUpdate'
+          $ref: '#/definitions/v3.HttpReq_ClientServiceUpdate'
       produces:
       - application/json
       responses:
@@ -3098,7 +3111,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v2.HttpRsp_Service_status'
+              $ref: '#/definitions/v3.HttpRsp_Service'
             type: array
       tags:
       - server/service
@@ -3116,14 +3129,14 @@ paths:
         name: service
         required: true
         schema:
-          $ref: '#/definitions/v2.HttpReq_Service_create'
+          $ref: '#/definitions/v3.HttpReq_Service_create'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v2.HttpRsp_Service_create'
+            $ref: '#/definitions/v3.HttpRsp_Service_create'
       tags:
       - server/service
   /server/service/{uuid}:
@@ -3147,7 +3160,31 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v2.HttpRsp_Service'
+            $ref: '#/definitions/v3.HttpRsp_Service'
+      tags:
+      - server/service
+  /server/service/{uuid}/result:
+    get:
+      consumes:
+      - application/json
+      description: Get a Service Result
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Service 의 Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v3.HttpRsp_ServiceResult'
       tags:
       - server/service
   /server/service/{uuid}/step:
@@ -3172,7 +3209,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v2.HttpRsp_ServiceStep'
+              $ref: '#/definitions/v3.HttpRsp_ServiceStep'
             type: array
       tags:
       - server/service
@@ -3202,7 +3239,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v2.HttpRsp_ServiceStep'
+            $ref: '#/definitions/v3.HttpRsp_ServiceStep'
       tags:
       - server/service
   /server/service/step:
@@ -3234,7 +3271,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v2.HttpRsp_ServiceStep'
+              $ref: '#/definitions/v3.HttpRsp_ServiceStep'
             type: array
       tags:
       - server/service

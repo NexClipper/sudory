@@ -121,7 +121,7 @@ func (ctl ControlVanilla) DeleteSession(ctx echo.Context) (err error) {
 		affected, err := vanilla.Stmt.Update(session.TableName(), updateSet, eq_uuid.Parse()).
 			Exec(ctl)
 		if err != nil {
-			return errors.Wrapf(err, "not found session%v", logs.KVL(
+			return errors.Wrapf(err, "could not found session%v", logs.KVL(
 				"uuid", session.Uuid,
 			))
 		}

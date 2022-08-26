@@ -3,10 +3,10 @@ package v3
  
 func (Service_create) ColumnNames() []string {
 	return []string{
- 		"pdate",
  		"cluster_uuid",
  		"uuid",
- 		"revision",
+ 		"timestamp",
+ 		"pdate",
  		"name",
  		"summary",
  		"template_uuid",
@@ -20,10 +20,10 @@ func (Service_create) ColumnNames() []string {
  
 func (Service) ColumnNames() []string {
 	return []string{
- 		"pdate",
  		"cluster_uuid",
  		"uuid",
- 		"revision",
+ 		"timestamp",
+ 		"pdate",
  		"name",
  		"summary",
  		"template_uuid",
@@ -34,42 +34,38 @@ func (Service) ColumnNames() []string {
  		"status",
  		"message",
  		"created",
- 		"updated",
 	}
 }
  
 func (ServiceResult_create) ColumnNames() []string {
 	return []string{
- 		"pdate",
  		"cluster_uuid",
  		"uuid",
- 		"revision",
+ 		"timestamp",
+ 		"pdate",
  		"result_type",
  		"result",
- 		"created",
 	}
 }
  
 func (ServiceResult) ColumnNames() []string {
 	return []string{
- 		"pdate",
  		"cluster_uuid",
  		"uuid",
- 		"revision",
+ 		"timestamp",
+ 		"pdate",
  		"result_type",
  		"result",
- 		"created",
- 		"updated",
 	}
 }
  
 func (ServiceStep_create) ColumnNames() []string {
 	return []string{
- 		"pdate",
  		"cluster_uuid",
  		"uuid",
  		"seq",
- 		"revision",
+ 		"timestamp",
+ 		"pdate",
  		"name",
  		"summary",
  		"method",
@@ -82,11 +78,11 @@ func (ServiceStep_create) ColumnNames() []string {
  
 func (ServiceStep) ColumnNames() []string {
 	return []string{
- 		"pdate",
  		"cluster_uuid",
  		"uuid",
  		"seq",
- 		"revision",
+ 		"timestamp",
+ 		"pdate",
  		"name",
  		"summary",
  		"method",
@@ -96,16 +92,24 @@ func (ServiceStep) ColumnNames() []string {
  		"started",
  		"ended",
  		"created",
- 		"updated",
+	}
+}
+ 
+func (Service_polling) ColumnNames() []string {
+	return []string{
+ 		"uuid",
+ 		"timestamp",
+ 		"status",
+ 		"created",
 	}
 }
  
 func (row Service_create) Values() []interface{} {
 	return []interface{}{
-		row.PK.PartitionDate,
-		row.PK.ClusterUuid,
-		row.PK.Uuid,
-		row.PK.Revision,
+		row.ClusterUuid,
+		row.Uuid,
+		row.Timestamp,
+		row.PartitionDate,
 		row.Name,
 		row.Summary,
 		row.TemplateUuid,
@@ -119,10 +123,10 @@ func (row Service_create) Values() []interface{} {
  
 func (row Service) Values() []interface{} {
 	return []interface{}{
-		row.PK.PartitionDate,
-		row.PK.ClusterUuid,
-		row.PK.Uuid,
-		row.PK.Revision,
+		row.ClusterUuid,
+		row.Uuid,
+		row.Timestamp,
+		row.PartitionDate,
 		row.Name,
 		row.Summary,
 		row.TemplateUuid,
@@ -133,42 +137,38 @@ func (row Service) Values() []interface{} {
 		row.Status,
 		row.Message,
 		row.Created,
-		row.Updated,
 	}
 }
  
 func (row ServiceResult_create) Values() []interface{} {
 	return []interface{}{
-		row.PK.PartitionDate,
-		row.PK.ClusterUuid,
-		row.PK.Uuid,
-		row.PK.Revision,
-		row.ResultType,
+		row.ClusterUuid,
+		row.Uuid,
+		row.Timestamp,
+		row.PartitionDate,
+		row.ResultSaveType,
 		row.Result,
-		row.Created,
 	}
 }
  
 func (row ServiceResult) Values() []interface{} {
 	return []interface{}{
-		row.PK.PartitionDate,
-		row.PK.ClusterUuid,
-		row.PK.Uuid,
-		row.PK.Revision,
-		row.ResultType,
+		row.ClusterUuid,
+		row.Uuid,
+		row.Timestamp,
+		row.PartitionDate,
+		row.ResultSaveType,
 		row.Result,
-		row.Created,
-		row.Updated,
 	}
 }
  
 func (row ServiceStep_create) Values() []interface{} {
 	return []interface{}{
-		row.PK.PartitionDate,
-		row.PK.ClusterUuid,
-		row.PK.Uuid,
-		row.PK.Sequence,
-		row.PK.Revision,
+		row.ClusterUuid,
+		row.Uuid,
+		row.Sequence,
+		row.Timestamp,
+		row.PartitionDate,
 		row.Name,
 		row.Summary,
 		row.Method,
@@ -181,11 +181,11 @@ func (row ServiceStep_create) Values() []interface{} {
  
 func (row ServiceStep) Values() []interface{} {
 	return []interface{}{
-		row.PK.PartitionDate,
-		row.PK.ClusterUuid,
-		row.PK.Uuid,
-		row.PK.Sequence,
-		row.PK.Revision,
+		row.ClusterUuid,
+		row.Uuid,
+		row.Sequence,
+		row.Timestamp,
+		row.PartitionDate,
 		row.Name,
 		row.Summary,
 		row.Method,
@@ -195,7 +195,15 @@ func (row ServiceStep) Values() []interface{} {
 		row.Started,
 		row.Ended,
 		row.Created,
-		row.Updated,
+	}
+}
+ 
+func (row Service_polling) Values() []interface{} {
+	return []interface{}{
+		row.Uuid,
+		row.Timestamp,
+		row.Status,
+		row.Created,
 	}
 }
 
@@ -205,10 +213,10 @@ type Scanner interface {
  
 func (row *Service_create) Scan(scanner Scanner) error {
 	return scanner.Scan(
-		&row.PK.PartitionDate,
-		&row.PK.ClusterUuid,
-		&row.PK.Uuid,
-		&row.PK.Revision,
+		&row.ClusterUuid,
+		&row.Uuid,
+		&row.Timestamp,
+		&row.PartitionDate,
 		&row.Name,
 		&row.Summary,
 		&row.TemplateUuid,
@@ -222,10 +230,10 @@ func (row *Service_create) Scan(scanner Scanner) error {
  
 func (row *Service) Scan(scanner Scanner) error {
 	return scanner.Scan(
-		&row.PK.PartitionDate,
-		&row.PK.ClusterUuid,
-		&row.PK.Uuid,
-		&row.PK.Revision,
+		&row.ClusterUuid,
+		&row.Uuid,
+		&row.Timestamp,
+		&row.PartitionDate,
 		&row.Name,
 		&row.Summary,
 		&row.TemplateUuid,
@@ -236,42 +244,38 @@ func (row *Service) Scan(scanner Scanner) error {
 		&row.Status,
 		&row.Message,
 		&row.Created,
-		&row.Updated,
 	)
 }
  
 func (row *ServiceResult_create) Scan(scanner Scanner) error {
 	return scanner.Scan(
-		&row.PK.PartitionDate,
-		&row.PK.ClusterUuid,
-		&row.PK.Uuid,
-		&row.PK.Revision,
-		&row.ResultType,
+		&row.ClusterUuid,
+		&row.Uuid,
+		&row.Timestamp,
+		&row.PartitionDate,
+		&row.ResultSaveType,
 		&row.Result,
-		&row.Created,
 	)
 }
  
 func (row *ServiceResult) Scan(scanner Scanner) error {
 	return scanner.Scan(
-		&row.PK.PartitionDate,
-		&row.PK.ClusterUuid,
-		&row.PK.Uuid,
-		&row.PK.Revision,
-		&row.ResultType,
+		&row.ClusterUuid,
+		&row.Uuid,
+		&row.Timestamp,
+		&row.PartitionDate,
+		&row.ResultSaveType,
 		&row.Result,
-		&row.Created,
-		&row.Updated,
 	)
 }
  
 func (row *ServiceStep_create) Scan(scanner Scanner) error {
 	return scanner.Scan(
-		&row.PK.PartitionDate,
-		&row.PK.ClusterUuid,
-		&row.PK.Uuid,
-		&row.PK.Sequence,
-		&row.PK.Revision,
+		&row.ClusterUuid,
+		&row.Uuid,
+		&row.Sequence,
+		&row.Timestamp,
+		&row.PartitionDate,
 		&row.Name,
 		&row.Summary,
 		&row.Method,
@@ -284,11 +288,11 @@ func (row *ServiceStep_create) Scan(scanner Scanner) error {
  
 func (row *ServiceStep) Scan(scanner Scanner) error {
 	return scanner.Scan(
-		&row.PK.PartitionDate,
-		&row.PK.ClusterUuid,
-		&row.PK.Uuid,
-		&row.PK.Sequence,
-		&row.PK.Revision,
+		&row.ClusterUuid,
+		&row.Uuid,
+		&row.Sequence,
+		&row.Timestamp,
+		&row.PartitionDate,
 		&row.Name,
 		&row.Summary,
 		&row.Method,
@@ -298,16 +302,24 @@ func (row *ServiceStep) Scan(scanner Scanner) error {
 		&row.Started,
 		&row.Ended,
 		&row.Created,
-		&row.Updated,
+	)
+}
+ 
+func (row *Service_polling) Scan(scanner Scanner) error {
+	return scanner.Scan(
+		&row.Uuid,
+		&row.Timestamp,
+		&row.Status,
+		&row.Created,
 	)
 }
  
 func (row *Service_create) Ptrs() []interface{} {
 	return []interface{}{
-		&row.PK.PartitionDate,
-		&row.PK.ClusterUuid,
-		&row.PK.Uuid,
-		&row.PK.Revision,
+		&row.ClusterUuid,
+		&row.Uuid,
+		&row.Timestamp,
+		&row.PartitionDate,
 		&row.Name,
 		&row.Summary,
 		&row.TemplateUuid,
@@ -321,10 +333,10 @@ func (row *Service_create) Ptrs() []interface{} {
  
 func (row *Service) Ptrs() []interface{} {
 	return []interface{}{
-		&row.PK.PartitionDate,
-		&row.PK.ClusterUuid,
-		&row.PK.Uuid,
-		&row.PK.Revision,
+		&row.ClusterUuid,
+		&row.Uuid,
+		&row.Timestamp,
+		&row.PartitionDate,
 		&row.Name,
 		&row.Summary,
 		&row.TemplateUuid,
@@ -335,42 +347,38 @@ func (row *Service) Ptrs() []interface{} {
 		&row.Status,
 		&row.Message,
 		&row.Created,
-		&row.Updated,
 	}
 }
  
 func (row *ServiceResult_create) Ptrs() []interface{} {
 	return []interface{}{
-		&row.PK.PartitionDate,
-		&row.PK.ClusterUuid,
-		&row.PK.Uuid,
-		&row.PK.Revision,
-		&row.ResultType,
+		&row.ClusterUuid,
+		&row.Uuid,
+		&row.Timestamp,
+		&row.PartitionDate,
+		&row.ResultSaveType,
 		&row.Result,
-		&row.Created,
 	}
 }
  
 func (row *ServiceResult) Ptrs() []interface{} {
 	return []interface{}{
-		&row.PK.PartitionDate,
-		&row.PK.ClusterUuid,
-		&row.PK.Uuid,
-		&row.PK.Revision,
-		&row.ResultType,
+		&row.ClusterUuid,
+		&row.Uuid,
+		&row.Timestamp,
+		&row.PartitionDate,
+		&row.ResultSaveType,
 		&row.Result,
-		&row.Created,
-		&row.Updated,
 	}
 }
  
 func (row *ServiceStep_create) Ptrs() []interface{} {
 	return []interface{}{
-		&row.PK.PartitionDate,
-		&row.PK.ClusterUuid,
-		&row.PK.Uuid,
-		&row.PK.Sequence,
-		&row.PK.Revision,
+		&row.ClusterUuid,
+		&row.Uuid,
+		&row.Sequence,
+		&row.Timestamp,
+		&row.PartitionDate,
 		&row.Name,
 		&row.Summary,
 		&row.Method,
@@ -383,11 +391,11 @@ func (row *ServiceStep_create) Ptrs() []interface{} {
  
 func (row *ServiceStep) Ptrs() []interface{} {
 	return []interface{}{
-		&row.PK.PartitionDate,
-		&row.PK.ClusterUuid,
-		&row.PK.Uuid,
-		&row.PK.Sequence,
-		&row.PK.Revision,
+		&row.ClusterUuid,
+		&row.Uuid,
+		&row.Sequence,
+		&row.Timestamp,
+		&row.PartitionDate,
 		&row.Name,
 		&row.Summary,
 		&row.Method,
@@ -397,6 +405,14 @@ func (row *ServiceStep) Ptrs() []interface{} {
 		&row.Started,
 		&row.Ended,
 		&row.Created,
-		&row.Updated,
+	}
+}
+ 
+func (row *Service_polling) Ptrs() []interface{} {
+	return []interface{}{
+		&row.Uuid,
+		&row.Timestamp,
+		&row.Status,
+		&row.Created,
 	}
 }

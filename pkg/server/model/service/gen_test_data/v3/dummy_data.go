@@ -23,16 +23,15 @@ func main() {
 
 	rand.Seed(time.Now().UnixNano())
 
-	new_service := func(name string, cluster string, template string, stepcount uint8) (*servicev3.Service_create, []servicev3.ServiceStep_create) {
+	new_service := func(name string, cluster string, template string, stepcount int) (*servicev3.Service_create, []servicev3.ServiceStep_create) {
 		uuid := macro.NewUuidString()
 		created := time.Now()
 
 		service := servicev3.Service_create{}
-		service.PK.PartitionDate = TrimDate(created)
-		service.PK.ClusterUuid = cluster
-		service.PK.Uuid = uuid
-		service.PK.Revision = 0
-
+		service.PartitionDate = TrimDate(created)
+		service.ClusterUuid = cluster
+		service.Uuid = uuid
+		service.Timestamp = created
 		service.Name = name
 		service.Summary = *vanilla.NewNullString(fmt.Sprintf("service %v", name))
 		service.TemplateUuid = template
@@ -43,12 +42,11 @@ func main() {
 		service.Created = created
 
 		step := servicev3.ServiceStep_create{}
-		// step.PK.Id = 0
-		step.PK.PartitionDate = TrimDate(created)
-		step.PK.ClusterUuid = cluster
-		step.PK.Uuid = uuid
-		step.PK.Sequence = 0
-		service.PK.Revision = 0
+		step.PartitionDate = TrimDate(created)
+		step.ClusterUuid = cluster
+		step.Uuid = uuid
+		step.Sequence = 0
+		step.Timestamp = created
 		step.Name = name
 		step.Summary = *vanilla.NewNullString(fmt.Sprintf("step %v", name))
 		step.Method = "fake.test.method"
@@ -72,19 +70,19 @@ func main() {
 		status1.Status = 1
 		status1.StepPosition = 1
 		status1.AssignedClientUuid = *vanilla.NewNullString(client_uuid)
-		status1.Updated = *vanilla.NewNullTime(addtime())
+		status1.Timestamp = addtime()
 
 		status2 := servicev3.Service_update{}
 		status2.Status = 2
 		status2.StepPosition = 1
 		status2.AssignedClientUuid = *vanilla.NewNullString(client_uuid)
-		status2.Updated = *vanilla.NewNullTime(addtime())
+		status2.Timestamp = addtime()
 
 		status4 := servicev3.Service_update{}
 		status4.Status = 4
 		status4.StepPosition = 1
 		status4.AssignedClientUuid = *vanilla.NewNullString(client_uuid)
-		status4.Updated = *vanilla.NewNullTime(addtime())
+		status4.Timestamp = addtime()
 
 		service_status := []servicev3.Service_update{
 			status1,
@@ -96,19 +94,19 @@ func main() {
 		step_status1.Status = 1
 		step_status1.Started = *vanilla.NewNullTime(addtime())
 		step_status1.Ended = *vanilla.NewNullTime(addtime())
-		step_status1.Updated = *vanilla.NewNullTime(addtime())
+		step_status1.Timestamp = addtime()
 
 		step_status2 := servicev3.ServiceStep_update{}
 		step_status2.Status = 2
 		step_status2.Started = *vanilla.NewNullTime(addtime())
 		step_status2.Ended = *vanilla.NewNullTime(addtime())
-		step_status2.Updated = *vanilla.NewNullTime(addtime())
+		step_status2.Timestamp = addtime()
 
 		step_status4 := servicev3.ServiceStep_update{}
 		step_status4.Status = 4
 		step_status4.Started = *vanilla.NewNullTime(addtime())
 		step_status4.Ended = *vanilla.NewNullTime(addtime())
-		step_status4.Updated = *vanilla.NewNullTime(addtime())
+		step_status4.Timestamp = addtime()
 
 		service_step_status := []servicev3.ServiceStep_update{
 			step_status1,
@@ -136,13 +134,13 @@ func main() {
 		status1.Status = 1
 		status1.StepPosition = 1
 		status1.AssignedClientUuid = *vanilla.NewNullString(client_uuid)
-		status1.Updated = *vanilla.NewNullTime(addtime())
+		status1.Timestamp = addtime()
 
 		status2 := servicev3.Service_update{}
 		status2.Status = 2
 		status2.StepPosition = 1
 		status2.AssignedClientUuid = *vanilla.NewNullString(client_uuid)
-		status2.Updated = *vanilla.NewNullTime(addtime())
+		status2.Timestamp = addtime()
 
 		service_status := []servicev3.Service_update{
 			status1,
@@ -153,13 +151,13 @@ func main() {
 		step_status1.Status = 1
 		step_status1.Started = *vanilla.NewNullTime(addtime())
 		step_status1.Ended = *vanilla.NewNullTime(addtime())
-		step_status1.Updated = *vanilla.NewNullTime(addtime())
+		step_status1.Timestamp = addtime()
 
 		step_status2 := servicev3.ServiceStep_update{}
 		step_status2.Status = 2
 		step_status2.Started = *vanilla.NewNullTime(addtime())
 		step_status2.Ended = *vanilla.NewNullTime(addtime())
-		step_status2.Updated = *vanilla.NewNullTime(addtime())
+		step_status2.Timestamp = addtime()
 
 		service_step_status := []servicev3.ServiceStep_update{
 			step_status1,
@@ -181,19 +179,19 @@ func main() {
 		status1.Status = 1
 		status1.StepPosition = 1
 		status1.AssignedClientUuid = *vanilla.NewNullString(client_uuid)
-		status1.Updated = *vanilla.NewNullTime(addtime())
+		status1.Timestamp = addtime()
 
 		status2 := servicev3.Service_update{}
 		status2.Status = 2
 		status2.StepPosition = 1
 		status2.AssignedClientUuid = *vanilla.NewNullString(client_uuid)
-		status2.Updated = *vanilla.NewNullTime(addtime())
+		status2.Timestamp = addtime()
 
 		status8 := servicev3.Service_update{}
 		status8.Status = 8
 		status8.StepPosition = 1
 		status8.AssignedClientUuid = *vanilla.NewNullString(client_uuid)
-		status8.Updated = *vanilla.NewNullTime(addtime())
+		status8.Timestamp = addtime()
 		status8.Message = *vanilla.NewNullString(fmt.Sprintf("error: created=%v", updated))
 
 		service_status := []servicev3.Service_update{
@@ -206,19 +204,19 @@ func main() {
 		step_status1.Status = 1
 		step_status1.Started = *vanilla.NewNullTime(addtime())
 		step_status1.Ended = *vanilla.NewNullTime(addtime())
-		step_status1.Updated = *vanilla.NewNullTime(addtime())
+		step_status1.Timestamp = addtime()
 
 		step_status2 := servicev3.ServiceStep_update{}
 		step_status2.Status = 2
 		step_status2.Started = *vanilla.NewNullTime(addtime())
 		step_status2.Ended = *vanilla.NewNullTime(addtime())
-		step_status2.Updated = *vanilla.NewNullTime(addtime())
+		step_status2.Timestamp = addtime()
 
 		step_status8 := servicev3.ServiceStep_update{}
 		step_status8.Status = 8
 		step_status8.Started = *vanilla.NewNullTime(addtime())
 		step_status8.Ended = *vanilla.NewNullTime(addtime())
-		step_status8.Updated = *vanilla.NewNullTime(addtime())
+		step_status8.Timestamp = addtime()
 
 		service_step_status := []servicev3.ServiceStep_update{
 			step_status1,
@@ -235,13 +233,12 @@ func main() {
 		r := rand.Int63()
 
 		service_result := &servicev3.ServiceResult_create{}
-		service_result.PK.PartitionDate = service.PK.PartitionDate
-		service_result.PK.ClusterUuid = service.PK.ClusterUuid
-		service_result.PK.Uuid = service.PK.Uuid
-		service_result.PK.Revision = 0
-		service_result.ResultType = servicev3.ResultTypeDatabase
+		service_result.ClusterUuid = service.ClusterUuid
+		service_result.Uuid = service.Uuid
+		service_result.PartitionDate = service.PartitionDate
+		service_result.Timestamp = created.Add(time.Duration(rand.Intn(1000)) * time.Millisecond)
+		service_result.ResultSaveType = servicev3.ResultSaveTypeDatabase
 		service_result.Result = dctv2.CryptoString(fmt.Sprintf("%v", r))
-		service_result.Created = created.Add(time.Duration(rand.Intn(1000)) * time.Millisecond)
 
 		return service_result
 	}
@@ -318,7 +315,7 @@ SELECT %v
 
 					// fmt.Printf("%v\n", query)
 					// fmt.Printf("%v\n", service.Values())
-					rows, err := db.Query(query, []interface{}{service.PK.PartitionDate, service.PK.ClusterUuid, service.PK.Uuid}...)
+					rows, err := db.Query(query, []interface{}{service.PartitionDate, service.ClusterUuid, service.Uuid}...)
 					if err != nil {
 						return err
 					}
@@ -330,18 +327,17 @@ SELECT %v
 						}
 
 						// get last revision
-						if record.PK.Revision <= tmp.PK.Revision {
+						if record.Timestamp.Before(tmp.Timestamp) {
 							record = tmp
 						}
 					}
 
-					record.PK.Revision += 1
+					record.Timestamp = service_status.Timestamp
 					// reset update columns
 					record.AssignedClientUuid = service_status.AssignedClientUuid
 					record.StepPosition = service_status.StepPosition
 					record.Status = service_status.Status
 					record.Message = service_status.Message
-					record.Updated = service_status.Updated
 
 					insert := fmt.Sprintf("INSERT INTO %v (%v) VALUES (%v)",
 						record.TableName(),
@@ -370,8 +366,8 @@ SELECT %v
 						)
 
 						// fmt.Printf("%v\n", query)
-						// fmt.Printf("%v %v %v %v\n", step.PK.PartitionDate, step.PK.ClusterUuid, step.PK.Uuid, step.PK.Sequence)
-						rows, err := db.Query(query, []interface{}{step.PK.PartitionDate, step.PK.ClusterUuid, step.PK.Uuid, step.PK.Sequence}...)
+						// fmt.Printf("%v %v %v %v\n", step.PartitionDate, step.ClusterUuid, step.Uuid, step.Sequence)
+						rows, err := db.Query(query, []interface{}{step.PartitionDate, step.ClusterUuid, step.Uuid, step.Sequence}...)
 						if err != nil {
 							return err
 						}
@@ -382,17 +378,16 @@ SELECT %v
 							}
 
 							// get last revision
-							if record.PK.Revision <= tmp.PK.Revision {
+							if record.Timestamp.Before(tmp.Timestamp) {
 								record = tmp
 							}
 						}
 
-						record.PK.Revision += 1
+						record.Timestamp = step_status.Timestamp
 						// reset update columns
 						record.Status = step_status.Status
 						record.Started = step_status.Started
 						record.Ended = step_status.Ended
-						record.Updated = step_status.Updated
 
 						insert := fmt.Sprintf("INSERT INTO %v (%v) VALUES (%v)",
 							record.TableName(),

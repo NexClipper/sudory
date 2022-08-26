@@ -17,7 +17,7 @@ func ErrorInvalidRequestParameter() error {
 // }
 
 func ErrorBindRequestObject() error {
-	return fmt.Errorf("cannot bind request")
+	return fmt.Errorf("could not bind request")
 }
 func ErrorFailedCast() error {
 	return fmt.Errorf("failed cast")

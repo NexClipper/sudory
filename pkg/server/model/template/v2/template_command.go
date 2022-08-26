@@ -12,8 +12,8 @@ type TemplateCommand struct {
 	Name         string             `column:"name"          json:"name,omitempty"`
 	Summary      vanilla.NullString `column:"summary"       json:"summary,omitempty"       swaggertype:"string"`
 	TemplateUuid string             `column:"template_uuid" json:"template_uuid"`
-	Sequence     vanilla.NullInt    `column:"sequence"      json:"sequence,omitempty"      swaggertype:"integer"`
-	Method       vanilla.NullString `column:"method"        json:"method,omitempty"        swaggertype:"string"`
+	Sequence     int                `column:"sequence"      json:"sequence,omitempty"`
+	Method       string             `column:"method"        json:"method,omitempty"`
 	Args         vanilla.NullObject `column:"args"          json:"args,omitempty"          swaggertype:"object"`
 	ResultFilter vanilla.NullString `column:"result_filter" json:"result_filter,omitempty" swaggertype:"string"`
 	Created      time.Time          `column:"created"       json:"created,omitempty"`

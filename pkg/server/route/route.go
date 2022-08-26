@@ -172,6 +172,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		//route /server/service*
 		group.GET("/service", control.FindService)
 		group.GET("/service/:uuid", control.GetService)
+		group.GET("/service/:uuid/result", control.GetServiceResult)
 		group.POST("/service", control.CreateService)
 		//route /server/service_step*
 		group.GET("/service/step", control.FindServiceStep)

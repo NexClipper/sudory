@@ -1,6 +1,12 @@
-DROP TABLE IF EXISTS `service`;
-DROP TABLE IF EXISTS `service_step`;
-DROP TABLE IF EXISTS `service_result`;
+
+-- move old tables
+RENAME TABLE `service` TO `old_service`;
+RENAME TABLE `service_status` TO `old_service_status`;
+RENAME TABLE `service_step` TO `old_service_step`;
+RENAME TABLE `service_step_status` TO `old_service_step_status`;
+RENAME TABLE `service_result` TO `old_service_result`;
+
+-- create new tables
 
 --
 -- Table structure for table `service`
