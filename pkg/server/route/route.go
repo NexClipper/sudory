@@ -185,6 +185,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		//route /server/session*
 		group.GET("/session", control.FindSession)
 		group.GET("/session/:uuid", control.GetSession)
+		group.GET("/session/cluster/:cluster_uuid/alive", control.AliveClusterSession)
 		group.DELETE("/session/:uuid", control.DeleteSession)
 		//route /server/cluster_token*
 		group.GET("/cluster_token", control.FindClusterToken)
