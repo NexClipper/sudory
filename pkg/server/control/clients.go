@@ -452,7 +452,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 			vanilla.Equal("uuid", mc.Uuid),
 			vanilla.IsNull("deleted"),
 		)
-		found, err := vanilla.Stmt.Exist(mc.TableName(), mc_cond.Parse())(ctx.Request().Context(), ctl)
+		found, err := vanilla.Stmt.Exist(mc.TableName(), mc_cond.Parse())(context.Background(), ctl)
 		if err != nil {
 			return err
 		}
