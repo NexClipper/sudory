@@ -24,6 +24,10 @@ func NewNullInt(i int) *NullInt {
 	return &NullInt{NullInt64: sql.NullInt64{Int64: int64(i), Valid: true}}
 }
 
+func NewNullInt64(i int64) *NullInt {
+	return &NullInt{NullInt64: sql.NullInt64{Int64: i, Valid: true}}
+}
+
 func (null NullInt) Int() int {
 	return int(null.Int64)
 }
