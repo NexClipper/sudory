@@ -41,7 +41,7 @@ var objs = []interface{}{
 }
 
 func TestNoXormColumns(t *testing.T) {
-	s, err := ice_cream_maker.GenerateParts(objs, ice_cream_maker.Ingredients)
+	s, err := ice_cream_maker.GenerateParts(objs, append(ice_cream_maker.Ingredients, ice_cream_maker.ColumnNamesWithAlias))
 	if err != nil {
 		t.Fatal(err)
 	}

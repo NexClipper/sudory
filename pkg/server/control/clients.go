@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"math"
 	"net/http"
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/client/log"
+	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/event"
 	"github.com/NexClipper/sudory/pkg/server/event/managed_channel"
 	"github.com/NexClipper/sudory/pkg/server/event/managed_event"
@@ -16,20 +18,19 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/prepare"
 
-	. "github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	authv2 "github.com/NexClipper/sudory/pkg/server/model/auth/v2"
 	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
 	clusterv2 "github.com/NexClipper/sudory/pkg/server/model/cluster/v2"
+	clusterinfov2 "github.com/NexClipper/sudory/pkg/server/model/cluster_infomation/v2"
 	clustertokenv2 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v2"
 	cryptov2 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v2"
-	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
+	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
+
 	sessionv2 "github.com/NexClipper/sudory/pkg/server/model/session/v2"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
-	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/labstack/echo/v4"
@@ -41,261 +42,210 @@ import (
 // @Tags        client/service
 // @Router      /client/service [get]
 // @Param       x-sudory-client-token header string true "client session token"
-// @Success     200 {array}  v2.HttpRsp_ClientServicePolling
+// @Success     200 {array}  v3.HttpRsp_ClientServicePolling
 // @Header      200 {string} x-sudory-client-token
 func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 
 	//get token claims
-	claims, err := GetSudoryClisentTokenClaims(ctx)
+	claims, err := GetSudoryClientTokenClaims(ctx)
 	err = errors.Wrapf(err, "failed to get client token")
 	if err != nil {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	cluster := clusterv2.Cluster{}
-	Do(&err, func() (err error) {
-		// uuid = ?
-		eq_uuid := vanilla.Equal("uuid", claims.ClusterUuid).Parse()
+	// get cluster
+	cluster := new(clusterv2.Cluster)
+	cluster.Uuid = claims.ClusterUuid
+	eq_uuid := vanilla.Equal("uuid", cluster.Uuid)
 
-		err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid, nil, nil).
-			QueryRowContext(ctx.Request().Context(), ctl)(func(s vanilla.Scanner) (err error) {
-			err = cluster.Scan(s)
-			err = errors.Wrapf(err, "scan cluster")
-			return
-		})
-		err = errors.Wrapf(err, "failed to get cluster")
+	err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid.Parse(), nil, nil).
+		QueryRowContext(ctx.Request().Context(), ctl)(func(s vanilla.Scanner) (err error) {
+		err = cluster.Scan(s)
+		err = errors.Wrapf(err, "scan cluster")
 		return
 	})
-
-	// find services
-	var services []servicev2.HttpRsp_ClientServicePolling = []servicev2.HttpRsp_ClientServicePolling{}
-	Do(&err, func() (err error) {
-		condition := pollingServiceCondition(cluster.Uuid)
-		limit := pollingServiceLimit(cluster.PoliingLimit)
-		service_statuses := make([]servicev2.Service_status, 0, state.ENV__INIT_SLICE_CAPACITY__())
-
-		service_status := servicev2.Service_status{}
-		err = vanilla.Stmt.Select(service_status.TableName(), service_status.ColumnNames(), condition, nil, limit).
-			QueryRowsContext(ctx.Request().Context(), ctl)(func(scan vanilla.Scanner, _ int) (err error) {
-			err = service_status.Scan(scan)
-			err = errors.Wrapf(err, "scan service_status")
-			if err != nil {
-				return
-			}
-
-			service_statuses = append(service_statuses, service_status)
-			return
-		})
-
-		err = errors.Wrapf(err, "failed to find services")
-		Do(&err, func() (err error) {
-			services = make([]servicev2.HttpRsp_ClientServicePolling, len(service_statuses))
-			for i := range service_statuses {
-				services[i].Service = service_statuses[i].Service
-				services[i].ServiceStatus_essential = service_statuses[i].ServiceStatus_essential
-				services[i].Steps = make([]servicev2.ServiceStep_tangled, 0, services[i].Service.StepCount)
-				service_uuid := services[i].Service.Uuid
-
-				step_query := `
-SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.result_filter, 
-       IFNULL(B.status, 0) AS status, B.started, B.ended, B.created AS updated
-  FROM service_step A
-  LEFT JOIN (
-	   SELECT C.uuid, C.sequence, C.status, 
-			  C.started, C.ended, MAX(C.created) as created
-	     FROM service_step_status C
-	    WHERE C.uuid = ?
-	    GROUP BY C.status, C.sequence
-	   ) B 
-	ON A.uuid = B.uuid AND A.sequence = B.sequence
- WHERE A.uuid = ?
-`
-
-				step_args := []interface{}{
-					service_uuid,
-					service_uuid,
-				}
-
-				var stepSet = map[int]servicev2.ServiceStep_tangled{}
-				err = vanilla.QueryRowsContext(ctx.Request().Context(), ctl, step_query, step_args)(func(scan vanilla.Scanner, _ int) error {
-
-					step_ := servicev2.ServiceStep_tangled{}
-					err = step_.Scan(scan)
-					err = errors.Wrapf(err, "scan service_step")
-					if err != nil {
-						return err
-					}
-
-					if _, ok := stepSet[step_.Sequence]; !ok {
-						stepSet[step_.Sequence] = step_
-					}
-
-					if stepSet[step_.Sequence].Updated.Time.Before(step_.Updated.Time) {
-						stepSet[step_.Sequence] = step_
-					}
-
-					return err
-				})
-
-				for _, step := range stepSet {
-					services[i].Steps = append(services[i].Steps, step)
-				}
-				// eq_uuid := vanilla.Equal("uuid", service_uuid).Parse()
-				// step := servicev2.ServiceStep_tangled{}
-				// err = vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), eq_uuid, nil, nil).
-				// 	QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
-				// 	err = step.Scan(scan)
-				// 	err = errors.Wrapf(err, "scan service_step")
-				// 	if err != nil {
-				// 		return
-				// 	}
-
-				// 	services[i].Steps = append(services[i].Steps, step)
-				// 	return
-				// })
-
-				if err != nil {
-					return errors.Wrapf(err, "failed to get steps%v", logs.KVL(
-						"service_uuid", service_uuid,
-					))
-				}
-			}
-			return
-		})
-		return
-	})
-
-	time_now := time.Now()
-
-	Do(&err, func() (err error) {
-
-		var service_statuses [][]interface{}
-		var service_step_statuses [][]interface{}
-
-		service_statuses = make([][]interface{}, 0, len(services))
-		service_step_statuses = make([][]interface{}, 0, len(services))
-		for i := range services {
-			service := &services[i]
-
-			if service.ServiceStatus_essential.Status == servicev2.StepStatusRegist {
-				service_status := servicev2.ServiceStatus{}
-				service_status.ServiceStatus_essential = service.ServiceStatus_essential
-				//Uuid
-				service_status.Uuid = service.Uuid
-				//Created
-				service_status.Created = time_now
-				//AssignedClientUuid
-				//할당된 클라이언트 정보 추가
-				service_status.AssignedClientUuid = claims.Uuid
-				service_status.Status = servicev2.StepStatusSend
-				service_status.Message = *vanilla.NewNullString(service_status.Status.String())
-
-				service_statuses = append(service_statuses, service_status.Values())
-
-				service.ServiceStatus_essential = service_status.ServiceStatus_essential
-			}
-
-			for i := range service.Steps {
-				step := &service.Steps[i]
-
-				//Status
-				//StatusSend 보다 작으면 응답 전 업데이트
-				if step.ServiceStepStatus_essential.Status == servicev2.StepStatusRegist {
-					step_status := servicev2.ServiceStepStatus{}
-					step_status.ServiceStepStatus_essential = step.ServiceStepStatus_essential
-					//Uuid
-					step_status.Uuid = step.Uuid
-					//Sequence
-					step_status.Sequence = step.Sequence
-					//Created
-					step_status.Created = time_now
-					step_status.Status = servicev2.StepStatusSend
-
-					service_step_statuses = append(service_step_statuses, step_status.Values())
-
-					step.ServiceStepStatus_essential = step_status.ServiceStepStatus_essential
-				}
-			}
-		}
-
-		err = ctl.ScopeTx(ctx.Request().Context(), func(tx *sql.Tx) (err error) {
-			Do(&err, func() (err error) {
-				if len(service_statuses) == 0 {
-					return
-				}
-
-				service_status := servicev2.ServiceStatus{}
-				builder, err := vanilla.Stmt.Insert(service_status.TableName(), service_status.ColumnNames(), service_statuses...)
-				err = errors.Wrapf(err, "cannot build a service_status insert statement")
-				if err != nil {
-					return err
-				}
-
-				affected, err := builder.Exec(tx)
-				if affected == 0 {
-					err = errors.Wrapf(err, "no affected")
-				}
-
-				err = errors.Wrapf(err, "faild to save service status")
-				return
-			})
-			Do(&err, func() (err error) {
-				if len(service_step_statuses) == 0 {
-					return
-				}
-
-				service_step_status := servicev2.ServiceStepStatus{}
-				builder, err := vanilla.Stmt.Insert(service_step_status.TableName(), service_step_status.ColumnNames(), service_step_statuses...)
-				err = errors.Wrapf(err, "cannot build a service_step_status insert statement")
-				if err != nil {
-					return err
-				}
-
-				affected, err := builder.Exec(tx)
-				if affected == 0 {
-					err = errors.Wrapf(err, "no affected")
-				}
-
-				err = errors.Wrapf(err, "faild to save service_step status")
-				return
-			})
-			return
-		})
-
-		return
-	})
-
-	Do(&err, func() (err error) {
-		//invoke event (service-poll-out)
-		for _, service := range services {
-			const event_name = "service-poll-out"
-			m := map[string]interface{}{}
-			m["event_name"] = event_name
-			m["service_uuid"] = service.Uuid
-			m["service_name"] = service.Name
-			m["template_uuid"] = service.TemplateUuid
-			m["cluster_uuid"] = service.ClusterUuid
-			m["assigned_client_uuid"] = service.AssignedClientUuid
-			m["status"] = service.Status
-			m["status_description"] = service.Status.String()
-			m["result_type"] = servicev2.ResultSaveTypeNone.String()
-			m["result"] = ""
-			m["step_count"] = service.StepCount
-			m["step_position"] = service.StepPosition
-
-			event.Invoke(event_name, m)
-			managed_event.Invoke(event_name, m)
-			// invoke event by event category
-			managed_channel.InvokeByEventCategory(channelv2.EventCategoryServicePollingOut, m)
-		}
-		return
-	})
-
 	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
+		return errors.Wrapf(err, "failed to get cluster")
 	}
 
-	return ctx.JSON(http.StatusOK, services)
+	// gather service
+	// get service offset
+	var polling_offest vanilla.NullTime
+	func() (err error) {
+		cluster_info := clusterinfov2.ClusterInformation{}
+		columnnames := []string{"polling_offset"}
+		cond := vanilla.Equal("cluster_uuid", claims.ClusterUuid)
+
+		err = vanilla.Stmt.Select(cluster_info.TableName(), columnnames, cond.Parse(), nil, nil).
+			QueryRowsContext(ctx.Request().Context(), ctl)(func(scan vanilla.Scanner, _ int) error {
+			return scan.Scan(&polling_offest)
+		})
+		if err != nil {
+			return errors.Wrapf(err, "failed to get service offset")
+		}
+		return
+	}()
+
+	// get all service in cluster
+	polling_service_keys, err := vault.Servicev3.GetServicesPolling(ctx.Request().Context(), ctl, cluster.Uuid, polling_offest)
+	if err != nil {
+		return errors.Wrapf(err, "failed to found services%v", logs.KVL(
+			"cluster_uuid", claims.ClusterUuid,
+			"polling_offest", polling_offest,
+		))
+	}
+
+	// polling limit filter
+	polling_filter := func(limit int) func(service servicev3.Service_polling) bool {
+		limit = func(limit int) int {
+			if limit == 0 {
+				limit = math.MaxInt8 // 127
+			}
+			return limit + 1
+		}(limit)
+
+		return func(service servicev3.Service_polling) bool {
+			if 0 < limit && service.Status < servicev3.StepStatusSuccess {
+				limit--
+				return true
+			}
+			return false
+		}
+	}(cluster.PoliingLimit)
+
+	// get polling service detail
+	polling_services := make([]*servicev3.Service, 0, len(polling_service_keys))
+	for _, polling_service_key := range polling_service_keys {
+		if polling_filter(polling_service_key) {
+			service, err := vault.Servicev3.GetService(ctx.Request().Context(), ctl, cluster.Uuid, polling_service_key.Uuid)
+			if err != nil {
+				return errors.Wrapf(err, "failed to found service %v", logs.KVL(
+					"cluster_uuid", cluster.Uuid,
+					"uuid", polling_service_key.Uuid,
+				))
+			}
+			// append to
+			polling_services = append(polling_services, service)
+		}
+	}
+
+	for _, polling_service := range polling_services {
+		polling_offest = *vanilla.NewNullTime(polling_service.Created)
+		break
+	}
+
+	// save polling_count to cluster_infomation
+	cluster_info := clusterinfov2.ClusterInformation{}
+	cluster_info.ClusterUuid = cluster.Uuid
+	cluster_info.PollingCount = *vanilla.NewNullInt(len(polling_services))
+	cluster_info.PollingOffset = polling_offest
+	cluster_info.Created = time.Now()
+	cluster_info.Updated = *vanilla.NewNullTime(cluster_info.Created)
+
+	cluster_info_update_columns := []string{
+		"polling_count", "polling_offset", "updated",
+	}
+	cluster_info_stmt, err := vanilla.Stmt.InsertOrUpdate(cluster_info.TableName(), cluster_info.ColumnNames(), cluster_info_update_columns, cluster_info.Values())
+	if err != nil {
+		return errors.Wrapf(err, "could not build a insert|update statement")
+	}
+	if _, err := cluster_info_stmt.Exec(ctl); err != nil {
+		return errors.Wrapf(err, "exec insert|update statement")
+	}
+
+	// gather service step
+	var steps map[string][]servicev3.ServiceStep = make(map[string][]servicev3.ServiceStep)
+	for _, service := range polling_services {
+
+		stepSet, err := vault.Servicev3.GetServiceSteps(ctx.Request().Context(), ctl, service.ClusterUuid, service.Uuid)
+		if err != nil {
+			return errors.Wrapf(err, "failed to found service steps%v", logs.KVL(
+				"cluster_uuid", service.ClusterUuid,
+				"uuid", service.Uuid,
+			))
+		}
+
+		for uuid, seqSet := range stepSet {
+			steps[uuid] = seqSet
+		}
+	}
+
+	UpServiceStatus := func(service servicev3.Service, assigned_client_uuid string, status servicev3.StepStatus, t time.Time) servicev3.Service {
+		service.AssignedClientUuid = *vanilla.NewNullString(assigned_client_uuid)
+		service.Status = status
+		service.Timestamp = t
+		return service
+	}
+	UpStepStatus := func(step servicev3.ServiceStep, status servicev3.StepStatus, t time.Time) servicev3.ServiceStep {
+		step.Status = status
+		step.Timestamp = t
+		return step
+	}
+
+	var service_to_update = make([]vault.Table, 0, len(polling_services))
+	var step_to_update = make([]vault.Table, 0, len(polling_services))
+
+	time_now := time.Now()
+	for _, service := range polling_services {
+		if service.Status == servicev3.StepStatusRegist {
+			*service = UpServiceStatus(*service, claims.Uuid, servicev3.StepStatusSend, time_now)
+			service_to_update = append(service_to_update, service)
+
+			for _, step := range steps[service.Uuid] {
+				step = UpStepStatus(step, servicev3.StepStatusSend, time_now)
+				step_to_update = append(step_to_update, step)
+			}
+		}
+	}
+
+	err = ctl.ScopeTx(ctx.Request().Context(), func(tx *sql.Tx) error {
+
+		if err = vault.SaveMultiTable(tx, service_to_update); err != nil {
+			return errors.Wrapf(err, "faild to save service")
+		}
+
+		if err = vault.SaveMultiTable(tx, step_to_update); err != nil {
+			return errors.Wrapf(err, "faild to save service step")
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// make response body
+	rsp := make([]servicev3.HttpRsp_ClientServicePolling, len(polling_services))
+	for i, service := range polling_services {
+		rsp[i].Service = *service
+		rsp[i].Steps = steps[service.Uuid]
+		i++
+	}
+
+	// invoke event (service-poll-out)
+	for _, service := range rsp {
+		const event_name = "service-poll-out"
+		m := map[string]interface{}{}
+		m["event_name"] = event_name
+		m["service_uuid"] = service.Uuid
+		m["service_name"] = service.Name
+		m["template_uuid"] = service.TemplateUuid
+		m["cluster_uuid"] = service.ClusterUuid
+		m["assigned_client_uuid"] = service.AssignedClientUuid
+		m["status"] = service.Status
+		m["status_description"] = service.Status.String()
+		m["result_type"] = servicev3.ResultSaveTypeNone.String()
+		m["result"] = ""
+		m["step_count"] = service.StepCount
+		m["step_position"] = service.StepPosition
+
+		event.Invoke(event_name, m)
+		managed_event.Invoke(event_name, m)
+		// invoke event by event category
+		managed_channel.InvokeByEventCategory(channelv2.EventCategoryServicePollingOut, m)
+	}
+
+	return ctx.JSON(http.StatusOK, rsp)
 }
 
 // @Description update a service
@@ -304,77 +254,78 @@ SELECT A.uuid, A.sequence, A.created, A.name, A.summary, A.method, A.args, A.res
 // @Tags        client/service
 // @Router      /client/service [put]
 // @Param       x-sudory-client-token header string           true  "client session token"
-// @Param       body body v2.HttpReq_ClientServiceUpdate true "HttpReq_ClientServiceUpdate"
+// @Param       body body v3.HttpReq_ClientServiceUpdate true "HttpReq_ClientServiceUpdate"
 // @Success     200
 // @Header      200 {string} x-sudory-client-token
 func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
-	body := servicev2.HttpReq_ClientServiceUpdate{}
-	err = echoutil.Bind(ctx, &body)
-	err = errors.Wrapf(err, "bind%s",
-		logs.KVL(
-			"type", TypeName(body),
-		))
-	if err != nil {
+	body := servicev3.HttpReq_ClientServiceUpdate{}
+	if err := echoutil.Bind(ctx, &body); err != nil {
+		err = errors.Wrapf(err, "bind%s",
+			logs.KVL(
+				"type", TypeName(body),
+			))
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	claims, err := GetSudoryClisentTokenClaims(ctx)
-	err = errors.Wrapf(err, "failed to get client token")
+	if err := body.Status.Valid(); err != nil {
+		err = errors.Wrapf(err, "valid param%s",
+			logs.KVL(
+				ParamLog(fmt.Sprintf("%s.Status", TypeName(body)), body.Status)...,
+			))
+		return HttpError(err, http.StatusBadRequest)
+	}
 
-	//request check point
+	// get client token claims
+	claims, err := GetSudoryClientTokenClaims(ctx)
 	if err != nil {
+		err = errors.Wrapf(err, "failed to get client token")
 		return HttpError(err, http.StatusBadRequest)
 	}
 
 	// get service
-	service := servicev2.Service{}
-	// uuid = ?
-	eq_uuid := vanilla.Equal("uuid", body.Uuid).Parse()
+	service := new(servicev3.Service)
+	service.ClusterUuid = claims.ClusterUuid
+	service.Uuid = body.Uuid
 
-	err = vanilla.Stmt.Select(service.TableName(), service.ColumnNames(), eq_uuid, nil, nil).
-		QueryRowContext(context.Background(), ctl)(func(s vanilla.Scanner) (err error) {
-		err = service.Scan(s)
-		err = errors.Wrapf(err, "scan service")
-		return
-
-	})
+	service, err = vault.Servicev3.GetService(context.Background(), ctl, service.ClusterUuid, service.Uuid)
 	if err != nil {
-		return errors.Wrapf(err, "failed to found service")
+		return errors.Wrapf(err, "failed to found service%v", logs.KVL(
+			"cluster_uuid", claims.ClusterUuid,
+			"uuid", body.Uuid,
+		))
 	}
 
-	// check service
-	step := servicev2.ServiceStep{}
-	// uuid = ?
-	step_eq_uuid := vanilla.And(
-		vanilla.Equal("uuid", body.Uuid),
-		vanilla.Equal("sequence", body.Sequence),
-	).Parse()
+	// get service service_step
+	service_step := new(servicev3.ServiceStep)
+	service_step.ClusterUuid = claims.ClusterUuid
+	service_step.Uuid = body.Uuid
+	service_step.Sequence = body.Sequence
 
-	exist, err := vanilla.Stmt.Exist(step.TableName(), step_eq_uuid)(context.Background(), ctl)
+	service_step, err = vault.Servicev3.GetServiceStep(context.Background(), ctl, service_step.ClusterUuid, service_step.Uuid, service_step.Sequence)
 	if err != nil {
-		return errors.Wrapf(err, "failed to found service step")
-	}
-
-	if !exist {
-		return errors.New("service step does not exist")
+		return errors.Wrapf(err, "failed to found service step%v", logs.KVL(
+			"cluster_uuid", claims.ClusterUuid,
+			"uuid", body.Uuid,
+			"sequence", uint8(body.Sequence),
+		))
 	}
 
 	stepPosition := func() int {
 		// 스템 포지션 값은
 		// ServiceStep.Sequence+1
-		return body.Sequence + 1
+		return service_step.Sequence + 1
 	}
-	stepStatus := func() servicev2.StepStatus {
+	stepStatus := func() servicev3.StepStatus {
 		// 스탭 포지션이 카운트와 같은 경우만
 		if service.StepCount == stepPosition() {
 			return body.Status
 		}
 		// 기본값; 처리중(Processing)
-		return servicev2.StepStatusProcessing
+		return servicev3.StepStatusProcessing
 	}
 	serviceResult := func() cryptov2.CryptoString {
 		// 상태가 성공인 경우만
-		if body.Status == servicev2.StepStatusSuccess {
+		if body.Status == servicev3.StepStatusSuccess {
 			return cryptov2.CryptoString(body.Result)
 		}
 		//기본값; 공백 문자열
@@ -382,28 +333,20 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	}
 	stepMessage := func() vanilla.NullString {
 		// 상태가 실패인 경우만
-		if body.Status == servicev2.StepStatusFail {
+		if body.Status == servicev3.StepStatusFail {
 			return *vanilla.NewNullString(body.Result)
 		}
 		//기본값; 공백 문자열
 		return vanilla.NullString{}
 	}
-	// eventMessage := func() vanilla.NullString {
-	// 	// 상태가 실패인 경우만
-	// 	if body.Status == servicev2.StepStatusFail {
-	// 		return *vanilla.NewNullString(body.Result)
-	// 	}
-	// 	//기본값; 공백 문자열
-	// 	return *vanilla.NewNullString(body.Status.String())
-	// }
-	resultType := func() (resultType servicev2.ResultSaveType) {
+	resultType := func() (resultType servicev3.ResultSaveType) {
 		// 마지막 스탭의 결과만 저장 한다
 		if service.StepCount != stepPosition() {
 			return
 		}
 		// 상태 값이 성공이 아닌 경우
 		// 서비스 결과를 저장 하지 않는다
-		if servicev2.StepStatusSuccess != stepStatus() {
+		if servicev3.StepStatusSuccess != stepStatus() {
 			return
 		}
 		// 채널이 등록되어 있는 경우
@@ -412,128 +355,73 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 			return
 		}
 
-		return servicev2.ResultSaveTypeDatabase
+		return servicev3.ResultSaveTypeDatabase
 	}
 
-	time_now := time.Now()
-
-	// service status
-	service_status := func() *servicev2.ServiceStatus {
-
-		service_status := new(servicev2.ServiceStatus)
-		service_status.Uuid = service.Uuid
-		service_status.Created = time_now
-		service_status.AssignedClientUuid = claims.Uuid
-		service_status.StepPosition = stepPosition()
-		service_status.Status = stepStatus()
-		service_status.Message = stepMessage()
-		return service_status
-	}()
-	// service result
-	service_result := func() *servicev2.ServiceResult {
-
-		service_result := new(servicev2.ServiceResult)
+	now_time := time.Now()
+	// set new value service
+	{
+		// update key
+		service.Timestamp = now_time
+		// update value
+		service.AssignedClientUuid = *vanilla.NewNullString(claims.Uuid)
+		service.StepPosition = stepPosition()
+		service.Status = stepStatus()
+		service.Message = stepMessage()
+	}
+	// new service result
+	service_result := func() *servicev3.ServiceResult {
+		// update key
+		service_result := new(servicev3.ServiceResult)
+		service_result.PartitionDate = service.PartitionDate
+		service_result.ClusterUuid = service.ClusterUuid
 		service_result.Uuid = service.Uuid
-		service_result.Created = time_now
-		service_result.Result = serviceResult()
+		service_result.Timestamp = now_time
+		// update value
 		service_result.ResultSaveType = resultType()
+		service_result.Result = serviceResult()
+
 		return service_result
 	}()
-	// step status
-	step_status := func() *servicev2.ServiceStepStatus {
-
-		step_status := new(servicev2.ServiceStepStatus)
-		step_status.Uuid = body.Uuid
-		step_status.Sequence = body.Sequence // missing
-		step_status.Created = time_now
-		step_status.Status = body.Status                         // Status
-		step_status.Started = *vanilla.NewNullTime(body.Started) // Started
-		step_status.Ended = *vanilla.NewNullTime(body.Ended)     // Ended
-		return step_status
-	}()
-
-	save_service_status := func(tx *sql.Tx) (err error) {
-		// 서비스 상태 저장
-		builder, err := vanilla.Stmt.Insert(service_status.TableName(), service_status.ColumnNames(), service_status.Values())
-		err = errors.Wrapf(err, "cannot build a service_status insert statement")
-		if err != nil {
-			return err
-		}
-
-		affected, err := builder.Exec(tx)
-		err = errors.Wrapf(err, "exec insert statement")
-		if err != nil {
-			return err
-		}
-		if affected == 0 {
-			return errors.New("no affected")
-		}
-
-		return
-	}
-	save_service_result := func(tx *sql.Tx) (err error) {
-		if service_result.ResultSaveType != servicev2.ResultSaveTypeDatabase {
-			return
-		}
-
-		// 서비스 결과 저장
-		builder, err := vanilla.Stmt.Insert(service_result.TableName(), service_result.ColumnNames(), service_result.Values())
-		err = errors.Wrapf(err, "cannot build a service_result insert statement")
-		if err != nil {
-			return err
-		}
-
-		affected, err := builder.Exec(tx)
-		err = errors.Wrapf(err, "exec insert statement")
-		if err != nil {
-			return err
-		}
-		if affected == 0 {
-			return errors.New("no affected")
-		}
-
-		return
-	}
-	save_service_step_status := func(tx *sql.Tx) (err error) {
-		// 서비스 스탭 저장
-		builder, err := vanilla.Stmt.Insert(step_status.TableName(), step_status.ColumnNames(), step_status.Values())
-		err = errors.Wrapf(err, "cannot build a service_step_status insert statement")
-		if err != nil {
-			return err
-		}
-
-		affected, err := builder.Exec(tx)
-		err = errors.Wrapf(err, "exec insert statement")
-		if err != nil {
-			return err
-		}
-		if affected == 0 {
-			return errors.New("no affected")
-		}
-
-		return
+	// set new value service step
+	{
+		// update key
+		service_step.Timestamp = now_time
+		// update value
+		service_step.Status = body.Status                         // Status
+		service_step.Started = *vanilla.NewNullTime(body.Started) // Started
+		service_step.Ended = *vanilla.NewNullTime(body.Ended)     // Ended
 	}
 
-	//save status
+	// save to db
 	err = ctl.ScopeTx(context.Background(), func(tx *sql.Tx) (err error) {
-		if err = save_service_status(tx); err != nil {
+
+		// save service
+		if err = vault.SaveMultiTable(tx, []vault.Table{service}); err != nil {
 			return errors.Wrapf(err, "failed to save service_status")
 		}
-		if err = save_service_result(tx); err != nil {
-			return errors.Wrapf(err, "failed to save service_result")
-		}
-		if err = save_service_step_status(tx); err != nil {
+
+		// save service step
+		if err = vault.SaveMultiTable(tx, []vault.Table{service_step}); err != nil {
 			return errors.Wrapf(err, "failed to save service_step_status")
 		}
+
+		// check servcie result save type
+		if service_result.ResultSaveType != servicev3.ResultSaveTypeNone {
+			// save service result
+			if err = vault.SaveMultiTable(tx, []vault.Table{service_result}); err != nil {
+				return errors.Wrapf(err, "failed to save service_result")
+			}
+		}
+
 		return
 	})
-
-	err = errors.Wrapf(err, "failed to save updated service and service_step status")
+	err = errors.Wrapf(err, "failed to save")
 	if err != nil {
 		return err
 	}
 
-	//invoke event (service-poll-in)
+	// invoke event (service-poll-in)
 	const event_name = "service-poll-in"
 	m := map[string]interface{}{}
 	m["event_name"] = event_name
@@ -541,15 +429,15 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	m["service_name"] = service.Name
 	m["template_uuid"] = service.TemplateUuid
 	m["cluster_uuid"] = service.ClusterUuid
-	m["assigned_client_uuid"] = service_status.AssignedClientUuid
-	m["status"] = service_status.Status
-	m["status_description"] = service_status.Status.String()
+	m["assigned_client_uuid"] = service.AssignedClientUuid
+	m["status"] = service.Status
+	m["status_description"] = service.Status.String()
 	m["result_type"] = service_result.ResultSaveType.String()
 	m["result"] = body.Result
 	m["step_count"] = service.StepCount
-	m["step_position"] = service_status.StepPosition
+	m["step_position"] = service.StepPosition
 
-	if service_status.Status == servicev2.StepStatusSuccess && len(service_result.Result.String()) == 0 {
+	if service.Status == servicev3.StepStatusSuccess && len(service_result.Result.String()) == 0 {
 		log.Debugf("channel(poll-in-service): %+v", m)
 	}
 
@@ -564,7 +452,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 			vanilla.Equal("uuid", mc.Uuid),
 			vanilla.IsNull("deleted"),
 		)
-		found, err := vanilla.Stmt.Exist(mc.TableName(), mc_cond.Parse())(ctx.Request().Context(), ctl)
+		found, err := vanilla.Stmt.Exist(mc.TableName(), mc_cond.Parse())(context.Background(), ctl)
 		if err != nil {
 			return err
 		}
@@ -817,11 +705,20 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 		return HttpError(err, http.StatusInternalServerError) // StatusInternalServerError
 	}
 
-	var service_count int
+	var service_count vanilla.NullInt
 	err = func() (err error) {
-		eq_uuid := pollingServiceCondition(claims.ClusterUuid)
-		service := servicev2.Service_status{}
-		service_count, err = vanilla.Stmt.Count(service.TableName(), eq_uuid, nil)(ctx.Request().Context(), ctl)
+		cluster_info := clusterinfov2.ClusterInformation{}
+		columnnames := []string{"polling_count"}
+		cond := vanilla.Equal("cluster_uuid", claims.ClusterUuid)
+
+		err = vanilla.Stmt.Select(cluster_info.TableName(), columnnames, cond.Parse(), nil, nil).
+			QueryRowsContext(ctx.Request().Context(), ctl)(func(scan vanilla.Scanner, _ int) error {
+			return scan.Scan(&service_count)
+		})
+
+		// cond := pollingServiceCondition(claims.ClusterUuid)
+		// service := servicev3.Service{}
+		// service_count, err = vanilla.Stmt.Count(service.TableName(), cond.Parse(), nil)(ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get cluster service count")
 		}
@@ -833,7 +730,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 	}
 
 	// polling interval 해더 저장
-	polling_interval := int(cluster.GetPollingOption().Interval(time.Duration(int64(globvar.ClientConfigPollInterval())*int64(time.Second)), service_count) / time.Second)
+	polling_interval := int(cluster.GetPollingOption().Interval(time.Duration(int64(globvar.ClientConfigPollInterval())*int64(time.Second)), service_count.Int()) / time.Second)
 
 	//reflesh payload
 	claims.PollInterval = polling_interval
@@ -874,7 +771,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 			return err
 		}
 		if !session_found {
-			return errors.Errorf("not found session%v", logs.KVL(
+			return errors.Errorf("could not found session%v", logs.KVL(
 				"uuid", session.Uuid,
 			))
 		}
@@ -919,55 +816,59 @@ func usedJwtSigningMethod(token jwt.Token, init jwt.SigningMethod) jwt.SigningMe
 	return init
 }
 
-func GetSudoryClisentTokenClaims(ctx echo.Context) (claims *sessionv2.ClientSessionPayload, err error) {
-	token := ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
-	if len(token) == 0 {
+func GetSudoryClientTokenClaims(ctx echo.Context) (claims *sessionv2.ClientSessionPayload, err error) {
+	var token string
+	if token = ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__); len(token) == 0 {
 		err = errors.Errorf("missing request header%s",
 			logs.KVL(
 				"key", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
 			))
+		return
 	}
 
 	claims = new(sessionv2.ClientSessionPayload)
-	if true {
-		Do(&err, func() (err error) {
-			var jwt_token *jwt.Token
-			// JWT unverify
-			jwt_token, _, err = jwt.NewParser().ParseUnverified(token, claims)
-			err = errors.Wrapf(err, "jwt.Parser.ParseUnverified")
-			Do(&err, func() (err error) {
-				var ok bool
-				claims, ok = jwt_token.Claims.(*sessionv2.ClientSessionPayload)
-				if !ok {
-					err = errors.New("jwt.Token.Claims not matched")
-				}
-				return
-			})
-			return
-		})
-	} else {
-		Do(&err, func() (err error) {
+	var fn func() error
+	if false {
+		fn = func() error {
 			var jwt_token *jwt.Token
 			// JWT verify
 			jwt_token, err = jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
 				return []byte(globvar.ClientSessionSignatureSecret()), nil
 			})
-			err = errors.Wrapf(err, "jwt.Parser.ParseWithClaims")
-			Do(&err, func() (err error) {
-				var ok bool
-				claims, ok = jwt_token.Claims.(*sessionv2.ClientSessionPayload)
-				if !ok {
-					err = errors.New("jwt.Token.Claims not matched")
-				}
-				if !jwt_token.Valid {
-					err = errors.New("jwt.Token.Valid false")
-				}
-				return
-			})
-			return
-		})
+			if err != nil {
+				return errors.Wrapf(err, "jwt.Parser.ParseWithClaims")
+			}
+
+			var ok bool
+			claims, ok = jwt_token.Claims.(*sessionv2.ClientSessionPayload)
+			if !ok {
+				return errors.New("jwt.Token.Claims not matched")
+			}
+			if !jwt_token.Valid {
+				return errors.New("jwt.Token.Valid false")
+			}
+
+			return nil
+		}
+	}
+	fn = func() error {
+		var jwt_token *jwt.Token
+		// JWT unverify
+		jwt_token, _, err = jwt.NewParser().ParseUnverified(token, claims)
+		if err != nil {
+			return errors.Wrapf(err, "jwt.Parser.ParseUnverified")
+		}
+
+		var ok bool
+		claims, ok = jwt_token.Claims.(*sessionv2.ClientSessionPayload)
+		if !ok {
+			return errors.New("jwt.Token.Claims not matched")
+		}
+
+		return nil
 	}
 
+	err = fn()
 	err = errors.Wrapf(err, "failed to parse header token%v", logs.KVL(
 		"header_token", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
 		"token", token,
@@ -995,40 +896,31 @@ func getCookie(ctx echo.Context, key string) (string, error) {
 	return cookie.Value, nil
 }
 
-// pollingServiceCondition
-//  cluster_uuid = ? AND ((status = ? OR status = ? OR status = ?))
-func pollingServiceCondition(cluster_uuid string) *prepare.Condition {
-	// condition := vanilla.NewCond(
-	// 	// 서비스의 polling 조건
-	// 	"WHERE cluster_uuid = ? AND ((status = ? OR status = ? OR status = ?))",
-	// 	cluster_uuid,
-	// 	servicev2.StepStatusRegist,
-	// 	servicev2.StepStatusSend,
-	// 	servicev2.StepStatusProcessing,
-	// )
+// // pollingServiceCondition
+// //  cluster_uuid = ? AND ((status = ? OR status = ? OR status = ?))
+// func pollingServiceCondition(cluster_uuid string) vanilla.PrepareCondition {
+// 	// 서비스의 polling 조건
 
-	if false {
-		return vanilla.And(
-			vanilla.Equal("cluster_uuid", cluster_uuid),
-			vanilla.Or(
-				vanilla.Equal("status", servicev2.StepStatusRegist),
-				vanilla.Equal("status", servicev2.StepStatusSend),
-				vanilla.Equal("status", servicev2.StepStatusProcessing),
-			)).Parse()
-	}
+// 	// return vanilla.And(
+// 	// 	vanilla.Equal("cluster_uuid", cluster_uuid),
+// 	// 	vanilla.Or(
+// 	// 		vanilla.Equal("status", servicev3.StepStatusRegist),
+// 	// 		vanilla.Equal("status", servicev3.StepStatusSend),
+// 	// 		vanilla.Equal("status", servicev3.StepStatusProcessing),
+// 	// 	))
 
-	return vanilla.And(
-		vanilla.Equal("cluster_uuid", cluster_uuid),
-		vanilla.LessThan("status", servicev2.StepStatusSuccess),
-	).Parse()
-}
+// 	return vanilla.And(
+// 		vanilla.Equal("cluster_uuid", cluster_uuid),
+// 		vanilla.LessThan("status", servicev3.StepStatusSuccess),
+// 	)
+// }
 
 // pollingServiceLimit
 //  LIMIT ?
-func pollingServiceLimit(poliing_limit int) *prepare.Pagination {
+func pollingServiceLimit(poliing_limit int) *vanilla.PreparePagination {
 	if poliing_limit == 0 {
 		poliing_limit = math.MaxInt8 // 127
 	}
 
-	return vanilla.Limit(poliing_limit).Parse()
+	return vanilla.Limit(poliing_limit)
 }

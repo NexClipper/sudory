@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
+	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -23,35 +24,58 @@ import (
 // @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
 // @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
 // @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
-// @Success     200 {array} v2.HttpRsp_ServiceStep
+// @Success     200 {array} v3.HttpRsp_ServiceStep
 func (ctl ControlVanilla) FindServiceStep(ctx echo.Context) error {
 	q, o, p, err := ParseDecoration(echoutil.QueryParam(ctx))
-	err = errors.Wrapf(err, "ParseDecoration%v", logs.KVL(
-		"query", echoutil.QueryParamString(ctx),
-	))
 	if err != nil {
+		err = errors.Wrapf(err, "ParseDecoration%v", logs.KVL(
+			"query", echoutil.QueryParamString(ctx),
+		))
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	rsps := make([]servicev2.HttpRsp_ServiceStep, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	// find service
+	tablename := `(
+SELECT A.pdate,A.cluster_uuid,A.uuid,A.seq,A.created,A.name,A.summary,A.method,A.args,A.result_filter,A.status,A.started,A.ended
+        FROM service_step A
+    INNER JOIN service_step B
+            ON B.pdate = A.pdate AND B.cluster_uuid = A.cluster_uuid AND B.uuid = A.uuid AND B.seq = A.seq AND B.created = A.created
+            AND B.created = ( SELECT MAX(C.created)
+			                    FROM service_step C
+                               WHERE C.pdate = B.pdate AND C.cluster_uuid = B.cluster_uuid AND B.uuid = C.uuid AND B.seq = C.seq )
+) X`
+	stepSet := make(map[string]map[int]servicev3.ServiceStep)
+	step := servicev3.ServiceStep{}
+	err = vanilla.Stmt.Select(tablename, step.ColumnNames(), q, o, p).
+		QueryRowsContext(ctx.Request().Context(), ctl)(func(scan vanilla.Scanner, _ int) error {
 
-	step := servicev2.ServiceStep_tangled{}
-	stmt := vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), q, o, p)
-	err = stmt.QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
-		err = step.Scan(scan)
-		if err == nil {
-			rsps = append(rsps, servicev2.HttpRsp_ServiceStep{
-				ServiceStep_tangled: step,
-			})
+		err := step.Scan(scan)
+		if err != nil {
+			return errors.Wrapf(err, "scan service")
 		}
-		return
-	})
 
+		if _, ok := stepSet[step.Uuid]; !ok {
+			stepSet[step.Uuid] = make(map[int]servicev3.ServiceStep)
+		}
+
+		stepSet[step.Uuid][step.Sequence] = step
+		return nil
+	})
 	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
+		return err
 	}
 
-	return ctx.JSON(http.StatusOK, rsps)
+	// make response body
+	rsp := make([]servicev3.HttpRsp_ServiceStep, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	for _, seqSet := range stepSet {
+		for _, step := range seqSet {
+			rsp = append(rsp, servicev3.HttpRsp_ServiceStep{
+				ServiceStep: step,
+			})
+		}
+	}
+
+	return ctx.JSON(http.StatusOK, rsp)
 }
 
 // Get []ServiceStep
@@ -61,44 +85,36 @@ func (ctl ControlVanilla) FindServiceStep(ctx echo.Context) error {
 // @Tags        server/service
 // @Router      /server/service/{uuid}/step [get]
 // @Param       x_auth_token header string false "client session token"
-// @Param       uuid path   string true  "ServiceStep 의 uuid"
-// @Success     200 {array} v2.HttpRsp_ServiceStep
+// @Param       uuid         path   string true  "ServiceStep 의 uuid"
+// @Success     200 {array} v3.HttpRsp_ServiceStep
 func (ctl ControlVanilla) GetServiceSteps(ctx echo.Context) (err error) {
-	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+	var uuid string
+	if uuid = echoutil.Param(ctx)[__UUID__]; len(uuid) == 0 {
 		err = ErrorInvalidRequestParameter()
-	}
-	err = errors.Wrapf(err, "valid param%s",
-		logs.KVL(
-			ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
-		))
-
-	if err != nil {
+		err = errors.Wrapf(err, "valid param%s",
+			logs.KVL(
+				ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
+			))
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	uuid := echoutil.Param(ctx)[__UUID__]
-
-	steps := make([]servicev2.HttpRsp_ServiceStep, 0, state.ENV__INIT_SLICE_CAPACITY__())
-
-	eq_uuid := vanilla.Equal("uuid", uuid).Parse()
-
-	step := servicev2.ServiceStep_tangled{}
-	stmt := vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), eq_uuid, nil, nil)
-	err = stmt.QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
-		err = step.Scan(scan)
-		if err == nil {
-			steps = append(steps, servicev2.HttpRsp_ServiceStep{
-				ServiceStep_tangled: step,
-			})
-		}
-		return
-	})
-
+	// get service steps
+	stepSet, err := vault.Servicev3.GetServiceSteps(ctx.Request().Context(), ctl, "", uuid)
 	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
+		return err
 	}
 
-	return ctx.JSON(http.StatusOK, steps)
+	// make response body
+	rsp := make([]servicev3.HttpRsp_ServiceStep, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	for _, seqSet := range stepSet {
+		for _, step := range seqSet {
+			rsp = append(rsp, servicev3.HttpRsp_ServiceStep{
+				ServiceStep: step,
+			})
+		}
+	}
+
+	return ctx.JSON(http.StatusOK, rsp)
 }
 
 // Get ServiceStep
@@ -108,60 +124,36 @@ func (ctl ControlVanilla) GetServiceSteps(ctx echo.Context) (err error) {
 // @Tags        server/service
 // @Router      /server/service/{uuid}/step/{sequence} [get]
 // @Param       x_auth_token header string false "client session token"
-// @Param       uuid     path string true  "ServiceStep 의 uuid"
-// @Param       sequence path string true  "ServiceStep 의 sequence"
-// @Success     200 {object} v2.HttpRsp_ServiceStep
+// @Param       uuid     path string true "ServiceStep 의 uuid"
+// @Param       sequence path string true "ServiceStep 의 sequence"
+// @Success     200 {object} v3.HttpRsp_ServiceStep
 func (ctl ControlVanilla) GetServiceStep(ctx echo.Context) (err error) {
-	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
+	var uuid string
+	if uuid = echoutil.Param(ctx)[__UUID__]; len(uuid) == 0 {
 		err = ErrorInvalidRequestParameter()
+		err = errors.Wrapf(err, "valid param%s",
+			logs.KVL(
+				ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
+			))
+		return HttpError(err, http.StatusBadRequest)
 	}
-	err = errors.Wrapf(err, "valid param%s",
-		logs.KVL(
-			ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
-		))
-
-	if err != nil {
+	var sequence int
+	if sequence, err = strconv.Atoi(echoutil.Param(ctx)[__SEQUENCE__]); err != nil {
+		err = errors.Wrapf(err, "valid param%s",
+			logs.KVL(
+				ParamLog(__SEQUENCE__, echoutil.Param(ctx)[__SEQUENCE__])...,
+			))
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	if len(echoutil.Param(ctx)[__SEQUENCE__]) == 0 {
-		err = ErrorInvalidRequestParameter()
-	}
-	err = errors.Wrapf(err, "valid param%s",
-		logs.KVL(
-			ParamLog(__SEQUENCE__, echoutil.Param(ctx)[__SEQUENCE__])...,
-		))
-
+	// get service step
+	step, err := vault.Servicev3.GetServiceStep(ctx.Request().Context(), ctl, "", uuid, sequence)
 	if err != nil {
-		return HttpError(err, http.StatusBadRequest)
+		return err
 	}
 
-	uuid := echoutil.Param(ctx)[__UUID__]
+	// make response body
+	rsp := servicev3.HttpRsp_ServiceStep{ServiceStep: *step}
 
-	s := echoutil.Param(ctx)[__SEQUENCE__]
-	sequence, err := strconv.Atoi(s)
-	err = errors.Wrapf(err, "sequence atoi%s", logs.KVL(
-		"a", s,
-	))
-
-	if err != nil {
-		return HttpError(err, http.StatusBadRequest)
-	}
-
-	eq_uuid := vanilla.Equal("uuid", uuid)
-	eq_sequence := vanilla.Equal("sequence", sequence)
-	q := vanilla.And(eq_uuid, eq_sequence).Parse()
-
-	step := servicev2.ServiceStep_tangled{}
-	stmt := vanilla.Stmt.Select(step.TableName(), step.ColumnNames(), q, nil, nil)
-	err = stmt.QueryRow(ctl)(func(s vanilla.Scanner) (err error) {
-		err = step.Scan(s)
-		return
-	})
-
-	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
-	}
-
-	return ctx.JSON(http.StatusOK, servicev2.HttpRsp_ServiceStep{ServiceStep_tangled: step})
+	return ctx.JSON(http.StatusOK, rsp)
 }
