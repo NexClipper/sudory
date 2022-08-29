@@ -8,6 +8,8 @@ import (
 
 	"github.com/NexClipper/logger"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	globvarv2 "github.com/NexClipper/sudory/pkg/server/model/global_variables/v2"
@@ -16,12 +18,20 @@ import (
 )
 
 type GlobalVariantUpdate struct {
-	*vanilla.SqlDbEx
-	offset time.Time //updated column
+	*sql.DB
+	dialect string
+	offset  time.Time //updated column
 }
 
-func NewGlobalVariablesUpdate(db *sql.DB) *GlobalVariantUpdate {
-	return &GlobalVariantUpdate{SqlDbEx: vanilla.NewSqlDbEx(db, state.ENV__CONTROL_TRANSACTION_TIMEOUT__())}
+func NewGlobalVariablesUpdate(db *sql.DB, dialect string) *GlobalVariantUpdate {
+	return &GlobalVariantUpdate{
+		DB:      db,
+		dialect: dialect,
+	}
+}
+
+func (worker *GlobalVariantUpdate) Dialect() string {
+	return worker.dialect
 }
 
 // Update
@@ -31,10 +41,10 @@ func (worker *GlobalVariantUpdate) Update() (err error) {
 	globvar := globvarv2.GlobalVariables{}
 	globvar.Updated = *vanilla.NewNullTime(worker.offset)
 
-	globvar_cond := vanilla.GreaterThan("updated", globvar.Updated)
+	globvar_cond := stmt.GT("updated", globvar.Updated)
 
-	err = vanilla.Stmt.Select(globvar.TableName(), globvar.ColumnNames(), globvar_cond.Parse(), nil, nil).
-		QueryRows(worker)(func(scan vanilla.Scanner, _ int) (err error) {
+	err = stmtex.Select(globvar.TableName(), globvar.ColumnNames(), globvar_cond, nil, nil).
+		QueryRows(worker, worker.Dialect())(func(scan stmtex.Scanner, _ int) (err error) {
 		err = globvar.Scan(scan)
 		if err != nil {
 			return errors.Wrapf(err, "failed to scan")
@@ -79,10 +89,10 @@ func (worker *GlobalVariantUpdate) WhiteListCheck() (err error) {
 
 	globvar := globvarv2.GlobalVariables{}
 	globvar.Updated = *vanilla.NewNullTime(worker.offset)
-	globvar_cond := vanilla.IsNull("deleted")
+	globvar_cond := stmt.IsNull("deleted")
 
-	err = vanilla.Stmt.Select(globvar.TableName(), globvar.ColumnNames(), globvar_cond.Parse(), nil, nil).
-		QueryRows(worker)(func(scan vanilla.Scanner, _ int) (err error) {
+	err = stmtex.Select(globvar.TableName(), globvar.ColumnNames(), globvar_cond, nil, nil).
+		QueryRows(worker, worker.Dialect())(func(scan stmtex.Scanner, _ int) (err error) {
 		err = globvar.Scan(scan)
 		if err != nil {
 			return errors.Wrapf(err, "failed to scan")
@@ -123,10 +133,10 @@ func (worker *GlobalVariantUpdate) Merge() (err error) {
 	globvar := globvarv2.GlobalVariables{}
 	globvar.Updated = *vanilla.NewNullTime(worker.offset)
 
-	globvar_cond := vanilla.IsNull("deleted")
+	globvar_cond := stmt.IsNull("deleted")
 
-	err = vanilla.Stmt.Select(globvar.TableName(), globvar.ColumnNames(), globvar_cond.Parse(), nil, nil).
-		QueryRows(worker)(func(scan vanilla.Scanner, _ int) (err error) {
+	err = stmtex.Select(globvar.TableName(), globvar.ColumnNames(), globvar_cond, nil, nil).
+		QueryRows(worker, worker.Dialect())(func(scan stmtex.Scanner, _ int) (err error) {
 		err = globvar.Scan(scan)
 		if err != nil {
 			return errors.Wrapf(err, "failed to scan")
@@ -164,12 +174,8 @@ func (worker *GlobalVariantUpdate) Merge() (err error) {
 					))
 			}
 
-			stmt, err := vanilla.Stmt.InsertOrUpdate(globvar.TableName(), globvar.ColumnNames(), updated_columns, globvar.Values())
-			if err != nil {
-				return errors.Wrapf(err, "failed to make create or update statement")
-			}
-
-			_, err = stmt.Exec(worker)
+			_, _, err = stmtex.InsertOrUpdate(globvar.TableName(), globvar.ColumnNames(), updated_columns, globvar.Values()).
+				Exec(worker, worker.Dialect())
 			if err != nil {
 				return errors.Wrapf(err, "failed to create or update global_variables")
 			}

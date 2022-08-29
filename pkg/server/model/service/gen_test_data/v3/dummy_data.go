@@ -36,6 +36,7 @@ func main() {
 		service.Summary = *vanilla.NewNullString(fmt.Sprintf("service %v", name))
 		service.TemplateUuid = template
 		service.StepCount = stepcount
+		service.Priority = 0
 		service.SubscribedChannel = vanilla.NullString{}
 		service.StepPosition = 0
 		service.Status = servicev3.StepStatusRegist

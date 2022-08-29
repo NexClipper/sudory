@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"os"
 
-	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
+	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	"github.com/pkg/errors"
 )
 
 type ChannelConsole struct {
 	uuid string
-	opt  *channelv2.NotifierConsole_property
+	opt  *channelv2.ConsoleConfig
 	// sub event.EventNotifierMuxer
 }
 
-func NewChannelConsole(uuid string, opt channelv2.NotifierConsole_property) *ChannelConsole {
+func NewChannelConsole(uuid string, opt *channelv2.ConsoleConfig) *ChannelConsole {
 	notifier := &ChannelConsole{}
 	notifier.uuid = uuid
-	notifier.opt = &opt
+	notifier.opt = opt
 
 	return notifier
 }

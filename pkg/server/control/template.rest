@@ -14,19 +14,19 @@
 # @name get_template_command
 
 GET {{url}}/server/template/{{template_uuid}}/command/{{command_uuid}}  {{protocolver}}
-content-type: application/json
+Content-Type: application/json
 
 ###
 # @name list_template_command
 
 GET {{url}}/server/template/{{template_uuid}}/command  {{protocolver}}
-content-type: application/json
+Content-Type: application/json
 
 ###
 # @name get_template
 
 GET {{url}}/server/template/{{template_uuid}}  {{protocolver}}
-content-type: application/json
+Content-Type: application/json
 
 ###
 # @name find_template__match__uuid
@@ -35,6 +35,6 @@ content-type: application/json
 @match_uuid = (eq uuid "{{template_uuid}}")
 
 GET {{url}}/server/template?q={{match_uuid}}  {{protocolver}}
-content-type: application/json
+Content-Type: application/json
 
 ###

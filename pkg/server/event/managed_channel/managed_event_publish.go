@@ -8,10 +8,11 @@ import (
 	"github.com/NexClipper/logger"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/event"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
+	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/pkg/errors"
 )
@@ -23,8 +24,9 @@ var InvokeByEventCategory func(ec channelv2.EventCategory, v map[string]interfac
 // var _ EventPublisher = (*ManagedChannel)(nil)
 
 type Event struct {
-	// db *sql.DB
-	*vanilla.SqlDbEx
+	*sql.DB
+	dialect string
+	// *vanilla.SqlDbEx
 
 	// HashsetEventNotifierMuxer
 	EventNotifierMuxer
@@ -33,16 +35,22 @@ type Event struct {
 	NofitierErrorHandlers HashsetNofitierErrorHandler
 }
 
-func NewEvent(db *sql.DB) *Event {
+func NewEvent(db *sql.DB, dialect string) *Event {
 
 	me := Event{}
-	me.SqlDbEx = vanilla.NewSqlDbEx(db)
+	me.DB = db
+	me.dialect = dialect
+	// me.SqlDbEx = &vanilla.SqlDbEx{DB: db}
 	// me.HashsetEventNotifierMuxer = HashsetEventNotifierMuxer{}
 
 	me.ErrorHandlers = event.HashsetErrorHandlers{}
 	me.NofitierErrorHandlers = HashsetNofitierErrorHandler{}
 
 	return &me
+}
+
+func (pub *Event) Dialect() string {
+	return pub.dialect
 }
 
 func (pub *Event) SetEventNotifierMuxer(mux EventNotifierMuxer) {
@@ -54,7 +62,7 @@ func (pub *Event) SetEventNotifierMuxer(mux EventNotifierMuxer) {
 // }
 
 func (pub Event) InvokeByChannelUuid(channel_uuid string, v map[string]interface{}) {
-	clone := NewEvent(pub.DB)
+	clone := NewEvent(pub.DB, pub.Dialect())
 	clone.ErrorHandlers = pub.ErrorHandlers
 	clone.NofitierErrorHandlers = pub.NofitierErrorHandlers
 
@@ -77,10 +85,10 @@ func (pub Event) InvokeByChannelUuid(channel_uuid string, v map[string]interface
 }
 
 func (pub Event) BuildChannelFormatter(channel_uuid string) (err error) {
-	eq_uuid := vanilla.Equal("uuid", channel_uuid)
+	eq_uuid := stmt.Equal("uuid", channel_uuid)
 	format := channelv2.Format{}
-	err = vanilla.Stmt.Select(format.TableName(), format.ColumnNames(), eq_uuid.Parse(), nil, nil).
-		QueryRows(pub)(func(scan vanilla.Scanner, _ int) (err error) {
+	err = stmtex.Select(format.TableName(), format.ColumnNames(), eq_uuid, nil, nil).
+		QueryRows(pub, pub.Dialect())(func(scan stmtex.Scanner, _ int) (err error) {
 		err = format.Scan(scan)
 		if err != nil {
 			return
@@ -108,7 +116,7 @@ func (pub Event) BuildChannelFormatter(channel_uuid string) (err error) {
 }
 
 func (pub Event) InvokeByEventCategory(ec channelv2.EventCategory, v map[string]interface{}) {
-	clone := NewEvent(pub.DB)
+	clone := NewEvent(pub.DB, pub.Dialect())
 	clone.ErrorHandlers = pub.ErrorHandlers
 	clone.NofitierErrorHandlers = pub.NofitierErrorHandlers
 
@@ -148,7 +156,7 @@ var (
 		logger.Error(fmt.Errorf("%w%s", err, stack))
 	}
 
-	DefaultErrorHandler_notifier = func(me *Event) func(notifier Notifier, err error) {
+	DefaultErrorHandler_notifier = func(pub *Event) func(notifier Notifier, err error) {
 		return func(notifier Notifier, err error) {
 			defer func() {
 				r := recover()
@@ -158,9 +166,9 @@ var (
 				}
 
 				if err, ok := r.(error); ok {
-					me.OnError(errors.Wrapf(err, "recover notifier error handler"))
+					pub.OnError(errors.Wrapf(err, "recover notifier error handler"))
 				} else {
-					me.OnError(errors.Errorf("notifier error handler recover='%+v'", r))
+					pub.OnError(errors.Errorf("notifier error handler recover='%+v'", r))
 				}
 			}()
 
@@ -178,9 +186,9 @@ var (
 			created := time.Now()
 			message := fmt.Sprintf("%s%s", err.Error(), stack)
 
-			if err_ := vault.CreateChannelStatus(me.DB, uuid, message, created, globvar.EventNofitierStatusRotateLimit()); err_ != nil {
+			if err_ := vault.CreateChannelStatus(pub.DB, pub.Dialect(), uuid, message, created, globvar.Event.NofitierStatusRotateLimit()); err_ != nil {
 				err_ = errors.Wrapf(err_, "failed to logging to channel status")
-				me.ErrorHandlers.OnError(err_)
+				pub.ErrorHandlers.OnError(err_)
 			}
 		}
 	}
@@ -203,15 +211,15 @@ func (pub *Event) BuildMuxerByEventCategory(event_category channelv2.EventCatego
 	// regist muxer to event publisher
 	muxer.Regist(pub)
 
-	find_channel_cond := vanilla.And(
-		vanilla.IsNull("deleted"),
-		vanilla.Equal("event_category", int(event_category)),
-	).Parse()
+	find_channel_cond := stmt.And(
+		stmt.Equal("event_category", int(event_category)),
+		stmt.IsNull("deleted"),
+	)
 	column_names := []string{"uuid"}
 
 	find_channel := channelv2.ManagedChannel{}
-	err = vanilla.Stmt.Select(find_channel.TableName(), column_names, find_channel_cond, nil, nil).
-		QueryRows(pub)(func(scan vanilla.Scanner, _ int) (err error) {
+	err = stmtex.Select(find_channel.TableName(), column_names, find_channel_cond, nil, nil).
+		QueryRows(pub, pub.Dialect())(func(scan stmtex.Scanner, _ int) (err error) {
 
 		var channel_uuid string
 		err = scan.Scan(&channel_uuid)
@@ -220,14 +228,15 @@ func (pub *Event) BuildMuxerByEventCategory(event_category channelv2.EventCatego
 		}
 
 		// get notifier edge with option
-		eq_uuid := vanilla.Equal("uuid", channel_uuid)
+		eq_uuid := stmt.Equal("uuid", channel_uuid)
 
 		notifier_edge_option := new(channelv2.NotifierEdge_option)
-		err = vanilla.Stmt.Select(notifier_edge_option.TableName(), notifier_edge_option.ColumnNames(), eq_uuid.Parse(), nil, nil).
-			QueryRows(pub)(func(scan vanilla.Scanner, _ int) (err error) {
-			err = notifier_edge_option.Scan(scan)
-			return
-		})
+		err = stmtex.Select(notifier_edge_option.TableName(), notifier_edge_option.ColumnNames(), eq_uuid, nil, nil).
+			QueryRows(pub, pub.Dialect())(
+			func(scan stmtex.Scanner, _ int) (err error) {
+				err = notifier_edge_option.Scan(scan)
+				return
+			})
 		err = errors.Wrapf(err, "failed to query from NotifierEdge_option")
 		if err != nil {
 			return
@@ -267,14 +276,15 @@ func (pub *Event) BuildMuxerByChannelUuid(channel_uuid string) (err error) {
 	muxer.Regist(pub)
 
 	// get notifier edge with option
-	eq_uuid := vanilla.Equal("uuid", channel_uuid)
+	eq_uuid := stmt.Equal("uuid", channel_uuid)
 
 	notifier_edge_option := new(channelv2.NotifierEdge_option)
-	err = vanilla.Stmt.Select(notifier_edge_option.TableName(), notifier_edge_option.ColumnNames(), eq_uuid.Parse(), nil, nil).
-		QueryRows(pub)(func(scan vanilla.Scanner, _ int) (err error) {
-		err = notifier_edge_option.Scan(scan)
-		return
-	})
+	err = stmtex.Select(notifier_edge_option.TableName(), notifier_edge_option.ColumnNames(), eq_uuid, nil, nil).
+		QueryRows(pub, pub.Dialect())(
+		func(scan stmtex.Scanner, _ int) (err error) {
+			err = notifier_edge_option.Scan(scan)
+			return
+		})
 	err = errors.Wrapf(err, "failed to query from NotifierEdge_option")
 	if err != nil {
 		return

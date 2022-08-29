@@ -6,18 +6,18 @@ import (
 	"strings"
 	"time"
 
-	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
+	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	"github.com/pkg/errors"
 )
 
 type ChannelWebhook struct {
 	uuid string
-	opt  *channelv2.NotifierWebhook_property
+	opt  *channelv2.WebhookConfig
 
 	httpclient *http.Client //http.Client
 }
 
-func NewChannelWebhook(uuid string, opt channelv2.NotifierWebhook_property) *ChannelWebhook {
+func NewChannelWebhook(uuid string, opt *channelv2.WebhookConfig) *ChannelWebhook {
 	if len(opt.Method) == 0 {
 		opt.Method = http.MethodGet //set default Method
 	}
@@ -29,7 +29,7 @@ func NewChannelWebhook(uuid string, opt channelv2.NotifierWebhook_property) *Cha
 	}
 	notifier := &ChannelWebhook{}
 	notifier.uuid = uuid
-	notifier.opt = &opt
+	notifier.opt = opt
 	notifier.httpclient = client
 
 	return notifier

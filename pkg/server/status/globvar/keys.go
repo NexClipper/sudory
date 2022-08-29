@@ -1,7 +1,6 @@
 package globvar
 
 import (
-	"math"
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
@@ -21,6 +20,9 @@ client-config-poll-interval
 client-config-loglevel
 
 event-notifier-status-rotate-limit
+
+service-session-signature-secret
+service-session-expiration-time
 )
 */
 type Key int
@@ -57,70 +59,109 @@ func init() {
 	}
 }
 
-// BearerTokenSignatureSecret
-//  bearer-토큰 시그니처 시크릿
-func BearerTokenSignatureSecret() string {
-	return bearerTokenSignatureSecret
+type bearerToken struct {
+	// bearer-토큰 시그니처 시크릿
+	signatureSecret string
+	// bearer-토큰 만료 시간
+	expirationTime int // (month)
 }
 
-var bearerTokenSignatureSecret string = ""
+func (value bearerToken) SignatureSecret() string {
+	return value.signatureSecret
+}
 
-func BearerTokenExpirationTime(t time.Time) time.Time {
+func (value bearerToken) ExpirationTime(t time.Time) time.Time {
 	if true {
-		const day = 1 * 60 * 60 * 24
-		//만료일 다음날 0시 정각
-		usec := (t.Unix() / day) * day
-		t = time.Unix(usec, 0)
-		return t.AddDate(0, bearerTokenExpirationTime_month, 1)
-
-	} else {
-		//만료일 현재 시간
-		return t.AddDate(0, bearerTokenExpirationTime_month, 0)
+		return TrimDay(t).AddDate(0, value.expirationTime, 1)
 	}
+	return t.AddDate(0, value.expirationTime, 0)
 }
 
-var bearerTokenExpirationTime_month int = 1
-
-// ClientSessionSignatureSecret
-//  클라이언트 세션 시그니처 시크릿
-func ClientSessionSignatureSecret() string {
-	return clientSessionSignatureSecret
+func TrimDay(t time.Time) time.Time {
+	const day = 1 * 60 * 60 * 24
+	usec := (t.Unix() / day) * day
+	return time.Unix(usec, 0)
 }
 
-var clientSessionSignatureSecret string = ""
-
-// EnvClientSessionExpirationTime
-//  클라이언트 세션 만료 시간 (초)
-func ClientSessionExpirationTime(t time.Time) time.Time {
-	return t.Add(time.Duration(clientSessionExpirationTime_sec) * time.Second)
+type clientSession struct {
+	// 클라이언트 세션 토큰 시그니처 시크릿
+	signatureSecret string
+	// 클라이언트 세션 만료 시간
+	expirationTime int
 }
 
-var clientSessionExpirationTime_sec int
-
-// ClientConfigPollInterval
-//  클라이언트 폴 주기
-func ClientConfigPollInterval() int {
-	return clientConfigPollInterval_sec
+func (value clientSession) SignatureSecret() string {
+	return value.signatureSecret
 }
 
-var clientConfigPollInterval_sec int = 1
-
-// ClientConfigLoglevel
-//  클라이언트 로그 레벨
-func ClientConfigLoglevel() string {
-	return clientConfigLoglevel
+func (value clientSession) ExpirationTime(t time.Time) time.Time {
+	return t.Add(time.Duration(value.expirationTime) * time.Second)
 }
 
-var clientConfigLoglevel string = "debug"
+type clientConfig struct {
+	// 클라이언트 로그 레벨
+	loglevel string
+	// 클라이언트 폴 주기
+	pollInterval int // (second)
+}
 
-// EventNofitierStatusRotateLimit
-//  이벤트 알림 상태 rotate limit
-func EventNofitierStatusRotateLimit() uint {
-	if eventNofitierStatusRotateLimit == 0 {
-		return math.MaxUint8 //max uint (255)
+func (value clientConfig) PollInterval() int {
+	return value.pollInterval
+}
+
+func (value clientConfig) Loglevel() string {
+	return value.loglevel
+}
+
+type event struct {
+	// 이벤트 알림 상태 rotate limit
+	nofitierStatusRotateLimit uint
+}
+
+func (value event) NofitierStatusRotateLimit() uint {
+	return value.nofitierStatusRotateLimit
+}
+
+type serviceSession struct {
+	// 서비스 세션 시그니처 시크릿
+	signatureSecret string
+	// 서비스 세션 만료 시간 (month)
+	expirationTime int // (month)
+}
+
+func (value serviceSession) SignatureSecret() string {
+	return value.signatureSecret
+}
+
+func (value serviceSession) ExpirationTime(t time.Time) time.Time {
+	if true {
+		return TrimDay(t).AddDate(0, value.expirationTime, 1)
+	}
+	return t.AddDate(0, value.expirationTime, 0)
+}
+
+var (
+	BearerToken = bearerToken{
+		signatureSecret: "",
+		expirationTime:  6, // month(6)
 	}
 
-	return eventNofitierStatusRotateLimit
-}
+	ClientSession = clientSession{
+		signatureSecret: "",
+		expirationTime:  60, // second(60)
+	}
 
-var eventNofitierStatusRotateLimit uint = 20
+	ClientConfig = clientConfig{
+		loglevel:     "debug",
+		pollInterval: 15, // second(15)
+	}
+
+	Event = event{
+		nofitierStatusRotateLimit: 20,
+	}
+
+	ServiceSession = serviceSession{
+		signatureSecret: "",
+		expirationTime:  12, // month(12)
+	}
+)

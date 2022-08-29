@@ -6,25 +6,25 @@ import (
 	"net/http"
 	"time"
 
-	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
+	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	"github.com/pkg/errors"
 )
 
 type ChannelSlackhook struct {
 	uuid string
-	opt  *channelv2.NotifierSlackhook_property
+	opt  *channelv2.SlackhookConfig
 
 	httpclient *http.Client //http.Client
 }
 
-func NewChannelSlackhook(uuid string, opt channelv2.NotifierSlackhook_property) *ChannelSlackhook {
+func NewChannelSlackhook(uuid string, opt *channelv2.SlackhookConfig) *ChannelSlackhook {
 	client := http.DefaultClient
 	if transport, ok := client.Transport.(*http.Transport); ok {
 		transport.MaxIdleConnsPerHost = 100 //MaxIdleConnsPerHost
 	}
 	notifier := &ChannelSlackhook{}
 	notifier.uuid = uuid
-	notifier.opt = &opt
+	notifier.opt = opt
 	notifier.httpclient = client
 
 	return notifier

@@ -18,18 +18,20 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	authv2 "github.com/NexClipper/sudory/pkg/server/model/auth/v2"
-	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
-	clusterv2 "github.com/NexClipper/sudory/pkg/server/model/cluster/v2"
+	channelv3 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
+	clusterv3 "github.com/NexClipper/sudory/pkg/server/model/cluster/v3"
 	clusterinfov2 "github.com/NexClipper/sudory/pkg/server/model/cluster_infomation/v2"
-	clustertokenv2 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v2"
+	clustertokenv3 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v3"
 	cryptov2 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v2"
 	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
 
-	sessionv2 "github.com/NexClipper/sudory/pkg/server/model/session/v2"
+	sessionv3 "github.com/NexClipper/sudory/pkg/server/model/session/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/golang-jwt/jwt/v4"
 
@@ -37,11 +39,11 @@ import (
 )
 
 // @Description get []Service
+// @Security    ClientAuth
 // @Accept      json
 // @Produce     json
 // @Tags        client/service
 // @Router      /client/service [get]
-// @Param       x-sudory-client-token header string true "client session token"
 // @Success     200 {array}  v3.HttpRsp_ClientServicePolling
 // @Header      200 {string} x-sudory-client-token
 func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
@@ -54,12 +56,12 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 	}
 
 	// get cluster
-	cluster := new(clusterv2.Cluster)
+	cluster := new(clusterv3.Cluster)
 	cluster.Uuid = claims.ClusterUuid
-	eq_uuid := vanilla.Equal("uuid", cluster.Uuid)
+	eq_uuid := stmt.Equal("uuid", cluster.Uuid)
 
-	err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid.Parse(), nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl)(func(s vanilla.Scanner) (err error) {
+	err = stmtex.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid, nil, nil).
+		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(func(s stmtex.Scanner) (err error) {
 		err = cluster.Scan(s)
 		err = errors.Wrapf(err, "scan cluster")
 		return
@@ -74,10 +76,10 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 	func() (err error) {
 		cluster_info := clusterinfov2.ClusterInformation{}
 		columnnames := []string{"polling_offset"}
-		cond := vanilla.Equal("cluster_uuid", claims.ClusterUuid)
+		cond := stmt.Equal("cluster_uuid", claims.ClusterUuid)
 
-		err = vanilla.Stmt.Select(cluster_info.TableName(), columnnames, cond.Parse(), nil, nil).
-			QueryRowsContext(ctx.Request().Context(), ctl)(func(scan vanilla.Scanner, _ int) error {
+		err = stmtex.Select(cluster_info.TableName(), columnnames, cond, nil, nil).
+			QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(func(scan stmtex.Scanner, _ int) error {
 			return scan.Scan(&polling_offest)
 		})
 		if err != nil {
@@ -88,7 +90,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 
 	// polling limit filter
 	polling_filter := newPollingFilter(cluster.PoliingLimit)
-	services, steps, err := pollingService(ctx.Request().Context(), ctl, claims.ClusterUuid, polling_offest, polling_filter)
+	services, steps, err := pollingService(ctx.Request().Context(), ctl, ctl.Dialect(), claims.ClusterUuid, polling_offest, polling_filter)
 
 	// set polling_offest
 	var polling_offest_ time.Time
@@ -117,11 +119,9 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 	cluster_info_update_columns := []string{
 		"polling_count", "polling_offset", "updated",
 	}
-	cluster_info_stmt, err := vanilla.Stmt.InsertOrUpdate(cluster_info.TableName(), cluster_info.ColumnNames(), cluster_info_update_columns, cluster_info.Values())
+	_, _, err = stmtex.InsertOrUpdate(cluster_info.TableName(), cluster_info.ColumnNames(), cluster_info_update_columns, cluster_info.Values()).
+		ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
 	if err != nil {
-		return errors.Wrapf(err, "could not build a insert|update statement")
-	}
-	if _, err := cluster_info_stmt.Exec(ctl); err != nil {
 		return errors.Wrapf(err, "exec insert|update statement")
 	}
 
@@ -170,13 +170,13 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 			new_step_status = append(new_step_status, a)
 		})
 
-	err = ctl.ScopeTx(ctx.Request().Context(), func(tx *sql.Tx) error {
+	err = stmtex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
 
-		if err = vault.SaveMultiTable(tx, new_service_status); err != nil {
+		if err = vault.SaveMultiTable(tx, ctl.Dialect(), new_service_status); err != nil {
 			return errors.Wrapf(err, "faild to save service")
 		}
 
-		if err = vault.SaveMultiTable(tx, new_step_status); err != nil {
+		if err = vault.SaveMultiTable(tx, ctl.Dialect(), new_step_status); err != nil {
 			return errors.Wrapf(err, "faild to save service step")
 		}
 
@@ -214,18 +214,18 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 		event.Invoke(event_name, m)
 		managed_event.Invoke(event_name, m)
 		// invoke event by event category
-		managed_channel.InvokeByEventCategory(channelv2.EventCategoryServicePollingOut, m)
+		managed_channel.InvokeByEventCategory(channelv3.EventCategoryServicePollingOut, m)
 	}
 
 	return ctx.JSON(http.StatusOK, rsp)
 }
 
 // @Description update a service
+// @Security    ClientAuth
 // @Accept      json
 // @Produce     json
 // @Tags        client/service
 // @Router      /client/service [put]
-// @Param       x-sudory-client-token header string           true  "client session token"
 // @Param       body body v3.HttpReq_ClientServiceUpdate true "HttpReq_ClientServiceUpdate"
 // @Success     200
 // @Header      200 {string} x-sudory-client-token
@@ -308,7 +308,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	service.ClusterUuid = claims.ClusterUuid
 	service.Uuid = body.Uuid
 
-	service, err = vault.Servicev3.GetService(context.Background(), ctl, service.ClusterUuid, service.Uuid)
+	service, err = vault.Servicev3.GetService(context.Background(), ctl, ctl.Dialect(), service.ClusterUuid, service.Uuid)
 	if err != nil {
 		return errors.Wrapf(err, "failed to found service%v", logs.KVL(
 			"cluster_uuid", claims.ClusterUuid,
@@ -322,7 +322,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	service_step.Uuid = body.Uuid
 	service_step.Sequence = body.Sequence
 
-	service_step, err = vault.Servicev3.GetServiceStep(context.Background(), ctl, service_step.ClusterUuid, service_step.Uuid, service_step.Sequence)
+	service_step, err = vault.Servicev3.GetServiceStep(context.Background(), ctl, ctl.Dialect(), service_step.ClusterUuid, service_step.Uuid, service_step.Sequence)
 	if err != nil {
 		return errors.Wrapf(err, "failed to found service step%v", logs.KVL(
 			"cluster_uuid", claims.ClusterUuid,
@@ -367,22 +367,22 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	}
 
 	// save to db
-	err = ctl.ScopeTx(context.Background(), func(tx *sql.Tx) (err error) {
+	err = stmtex.ScopeTx(context.Background(), ctl, func(tx *sql.Tx) (err error) {
 
 		// save service
-		if err = vault.SaveMultiTable(tx, []vault.Table{service}); err != nil {
+		if err = vault.SaveMultiTable(tx, ctl.Dialect(), []vault.Table{service}); err != nil {
 			return errors.Wrapf(err, "failed to save service_status")
 		}
 
 		// save service step
-		if err = vault.SaveMultiTable(tx, []vault.Table{service_step}); err != nil {
+		if err = vault.SaveMultiTable(tx, ctl.Dialect(), []vault.Table{service_step}); err != nil {
 			return errors.Wrapf(err, "failed to save service_step_status")
 		}
 
 		// check servcie result save type
 		if service_result.ResultSaveType != servicev3.ResultSaveTypeNone {
 			// save service result
-			if err = vault.SaveMultiTable(tx, []vault.Table{service_result}); err != nil {
+			if err = vault.SaveMultiTable(tx, ctl.Dialect(), []vault.Table{service_result}); err != nil {
 				return errors.Wrapf(err, "failed to save service_result")
 			}
 		}
@@ -419,13 +419,13 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	// invoke event by channel uuid
 	if 0 < len(service.SubscribedChannel.String) {
 		// find channel
-		mc := channelv2.ManagedChannel{}
+		mc := channelv3.ManagedChannel{}
 		mc.Uuid = service.SubscribedChannel.String
-		mc_cond := vanilla.And(
-			vanilla.Equal("uuid", mc.Uuid),
-			vanilla.IsNull("deleted"),
+		mc_cond := stmt.And(
+			stmt.Equal("uuid", mc.Uuid),
+			stmt.IsNull("deleted"),
 		)
-		found, err := vanilla.Stmt.Exist(mc.TableName(), mc_cond.Parse())(context.Background(), ctl)
+		found, err := stmtex.ExistContext(mc.TableName(), mc_cond)(context.Background(), ctl, ctl.Dialect())
 		if err != nil {
 			return err
 		}
@@ -434,7 +434,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		}
 	}
 	// invoke event by event category
-	managed_channel.InvokeByEventCategory(channelv2.EventCategoryServicePollingIn, m)
+	managed_channel.InvokeByEventCategory(channelv3.EventCategoryServicePollingIn, m)
 
 	return ctx.JSON(http.StatusOK, OK())
 }
@@ -462,10 +462,10 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	cluster := clusterv2.Cluster{}
+	cluster := clusterv3.Cluster{}
 	cluster.Uuid = auth.ClusterUuid
-	cluster_eq_uuid := vanilla.Equal("uuid", cluster.Uuid)
-	cluster_found, err := vanilla.Stmt.Exist(cluster.TableName(), cluster_eq_uuid.Parse())(ctx.Request().Context(), ctl)
+	cluster_eq_uuid := stmt.Equal("uuid", cluster.Uuid)
+	cluster_found, err := stmtex.ExistContext(cluster.TableName(), cluster_eq_uuid)(ctx.Request().Context(), ctl, ctl.Dialect())
 	if err != nil {
 		return HttpError(err, http.StatusInternalServerError)
 	}
@@ -478,17 +478,17 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	}
 
 	//valid token
-	token := clustertokenv2.ClusterToken{}
+	token := clustertokenv3.ClusterToken{}
 	token.ClusterUuid = auth.ClusterUuid
 	token.Token = cryptov2.CryptoString(auth.Assertion)
 
-	token_cond := vanilla.And(
-		vanilla.Equal("cluster_uuid", token.ClusterUuid),
-		vanilla.Equal("token", token.Token),
+	token_cond := stmt.And(
+		stmt.Equal("cluster_uuid", token.ClusterUuid),
+		stmt.Equal("token", token.Token),
 	)
 
-	err = vanilla.Stmt.Select(token.TableName(), token.ColumnNames(), token_cond.Parse(), nil, nil).
-		QueryRow(ctl)(func(scan vanilla.Scanner) (err error) {
+	err = stmtex.Select(token.TableName(), token.ColumnNames(), token_cond, nil, nil).
+		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(func(scan stmtex.Scanner) (err error) {
 		err = token.Scan(scan)
 		return
 	})
@@ -506,15 +506,15 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	session_token_uuid := macro.NewUuidString()
 	created := time.Now()
 	iat := time.Now()
-	exp := globvar.ClientSessionExpirationTime(iat)
+	exp := globvar.ClientSession.ExpirationTime(iat)
 
-	payload := &sessionv2.ClientSessionPayload{
+	payload := &sessionv3.ClientSessionPayload{
 		ExpiresAt:    exp.Unix(),
 		IssuedAt:     iat.Unix(),
 		Uuid:         session_token_uuid,
 		ClusterUuid:  auth.ClusterUuid,
-		PollInterval: globvar.ClientConfigPollInterval(),
-		Loglevel:     globvar.ClientConfigLoglevel(),
+		PollInterval: globvar.ClientConfig.PollInterval(),
+		Loglevel:     globvar.ClientConfig.Loglevel(),
 	}
 
 	if false {
@@ -533,13 +533,13 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	}
 
 	token_string, err := jwt.NewWithClaims(jwt.SigningMethodHS256, payload).
-		SignedString([]byte(globvar.ClientSessionSignatureSecret()))
+		SignedString([]byte(globvar.ClientSession.SignatureSecret()))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError).SetInternal(
 			errors.Wrapf(err, "jwt New payload=%+v", payload))
 	}
 
-	session := sessionv2.Session{}
+	session := sessionv3.Session{}
 	session.Uuid = payload.Uuid
 	session.ClusterUuid = payload.ClusterUuid
 	session.Token = token_string
@@ -548,11 +548,8 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	session.Created = created
 
 	err = func() (err error) {
-		stmt, err := vanilla.Stmt.Insert(session.TableName(), session.ColumnNames(), session.Values())
-		if err != nil {
-			return err
-		}
-		affected, err := stmt.Exec(ctl)
+		var affected int64
+		affected, session.ID, err = stmtex.Insert(session.TableName(), session.ColumnNames(), session.Values()).ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
 		if err != nil {
 			return err
 		}
@@ -578,7 +575,7 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	event.Invoke(event_name, m)
 	managed_event.Invoke(event_name, m)
 	// invoke event by event category
-	managed_channel.InvokeByEventCategory(channelv2.EventCategoryClientAuthAccept, m)
+	managed_channel.InvokeByEventCategory(channelv3.EventCategoryClientAuthAccept, m)
 
 	return ctx.JSON(http.StatusOK, OK())
 }
@@ -597,20 +594,20 @@ func (ctl ControlVanilla) VerifyClientSessionToken(ctx echo.Context) (err error)
 	token := ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
 	err = func() (err error) {
 		if len(token) == 0 {
-			return errors.Wrapf(ErrorInvalidRequestParameter(), "missing request header%v", logs.KVL(
+			return errors.Wrapf(ErrorInvalidRequestParameter, "missing request header%v", logs.KVL(
 				"header", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
 			))
 		}
 
-		claims := new(sessionv2.ClientSessionPayload)
+		claims := new(sessionv3.ClientSessionPayload)
 		jwt_token, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-			return []byte(globvar.ClientSessionSignatureSecret()), nil
+			return []byte(globvar.ClientSession.SignatureSecret()), nil
 		})
 		if err != nil {
 			return errors.Wrapf(err, "jwt parse claims")
 		}
 
-		if _, ok := jwt_token.Claims.(*sessionv2.ClientSessionPayload); !ok || !jwt_token.Valid {
+		if _, ok := jwt_token.Claims.(*sessionv3.ClientSessionPayload); !ok || !jwt_token.Valid {
 			return errors.Errorf("jwt verify%v", logs.KVL(
 				"header", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
 				"token", token,
@@ -628,10 +625,10 @@ func (ctl ControlVanilla) VerifyClientSessionToken(ctx echo.Context) (err error)
 func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error) {
 	token := ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
 	var jwt_token *jwt.Token
-	claims := new(sessionv2.ClientSessionPayload)
+	claims := new(sessionv3.ClientSessionPayload)
 	err = func() (err error) {
 		if len(token) == 0 {
-			return errors.Wrapf(ErrorInvalidRequestParameter(), "missing request header%s",
+			return errors.Wrapf(ErrorInvalidRequestParameter, "missing request header%s",
 				logs.KVL(
 					"key", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
 				))
@@ -644,7 +641,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 			))
 		}
 
-		if _, ok := jwt_token.Claims.(*sessionv2.ClientSessionPayload); !ok {
+		if _, ok := jwt_token.Claims.(*sessionv3.ClientSessionPayload); !ok {
 			return errors.Errorf("is not valid type%v",
 				logs.KVL(
 					"jwt.Token.Claims", TypeName(jwt_token.Claims),
@@ -661,15 +658,14 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 	time_now := time.Now()
 
 	// polling interval
-	cluster := clusterv2.Cluster{}
+	cluster := clusterv3.Cluster{}
 	err = func() (err error) {
-		eq_uuid := vanilla.Equal("uuid", claims.ClusterUuid).Parse()
-		err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid, nil, nil).
-			QueryRowContext(ctx.Request().Context(), ctl)(func(s vanilla.Scanner) (err error) {
-			err = cluster.Scan(s)
-			err = errors.Wrapf(err, "cluster Scan")
-			return
-		})
+		eq_uuid := stmt.Equal("uuid", claims.ClusterUuid)
+		err = stmtex.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid, nil, nil).
+			QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+			func(s stmtex.Scanner) (err error) {
+				return cluster.Scan(s)
+			})
 
 		err = errors.Wrapf(err, "failed to get cluster")
 		return
@@ -682,16 +678,16 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 	err = func() (err error) {
 		cluster_info := clusterinfov2.ClusterInformation{}
 		columnnames := []string{"polling_count"}
-		cond := vanilla.Equal("cluster_uuid", claims.ClusterUuid)
+		cond := stmt.Equal("cluster_uuid", claims.ClusterUuid)
 
-		err = vanilla.Stmt.Select(cluster_info.TableName(), columnnames, cond.Parse(), nil, nil).
-			QueryRowsContext(ctx.Request().Context(), ctl)(func(scan vanilla.Scanner, _ int) error {
+		err = stmtex.Select(cluster_info.TableName(), columnnames, cond, nil, nil).
+			QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(func(scan stmtex.Scanner, _ int) error {
 			return scan.Scan(&service_count)
 		})
 
 		// cond := pollingServiceCondition(claims.ClusterUuid)
 		// service := servicev3.Service{}
-		// service_count, err = vanilla.Stmt.Count(service.TableName(), cond.Parse(), nil)(ctx.Request().Context(), ctl)
+		// service_count, err = stmtex.Count(service.TableName(), cond.Parse(), nil)(ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get cluster service count")
 		}
@@ -703,18 +699,18 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 	}
 
 	// polling interval 해더 저장
-	polling_interval := int(cluster.GetPollingOption().Interval(time.Duration(int64(globvar.ClientConfigPollInterval())*int64(time.Second)), service_count.Int()) / time.Second)
+	polling_interval := int(clusterv3.ConvPollingOption(cluster.PollingOption).Interval(time.Duration(int64(globvar.ClientConfig.PollInterval())*int64(time.Second)), service_count.Int()) / time.Second)
 
 	//reflesh payload
 	claims.PollInterval = polling_interval
-	claims.ExpiresAt = globvar.ClientSessionExpirationTime(time_now).Unix()
-	claims.Loglevel = globvar.ClientConfigLoglevel()
+	claims.ExpiresAt = globvar.ClientSession.ExpirationTime(time_now).Unix()
+	claims.Loglevel = globvar.ClientConfig.Loglevel()
 
 	var new_token_string string
 	err = func() (err error) {
 		//client auth 에서 사용된 알고리즘 그대로 사용
 		new_token_string, err = jwt.NewWithClaims(usedJwtSigningMethod(*jwt_token, jwt.SigningMethodHS256), claims).
-			SignedString([]byte(globvar.ClientSessionSignatureSecret()))
+			SignedString([]byte(globvar.ClientSession.SignatureSecret()))
 		if err != nil {
 			return errors.Wrapf(err, "failed to make session token to formed jwt")
 		}
@@ -727,19 +723,19 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 	//save client session-token to header
 	ctx.Response().Header().Set(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, new_token_string)
 
-	session := sessionv2.Session{}
+	session := sessionv3.Session{}
 	session.Uuid = claims.Uuid
 	session.Token = new_token_string
 	session.ExpirationTime = *vanilla.NewNullTime(time.Unix(claims.ExpiresAt, 0))
 	session.Updated = *vanilla.NewNullTime(time_now)
 
 	// uuid = ? AND deleted IS NULL
-	cond_session := vanilla.And(
-		vanilla.Equal("uuid", session.Uuid),
-		vanilla.IsNull("deleted"),
+	cond_session := stmt.And(
+		stmt.Equal("uuid", session.Uuid),
+		stmt.IsNull("deleted"),
 	)
 	err = func() (err error) {
-		session_found, err := vanilla.Stmt.Exist(session.TableName(), cond_session.Parse())(ctx.Request().Context(), ctl)
+		session_found, err := stmtex.ExistContext(session.TableName(), cond_session)(ctx.Request().Context(), ctl, ctl.Dialect())
 		if err != nil {
 			return err
 		}
@@ -761,8 +757,8 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 			"updated":         session.Updated,
 		}
 
-		_, err = vanilla.Stmt.Update(session.TableName(), keys_values, cond_session.Parse()).
-			Exec(ctl)
+		_, err = stmtex.Update(session.TableName(), keys_values, cond_session).
+			Exec(ctl, ctl.Dialect())
 		if err != nil {
 			return errors.Wrapf(err, "failed to refresh client session%v", logs.KVL(
 				"uuid", claims.Uuid,
@@ -789,7 +785,7 @@ func usedJwtSigningMethod(token jwt.Token, init jwt.SigningMethod) jwt.SigningMe
 	return init
 }
 
-func GetSudoryClientTokenClaims(ctx echo.Context) (claims *sessionv2.ClientSessionPayload, err error) {
+func GetSudoryClientTokenClaims(ctx echo.Context) (claims *sessionv3.ClientSessionPayload, err error) {
 	var token string
 	if token = ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__); len(token) == 0 {
 		err = errors.Errorf("missing request header%s",
@@ -799,31 +795,8 @@ func GetSudoryClientTokenClaims(ctx echo.Context) (claims *sessionv2.ClientSessi
 		return
 	}
 
-	claims = new(sessionv2.ClientSessionPayload)
+	claims = new(sessionv3.ClientSessionPayload)
 	var fn func() error
-	if false {
-		fn = func() error {
-			var jwt_token *jwt.Token
-			// JWT verify
-			jwt_token, err = jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-				return []byte(globvar.ClientSessionSignatureSecret()), nil
-			})
-			if err != nil {
-				return errors.Wrapf(err, "jwt.Parser.ParseWithClaims")
-			}
-
-			var ok bool
-			claims, ok = jwt_token.Claims.(*sessionv2.ClientSessionPayload)
-			if !ok {
-				return errors.New("jwt.Token.Claims not matched")
-			}
-			if !jwt_token.Valid {
-				return errors.New("jwt.Token.Valid false")
-			}
-
-			return nil
-		}
-	}
 	fn = func() error {
 		var jwt_token *jwt.Token
 		// JWT unverify
@@ -833,12 +806,35 @@ func GetSudoryClientTokenClaims(ctx echo.Context) (claims *sessionv2.ClientSessi
 		}
 
 		var ok bool
-		claims, ok = jwt_token.Claims.(*sessionv2.ClientSessionPayload)
+		claims, ok = jwt_token.Claims.(*sessionv3.ClientSessionPayload)
 		if !ok {
 			return errors.New("jwt.Token.Claims not matched")
 		}
 
 		return nil
+	}
+	if false {
+		fn = func() error {
+			var jwt_token *jwt.Token
+			// JWT verify
+			jwt_token, err = jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+				return []byte(globvar.ClientSession.SignatureSecret()), nil
+			})
+			if err != nil {
+				return errors.Wrapf(err, "jwt.Parser.ParseWithClaims")
+			}
+
+			var ok bool
+			claims, ok = jwt_token.Claims.(*sessionv3.ClientSessionPayload)
+			if !ok {
+				return errors.New("jwt.Token.Claims not matched")
+			}
+			if !jwt_token.Valid {
+				return errors.New("jwt.Token.Valid false")
+			}
+
+			return nil
+		}
 	}
 
 	err = fn()
@@ -888,15 +884,15 @@ func getCookie(ctx echo.Context, key string) (string, error) {
 // 	)
 // }
 
-// pollingServiceLimit
-//  LIMIT ?
-func pollingServiceLimit(poliing_limit int) *vanilla.PreparePagination {
-	if poliing_limit == 0 {
-		poliing_limit = math.MaxInt8 // 127
-	}
+// // pollingServiceLimit
+// //  LIMIT ?
+// func pollingServiceLimit(poliing_limit int) *vanilla.PreparePagination {
+// 	if poliing_limit == 0 {
+// 		poliing_limit = math.MaxInt8 // 127
+// 	}
 
-	return vanilla.Limit(poliing_limit)
-}
+// 	return vanilla.Limit(poliing_limit)
+// }
 
 type PollingFilter = func(status servicev3.StepStatus) bool
 
@@ -917,13 +913,13 @@ func newPollingFilter(limit int) PollingFilter {
 	}
 }
 
-func pollingService(ctx context.Context, tx vanilla.Preparer,
+func pollingService(ctx context.Context, tx stmtex.Preparer, dialect string,
 	cluster_uuid string, polling_offest vanilla.NullTime,
 	polling_filter PollingFilter,
-) (services []servicev3.Service, steps map[string][]servicev3.ServiceStep, err error) {
+) (services []servicev3.Service, stepSet map[string][]servicev3.ServiceStep, err error) {
 
 	// check polling
-	polling_keys, err := vault.Servicev3.GetServicesPolling(ctx, tx, cluster_uuid, polling_offest)
+	polling_keys, err := vault.Servicev3.GetServicesPolling(ctx, tx, dialect, cluster_uuid, polling_offest)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to found services%v", logs.KVL(
 			"cluster_uuid", cluster_uuid,
@@ -944,7 +940,7 @@ func pollingService(ctx context.Context, tx vanilla.Preparer,
 	services = make([]servicev3.Service, 0, len(filtered_keys))
 	for _, service_key := range filtered_keys {
 		var service *servicev3.Service
-		service, err = vault.Servicev3.GetService(ctx, tx, cluster_uuid, service_key.Uuid)
+		service, err = vault.Servicev3.GetService(ctx, tx, dialect, cluster_uuid, service_key.Uuid)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to found service %v", logs.KVL(
 				"cluster_uuid", cluster_uuid,
@@ -957,10 +953,10 @@ func pollingService(ctx context.Context, tx vanilla.Preparer,
 	}
 
 	// gather service step
-	steps = make(map[string][]servicev3.ServiceStep)
+	stepSet = make(map[string][]servicev3.ServiceStep)
 	for _, service := range filtered_keys {
-		var stepSet map[string][]servicev3.ServiceStep
-		stepSet, err = vault.Servicev3.GetServiceSteps(ctx, tx, cluster_uuid, service.Uuid)
+		var steps []servicev3.ServiceStep
+		steps, err = vault.Servicev3.GetServiceSteps(ctx, tx, dialect, cluster_uuid, service.Uuid)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to found service steps%v", logs.KVL(
 				"cluster_uuid", cluster_uuid,
@@ -969,9 +965,8 @@ func pollingService(ctx context.Context, tx vanilla.Preparer,
 			return
 		}
 
-		for uuid, seqSet := range stepSet {
-			steps[uuid] = seqSet
-		}
+		stepSet[service.Uuid] = steps
+
 	}
 
 	return

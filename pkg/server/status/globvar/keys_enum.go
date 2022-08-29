@@ -26,9 +26,13 @@ const (
 	KeyClientConfigLoglevel
 	// KeyEventNotifierStatusRotateLimit is a Key of type Event-Notifier-Status-Rotate-Limit.
 	KeyEventNotifierStatusRotateLimit
+	// KeyServiceSessionSignatureSecret is a Key of type Service-Session-Signature-Secret.
+	KeyServiceSessionSignatureSecret
+	// KeyServiceSessionExpirationTime is a Key of type Service-Session-Expiration-Time.
+	KeyServiceSessionExpirationTime
 )
 
-const _KeyName = "bearer-token-signature-secretbearer-token-expiration-timeclient-session-signature-secretclient-session-expiration-timeclient-config-poll-intervalclient-config-loglevelevent-notifier-status-rotate-limit"
+const _KeyName = "bearer-token-signature-secretbearer-token-expiration-timeclient-session-signature-secretclient-session-expiration-timeclient-config-poll-intervalclient-config-loglevelevent-notifier-status-rotate-limitservice-session-signature-secretservice-session-expiration-time"
 
 var _KeyNames = []string{
 	_KeyName[0:29],
@@ -38,6 +42,8 @@ var _KeyNames = []string{
 	_KeyName[118:145],
 	_KeyName[145:167],
 	_KeyName[167:201],
+	_KeyName[201:233],
+	_KeyName[233:264],
 }
 
 // KeyNames returns a list of possible string values of Key.
@@ -55,6 +61,8 @@ var _KeyMap = map[Key]string{
 	KeyClientConfigPollInterval:       _KeyName[118:145],
 	KeyClientConfigLoglevel:           _KeyName[145:167],
 	KeyEventNotifierStatusRotateLimit: _KeyName[167:201],
+	KeyServiceSessionSignatureSecret:  _KeyName[201:233],
+	KeyServiceSessionExpirationTime:   _KeyName[233:264],
 }
 
 // String implements the Stringer interface.
@@ -80,6 +88,10 @@ var _KeyValue = map[string]Key{
 	strings.ToLower(_KeyName[145:167]): KeyClientConfigLoglevel,
 	_KeyName[167:201]:                  KeyEventNotifierStatusRotateLimit,
 	strings.ToLower(_KeyName[167:201]): KeyEventNotifierStatusRotateLimit,
+	_KeyName[201:233]:                  KeyServiceSessionSignatureSecret,
+	strings.ToLower(_KeyName[201:233]): KeyServiceSessionSignatureSecret,
+	_KeyName[233:264]:                  KeyServiceSessionExpirationTime,
+	strings.ToLower(_KeyName[233:264]): KeyServiceSessionExpirationTime,
 }
 
 // ParseKey attempts to convert a string to a Key.

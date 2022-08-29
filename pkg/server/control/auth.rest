@@ -1,0 +1,45 @@
+
+@protocolver = HTTP/1.1
+@protocol    = http
+@hostname    = localhost
+@port        = 8099
+@url         = {{protocol}}://{{hostname}}:{{port}}
+
+@test_path   = /server/auth
+
+@date = {{$datetime "YYYY-MM-DDThh:mm:ss"}}Z
+
+//<<<< POST >>>> 
+# @name auth__default
+@tenant_default = 
+
+POST {{url}}{{test_path}} {{protocolver}}
+Content-Type: application/json
+x_auth_token: SUDORY
+
+{
+  "tenant": "{{ tenant_default }}"
+}
+###
+# @name auth__foo
+@tenant_foo = foo
+
+POST {{url}}{{test_path}} {{protocolver}}
+Content-Type: application/json
+x_auth_token: SUDORY
+
+{
+  "tenant": "{{ tenant_foo }}"
+}
+###
+# @name auth(test)
+@tenant_test = test
+
+POST {{url}}{{test_path}} {{protocolver}}
+Content-Type: application/json
+x_auth_token: SUDORY
+
+{
+  "tenant": "{{ tenant_test }}"
+}
+###

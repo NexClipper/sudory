@@ -116,7 +116,7 @@ func (context XormContext) Create(record interface{}) error {
 				"type_name", TypeName(record),
 			))
 	} else if !(0 < affect) {
-		return errors.Wrapf(ErrorNoAffected(), "xorm insert%v",
+		return errors.Wrapf(ErrorNoAffected, "xorm insert%v",
 			logs.KVL(
 				"type_name", TypeName(record),
 			))
@@ -146,7 +146,7 @@ func (context XormContext) Get(record interface{}) error {
 				"type_name", TypeName(record),
 			))
 	} else if !has {
-		return errors.Wrapf(ErrorRecordWasNotFound(), "xorm get%v",
+		return errors.Wrapf(ErrorRecordWasNotFound, "xorm get%v",
 			logs.KVL(
 				"type_name", TypeName(record),
 			))
@@ -190,7 +190,7 @@ func (context XormContext) Update(record interface{}) error {
 			))
 	}
 	if !has {
-		return errors.Wrapf(ErrorNoAffected(), "xorm update%v",
+		return errors.Wrapf(ErrorNoAffected, "xorm update%v",
 			logs.KVL(
 				"type_name", TypeName(replica),
 			))

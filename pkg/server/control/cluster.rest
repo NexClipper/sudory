@@ -9,99 +9,146 @@
 
 @date = {{$datetime "YYYY-MM-DDThh:mm:ss"}}Z
 
-//<<<< POST >>>> 
-# @name create_cluster
+//<<<< AUTH >>>>
+# @name auth
+@tenant_pattern = cluster_test
 
-POST {{url}}{{test_path}} {{protocolver}}
-content-type: application/json
+POST {{url}}/server/auth {{protocolver}}
+Content-Type: application/json
+x_auth_token: SUDORY
 
 {
-  "name": "test name"
-  ,"polling_limit": 5
-  ,"polling_option": {}
-  ,"summary": "test summary"
-#   ,"uuid": "test"
+  "tenant": "{{ tenant_pattern }}"
 }
+###
 
-@created__id = {{create_cluster.response.body.$.id}}
-@created__uuid = {{create_cluster.response.body.$.uuid}}
-@create__name = {{create_cluster.response.body.$.name}}
-@created__summary = {{create_cluster.response.body.$.summary}}
-@create__created = {{create_cluster.response.body.$.created}}
+@auth_token = Bearer {{auth.response.body.$.access_token}}
 
-### 
-//<<<< GET >>>> 
+//<<<< POST >>>> 
+# POST cluster with cordinated uuid
+# @name cordinated_cluster
+@create__uuid = test
+POST {{url}}{{test_path}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "name": "test name",
+  "polling_limit": 5,
+  "polling_option": {},
+  "summary": "test summary",
+  "uuid": "{{ create__uuid }}"
+}
+###
+# GET cluster by cordinated uuid
 # @name get_cluster
+GET {{url}}{{test_path}}/{{create__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
 
+###
+# POST cluster with generate uuid
+# @name create_cluster
+POST {{url}}{{test_path}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "name": "test name",
+  "polling_limit": 5,
+  "polling_option": {},
+  "summary": "test summary"
+}
+### 
+@created__uuid = {{create_cluster.response.body.$.uuid}}
+# GET cluster by generate uuid
+# @name get_cluster
 GET {{url}}{{test_path}}/{{created__uuid}} {{protocolver}}
-content-type: application/json
+Content-Type: application/json
+Authorization: {{auth_token}}
 
 ###
 
-@match_id = (eq id "{{created__id}}")
-@match_uuid = (eq uuid "{{created__uuid}}")
-@match_name = (eq name "{{create__name}}")
-@match_summary = (eq summary "{{created__summary}}")
-@match_created = (eq created "{{create__created}}")
+@channel__id = {{get_cluster.response.body.$.id}}
+@channel__uuid = {{get_cluster.response.body.$.uuid}}
+@channel__name = {{get_cluster.response.body.$.name}}
+@channel__summary = {{get_cluster.response.body.$.summary}}
+@channel__created = {{get_cluster.response.body.$.created}}
+
+
+@match_id = (eq id "{{ channel__id }}")
+@match_uuid = (eq uuid "{{ channel__uuid }}")
+@match_name = (eq name "{{ channel__name }}")
+@match_summary = (eq summary "{{ channel__summary }}")
+@match_created = (eq created "{{ channel__created }}")
 
 @pagination={"limit": 999, "page": 1}
-@order=["created", "desc"]
+@order={"desc": "created"}
 
+//<<<< GET >>>> 
 # @name find_cluster__match__id
 
 GET {{url}}{{test_path}}?q={{match_id}}&p={{pagination}}&o={{order}} {{protocolver}}
-content-type: application/json
+Content-Type: application/json
+Authorization: {{auth_token}}
 
 ###
 # @name find_cluster__match__uuid
 
 GET {{url}}{{test_path}}?q={{match_uuid}}&p={{pagination}}&o={{order}} {{protocolver}}
-content-type: application/json
+Content-Type: application/json
+Authorization: {{auth_token}}
 
 ###
 # @name find_cluster__match__name
 
 GET {{url}}{{test_path}}?q={{match_name}}&p={{pagination}}&o={{order}} {{protocolver}}
-content-type: application/json
+Content-Type: application/json
+Authorization: {{auth_token}}
 
 ###
 # @name find_cluster__match__summary
 
 GET {{url}}{{test_path}}?q={{match_summary}}&p={{pagination}}&o={{order}} {{protocolver}}
-content-type: application/json
+Content-Type: application/json
+Authorization: {{auth_token}}
 
 ###
 # @name find_cluster__match__created
 
 GET {{url}}{{test_path}}?q={{match_created}}&p={{pagination}}&o={{order}} {{protocolver}}
-content-type: application/json
+Content-Type: application/json
+Authorization: {{auth_token}}
 
 ###
 //<<<< PUT >>>> 
 # @name update_cluster__name
 
-PUT {{url}}{{test_path}}/{{created__uuid}} {{protocolver}}
-content-type: application/json
+PUT {{url}}{{test_path}}/{{channel__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
 
 {
-    "name": "{{create__name}} {{created__uuid}}"
+    "name": "{{channel__name}}_{{channel__uuid}}_{{ date }}"
 }
 
 ###
 # @name update_cluster__summary
 
-PUT {{url}}{{test_path}}/{{created__uuid}} {{protocolver}}
-content-type: application/json
+PUT {{url}}{{test_path}}/{{channel__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
 
 {
-    "summary": "{{created__summary}} {{created__uuid}}"
+    "summary": "{{channel__summary}} {{channel__uuid}} {{ date }}"
 }
 
 ###
 # @name update_cluster__polling_option__regular_1
 
-PUT {{url}}{{test_path}}/{{created__uuid}} {{protocolver}}
-content-type: application/json
+PUT {{url}}{{test_path}}/{{channel__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
 
 {
     "polling_option": {
@@ -112,22 +159,24 @@ content-type: application/json
 ###
 # @name update_cluster__polling_option__smart_1
 
-PUT {{url}}{{test_path}}/{{created__uuid}} {{protocolver}}
-content-type: application/json
+PUT {{url}}{{test_path}}/{{channel__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
 
 {
     "polling_option": {
-        "type":"smart"
-        ,"busy":5
-        ,"idle":30
+        "type": "smart",
+        "busy": {{$randomInt 5 10}},
+        "idle": {{$randomInt 30 60}}
         }
 }
 
 ###
 # @name update_cluster__polling_option__regular_2
 
-PUT {{url}}{{test_path}}/{{created__uuid}}/polling/regular {{protocolver}}
-content-type: application/json
+PUT {{url}}{{test_path}}/{{channel__uuid}}/polling/regular {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
 
 {
     "type":"regular"
@@ -136,20 +185,22 @@ content-type: application/json
 ###
 # @name update_cluster__polling_option__smart_2
 
-PUT {{url}}{{test_path}}/{{created__uuid}}/polling/smart {{protocolver}}
-content-type: application/json
+PUT {{url}}{{test_path}}/{{channel__uuid}}/polling/smart {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
 
 {
-    "type":"smart"
-    ,"busy":5
-    ,"idle":30
+    "type": "smart",
+    "busy": {{$randomInt 5 10}},
+    "idle": {{$randomInt 30 60}}
 }
 
 ###
 //<<<< DELETE >>>> 
 # @name delete_cluster
 
-DELETE {{url}}{{test_path}}/{{created__uuid}} {{protocolver}}
-content-type: application/json
+DELETE {{url}}{{test_path}}/{{channel__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
 
 ###

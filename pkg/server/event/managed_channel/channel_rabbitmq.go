@@ -6,23 +6,23 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
+	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	"github.com/pkg/errors"
 	"github.com/streadway/amqp"
 )
 
 type ChannelRabbitMQ struct {
 	uuid string
-	opt  *channelv2.NotifierRabbitMq_property
+	opt  *channelv2.RabbitMqConfig
 
 	connection *amqp.Connection //RabbitMQ //amqp.Connection
 	channel    *amqp.Channel    //RabbitMQ //amqp.Channel
 }
 
-func NewChannelRabbitMQ(uuid string, opt channelv2.NotifierRabbitMq_property) *ChannelRabbitMQ {
+func NewChannelRabbitMQ(uuid string, opt *channelv2.RabbitMqConfig) *ChannelRabbitMQ {
 	notifier := &ChannelRabbitMQ{}
 	notifier.uuid = uuid
-	notifier.opt = &opt
+	notifier.opt = opt
 
 	return notifier
 }
@@ -99,7 +99,7 @@ func (ChannelRabbitMQ) Dial(url string) (*amqp.Connection, *amqp.Channel, error)
 	return conn, ch, nil
 }
 
-func (ChannelRabbitMQ) Publish(opt *channelv2.NotifierRabbitMq_property, ch *amqp.Channel, b []byte) error {
+func (ChannelRabbitMQ) Publish(opt *channelv2.RabbitMqConfig, ch *amqp.Channel, b []byte) error {
 	publishing := amqp.Publishing{}
 	publishing.ContentType = opt.Publishing.MessageContentType.String
 	publishing.ContentEncoding = opt.Publishing.MessageContentEncoding.String

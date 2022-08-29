@@ -17,18 +17,18 @@ import (
 
 // @deprecated
 // @Description Create a channel notifier console
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel_notifier
 // @Router      /server/channel_notifier/console [post]
-// @Param       x_auth_token header string                          false "client session token"
 // @Param       object       body   v1.NotifierConsole_create  true  "EventNotifierConsole_create"
 // @Success     200 {object} v1.NotifierConsole
 func (ctl Control) CreateChannelNotifierConsole(ctx echo.Context) error {
 	body := new(channelv1.NotifierConsole_create)
 	if err := echoutil.Bind(ctx, body); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+			errors.Wrapf(ErrorBindRequestObject, "bind%s",
 				logs.KVL(
 					"type", TypeName(body),
 				)))
@@ -36,7 +36,7 @@ func (ctl Control) CreateChannelNotifierConsole(ctx echo.Context) error {
 
 	if len(body.Name) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(fmt.Sprintf("%s.Name", TypeName(body)), body.Name)...,
 				)))
@@ -71,18 +71,18 @@ func (ctl Control) CreateChannelNotifierConsole(ctx echo.Context) error {
 
 // @deprecated
 // @Description Create a channel notifier webhook
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel_notifier
 // @Router      /server/channel_notifier/webhook [post]
-// @Param       x_auth_token header string                          false "client session token"
 // @Param       object       body   v1.NotifierWebhook_create  true  "EventNotifierWebhook_create"
 // @Success     200 {object} v1.NotifierWebhook
 func (ctl Control) CreateChannelNotifierWebhook(ctx echo.Context) error {
 	body := new(channelv1.NotifierWebhook_create)
 	if err := echoutil.Bind(ctx, body); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+			errors.Wrapf(ErrorBindRequestObject, "bind%s",
 				logs.KVL(
 					"type", TypeName(body),
 				)))
@@ -90,7 +90,7 @@ func (ctl Control) CreateChannelNotifierWebhook(ctx echo.Context) error {
 
 	if len(body.Name) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(fmt.Sprintf("%s.Name", TypeName(body)), body.Name)...,
 				)))
@@ -98,7 +98,7 @@ func (ctl Control) CreateChannelNotifierWebhook(ctx echo.Context) error {
 
 	if len(body.Url) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(fmt.Sprintf("%s.Url", TypeName(body)), body.Url)...,
 				)))
@@ -133,18 +133,18 @@ func (ctl Control) CreateChannelNotifierWebhook(ctx echo.Context) error {
 
 // @deprecated
 // @Description Create a channel notifier rabbitmq
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel_notifier
 // @Router      /server/channel_notifier/rabbitmq [post]
-// @Param       x_auth_token header string                           false "client session token"
 // @Param       object       body   v1.NotifierRabbitMq_create  true  "NotifierRabbitMq_create"
 // @Success     200 {object} v1.NotifierRabbitMq
 func (ctl Control) CreateChannelNotifierRabbitMq(ctx echo.Context) error {
 	body := new(channelv1.NotifierRabbitMq_create)
 	if err := echoutil.Bind(ctx, body); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+			errors.Wrapf(ErrorBindRequestObject, "bind%s",
 				logs.KVL(
 					"type", TypeName(body),
 				)))
@@ -199,14 +199,14 @@ func (ctl Control) CreateChannelNotifierRabbitMq(ctx echo.Context) error {
 
 // @deprecated
 // @Description Find channel notifier console
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel_notifier
 // @Router      /server/channel_notifier/console [get]
-// @Param       x_auth_token header string false "client session token"
-// @Param       q                   query  string false "query  pkg/server/database/prepared/README.md"
-// @Param       o                   query  string false "order  pkg/server/database/prepared/README.md"
-// @Param       p                   query  string false "paging pkg/server/database/prepared/README.md"
+// @Param       q                   query  string false "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       o                   query  string false "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       p                   query  string false "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Success     200 {array} v1.NotifierConsole
 func (ctl Control) FindChannelNotifierConsole(ctx echo.Context) error {
 	r, err := vault.NewNotifierConsole(ctl.db.Engine().NewSession()).Query(echoutil.QueryParam(ctx))
@@ -220,14 +220,14 @@ func (ctl Control) FindChannelNotifierConsole(ctx echo.Context) error {
 
 // @deprecated
 // @Description Find channel notifier webhook
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel_notifier
 // @Router      /server/channel_notifier/webhook [get]
-// @Param       x_auth_token header string false "client session token"
-// @Param       q                   query  string false "query  pkg/server/database/prepared/README.md"
-// @Param       o                   query  string false "order  pkg/server/database/prepared/README.md"
-// @Param       p                   query  string false "paging pkg/server/database/prepared/README.md"
+// @Param       q                   query  string false "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       o                   query  string false "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       p                   query  string false "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Success     200 {array} v1.NotifierWebhook
 func (ctl Control) FindChannelNotifierWebhook(ctx echo.Context) error {
 	r, err := vault.NewNotifierWebhook(ctl.db.Engine().NewSession()).Query(echoutil.QueryParam(ctx))
@@ -241,14 +241,14 @@ func (ctl Control) FindChannelNotifierWebhook(ctx echo.Context) error {
 
 // @deprecated
 // @Description Find channel notifier
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel_notifier
 // @Router      /server/channel_notifier/rabbitmq [get]
-// @Param       x_auth_token header string false "client session token"
-// @Param       q                   query  string false "query  pkg/server/database/prepared/README.md"
-// @Param       o                   query  string false "order  pkg/server/database/prepared/README.md"
-// @Param       p                   query  string false "paging pkg/server/database/prepared/README.md"
+// @Param       q                   query  string false "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       o                   query  string false "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       p                   query  string false "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Success     200 {array} v1.NotifierRabbitMq
 func (ctl Control) FindChannelNotifierRabbitmq(ctx echo.Context) error {
 	r, err := vault.NewNotifierRabbitMq(ctl.db.Engine().NewSession()).Query(echoutil.QueryParam(ctx))
@@ -262,17 +262,17 @@ func (ctl Control) FindChannelNotifierRabbitmq(ctx echo.Context) error {
 
 // @deprecated
 // @Description Get a channel notifier
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel_notifier
 // @Router      /server/channel_notifier/console/{uuid} [get]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid                path   string true  "channel notifier 의 Uuid"
 // @Success     200 {object} v1.NotifierConsole
 func (ctl Control) GetChannelNotifierConsole(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
@@ -291,17 +291,17 @@ func (ctl Control) GetChannelNotifierConsole(ctx echo.Context) error {
 
 // @deprecated
 // @Description Get a channel notifier webhook
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel_notifier
 // @Router      /server/channel_notifier/webhook/{uuid} [get]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid                path   string true  "channel notifier 의 Uuid"
 // @Success     200 {object} v1.NotifierWebhook
 func (ctl Control) GetChannelNotifierWebhook(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
@@ -320,17 +320,17 @@ func (ctl Control) GetChannelNotifierWebhook(ctx echo.Context) error {
 
 // @deprecated
 // @Description Get a channel notifier rabbitmq
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel_notifier
 // @Router      /server/channel_notifier/rabbitmq/{uuid} [get]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid                path   string true  "channel notifier 의 Uuid"
 // @Success     200 {object} v1.NotifierRabbitMq
 func (ctl Control) GetChannelNotifierRabbitmq(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
@@ -349,11 +349,11 @@ func (ctl Control) GetChannelNotifierRabbitmq(ctx echo.Context) error {
 
 // @deprecated
 // @Description Update a console channel notifier
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel_notifier
 // @Router      /server/channel_notifier/console/{uuid} [put]
-// @Param       x_auth_token header string                         false "client session token"
 // @Param       uuid         path   string                         true  "Channel 의 Uuid"
 // @Param       object       body   v1.NotifierConsole_create true  "NotifierConsole_create"
 // @Success     200 {object} v1.NotifierConsole
@@ -361,7 +361,7 @@ func (ctl Control) UpdateChannelNotifierConsole(ctx echo.Context) error {
 	body := new(channelv1.NotifierConsole_create)
 	if err := echoutil.Bind(ctx, body); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+			errors.Wrapf(ErrorBindRequestObject, "bind%s",
 				logs.KVL(
 					"type", TypeName(body),
 				)))
@@ -397,11 +397,11 @@ func (ctl Control) UpdateChannelNotifierConsole(ctx echo.Context) error {
 
 // @deprecated
 // @Description Update a webhook channel notifier
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel_notifier
 // @Router      /server/channel_notifier/webhook/{uuid} [put]
-// @Param       x_auth_token header string                         false "client session token"
 // @Param       uuid         path   string                         true  "Channel 의 Uuid"
 // @Param       object       body   v1.NotifierWebhook_create true  "NotifierWebhook_create"
 // @Success     200 {object} v1.NotifierWebhook
@@ -409,7 +409,7 @@ func (ctl Control) UpdateChannelNotifierWebhook(ctx echo.Context) error {
 	body := new(channelv1.NotifierWebhook_create)
 	if err := echoutil.Bind(ctx, body); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+			errors.Wrapf(ErrorBindRequestObject, "bind%s",
 				logs.KVL(
 					"type", TypeName(body),
 				)))
@@ -445,11 +445,11 @@ func (ctl Control) UpdateChannelNotifierWebhook(ctx echo.Context) error {
 
 // @deprecated
 // @Description Update a rabbitmq channel notifier
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel_notifier
 // @Router      /server/channel_notifier/rabbitmq/{uuid} [put]
-// @Param       x_auth_token header string                          false "client session token"
 // @Param       uuid         path   string                          true  "Channel 의 Uuid"
 // @Param       object       body   v1.NotifierRabbitMq_create true  "NotifierRabbitMq_create"
 // @Success     200 {object} v1.NotifierRabbitMq
@@ -457,7 +457,7 @@ func (ctl Control) UpdateChannelNotifierRabbitMq(ctx echo.Context) error {
 	body := new(channelv1.NotifierRabbitMq_create)
 	if err := echoutil.Bind(ctx, body); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+			errors.Wrapf(ErrorBindRequestObject, "bind%s",
 				logs.KVL(
 					"type", TypeName(body),
 				)))
@@ -493,17 +493,17 @@ func (ctl Control) UpdateChannelNotifierRabbitMq(ctx echo.Context) error {
 
 // @deprecated
 // @Description Delete a channel notifier console
+// @Security    XAuthToken
 // @Accept json
 // @Produce json
 // @Tags server/channel_notifier
 // @Router /server/channel_notifier/console/{uuid} [delete]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid                path   string true  "Channel 의 Uuid"
 // @Success 200
 func (ctl Control) DeleteChannelNotifierConsole(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
@@ -527,17 +527,17 @@ func (ctl Control) DeleteChannelNotifierConsole(ctx echo.Context) error {
 
 // @deprecated
 // @Description Delete a channel notifier webhook
+// @Security    XAuthToken
 // @Accept json
 // @Produce json
 // @Tags server/channel_notifier
 // @Router /server/channel_notifier/webhook/{uuid} [delete]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid                path   string true  "Channel 의 Uuid"
 // @Success 200
 func (ctl Control) DeleteChannelNotifierWebhook(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
@@ -561,17 +561,17 @@ func (ctl Control) DeleteChannelNotifierWebhook(ctx echo.Context) error {
 
 // @deprecated
 // @Description Delete a channel notifier rabbitmq
+// @Security    XAuthToken
 // @Accept json
 // @Produce json
 // @Tags server/channel_notifier
 // @Router /server/channel_notifier/rabbitmq/{uuid} [delete]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid                path   string true  "Channel 의 Uuid"
 // @Success 200
 func (ctl Control) DeleteChannelNotifierRabbitmq(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
