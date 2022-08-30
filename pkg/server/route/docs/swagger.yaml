@@ -3353,6 +3353,30 @@ paths:
             $ref: '#/definitions/v2.Session'
       tags:
       - server/session
+  /server/session/cluster/{cluster_uuid}/alive:
+    get:
+      consumes:
+      - application/json
+      description: Alive Cluster Session
+      parameters:
+      - description: client session token
+        in: header
+        name: x_auth_token
+        type: string
+      - description: Cluster Uuid
+        in: path
+        name: cluster_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      tags:
+      - server/session
   /server/template:
     get:
       consumes:

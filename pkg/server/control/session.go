@@ -90,6 +90,58 @@ func (ctl ControlVanilla) GetSession(ctx echo.Context) (err error) {
 	return ctx.JSON(http.StatusOK, session)
 }
 
+// @Description Alive Cluster Session
+// @Accept      json
+// @Produce     json
+// @Tags        server/session
+// @Router      /server/session/cluster/{cluster_uuid}/alive [get]
+// @Param       x_auth_token header string false "client session token"
+// @Param       cluster_uuid path   string true  "Cluster Uuid"
+// @Success     200 {object} boolean
+func (ctl ControlVanilla) AliveClusterSession(ctx echo.Context) (err error) {
+	const __CLUSTER_UUID__ = "cluster_uuid"
+
+	err = func() (err error) {
+		if len(echoutil.Param(ctx)[__CLUSTER_UUID__]) == 0 {
+			return errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+				logs.KVL(
+					ParamLog(__CLUSTER_UUID__, echoutil.Param(ctx)[__CLUSTER_UUID__])...,
+				))
+		}
+		return
+	}()
+	if err != nil {
+		return HttpError(err, http.StatusBadRequest)
+	}
+
+	cluster_uuid := echoutil.Param(ctx)[__CLUSTER_UUID__]
+
+	session := sessionv2.Session{}
+	session.ClusterUuid = cluster_uuid
+	cond := vanilla.And(
+		vanilla.Equal("cluster_uuid", session.ClusterUuid),
+		vanilla.IsNull("deleted"),
+	)
+	order := vanilla.Desc("expiration_time")
+	page := vanilla.Limit(1)
+	err = vanilla.Stmt.Select(session.TableName(), session.ColumnNames(), cond.Parse(), order.Parse(), page.Parse()).
+		QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
+		err = session.Scan(scan)
+
+		return
+	})
+	if err != nil {
+		return err
+	}
+
+	var expt bool = false
+	if session.ExpirationTime.Valid {
+		expt = time.Now().Before(session.ExpirationTime.Time)
+	}
+
+	return ctx.JSON(http.StatusOK, expt)
+}
+
 // Delete Session
 // @Description Delete a Session
 // @Accept      json
