@@ -3,7 +3,6 @@ package vault
 import (
 	"context"
 	"database/sql"
-	"math"
 	"sort"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
@@ -29,14 +28,7 @@ func (servicev3) GetService(
 	if 0 < len(cluster_uuid) {
 		args = append(args, vanilla.Equal("cluster_uuid", cluster_uuid))
 	}
-	if 0 < len(cluster_uuid) {
-		args = append(args, vanilla.Equal("uuid", uuid))
-	}
-
-	if len(args) == 0 {
-		err = errors.New("need more conditon")
-		return
-	}
+	args = append(args, vanilla.Equal("uuid", uuid))
 
 	cond := vanilla.And(args[0], args[1:]...)
 
@@ -95,9 +87,9 @@ func (servicev3) GetServicesPolling(
 
 	cond := vanilla.And(args[0], args[1:]...)
 
-	limit := vanilla.Limit(math.MaxInt8)
+	// limit := vanilla.Limit(math.MaxInt8)
 
-	err = vanilla.Stmt.Select(record.TableName(), record.ColumnNames(), cond.Parse(), nil, limit.Parse()).
+	err = vanilla.Stmt.Select(record.TableName(), record.ColumnNames(), cond.Parse(), nil, nil).
 		QueryRowsContext(ctx, db)(func(scan vanilla.Scanner, i int) error {
 
 		err = record.Scan(scan)
@@ -125,8 +117,16 @@ func (servicev3) GetServicesPolling(
 	for _, service := range recordSet_ {
 		records = append(records, service)
 	}
-
+	// sort by priority
 	sort.Slice(records, func(i, j int) bool {
+		return records[j].Priority < records[i].Priority
+	})
+
+	// sort by created
+	sort.Slice(records, func(i, j int) bool {
+		if records[i].Priority != records[j].Priority {
+			return false
+		}
 		return records[i].Created.Before(records[j].Created)
 	})
 
@@ -144,17 +144,8 @@ func (servicev3) GetServiceStep(
 	if 0 < len(cluster_uuid) {
 		args = append(args, vanilla.Equal("cluster_uuid", cluster_uuid))
 	}
-	if 0 < len(cluster_uuid) {
-		args = append(args, vanilla.Equal("uuid", uuid))
-	}
-	if 0 < sequence {
-		args = append(args, vanilla.Equal("sequence", sequence))
-	}
-
-	if len(args) == 0 {
-		err = errors.New("need more conditon")
-		return
-	}
+	args = append(args, vanilla.Equal("uuid", uuid))
+	args = append(args, vanilla.Equal("seq", sequence))
 
 	cond := vanilla.And(args[0], args[1:]...)
 
@@ -203,14 +194,7 @@ func (servicev3) GetServiceSteps(
 	if 0 < len(cluster_uuid) {
 		args = append(args, vanilla.Equal("cluster_uuid", cluster_uuid))
 	}
-	if 0 < len(uuid) {
-		args = append(args, vanilla.Equal("uuid", uuid))
-	}
-
-	if len(args) == 0 {
-		err = errors.New("need more conditon")
-		return
-	}
+	args = append(args, vanilla.Equal("uuid", uuid))
 
 	cond := vanilla.And(args[0], args[1:]...)
 

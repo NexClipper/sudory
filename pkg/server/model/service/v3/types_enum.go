@@ -65,6 +65,65 @@ func ParseOnCompletion(name string) (OnCompletion, error) {
 }
 
 const (
+	// PriorityLow is a Priority of type Low.
+	PriorityLow Priority = iota
+	// PriorityMiddle is a Priority of type Middle.
+	PriorityMiddle
+	// PriorityHigh is a Priority of type High.
+	PriorityHigh
+)
+
+const _PriorityName = "lowmiddlehigh"
+
+var _PriorityNames = []string{
+	_PriorityName[0:3],
+	_PriorityName[3:9],
+	_PriorityName[9:13],
+}
+
+// PriorityNames returns a list of possible string values of Priority.
+func PriorityNames() []string {
+	tmp := make([]string, len(_PriorityNames))
+	copy(tmp, _PriorityNames)
+	return tmp
+}
+
+var _PriorityMap = map[Priority]string{
+	PriorityLow:    _PriorityName[0:3],
+	PriorityMiddle: _PriorityName[3:9],
+	PriorityHigh:   _PriorityName[9:13],
+}
+
+// String implements the Stringer interface.
+func (x Priority) String() string {
+	if str, ok := _PriorityMap[x]; ok {
+		return str
+	}
+	return fmt.Sprintf("Priority(%d)", x)
+}
+
+var _PriorityValue = map[string]Priority{
+	_PriorityName[0:3]:                   PriorityLow,
+	strings.ToLower(_PriorityName[0:3]):  PriorityLow,
+	_PriorityName[3:9]:                   PriorityMiddle,
+	strings.ToLower(_PriorityName[3:9]):  PriorityMiddle,
+	_PriorityName[9:13]:                  PriorityHigh,
+	strings.ToLower(_PriorityName[9:13]): PriorityHigh,
+}
+
+// ParsePriority attempts to convert a string to a Priority.
+func ParsePriority(name string) (Priority, error) {
+	if x, ok := _PriorityValue[name]; ok {
+		return x, nil
+	}
+	// Case insensitive parse, do a separate lookup to prevent unnecessary cost of lowercasing a string if we don't need to.
+	if x, ok := _PriorityValue[strings.ToLower(name)]; ok {
+		return x, nil
+	}
+	return Priority(0), fmt.Errorf("%s is not a valid Priority, try [%s]", name, strings.Join(_PriorityNames, ", "))
+}
+
+const (
 	// ResultSaveTypeNone is a ResultSaveType of type None.
 	ResultSaveTypeNone ResultSaveType = iota
 	// ResultSaveTypeDatabase is a ResultSaveType of type Database.

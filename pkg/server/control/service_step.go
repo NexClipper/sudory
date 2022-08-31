@@ -36,13 +36,11 @@ func (ctl ControlVanilla) FindServiceStep(ctx echo.Context) error {
 
 	// find service
 	tablename := `(
-SELECT A.pdate,A.cluster_uuid,A.uuid,A.seq,A.created,A.name,A.summary,A.method,A.args,A.result_filter,A.status,A.started,A.ended
-        FROM service_step A
-    INNER JOIN service_step B
-            ON B.pdate = A.pdate AND B.cluster_uuid = A.cluster_uuid AND B.uuid = A.uuid AND B.seq = A.seq AND B.created = A.created
-            AND B.created = ( SELECT MAX(C.created)
-			                    FROM service_step C
-                               WHERE C.pdate = B.pdate AND C.cluster_uuid = B.cluster_uuid AND B.uuid = C.uuid AND B.seq = C.seq )
+SELECT A.cluster_uuid,A.uuid,A.seq,A.pdate,A.timestamp,A.name,A.summary,A.method,A.args,A.result_filter,A.status,A.started,A.ended,A.created
+       FROM service_step A
+ INNER JOIN ( SELECT C.cluster_uuid,C.uuid,C.seq,C.pdate,MAX(C.timestamp) AS timestamp FROM service_step AS C
+                     GROUP BY C.cluster_uuid,C.uuid,C.seq,C.pdate
+            ) B ON B.cluster_uuid = A.cluster_uuid AND B.uuid = A.uuid AND B.seq = A.seq AND B.pdate = A.pdate AND B.timestamp = A.timestamp 
 ) X`
 	stepSet := make(map[string]map[int]servicev3.ServiceStep)
 	step := servicev3.ServiceStep{}

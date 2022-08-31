@@ -1177,6 +1177,8 @@ definitions:
       partition_date:
         description: pk date
         type: string
+      priority:
+        type: integer
       status:
         type: integer
       step_count:
@@ -1216,6 +1218,8 @@ definitions:
       partition_date:
         description: pk date
         type: string
+      priority:
+        type: integer
       status:
         type: integer
       step_count:
@@ -1251,6 +1255,8 @@ definitions:
       partition_date:
         description: pk date
         type: string
+      priority:
+        type: integer
       status:
         type: integer
       step_count:

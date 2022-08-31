@@ -37,3 +37,11 @@ func (status StepStatus) Valid() error {
 	}
 	return errors.Errorf("invalid %v", status)
 }
+
+/* ENUM(
+	low
+	middle
+	high
+)
+*/
+type Priority int
