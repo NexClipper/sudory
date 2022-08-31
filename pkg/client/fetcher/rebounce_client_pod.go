@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/client/log"
-	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
+	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
 )
 
 func (f *Fetcher) RebounceClientPod(serviceId string) {
@@ -17,10 +17,10 @@ func (f *Fetcher) RebounceClientPod(serviceId string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	if err := f.sudoryAPI.UpdateServices(ctx, &servicev2.HttpReq_ClientServiceUpdate{
+	if err := f.sudoryAPI.UpdateServices(ctx, &servicev3.HttpReq_ClientServiceUpdate{
 		Uuid:     serviceId,
 		Sequence: 0,
-		Status:   servicev2.StepStatusProcessing,
+		Status:   servicev3.StepStatusProcessing,
 		Started:  t,
 	}); err != nil {
 		log.Errorf("SudoryClientPod Rebounce: failed to update service status(processing): error: %s\n", err.Error())
@@ -63,10 +63,10 @@ func (f *Fetcher) RebounceClientPod(serviceId string) {
 	ctx2, cancel2 := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel2()
 
-	if err := f.sudoryAPI.UpdateServices(ctx2, &servicev2.HttpReq_ClientServiceUpdate{
+	if err := f.sudoryAPI.UpdateServices(ctx2, &servicev3.HttpReq_ClientServiceUpdate{
 		Uuid:     serviceId,
 		Sequence: 0,
-		Status:   servicev2.StepStatusSuccess,
+		Status:   servicev3.StepStatusSuccess,
 		Result:   "SudoryClient pod rebounce will be complete",
 		Started:  t,
 		Ended:    time.Now(),
