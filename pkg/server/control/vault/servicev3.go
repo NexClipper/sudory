@@ -117,17 +117,15 @@ func (servicev3) GetServicesPolling(
 	for _, service := range recordSet_ {
 		records = append(records, service)
 	}
-	// sort by priority
+	// sort by priority, created
 	sort.Slice(records, func(i, j int) bool {
-		return records[j].Priority < records[i].Priority
-	})
-
-	// sort by created
-	sort.Slice(records, func(i, j int) bool {
-		if records[i].Priority != records[j].Priority {
+		if records[i].Priority > records[j].Priority {
+			return true
+		} else if records[i].Priority < records[j].Priority {
 			return false
+		} else {
+			return records[i].Created.Before(records[j].Created)
 		}
-		return records[i].Created.Before(records[j].Created)
 	})
 
 	return
