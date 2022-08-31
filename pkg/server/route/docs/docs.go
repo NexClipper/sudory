@@ -2938,6 +2938,43 @@ var doc = `{
                 }
             }
         },
+        "/server/session/cluster/{cluster_uuid}/alive": {
+            "get": {
+                "description": "Alive Cluster Session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/session"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client session token",
+                        "name": "x_auth_token",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cluster Uuid",
+                        "name": "cluster_uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
         "/server/session/{uuid}": {
             "get": {
                 "description": "Get a Session",
@@ -5189,6 +5226,9 @@ var doc = `{
                     "description": "pk date",
                     "type": "string"
                 },
+                "priority": {
+                    "type": "integer"
+                },
                 "status": {
                     "type": "integer"
                 },
@@ -5245,6 +5285,9 @@ var doc = `{
                 "partition_date": {
                     "description": "pk date",
                     "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
                 },
                 "status": {
                     "type": "integer"
@@ -5375,6 +5418,9 @@ var doc = `{
                 "partition_date": {
                     "description": "pk date",
                     "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
                 },
                 "status": {
                     "type": "integer"

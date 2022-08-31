@@ -27,6 +27,7 @@ type Service_create struct {
 	Summary           vanilla.NullString `column:"summary"            json:"summary,omitempty"            swaggertype:"string"`
 	TemplateUuid      string             `column:"template_uuid"      json:"template_uuid,omitempty"`
 	StepCount         int                `column:"step_count"         json:"step_count,omitempty"`
+	Priority          Priority           `column:"priority"           json:"priority,omitempty"`
 	SubscribedChannel vanilla.NullString `column:"subscribed_channel" json:"subscribed_channel,omitempty" swaggertype:"string"`
 	StepPosition      int                `column:"step_position"      json:"step_position,omitempty"`
 	Status            StepStatus         `column:"status"             json:"status,omitempty"`
@@ -51,6 +52,7 @@ type Service struct {
 	Summary            vanilla.NullString `column:"summary"              json:"summary,omitempty"              swaggertype:"string"`
 	TemplateUuid       string             `column:"template_uuid"        json:"template_uuid,omitempty"`
 	StepCount          int                `column:"step_count"           json:"step_count,omitempty"`
+	Priority           Priority           `column:"priority"             json:"priority,omitempty"`
 	SubscribedChannel  vanilla.NullString `column:"subscribed_channel"   json:"subscribed_channel,omitempty"   swaggertype:"string"`
 	AssignedClientUuid vanilla.NullString `column:"assigned_client_uuid" json:"assigned_client_uuid,omitempty" swaggertype:"string"`
 	StepPosition       int                `column:"step_position"        json:"step_position,omitempty"`
@@ -64,6 +66,7 @@ type Service_polling struct {
 
 	Uuid      string     `column:"uuid"`
 	Timestamp time.Time  `column:"timestamp"`
+	Priority  Priority   `column:"priority"`
 	Status    StepStatus `column:"status"`
 	Created   time.Time  `column:"created"`
 }

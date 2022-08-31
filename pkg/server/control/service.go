@@ -195,6 +195,13 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 		uuid = macro.NewUuidString()
 	}
 
+	getPriority := func(template templatev2.Template) servicev3.Priority {
+		if template.Origin == templatev2.OriginSystem.String() {
+			return servicev3.PriorityHigh // system
+		}
+		return servicev3.PriorityLow
+	}
+
 	// property service
 	service := servicev3.Service_create{}
 	service.PartitionDate = now_time
@@ -208,6 +215,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 	service.SubscribedChannel = *vanilla.NewNullString(body.SubscribedChannel)
 	service.StepPosition = 0
 	service.Status = servicev3.StepStatusRegist
+	service.Priority = getPriority(template)
 	service.Created = now_time
 
 	// create steps
@@ -292,13 +300,11 @@ func (ctl ControlVanilla) FindService(ctx echo.Context) (err error) {
 
 	// find service
 	tablename := `(
-SELECT A.pdate,A.cluster_uuid,A.uuid,A.created,A.name,A.summary,A.template_uuid,A.step_count,A.subscribed_channel,A.assigned_client_uuid,A.step_position,A.status,A.message,A.service_created
+SELECT A.cluster_uuid,A.uuid,A.pdate,A.timestamp,A.name,A.summary,A.template_uuid,A.step_count,A.priority,A.subscribed_channel,A.assigned_client_uuid,A.step_position,A.status,A.message,A.created
        FROM service A
- INNER JOIN service B
-         ON B.pdate = A.pdate AND B.cluster_uuid = A.cluster_uuid AND B.uuid = A.uuid
-        AND B.created = ( SELECT MAX(C.created)
-                            FROM service C
-                           WHERE C.pdate = B.pdate AND C.cluster_uuid = B.cluster_uuid AND B.uuid = C.uuid )
+ INNER JOIN ( SELECT C.cluster_uuid,C.uuid,C.pdate,MAX(C.timestamp) AS timestamp FROM service AS C
+                     GROUP BY C.cluster_uuid,C.uuid,C.pdate 
+            ) B ON B.cluster_uuid = A.cluster_uuid AND B.uuid = A.uuid AND B.pdate = A.pdate AND B.timestamp = A.timestamp 
 ) X`
 	serviceSet := make(map[string]servicev3.Service)
 	service := servicev3.Service{}
