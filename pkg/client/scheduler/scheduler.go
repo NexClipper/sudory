@@ -3,6 +3,7 @@ package scheduler
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/NexClipper/sudory/pkg/client/executor"
@@ -48,6 +49,15 @@ func (s *Scheduler) RegisterServices(services map[string]*service.Service) {
 			startingList = append(startingList, service)
 		}
 	}
+	sort.Slice(startingList, func(i, j int) bool {
+		if startingList[i].Priority > startingList[j].Priority {
+			return true
+		} else if startingList[i].Priority < startingList[j].Priority {
+			return false
+		} else {
+			return startingList[i].CreatedTime.Before(startingList[j].CreatedTime)
+		}
+	})
 
 	// 2. if existing service's status is ServiceStatusSuccess or ServiceStatusFailed, delete in statusMap
 	var preExistingServiceUuids []string

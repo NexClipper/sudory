@@ -5210,6 +5210,9 @@
                     "description": "pk date",
                     "type": "string"
                 },
+                "priority": {
+                    "type": "integer"
+                },
                 "status": {
                     "type": "integer"
                 },
@@ -5266,6 +5269,9 @@
                 "partition_date": {
                     "description": "pk date",
                     "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
                 },
                 "status": {
                     "type": "integer"
@@ -5396,6 +5402,9 @@
                 "partition_date": {
                     "description": "pk date",
                     "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
                 },
                 "status": {
                     "type": "integer"

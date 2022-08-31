@@ -14,6 +14,7 @@ func (Service_create) ColumnNames() []string {
  		"subscribed_channel",
  		"step_position",
  		"status",
+ 		"priority",
  		"created",
 	}
 }
@@ -32,6 +33,7 @@ func (Service) ColumnNames() []string {
  		"assigned_client_uuid",
  		"step_position",
  		"status",
+ 		"priority",
  		"message",
  		"created",
 	}
@@ -100,6 +102,7 @@ func (Service_polling) ColumnNames() []string {
  		"uuid",
  		"timestamp",
  		"status",
+ 		"priority",
  		"created",
 	}
 }
@@ -117,6 +120,7 @@ func (row Service_create) Values() []interface{} {
 		row.SubscribedChannel,
 		row.StepPosition,
 		row.Status,
+		row.Priority,
 		row.Created,
 	}
 }
@@ -135,6 +139,7 @@ func (row Service) Values() []interface{} {
 		row.AssignedClientUuid,
 		row.StepPosition,
 		row.Status,
+		row.Priority,
 		row.Message,
 		row.Created,
 	}
@@ -203,6 +208,7 @@ func (row Service_polling) Values() []interface{} {
 		row.Uuid,
 		row.Timestamp,
 		row.Status,
+		row.Priority,
 		row.Created,
 	}
 }
@@ -224,6 +230,7 @@ func (row *Service_create) Scan(scanner Scanner) error {
 		&row.SubscribedChannel,
 		&row.StepPosition,
 		&row.Status,
+		&row.Priority,
 		&row.Created,
 	)
 }
@@ -242,6 +249,7 @@ func (row *Service) Scan(scanner Scanner) error {
 		&row.AssignedClientUuid,
 		&row.StepPosition,
 		&row.Status,
+		&row.Priority,
 		&row.Message,
 		&row.Created,
 	)
@@ -310,6 +318,7 @@ func (row *Service_polling) Scan(scanner Scanner) error {
 		&row.Uuid,
 		&row.Timestamp,
 		&row.Status,
+		&row.Priority,
 		&row.Created,
 	)
 }
@@ -327,6 +336,7 @@ func (row *Service_create) Ptrs() []interface{} {
 		&row.SubscribedChannel,
 		&row.StepPosition,
 		&row.Status,
+		&row.Priority,
 		&row.Created,
 	}
 }
@@ -345,6 +355,7 @@ func (row *Service) Ptrs() []interface{} {
 		&row.AssignedClientUuid,
 		&row.StepPosition,
 		&row.Status,
+		&row.Priority,
 		&row.Message,
 		&row.Created,
 	}
@@ -413,6 +424,7 @@ func (row *Service_polling) Ptrs() []interface{} {
 		&row.Uuid,
 		&row.Timestamp,
 		&row.Status,
+		&row.Priority,
 		&row.Created,
 	}
 }

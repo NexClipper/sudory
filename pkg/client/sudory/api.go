@@ -12,7 +12,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/log"
 	authv1 "github.com/NexClipper/sudory/pkg/server/model/auth/v1"
-	servicev2 "github.com/NexClipper/sudory/pkg/server/model/service/v2"
+	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 )
 
@@ -82,8 +82,8 @@ func (s *SudoryAPI) Auth(ctx context.Context, auth *authv1.HttpReqAuth) error {
 	return nil
 }
 
-func (s *SudoryAPI) GetServices(ctx context.Context) ([]servicev2.HttpRsp_ClientServicePolling, error) {
-	var services []servicev2.HttpRsp_ClientServicePolling
+func (s *SudoryAPI) GetServices(ctx context.Context) ([]servicev3.HttpRsp_ClientServicePolling, error) {
+	var services []servicev3.HttpRsp_ClientServicePolling
 
 	token := s.GetToken()
 	if token == "" {
@@ -107,7 +107,7 @@ func (s *SudoryAPI) GetServices(ctx context.Context) ([]servicev2.HttpRsp_Client
 	return services, nil
 }
 
-func (s *SudoryAPI) UpdateServices(ctx context.Context, service *servicev2.HttpReq_ClientServiceUpdate) error {
+func (s *SudoryAPI) UpdateServices(ctx context.Context, service *servicev3.HttpReq_ClientServiceUpdate) error {
 	if service == nil {
 		return fmt.Errorf("service is nil")
 	}

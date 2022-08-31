@@ -5226,6 +5226,9 @@ var doc = `{
                     "description": "pk date",
                     "type": "string"
                 },
+                "priority": {
+                    "type": "integer"
+                },
                 "status": {
                     "type": "integer"
                 },
@@ -5282,6 +5285,9 @@ var doc = `{
                 "partition_date": {
                     "description": "pk date",
                     "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
                 },
                 "status": {
                     "type": "integer"
@@ -5412,6 +5418,9 @@ var doc = `{
                 "partition_date": {
                     "description": "pk date",
                     "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
                 },
                 "status": {
                     "type": "integer"
