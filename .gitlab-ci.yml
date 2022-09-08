@@ -2,7 +2,7 @@ variables:
   DOCKER_DRIVER: overlay
   APP_DOCKERFILE_LOCATION: "Dockerfile"
   APP_IMAGE_NAME: "nexclipper-sudory"
-  APP_VERSION: "0.2.66"
+  APP_VERSION: "0.2.70"
 
 default:
   services:
