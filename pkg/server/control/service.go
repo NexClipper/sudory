@@ -183,7 +183,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 			}
 			return
 		}
-		if iter_verr(); err != nil {
+		if err := iter_verr(); err != nil {
 			return HttpError(err, http.StatusBadRequest)
 		}
 	}
