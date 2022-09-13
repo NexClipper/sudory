@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"sort"
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/client/log"
@@ -89,18 +88,22 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 
 	// polling limit filter
 	polling_filter := newPollingFilter(cluster.PoliingLimit)
-	polling_keys, services, steps, err := pollingService(ctx.Request().Context(), ctl, claims.ClusterUuid, polling_offest, polling_filter)
+	services, steps, err := pollingService(ctx.Request().Context(), ctl, claims.ClusterUuid, polling_offest, polling_filter)
 
 	// set polling_offest
-	// sort by created
-	sort.Slice(polling_keys, func(i, j int) bool {
-		return polling_keys[i].Created.Before(polling_keys[j].Created)
-	})
+	var polling_offest_ time.Time
+	for _, service := range services {
+		if polling_offest_.IsZero() {
+			polling_offest_ = service.Created
+		}
 
-	for _, polling_key := range polling_keys {
-		// get first
-		polling_offest = *vanilla.NewNullTime(polling_key.Created)
-		break
+		if polling_offest_.After(service.Created) {
+			polling_offest_ = service.Created
+		}
+	}
+
+	if !polling_offest_.IsZero() {
+		polling_offest = *vanilla.NewNullTime(polling_offest_)
 	}
 
 	// save polling_count to cluster_infomation
@@ -917,10 +920,10 @@ func newPollingFilter(limit int) PollingFilter {
 func pollingService(ctx context.Context, tx vanilla.Preparer,
 	cluster_uuid string, polling_offest vanilla.NullTime,
 	polling_filter PollingFilter,
-) (polling_keys []servicev3.Service_polling, services []servicev3.Service, steps map[string][]servicev3.ServiceStep, err error) {
+) (services []servicev3.Service, steps map[string][]servicev3.ServiceStep, err error) {
 
 	// check polling
-	polling_keys, err = vault.Servicev3.GetServicesPolling(ctx, tx, cluster_uuid, polling_offest)
+	polling_keys, err := vault.Servicev3.GetServicesPolling(ctx, tx, cluster_uuid, polling_offest)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to found services%v", logs.KVL(
 			"cluster_uuid", cluster_uuid,
@@ -938,7 +941,7 @@ func pollingService(ctx context.Context, tx vanilla.Preparer,
 	}
 
 	// get polling service detail
-	services = make([]servicev3.Service, 0, len(polling_keys))
+	services = make([]servicev3.Service, 0, len(filtered_keys))
 	for _, service_key := range filtered_keys {
 		var service *servicev3.Service
 		service, err = vault.Servicev3.GetService(ctx, tx, cluster_uuid, service_key.Uuid)
