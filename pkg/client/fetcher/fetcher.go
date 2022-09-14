@@ -192,6 +192,11 @@ func (f *Fetcher) CatchSudoryClientService(services map[string]*service.Service)
 				case "sudory.client_pod.rebounce":
 					exist = true
 					f.RebounceClientPod(svc.Id)
+				case "sudory.client.upgrade":
+					exist = true
+					f.UpgradeClient(svc.Id, step.Command.Args)
+				}
+				if exist {
 					return exist
 				}
 			}
