@@ -95,6 +95,10 @@ func GetClient() (*Client, error) {
 	return k8sClient, nil
 }
 
+func (c *Client) GetK8sClientset() *kubernetes.Clientset {
+	return c.client
+}
+
 func (c *Client) RawRequest() *rawRequest {
 	return newRawRequest(c)
 }
