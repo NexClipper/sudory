@@ -71,6 +71,16 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		e.Use(echoServiceLogger(config.LoggerInfoOutput))
 	}
 
+	// enable request 'Content-Encoding' header handler
+	if true {
+		e.Use(middleware.Decompress())
+	}
+
+	// enable response 'Content-Encoding' header handler
+	if true {
+		e.Use(middleware.Gzip())
+	}
+
 	//echo error handler
 	e.HTTPErrorHandler = func(err error, ctx echo.Context) {
 		echoErrorResponder(err, ctx)
@@ -107,15 +117,15 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		// /server/template*
 		group.GET("/server/template", ctl.FindTemplate)
 		group.GET("/server/template/:uuid", ctl.GetTemplate)
-		group.POST("/server/template", controller.CreateTemplate)
-		group.PUT("/server/template/:uuid", controller.UpdateTemplate)
-		group.DELETE("/server/template/:uuid", controller.DeleteTemplate)
+		// group.POST("/server/template", controller.CreateTemplate)
+		// group.PUT("/server/template/:uuid", ctl.UpdateTemplate)
+		// group.DELETE("/server/template/:uuid", controller.DeleteTemplate)
 		// /server/template/:template_uuid/command*
 		group.GET("/server/template/:template_uuid/command", ctl.ListTemplateCommand)
 		group.GET("/server/template/:template_uuid/command/:uuid", ctl.GetTemplateCommand)
-		group.POST("/server/template/:template_uuid/command", controller.CreateTemplateCommand)
-		group.PUT("/server/template/:template_uuid/command/:uuid", controller.UpdateTemplateCommand)
-		group.DELETE("/server/template/:template_uuid/command/:uuid", controller.DeleteTemplateCommand)
+		// group.POST("/server/template/:template_uuid/command", controller.CreateTemplateCommand)
+		// group.PUT("/server/template/:template_uuid/command/:uuid", controller.UpdateTemplateCommand)
+		// group.DELETE("/server/template/:template_uuid/command/:uuid", controller.DeleteTemplateCommand)
 		// /server/template_recipe*
 		group.GET("/server/template_recipe", ctl.FindTemplateRecipe)
 
