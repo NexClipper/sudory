@@ -12,6 +12,7 @@ import (
 
 var (
 	TableNameWithTenant = tableNameWithTenant()
+	TenantTableName     = tenantTableName()
 )
 
 func tableNameWithTenant() func(tenant_hash string) string {
@@ -51,5 +52,46 @@ func tableNameWithTenant() func(tenant_hash string) string {
 
 	return func(tenant_hash string) string {
 		return fmt.Sprintf(format, tenant_hash)
+	}
+}
+
+func tenantTableName() func(cluster_uuid string) string {
+	var C = Cluster{}
+	var TC = tenantv3.TenantClusters{}
+	var T = tenantv3.Tenant{}
+
+	aliasC := C.TableName()
+	aliasTC := TC.TableName()
+	aliasT := T.TableName()
+
+	columninfos := ice_cream_maker.ParseColumnTag(reflect.TypeOf(T), ice_cream_maker.ParseColumnTag_opt{})
+
+	columns := make([]string, 0, len(columninfos))
+	for i := range columninfos {
+		columns = append(columns, columninfos[i].Name)
+	}
+
+	columns = slicestrings.Map(columns, func(s string, i int) string {
+		return aliasT + "." + s
+	})
+
+	tables := []string{aliasC, aliasTC, aliasT}
+
+	conds := []string{
+		fmt.Sprintf("%v.uuid = '%%v'", aliasC),
+		fmt.Sprintf("%v.deleted IS NULL", aliasC),
+		fmt.Sprintf("%v.cluster_id =  %v.id", aliasTC, aliasC),
+		fmt.Sprintf("%v.id = %v.tenant_id", aliasT, aliasTC),
+	}
+
+	format := fmt.Sprintf("( SELECT %v FROM %v WHERE %v ) X",
+		strings.Join(columns, ", "),
+		// aliasC,
+		strings.Join(tables, ", "),
+		strings.Join(conds, " AND "),
+	)
+
+	return func(cluster_uuid string) string {
+		return fmt.Sprintf(format, cluster_uuid)
 	}
 }

@@ -44,12 +44,6 @@ func (tc TenantClusters) TableName() string {
 	return "tenant_clusters"
 }
 
-// func (TenantClusters) TableNameWithTenant(tenant_hash string, cluster_uuid string) string {
-// 	return fmt.Sprintf("( SELECT tenant_clusters.* FROM tenant_clusters, tenant WHERE tenant_clusters.tenant_id = tenant.id AND tenant.deleted IS NULL AND tenant.hash = %v ) x",
-// 		tenant_hash,
-// 	)
-// }
-
 // TenantChannels
 // Tenant(1): Channel(1)
 type TenantChannels struct {

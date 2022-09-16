@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
@@ -518,7 +519,7 @@ func (ctl ControlVanilla) GetChannelNotifierEdge(ctx echo.Context) (err error) {
 	}
 
 	// get edge
-	notifier_edge, err := vault.GetChannelNotifierEdge(ctl.DB, ctl.Dialect(), ctx.Request().Context(), edge)
+	notifier_edge, err := vault.GetChannelNotifierEdge(ctx.Request().Context(), ctl.DB, ctl.Dialect(), edge)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get channel notifier edge")
 	}
@@ -673,6 +674,7 @@ func (ctl ControlVanilla) UpdateChannelNotifierRabbitMq(ctx echo.Context) (err e
 		return HttpError(err, http.StatusBadRequest)
 	}
 
+	body.Url = strings.TrimSpace(body.Url)
 	if len(body.Url) == 0 {
 		err = ErrorInvalidRequestParameter
 	}
@@ -704,6 +706,13 @@ func (ctl ControlVanilla) UpdateChannelNotifierRabbitMq(ctx echo.Context) (err e
 		))
 	if err != nil {
 		return HttpError(err, http.StatusBadRequest)
+	}
+
+	// vaild RabbitMq config
+	if body.Valid() != nil {
+		return HttpError(
+			errors.Wrapf(err, "failed to vaild RabbitMq config"),
+			http.StatusBadRequest)
 	}
 
 	// get tenant claims
@@ -778,6 +787,9 @@ func (ctl ControlVanilla) UpdateChannelNotifierWebhook(ctx echo.Context) (err er
 		return HttpError(err, http.StatusBadRequest)
 	}
 
+	body.Method = strings.TrimSpace(body.Method)
+	body.Url = strings.TrimSpace(body.Url)
+
 	if len(body.Method) == 0 {
 		err = ErrorInvalidRequestParameter
 	}
@@ -809,6 +821,13 @@ func (ctl ControlVanilla) UpdateChannelNotifierWebhook(ctx echo.Context) (err er
 		))
 	if err != nil {
 		return HttpError(err, http.StatusBadRequest)
+	}
+
+	// vaild Webhook config
+	if body.Valid() != nil {
+		return HttpError(
+			errors.Wrapf(err, "failed to vaild Webhook config"),
+			http.StatusBadRequest)
 	}
 
 	// get tenant claims
@@ -891,6 +910,7 @@ func (ctl ControlVanilla) UpdateChannelNotifierSlackhook(ctx echo.Context) (err 
 		return HttpError(err, http.StatusBadRequest)
 	}
 
+	body.Url = strings.TrimSpace(body.Url)
 	if len(body.Url) == 0 {
 		err = ErrorInvalidRequestParameter
 	}
@@ -911,6 +931,13 @@ func (ctl ControlVanilla) UpdateChannelNotifierSlackhook(ctx echo.Context) (err 
 		))
 	if err != nil {
 		return HttpError(err, http.StatusBadRequest)
+	}
+
+	// vaild SlackWebhook config
+	if body.Valid() != nil {
+		return HttpError(
+			errors.Wrapf(err, "failed to vaild SlackWebhook config"),
+			http.StatusBadRequest)
 	}
 
 	// get tenant claims

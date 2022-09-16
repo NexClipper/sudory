@@ -6,8 +6,8 @@ func (ConsoleConfig) Type() NotifierType {
 	return NotifierTypeConsole
 }
 
-func (ConsoleConfig) Valid() bool {
-	return true
+func (ConsoleConfig) Valid() error {
+	return nil
 }
 
 type NotifierConsole_update = ConsoleConfig

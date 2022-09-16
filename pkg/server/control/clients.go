@@ -30,6 +30,7 @@ import (
 	clustertokenv3 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v3"
 	cryptov2 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v2"
 	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
+	tenantv3 "github.com/NexClipper/sudory/pkg/server/model/tenant/v3"
 
 	sessionv3 "github.com/NexClipper/sudory/pkg/server/model/session/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
@@ -194,6 +195,26 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 		i++
 	}
 
+	// get tenent by cluster_uuid
+	var tenant tenantv3.Tenant
+	tenant_table := clusterv3.TenantTableName(claims.ClusterUuid)
+	tenant_cond := stmt.And(
+		stmt.IsNull("deleted"),
+	)
+	err = stmtex.Select(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil).
+		QueryRowsContext(ctx.Request().Context(), ctl.DB, ctl.Dialect())(
+		func(scan stmtex.Scanner, _ int) error {
+			err := tenant.Scan(scan)
+			if err != nil {
+				return errors.Wrapf(err, "failed to scan")
+			}
+
+			return nil
+		})
+	if err != nil {
+		return errors.Wrapf(err, "failed to get a tenent by cluster_uuid")
+	}
+
 	// invoke event (service-poll-out)
 	for _, service := range rsp {
 		const event_name = "service-poll-out"
@@ -214,7 +235,8 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 		event.Invoke(event_name, m)
 		managed_event.Invoke(event_name, m)
 		// invoke event by event category
-		managed_channel.InvokeByEventCategory(channelv3.EventCategoryServicePollingOut, m)
+
+		managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryServicePollingOut, m)
 	}
 
 	return ctx.JSON(http.StatusOK, rsp)
@@ -394,6 +416,26 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		return err
 	}
 
+	// get tenent by cluster_uuid
+	var tenant tenantv3.Tenant
+	tenant_table := clusterv3.TenantTableName(claims.ClusterUuid)
+	tenant_cond := stmt.And(
+		stmt.IsNull("deleted"),
+	)
+	err = stmtex.Select(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil).
+		QueryRowsContext(ctx.Request().Context(), ctl.DB, ctl.Dialect())(
+		func(scan stmtex.Scanner, _ int) error {
+			err := tenant.Scan(scan)
+			if err != nil {
+				return errors.Wrapf(err, "failed to scan")
+			}
+
+			return nil
+		})
+	if err != nil {
+		return errors.Wrapf(err, "failed to get a tenent by cluster_uuid")
+	}
+
 	// invoke event (service-poll-in)
 	const event_name = "service-poll-in"
 	m := map[string]interface{}{}
@@ -419,22 +461,23 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	// invoke event by channel uuid
 	if 0 < len(service.SubscribedChannel.String) {
 		// find channel
-		mc := channelv3.ManagedChannel{}
-		mc.Uuid = service.SubscribedChannel.String
-		mc_cond := stmt.And(
-			stmt.Equal("uuid", mc.Uuid),
+		channel := channelv3.ManagedChannel{}
+		channel.Uuid = service.SubscribedChannel.String
+		channel_cond := stmt.And(
+			stmt.Equal("uuid", channel.Uuid),
 			stmt.IsNull("deleted"),
 		)
-		found, err := stmtex.ExistContext(mc.TableName(), mc_cond)(context.Background(), ctl, ctl.Dialect())
+		channel_table := channelv3.TableNameWithTenant_ManagedChannel(tenant.Hash)
+		found, err := stmtex.ExistContext(channel_table, channel_cond)(context.Background(), ctl, ctl.Dialect())
 		if err != nil {
 			return err
 		}
 		if found {
-			managed_channel.InvokeByChannelUuid(service.SubscribedChannel.String, m)
+			managed_channel.InvokeByChannelUuid(tenant.Hash, service.SubscribedChannel.String, m)
 		}
 	}
 	// invoke event by event category
-	managed_channel.InvokeByEventCategory(channelv3.EventCategoryServicePollingIn, m)
+	managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryServicePollingIn, m)
 
 	return ctx.JSON(http.StatusOK, OK())
 }
@@ -565,6 +608,26 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	//save token to header
 	ctx.Response().Header().Set(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, token_string)
 
+	// get tenent by cluster_uuid
+	var tenant tenantv3.Tenant
+	tenant_table := clusterv3.TenantTableName(cluster.Uuid)
+	tenant_cond := stmt.And(
+		stmt.IsNull("deleted"),
+	)
+	err = stmtex.Select(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil).
+		QueryRowsContext(ctx.Request().Context(), ctl.DB, ctl.Dialect())(
+		func(scan stmtex.Scanner, _ int) error {
+			err := tenant.Scan(scan)
+			if err != nil {
+				return errors.Wrapf(err, "failed to scan")
+			}
+
+			return nil
+		})
+	if err != nil {
+		return errors.Wrapf(err, "failed to get a tenent by cluster_uuid")
+	}
+
 	//invoke event (client-auth-accept)
 	const event_name = "client-auth-accept"
 	m := map[string]interface{}{
@@ -575,7 +638,7 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	event.Invoke(event_name, m)
 	managed_event.Invoke(event_name, m)
 	// invoke event by event category
-	managed_channel.InvokeByEventCategory(channelv3.EventCategoryClientAuthAccept, m)
+	managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryClientAuthAccept, m)
 
 	return ctx.JSON(http.StatusOK, OK())
 }

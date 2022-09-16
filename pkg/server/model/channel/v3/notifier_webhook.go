@@ -1,6 +1,9 @@
 package v3
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 )
 
@@ -16,8 +19,16 @@ func (WebhookConfig) Type() NotifierType {
 	return NotifierTypeWebhook
 }
 
-func (cfg WebhookConfig) Valid() bool {
-	return true
+func (cfg WebhookConfig) Valid() error {
+	const http = "http://"
+	const https = "https://"
+	if strings.Index(cfg.Url, http) != 0 && strings.Index(cfg.Url, https) != 0 {
+		return fmt.Errorf("url is not an expression of the Webhook protocol")
+	}
+	if len(cfg.Method) == 0 {
+		return fmt.Errorf("missing method")
+	}
+	return nil
 }
 
 type NotifierWebhook_update = WebhookConfig

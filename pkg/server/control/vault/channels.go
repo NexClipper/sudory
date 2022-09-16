@@ -194,7 +194,7 @@ func GetManagedChannel(db *sql.DB, dialect string, ctx context.Context, uuid str
 				return err
 			}
 
-			edge_options, err := GetChannelNotifierEdge(db, dialect, ctx, edge)
+			edge_options, err := GetChannelNotifierEdge(ctx, db, dialect, edge)
 			if err != nil {
 				return err
 			}
@@ -214,7 +214,7 @@ func GetManagedChannel(db *sql.DB, dialect string, ctx context.Context, uuid str
 	return rst, nil
 }
 
-func GetChannelNotifierEdge(db *sql.DB, dialect string, ctx context.Context, edge channelv3.NotifierEdge) (*channelv3.HttpRsp_ManagedChannel_NotifierEdge, error) {
+func GetChannelNotifierEdge(ctx context.Context, db *sql.DB, dialect string, edge channelv3.NotifierEdge) (*channelv3.HttpRsp_ManagedChannel_NotifierEdge, error) {
 	var err error
 	var rsp = new(channelv3.HttpRsp_ManagedChannel_NotifierEdge)
 

@@ -109,7 +109,7 @@ import (
 // 	// command := body.TemplateCommand
 // 	template_uuid := echoutil.Param(ctx)[__TEMPLATE_UUID__]
 
-// 	//vailed template
+// 	//vaild template
 // 	_, err := ctl.Scope(func(db database.Context) (interface{}, error) {
 // 		if _, err := vault.NewTemplate(db).Get(template_uuid); err != nil {
 // 			return nil, errors.Wrapf(err, "valid%s",

@@ -1,6 +1,9 @@
 package v3
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 )
 
@@ -38,8 +41,16 @@ func (RabbitMqConfig) Type() NotifierType {
 	return NotifierTypeRabbitmq
 }
 
-func (cfg RabbitMqConfig) Valid() bool {
-	return true
+func (cfg RabbitMqConfig) Valid() error {
+	const protocol = "amqp://"
+	if strings.Index(cfg.Url, protocol) != 0 {
+		return fmt.Errorf("url is not an expression of the RabbitMQ protocol")
+	}
+	if len(cfg.ChannelPublish.Exchange.String) == 0 &&
+		len(cfg.ChannelPublish.RoutingKey.String) == 0 {
+		return fmt.Errorf("missing exchange or routing-key")
+	}
+	return nil
 }
 
 type NotifierRabbitMq_update = RabbitMqConfig
