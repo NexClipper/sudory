@@ -640,10 +640,10 @@ func (ctl ControlVanilla) UpdateChannelNotifierConsole(ctx echo.Context) (err er
 		return err
 	})
 	if err != nil {
-		return errors.Wrapf(err, "failed to set a console notifier")
+		return errors.Wrapf(err, "failed to set a Console notifier")
 	}
 	if edge == nil {
-		return errors.Wrapf(database.ErrorRecordWasNotFound, "failed to set a console notifier")
+		return errors.Wrapf(database.ErrorRecordWasNotFound, "failed to set a Console notifier")
 	}
 
 	rsp := channelv3.NotifierEdge_option{
@@ -709,7 +709,7 @@ func (ctl ControlVanilla) UpdateChannelNotifierRabbitMq(ctx echo.Context) (err e
 	}
 
 	// vaild RabbitMq config
-	if body.Valid() != nil {
+	if err := body.Valid(); err != nil {
 		return HttpError(
 			errors.Wrapf(err, "failed to vaild RabbitMq config"),
 			http.StatusBadRequest)
@@ -753,10 +753,10 @@ func (ctl ControlVanilla) UpdateChannelNotifierRabbitMq(ctx echo.Context) (err e
 		return err
 	})
 	if err != nil {
-		return errors.Wrapf(err, "failed to set a console notifier")
+		return errors.Wrapf(err, "failed to set a RabbitMq notifier")
 	}
 	if edge == nil {
-		return errors.Wrapf(database.ErrorRecordWasNotFound, "failed to set a console notifier")
+		return errors.Wrapf(database.ErrorRecordWasNotFound, "failed to set a RabbitMq notifier")
 	}
 
 	rsp := channelv3.NotifierEdge_option{
@@ -824,7 +824,7 @@ func (ctl ControlVanilla) UpdateChannelNotifierWebhook(ctx echo.Context) (err er
 	}
 
 	// vaild Webhook config
-	if body.Valid() != nil {
+	if err := body.Valid(); err != nil {
 		return HttpError(
 			errors.Wrapf(err, "failed to vaild Webhook config"),
 			http.StatusBadRequest)
@@ -876,10 +876,10 @@ func (ctl ControlVanilla) UpdateChannelNotifierWebhook(ctx echo.Context) (err er
 		return err
 	})
 	if err != nil {
-		return errors.Wrapf(err, "failed to set a console notifier")
+		return errors.Wrapf(err, "failed to set a Webhook notifier")
 	}
 	if edge == nil {
-		return errors.Wrapf(database.ErrorRecordWasNotFound, "failed to set a console notifier")
+		return errors.Wrapf(database.ErrorRecordWasNotFound, "failed to set a Webhook notifier")
 	}
 
 	rsp := channelv3.NotifierEdge_option{
@@ -934,7 +934,7 @@ func (ctl ControlVanilla) UpdateChannelNotifierSlackhook(ctx echo.Context) (err 
 	}
 
 	// vaild SlackWebhook config
-	if body.Valid() != nil {
+	if err := body.Valid(); err != nil {
 		return HttpError(
 			errors.Wrapf(err, "failed to vaild SlackWebhook config"),
 			http.StatusBadRequest)
@@ -984,10 +984,10 @@ func (ctl ControlVanilla) UpdateChannelNotifierSlackhook(ctx echo.Context) (err 
 		return err
 	})
 	if err != nil {
-		return errors.Wrapf(err, "failed to set a console notifier")
+		return errors.Wrapf(err, "failed to set a SlackHook notifier")
 	}
 	if edge == nil {
-		return errors.Wrapf(database.ErrorRecordWasNotFound, "failed to set a console notifier")
+		return errors.Wrapf(database.ErrorRecordWasNotFound, "failed to set a SlackHook notifier")
 	}
 
 	rsp := channelv3.NotifierEdge_option{
