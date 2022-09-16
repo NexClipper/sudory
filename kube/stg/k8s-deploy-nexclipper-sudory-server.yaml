@@ -97,6 +97,7 @@ spec:
       containers:
         - name: ${APP_IMAGE_NAME}
           image: ${IMG_TAG_TO_DEPLOY}
+          imagePullPolicy: Always
           ports:
             - containerPort: 8099
           resources: {}
