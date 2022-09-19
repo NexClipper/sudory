@@ -12,17 +12,19 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/k8s"
 	"github.com/NexClipper/sudory/pkg/client/p8s"
 	"github.com/NexClipper/sudory/pkg/client/service"
+	"github.com/NexClipper/sudory/pkg/client/sudoryclient"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 )
 
 type CommandType int
 
 const (
-	CommandTypeK8s = iota + 1
+	CommandTypeK8s CommandType = iota + 1
 	CommandTypeP8s
 	CommandTypeHelm
 	CommandTypeJq
 	CommandTypeAlertManager
+	CommandTypeSudoryclient
 )
 
 func (ct CommandType) String() string {
@@ -36,6 +38,8 @@ func (ct CommandType) String() string {
 		return "jq"
 	} else if ct == CommandTypeAlertManager {
 		return "alertmanager"
+	} else if ct == CommandTypeSudoryclient {
+		return "sudory"
 	}
 
 	return "Unknown CommandType"
@@ -61,6 +65,8 @@ func NewCommander(command *service.StepCommand) (Commander, error) {
 		return NewJqCommander(command)
 	case "alertmanager":
 		return NewAlertManagerCommander(command)
+	case "sudory":
+		return NewSudoryclientCommander(command)
 	}
 
 	return nil, fmt.Errorf("unknown command method(%s)", command.Method)
@@ -273,14 +279,14 @@ func NewAlertManagerCommander(command *service.StepCommand) (Commander, error) {
 }
 
 func (c *AlertManagerCommander) GetCommandType() CommandType {
-	return CommandTypeP8s
+	return CommandTypeAlertManager
 }
 
 func (c *AlertManagerCommander) ParseCommand(command *service.StepCommand) error {
 	mlist := strings.SplitN(command.Method, ".", 4)
 
 	if len(mlist) != 4 {
-		return fmt.Errorf("there is not enough method(%s) for alertmanager. want(3) but got(%d)", command.Method, len(mlist))
+		return fmt.Errorf("there is not enough method(%s) for alertmanager. want(4) but got(%d)", command.Method, len(mlist))
 	}
 
 	c.api = mlist[1]
@@ -305,4 +311,50 @@ func (c *AlertManagerCommander) ParseCommand(command *service.StepCommand) error
 
 func (c *AlertManagerCommander) Run() (string, error) {
 	return c.client.ApiRequest(c.apiVersion, c.api, c.verb, c.params)
+}
+
+type SudoryclientCommander struct {
+	client *sudoryclient.Client
+	api    string
+	verb   string
+	params map[string]interface{}
+}
+
+func NewSudoryclientCommander(command *service.StepCommand) (Commander, error) {
+	cmdr := &SudoryclientCommander{}
+
+	if err := cmdr.ParseCommand(command); err != nil {
+		return nil, err
+	}
+
+	return cmdr, nil
+}
+
+func (c *SudoryclientCommander) GetCommandType() CommandType {
+	return CommandTypeSudoryclient
+}
+
+func (c *SudoryclientCommander) ParseCommand(command *service.StepCommand) error {
+	mlist := strings.SplitN(command.Method, ".", 3)
+
+	if len(mlist) != 3 {
+		return fmt.Errorf("there is not enough method(%s) for sudoryclient. want(3) but got(%d)", command.Method, len(mlist))
+	}
+
+	c.api = mlist[1]
+	c.verb = mlist[2]
+	c.params = command.Args
+
+	client, err := sudoryclient.NewClient()
+	if err != nil {
+		return err
+	}
+
+	c.client = client
+
+	return nil
+}
+
+func (c *SudoryclientCommander) Run() (string, error) {
+	return c.client.Request(c.api, c.verb, c.params)
 }

@@ -25,6 +25,7 @@ type Client struct {
 	mclient        monitoringclient.Interface
 	apiextv1client apiextensionsv1.Interface
 	aggrev1client  aggregatorv1.Interface
+	restconfig     *rest.Config
 }
 
 func getClusterConfig() (*rest.Config, error) {
@@ -82,7 +83,7 @@ func NewClient() (*Client, error) {
 		return nil, err
 	}
 
-	k8sClient = &Client{client: clientset, mclient: mclient, apiextv1client: apiextv1client, aggrev1client: aggrev1client}
+	k8sClient = &Client{client: clientset, mclient: mclient, apiextv1client: apiextv1client, aggrev1client: aggrev1client, restconfig: cfg}
 
 	return k8sClient, nil
 }
@@ -93,6 +94,10 @@ func GetClient() (*Client, error) {
 	}
 
 	return k8sClient, nil
+}
+
+func (c *Client) GetK8sClientset() *kubernetes.Clientset {
+	return c.client
 }
 
 func (c *Client) RawRequest() *rawRequest {
@@ -121,6 +126,11 @@ func (c *Client) ResourceRequest(gv schema.GroupVersion, resource, verb string, 
 		}
 	case "patch":
 		result, err = c.ResourcePatch(gv, resource, args)
+		if err != nil {
+			break
+		}
+	case "exec":
+		result, err = c.ResourceExec(gv, resource, args)
 		if err != nil {
 			break
 		}
