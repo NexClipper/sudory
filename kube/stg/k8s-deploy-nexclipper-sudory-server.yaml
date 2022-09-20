@@ -79,8 +79,6 @@ spec:
         vault.hashicorp.com/agent-inject-secret-ncdb-admin-login: 'kv/database/ncdb'
         vault.hashicorp.com/agent-inject-template-ncdb-admin-login: |
           {{- with secret "kv/database/ncdb" -}}
-          SUDORY_DB_ROOT_USERNAME={{ .Data.data.username }}
-          SUDORY_DB_ROOT_PASSWORD={{ .Data.data.password }}
           SUDORY_DB_SERVER_USERNAME={{ .Data.data.server_username }}
           SUDORY_DB_SERVER_PASSWORD={{ .Data.data.server_password }}
           {{- end -}}
