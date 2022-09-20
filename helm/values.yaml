@@ -17,7 +17,6 @@ server:
       SUDORY_DB_PORT: "3306"
       SUDORY_DB_SCHEME: "nc_sudory"
       SUDORY_DB_EXPORT_PATH: "."
-      SUDORY_DB_ROOT_USERNAME: "root"
       SUDORY_DB_SERVER_USERNAME: "user"
       SUDORY_LOG_SEVERITY: "info"
       SUDORY_LOG_SYSTEM_EVENT: "false"
@@ -30,92 +29,12 @@ server:
       SUDORY_LOG_COMPRESS: "false"
   secret_variable:
     data:
-      db_root_password: ""
       db_server_password: ""
 
   serverrule:
     enabled: false
     data:
-      events.yml: |
-         events:
-         - event:
-           name: 'service-poll-in'
-           update-interval: 5s
-           notifiers:
-           - notifier:
-             type: console
-           - notifier:
-             type: 'rabbitmq'
-             url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
-             exchange: ''
-             routing-key: 'event'
-         - event:
-           name: 'service-poll-out'
-           update-interval: 5s
-           notifiers:
-           - notifier:
-             type: console
-           - notifier:
-             type: 'rabbitmq'
-             url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
-             exchange: ''
-             routing-key: 'event'
-         - event:
-           name: 'client-auth-accept'
-           update-interval: 5s
-           notifiers:
-           - notifier:
-             type: console
-           - notifier:
-             type: 'rabbitmq'
-             url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
-             exchange: ''
-             routing-key: 'client'
-         - event:
-           name: 'nc_metric'
-           update-interval: 5s
-           notifiers:
-           - notifier:
-             type: console
-           - notifier:
-             type: 'rabbitmq'
-             url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
-             exchange: ''
-             routing-key: 'nc_metric'
-         - event:
-           name: 'nc_metric_received'
-           update-interval: 5s
-           notifiers:
-           - notifier:
-             type: console
-           - notifier:
-             type: 'rabbitmq'
-             url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
-             exchange: ''
-             routing-key: 'nc_metric_received'
-         - event:
-           name: 'nc_resource'
-           update-interval: 5s
-           notifiers:
-           - notifier:
-             type: console
-           - notifier:
-             type: 'rabbitmq'
-             url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
-             exchange: ''
-             routing-key: 'nc_resource'
-         - event:
-           name: 'nc_alert'
-           update-interval: 5s
-           notifiers:
-           - notifier:
-             type: console
-           - notifier:
-             type: 'rabbitmq'
-             url: 'amqp://nexclipper:nexclipper@ncmq-rabbitmq.rabbitmq.svc.cluster.local:5672/nexclipper'
-             exchange: ''
-             routing-key: 'nc_alert'
-      enigma.yml: |
+     enigma.yml: |
        enigma:
          sudory.default.crypto:
            block-method: none

@@ -13,7 +13,6 @@ data:
   db_port: "3306"
   db_scheme: "sudory"
   db_export_path: "."
-  db_root_username: "root"
   db_server_username: "sudory"
   log_severity: "info"
   log_system_event: "false"
@@ -32,5 +31,4 @@ metadata:
   namespace: sudory
 type: Opaque
 data:
-  db_root_password: ""
   db_server_password: ""
