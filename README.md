@@ -74,7 +74,7 @@ Use manifest files in this github to install Server & Client.
 
 ### Server
 
-You need to have MariaDB 10.0 and above to install sudoRy server. Recommand using bitnami Mariadb helm chart to install Mariadb in your Kubernetes cluster. Once you install Mariadb and get host/port/root/user informatin to configre in "environment.yaml". 
+You need to have MariaDB 10.0 and above to install sudoRy server. Recommand using bitnami Mariadb helm chart to install Mariadb in your Kubernetes cluster. Once you install Mariadb and get host/port/user informatin to configre in "environment.yaml". 
 
 ```console
 data:
@@ -82,7 +82,6 @@ data:
   db_port: "3306"
   db_scheme: "sudory"
   db_export_path: "."
-  db_root_username: "root"
   db_server_username: "sudory"
 ```
 
@@ -95,7 +94,6 @@ metadata:
   namespace: sudory
 type: Opaque
 data:
-  db_root_password: 
   db_server_password: 
 
 ```

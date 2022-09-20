@@ -17,7 +17,6 @@ RUN mkdir -p ${WORKDIR}/migrations/sudory
 
 
 COPY /bin/server/sudory-server ${WORKDIR}/
-COPY /conf/script/server/init-db.sh ${WORKDIR}/
 COPY /conf/sudory-server.yml ${WORKDIR}/conf/
 COPY /conf/enigma.yml ${WORKDIR}/conf/rules/
 COPY /conf/script/migrations/sudory  ${WORKDIR}/conf/migrations/sudory
@@ -25,7 +24,6 @@ COPY docker-entrypoint.sh ${WORKDIR}/
 
 
 RUN chmod +x  ${WORKDIR}/docker-entrypoint.sh
-RUN chmod +x  ${WORKDIR}/init-db.sh
 
 # RUN addgroup ${GROUP} && \
 #     adduser -D ${USER} -g ${GROUP} -u ${USER_ID} && \
@@ -36,5 +34,3 @@ RUN chmod +x  ${WORKDIR}/init-db.sh
 EXPOSE 8099
 
 ENTRYPOINT [ "sh","./docker-entrypoint.sh" ]
-
-

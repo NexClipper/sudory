@@ -407,21 +407,21 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	m["status_description"] = service.Status.String()
 	m["result_type"] = service_result.ResultSaveType.String()
 	m["result"] = func() interface{} {
-		// empty result
-		if len(body.Result) == 0 {
-			return nil
-		}
+		var b = []byte(body.Result)
 
-		// convert to json
 		var obj map[string]interface{}
-		if err := json.Unmarshal([]byte(body.Result), &obj); err != nil {
-			// convert to json format
-			return map[string]interface{}{
-				"message": body.Result,
-			}
+		if err := json.Unmarshal(b, &obj); err == nil {
+			return json.RawMessage(body.Result)
 		}
 
-		return obj
+		var arr []interface{}
+		if err := json.Unmarshal(b, &arr); err == nil {
+			return json.RawMessage(body.Result)
+		}
+
+		return map[string]interface{}{
+			"message": body.Result,
+		}
 	}()
 	m["step_count"] = service.StepCount
 	m["step_position"] = service.StepPosition

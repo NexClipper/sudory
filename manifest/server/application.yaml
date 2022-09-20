@@ -52,16 +52,6 @@ spec:
                 configMapKeyRef:
                   name: sudory-configmap
                   key: db_export_path
-            - name: SUDORY_DB_ROOT_USERNAME
-              valueFrom:
-                configMapKeyRef:
-                  name: sudory-configmap
-                  key: db_root_username
-            - name: SUDORY_DB_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: sudory-secret
-                  key: db_root_password
             - name: SUDORY_DB_SERVER_USERNAME
               valueFrom:
                 configMapKeyRef:
