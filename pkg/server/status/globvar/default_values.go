@@ -56,6 +56,14 @@ var defaultValueSet = map[Key]defaultValue{
 		clientConfigLoglevel = s
 		return nil
 	}},
+	KeyClientConfigServiceValidTimeLimit: {Uuid: "bc2cd0f95b6d4db68870d30862523a04", Value: "10", Summary: "Service Valid Time Limit (minute)", Setter: func(s string) error {
+		i, err := strconv.Atoi(s)
+		if err != nil {
+			return err
+		}
+		clientConfigServiceValidTimeLimit = i
+		return nil
+	}},
 	KeyEventNotifierStatusRotateLimit: {Uuid: "997c1631c9dd47f9a0c75448fb557ab0", Value: "20", Summary: "이벤트 알림 상태 rotate limit", Setter: func(s string) error {
 		i, err := strconv.Atoi(s)
 		if err != nil {
