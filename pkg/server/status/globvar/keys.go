@@ -19,8 +19,10 @@ client-session-expiration-time
 
 client-config-poll-interval
 client-config-loglevel
+client-config-service-valid-time-limit
 
 event-notifier-status-rotate-limit
+
 )
 */
 type Key int
@@ -124,3 +126,11 @@ func EventNofitierStatusRotateLimit() uint {
 }
 
 var eventNofitierStatusRotateLimit uint = 20
+
+// ClientConfigServiceVaildTimeLimit
+//  클라이언트 설정; 서비스 유효시간 제한 (minute)
+func ClientConfigServiceVaildTimeLimit() int {
+	return clientConfigServiceValidTimeLimit
+}
+
+var clientConfigServiceValidTimeLimit int = 10 // 10(minute)
