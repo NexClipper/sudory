@@ -914,7 +914,7 @@ func pollingServiceLimit(poliing_limit int) *vanilla.PreparePagination {
 	return vanilla.Limit(poliing_limit)
 }
 
-type PollingFilter = func(status servicev3.StepStatus) bool
+type PollingFilter = func(service servicev3.Service_polling) bool
 
 func newPollingFilter(limit int) PollingFilter {
 	limit = func(limit int) int {
@@ -924,12 +924,29 @@ func newPollingFilter(limit int) PollingFilter {
 		return limit + 1
 	}(limit)
 
-	return func(status servicev3.StepStatus) bool {
-		if 0 < limit && status < servicev3.StepStatusSuccess {
-			limit--
-			return true
+	timelimit := globvar.ClientConfigServiceVaildTimeLimit()
+	ltime := time.Now().
+		Round(time.Second).
+		Add(time.Duration(timelimit) * time.Minute * -1)
+
+	return func(service servicev3.Service_polling) bool {
+		status := service.Status
+		created := service.Created
+
+		if !(0 < limit) {
+			return false
 		}
-		return false
+
+		if !(status < servicev3.StepStatusSuccess) {
+			return false
+		}
+
+		if !created.After(ltime) && 0 < timelimit {
+			return false
+		}
+
+		limit--
+		return true
 	}
 }
 
@@ -951,7 +968,7 @@ func pollingService(ctx context.Context, tx vanilla.Preparer,
 	// filtering
 	filtered_keys := make([]servicev3.Service_polling, 0, len(polling_keys))
 	for _, service_key := range polling_keys {
-		if polling_filter(service_key.Status) {
+		if polling_filter(service_key) {
 			filtered_keys = append(filtered_keys, service_key)
 		}
 	}
