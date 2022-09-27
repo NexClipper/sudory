@@ -1,12 +1,15 @@
 package executor
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/NexClipper/sudory/pkg/client/alertmanager"
+	"github.com/NexClipper/sudory/pkg/client/grafana"
 	"github.com/NexClipper/sudory/pkg/client/helm"
 	"github.com/NexClipper/sudory/pkg/client/jq"
 	"github.com/NexClipper/sudory/pkg/client/k8s"
@@ -25,6 +28,7 @@ const (
 	CommandTypeJq
 	CommandTypeAlertManager
 	CommandTypeSudoryclient
+	CommandTypeGrafana
 )
 
 func (ct CommandType) String() string {
@@ -40,6 +44,8 @@ func (ct CommandType) String() string {
 		return "alertmanager"
 	} else if ct == CommandTypeSudoryclient {
 		return "sudory"
+	} else if ct == CommandTypeGrafana {
+		return "grafana"
 	}
 
 	return "Unknown CommandType"
@@ -67,6 +73,8 @@ func NewCommander(command *service.StepCommand) (Commander, error) {
 		return NewAlertManagerCommander(command)
 	case "sudory":
 		return NewSudoryclientCommander(command)
+	case "grafana":
+		return NewGrafanaCommander(command)
 	}
 
 	return nil, fmt.Errorf("unknown command method(%s)", command.Method)
@@ -357,4 +365,77 @@ func (c *SudoryclientCommander) ParseCommand(command *service.StepCommand) error
 
 func (c *SudoryclientCommander) Run() (string, error) {
 	return c.client.Request(c.api, c.verb, c.params)
+}
+
+type GrafanaCommander struct {
+	client *grafana.Client
+	api    string
+	verb   string
+	params map[string]interface{}
+}
+
+func NewGrafanaCommander(command *service.StepCommand) (Commander, error) {
+	cmdr := &GrafanaCommander{}
+
+	if err := cmdr.ParseCommand(command); err != nil {
+		return nil, err
+	}
+
+	return cmdr, nil
+}
+
+func (c *GrafanaCommander) GetCommandType() CommandType {
+	return CommandTypeGrafana
+}
+
+func (c *GrafanaCommander) ParseCommand(command *service.StepCommand) error {
+	mlist := strings.SplitN(command.Method, ".", 3)
+
+	if len(mlist) != 3 {
+		return fmt.Errorf("there is not enough method(%s) for grafana. want(3) but got(%d)", command.Method, len(mlist))
+	}
+
+	c.api = mlist[1]
+	c.verb = mlist[2]
+	c.params = command.Args
+
+	url, ok := macro.MapString(command.Args, "url")
+	if !ok || len(url) == 0 {
+		return fmt.Errorf("grafana url is empty")
+	}
+
+	credentialKey, ok := macro.MapString(command.Args, "credential_key")
+	if !ok || len(credentialKey) == 0 {
+		return fmt.Errorf("grafana credential_key is empty")
+	}
+
+	client, err := grafana.NewClient(url, func() ([]byte, error) {
+		kc, err := k8s.GetClient()
+		if err != nil {
+			return nil, err
+		}
+
+		secret, err := kc.GetK8sClientset().CoreV1().Secrets("sudoryclient").Get(context.Background(), "sudoryclient-credential", metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		apikey, ok := secret.Data[credentialKey]
+		if !ok || len(apikey) <= 0 {
+			return nil, fmt.Errorf("could not find apikey from credential_key(%s)", credentialKey)
+		}
+
+		return apikey, nil
+	})
+	if err != nil {
+		return err
+	}
+
+	c.client = client
+
+	return nil
+}
+
+func (c *GrafanaCommander) Run() (string, error) {
+	return c.client.ApiRequest(c.api, c.verb, c.params)
 }
