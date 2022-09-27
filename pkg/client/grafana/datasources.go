@@ -38,7 +38,7 @@ func (c *Client) GetDatasource(apiPath string, params map[string]interface{}) (s
 	defer cancel()
 
 	body, err := c.client.Get(apiPath+path).
-		SetHeader("Authorization", "Bearer "+string(apikey)).
+		SetHeader("Authorization", string(apikey)).
 		SetHeader("Accept", "application/json").
 		Do(ctx).Raw()
 	if err != nil {
@@ -58,7 +58,7 @@ func (c *Client) ListDatasources(apiPath string) (string, error) {
 	defer cancel()
 
 	body, err := c.client.Get(apiPath).
-		SetHeader("Authorization", "Bearer "+string(apikey)).
+		SetHeader("Authorization", string(apikey)).
 		SetHeader("Accept", "application/json").
 		Do(ctx).Raw()
 	if err != nil {
@@ -101,7 +101,7 @@ func (c *Client) DeleteDatasource(apiPath string, params map[string]interface{})
 	defer cancel()
 
 	body, err := c.client.Delete(apiPath+path).
-		SetHeader("Authorization", "Bearer "+string(apikey)).
+		SetHeader("Authorization", string(apikey)).
 		SetHeader("Accept", "application/json").
 		Do(ctx).Raw()
 	if err != nil {
