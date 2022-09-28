@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS `tenant_clusters` (
 
 -- default value for tenant
 INSERT INTO tenant (`hash`, `pattern`, `name`, `summary`, `created`)
-SELECT 'da39a3ee5e6b4b0d3255bfef95601890afd80709', '', 'default tenant', 'default tenant', NOW()
+SELECT 'da39a3ee5e6b4b0d3255bfef95601890afd80709', '', 'tenant.default', 'hash=''da39a3ee5e6b4b0d3255bfef95601890afd80709'' pattern=''''', NOW()
 ON DUPLICATE KEY UPDATE updated=NOW()
 ;
 
