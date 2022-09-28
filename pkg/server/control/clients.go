@@ -985,7 +985,7 @@ func newPollingFilter(limit int) PollingFilter {
 
 	timelimit := globvar.ClientConfig.ServiceValidTimeLimit()
 	ltime := time.Now().
-		Round(time.Second).
+		Truncate(time.Second).
 		Add(time.Duration(timelimit) * time.Minute * -1)
 
 	return func(service servicev3.Service_polling) bool {
