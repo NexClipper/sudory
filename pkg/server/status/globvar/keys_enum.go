@@ -24,6 +24,8 @@ const (
 	KeyClientConfigPollInterval
 	// KeyClientConfigLoglevel is a Key of type Client-Config-Loglevel.
 	KeyClientConfigLoglevel
+	// KeyClientConfigServiceValidTimeLimit is a Key of type Client-Config-Service-Valid-Time-Limit.
+	KeyClientConfigServiceValidTimeLimit
 	// KeyEventNotifierStatusRotateLimit is a Key of type Event-Notifier-Status-Rotate-Limit.
 	KeyEventNotifierStatusRotateLimit
 	// KeyServiceSessionSignatureSecret is a Key of type Service-Session-Signature-Secret.
@@ -32,7 +34,7 @@ const (
 	KeyServiceSessionExpirationTime
 )
 
-const _KeyName = "bearer-token-signature-secretbearer-token-expiration-timeclient-session-signature-secretclient-session-expiration-timeclient-config-poll-intervalclient-config-loglevelevent-notifier-status-rotate-limitservice-session-signature-secretservice-session-expiration-time"
+const _KeyName = "bearer-token-signature-secretbearer-token-expiration-timeclient-session-signature-secretclient-session-expiration-timeclient-config-poll-intervalclient-config-loglevelclient-config-service-valid-time-limitevent-notifier-status-rotate-limitservice-session-signature-secretservice-session-expiration-time"
 
 var _KeyNames = []string{
 	_KeyName[0:29],
@@ -41,9 +43,10 @@ var _KeyNames = []string{
 	_KeyName[88:118],
 	_KeyName[118:145],
 	_KeyName[145:167],
-	_KeyName[167:201],
-	_KeyName[201:233],
-	_KeyName[233:264],
+	_KeyName[167:205],
+	_KeyName[205:239],
+	_KeyName[239:271],
+	_KeyName[271:302],
 }
 
 // KeyNames returns a list of possible string values of Key.
@@ -54,15 +57,16 @@ func KeyNames() []string {
 }
 
 var _KeyMap = map[Key]string{
-	KeyBearerTokenSignatureSecret:     _KeyName[0:29],
-	KeyBearerTokenExpirationTime:      _KeyName[29:57],
-	KeyClientSessionSignatureSecret:   _KeyName[57:88],
-	KeyClientSessionExpirationTime:    _KeyName[88:118],
-	KeyClientConfigPollInterval:       _KeyName[118:145],
-	KeyClientConfigLoglevel:           _KeyName[145:167],
-	KeyEventNotifierStatusRotateLimit: _KeyName[167:201],
-	KeyServiceSessionSignatureSecret:  _KeyName[201:233],
-	KeyServiceSessionExpirationTime:   _KeyName[233:264],
+	KeyBearerTokenSignatureSecret:        _KeyName[0:29],
+	KeyBearerTokenExpirationTime:         _KeyName[29:57],
+	KeyClientSessionSignatureSecret:      _KeyName[57:88],
+	KeyClientSessionExpirationTime:       _KeyName[88:118],
+	KeyClientConfigPollInterval:          _KeyName[118:145],
+	KeyClientConfigLoglevel:              _KeyName[145:167],
+	KeyClientConfigServiceValidTimeLimit: _KeyName[167:205],
+	KeyEventNotifierStatusRotateLimit:    _KeyName[205:239],
+	KeyServiceSessionSignatureSecret:     _KeyName[239:271],
+	KeyServiceSessionExpirationTime:      _KeyName[271:302],
 }
 
 // String implements the Stringer interface.
@@ -86,12 +90,14 @@ var _KeyValue = map[string]Key{
 	strings.ToLower(_KeyName[118:145]): KeyClientConfigPollInterval,
 	_KeyName[145:167]:                  KeyClientConfigLoglevel,
 	strings.ToLower(_KeyName[145:167]): KeyClientConfigLoglevel,
-	_KeyName[167:201]:                  KeyEventNotifierStatusRotateLimit,
-	strings.ToLower(_KeyName[167:201]): KeyEventNotifierStatusRotateLimit,
-	_KeyName[201:233]:                  KeyServiceSessionSignatureSecret,
-	strings.ToLower(_KeyName[201:233]): KeyServiceSessionSignatureSecret,
-	_KeyName[233:264]:                  KeyServiceSessionExpirationTime,
-	strings.ToLower(_KeyName[233:264]): KeyServiceSessionExpirationTime,
+	_KeyName[167:205]:                  KeyClientConfigServiceValidTimeLimit,
+	strings.ToLower(_KeyName[167:205]): KeyClientConfigServiceValidTimeLimit,
+	_KeyName[205:239]:                  KeyEventNotifierStatusRotateLimit,
+	strings.ToLower(_KeyName[205:239]): KeyEventNotifierStatusRotateLimit,
+	_KeyName[239:271]:                  KeyServiceSessionSignatureSecret,
+	strings.ToLower(_KeyName[239:271]): KeyServiceSessionSignatureSecret,
+	_KeyName[271:302]:                  KeyServiceSessionExpirationTime,
+	strings.ToLower(_KeyName[271:302]): KeyServiceSessionExpirationTime,
 }
 
 // ParseKey attempts to convert a string to a Key.

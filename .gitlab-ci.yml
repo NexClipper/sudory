@@ -2,7 +2,7 @@ variables:
   DOCKER_DRIVER: overlay
   APP_DOCKERFILE_LOCATION: "Dockerfile"
   APP_IMAGE_NAME: "nexclipper-sudory"
-  APP_VERSION: "0.2.70"
+  APP_VERSION: "0.2.78"
 
 default:
   services:
@@ -118,7 +118,7 @@ code-build-client:
       - bin/
       - pkg/
   rules:
-    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
 
 docker-build-sudory-client-dev:
   stage: dev
@@ -136,6 +136,23 @@ docker-build-sudory-client-dev:
     - "source /data/scripts/build_v3.sh $APP_IMAGE_NAME"
   rules:
     - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+
+docker-build-sudory-client-stg:
+  stage: stg
+  before_script:
+    - "apk add --no-cache git"
+  variables:
+    BUILD_TARGET_STAGE: build-stage
+    HARBOR_NEXCLIPPER_PROJECT: "nexclipper"
+    APP_DOCKERFILE_LOCATION: "Dockerfile.client"
+    APP_IMAGE_NAME: "nexclipper-sudory-client"
+  needs:
+    - job: code-build-client
+  script:
+    - echo "building docker image for $APP_IMAGE_NAME "
+    - "source /data/scripts/build_v3.sh $APP_IMAGE_NAME"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging"
 
 
 # deploy-nexclipper-sudory-client-dev:

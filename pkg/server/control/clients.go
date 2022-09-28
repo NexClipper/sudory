@@ -448,7 +448,23 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	m["status"] = service.Status
 	m["status_description"] = service.Status.String()
 	m["result_type"] = service_result.ResultSaveType.String()
-	m["result"] = body.Result
+	m["result"] = func() interface{} {
+		var b = []byte(body.Result)
+
+		var obj map[string]interface{}
+		if err := json.Unmarshal(b, &obj); err == nil {
+			return json.RawMessage(body.Result)
+		}
+
+		var arr []interface{}
+		if err := json.Unmarshal(b, &arr); err == nil {
+			return json.RawMessage(body.Result)
+		}
+
+		return map[string]interface{}{
+			"message": body.Result,
+		}
+	}()
 	m["step_count"] = service.StepCount
 	m["step_position"] = service.StepPosition
 
@@ -957,7 +973,7 @@ func getCookie(ctx echo.Context, key string) (string, error) {
 // 	return vanilla.Limit(poliing_limit)
 // }
 
-type PollingFilter = func(status servicev3.StepStatus) bool
+type PollingFilter = func(service servicev3.Service_polling) bool
 
 func newPollingFilter(limit int) PollingFilter {
 	limit = func(limit int) int {
@@ -967,12 +983,29 @@ func newPollingFilter(limit int) PollingFilter {
 		return limit + 1
 	}(limit)
 
-	return func(status servicev3.StepStatus) bool {
-		if 0 < limit && status < servicev3.StepStatusSuccess {
-			limit--
-			return true
+	timelimit := globvar.ClientConfig.ServiceValidTimeLimit()
+	ltime := time.Now().
+		Round(time.Second).
+		Add(time.Duration(timelimit) * time.Minute * -1)
+
+	return func(service servicev3.Service_polling) bool {
+		status := service.Status
+		created := service.Created
+
+		if !(0 < limit) {
+			return false
 		}
-		return false
+
+		if !(status < servicev3.StepStatusSuccess) {
+			return false
+		}
+
+		if !created.After(ltime) && 0 < timelimit {
+			return false
+		}
+
+		limit--
+		return true
 	}
 }
 
@@ -994,7 +1027,7 @@ func pollingService(ctx context.Context, tx stmtex.Preparer, dialect string,
 	// filtering
 	filtered_keys := make([]servicev3.Service_polling, 0, len(polling_keys))
 	for _, service_key := range polling_keys {
-		if polling_filter(service_key.Status) {
+		if polling_filter(service_key) {
 			filtered_keys = append(filtered_keys, service_key)
 		}
 	}

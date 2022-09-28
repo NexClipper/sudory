@@ -18,6 +18,7 @@ client-session-expiration-time
 
 client-config-poll-interval
 client-config-loglevel
+client-config-service-valid-time-limit
 
 event-notifier-status-rotate-limit
 
@@ -103,6 +104,8 @@ type clientConfig struct {
 	loglevel string
 	// 클라이언트 폴 주기
 	pollInterval int // (second)
+	// 서비스 유효시간
+	serviceValidTimeLimit int // (minute)
 }
 
 func (value clientConfig) PollInterval() int {
@@ -111,6 +114,10 @@ func (value clientConfig) PollInterval() int {
 
 func (value clientConfig) Loglevel() string {
 	return value.loglevel
+}
+
+func (value clientConfig) ServiceValidTimeLimit() int {
+	return value.serviceValidTimeLimit
 }
 
 type event struct {
@@ -152,8 +159,9 @@ var (
 	}
 
 	ClientConfig = clientConfig{
-		loglevel:     "debug",
-		pollInterval: 15, // second(15)
+		loglevel:              "debug",
+		pollInterval:          15, // second(15)
+		serviceValidTimeLimit: 10, // minute(10)
 	}
 
 	Event = event{

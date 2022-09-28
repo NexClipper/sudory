@@ -22,6 +22,9 @@ docker-build:
 docker-push:
 	docker push ${image}-${target}:$(VERSION)
 
+docker-buildx-and-push:
+	docker buildx build --platform linux/amd64,linux/arm64 -t ${image}-${target}:${VERSION} -f Dockerfile.${target} --push .
+
 clean:
 	rm ./bin/server/sudory-server
 	rm ./bin/client/sudory-client

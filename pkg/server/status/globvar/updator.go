@@ -70,7 +70,7 @@ func (worker *GlobalVariantUpdate) Update() (err error) {
 					))
 			}
 		default:
-			logger.Warningf("%v: parse record name to%v", err.Error(), logs.KVL(
+			logger.Warningf("%v: parse record name to key%v", err.Error(), logs.KVL(
 				"key", record.Name,
 			))
 		}
