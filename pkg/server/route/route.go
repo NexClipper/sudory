@@ -248,12 +248,12 @@ func (r *Route) Start() error {
 	if r.UseTls {
 		crt, err := os.ReadFile(r.TlsCertificateFilename)
 		if err != nil {
-			err = errors.Wrapf(err, "faild to read tls certificate file=", r.TlsCertificateFilename)
+			err = errors.Wrapf(err, "faild to read tls certificate file name=%v", r.TlsCertificateFilename)
 			return err
 		}
 		key, err := os.ReadFile(r.TlsPrivateKeyFilename)
 		if err != nil {
-			err = errors.Wrapf(err, "faild to read tls privateKey file=", r.TlsPrivateKeyFilename)
+			err = errors.Wrapf(err, "faild to read tls privateKey file name=%v", r.TlsPrivateKeyFilename)
 			return err
 		}
 
