@@ -72,9 +72,6 @@ ON DUPLICATE KEY UPDATE `tenant_id`=VALUES(`tenant_id`), `channel_uuid`=VALUES(`
 
 
 -- alter channel tables
-ALTER TABLE `managed_channel_filter`
-	CHANGE COLUMN IF EXISTS `created` `created` DATETIME NOT NULL DEFAULT NOW();
-
 ALTER TABLE `managed_channel_format`
 	CHANGE COLUMN IF EXISTS `created` `created` DATETIME NOT NULL DEFAULT NOW();
 

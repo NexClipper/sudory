@@ -3,9 +3,6 @@ DROP TABLE IF EXISTS `tenant_channels`;
 DROP TABLE IF EXISTS `tenant`;
 
 -- alter channel tables
-ALTER TABLE `managed_channel_filter`
-	CHANGE COLUMN IF EXISTS `created` `created` DATETIME NOT NULL;
-
 ALTER TABLE `managed_channel_format`
 	CHANGE COLUMN IF EXISTS `created` `created` DATETIME NOT NULL;
 
