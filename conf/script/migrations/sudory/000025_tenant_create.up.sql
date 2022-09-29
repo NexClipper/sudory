@@ -69,3 +69,30 @@ INSERT INTO tenant_channels (`tenant_id`, `channel_uuid`)
 SELECT tenant.`id`, `uuid` FROM managed_channel, tenant WHERE tenant.`hash` = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
 ON DUPLICATE KEY UPDATE `tenant_id`=VALUES(`tenant_id`), `channel_uuid`=VALUES(`channel_uuid`) 
 ;
+
+
+-- alter channel tables
+ALTER TABLE `managed_channel_filter`
+	CHANGE COLUMN IF EXISTS `created` `created` DATETIME NOT NULL DEFAULT NOW();
+
+ALTER TABLE `managed_channel_format`
+	CHANGE COLUMN IF EXISTS `created` `created` DATETIME NOT NULL DEFAULT NOW();
+
+ALTER TABLE `managed_channel_notifier_console`
+	CHANGE COLUMN IF EXISTS `created` `created` DATETIME NOT NULL DEFAULT NOW();
+
+ALTER TABLE `managed_channel_notifier_edge`
+	CHANGE COLUMN IF EXISTS `created` `created` DATETIME NOT NULL DEFAULT NOW();
+
+ALTER TABLE `managed_channel_notifier_rabbitmq`
+	CHANGE COLUMN IF EXISTS `created` `created` DATETIME NOT NULL DEFAULT NOW();
+
+ALTER TABLE `managed_channel_notifier_slackhook`
+	CHANGE COLUMN IF EXISTS `created` `created` DATETIME NOT NULL DEFAULT NOW();
+
+ALTER TABLE `managed_channel_notifier_webhook`
+	CHANGE COLUMN IF EXISTS `created` `created` DATETIME NOT NULL DEFAULT NOW();
+
+ALTER TABLE `managed_channel_status_option`
+	CHANGE COLUMN IF EXISTS `created` `created` DATETIME NOT NULL DEFAULT NOW();
+
