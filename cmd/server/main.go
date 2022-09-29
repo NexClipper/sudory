@@ -92,7 +92,7 @@ func main() {
 		panic(err)
 	}
 
-	if true {
+	if false {
 		//init event
 		eventsConfigYaml := cfg.Events
 		if !path.IsAbs(cfg.Events) {
@@ -144,7 +144,7 @@ func main() {
 	}
 
 	r := route.New(cfg, db)
-	r.Start(cfg.Host.Port)
+	r.Start()
 
 	logger.Debugf("%s is DONE", path.Base(strings.ReplaceAll(os.Args[0], "\\", "/")))
 }
