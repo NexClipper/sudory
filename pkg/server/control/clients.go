@@ -504,7 +504,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 // @Produce     json
 // @Tags        client/auth
 // @Router      /client/auth [post]
-// @Param       body body v2.HttpReqAuth true "HttpReqAuth"
+// @Param       body body auths.HttpReqAuth true "HttpReqAuth"
 // @Success     200 {string} ok
 // @Header      200 {string} x-sudory-client-token
 func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
