@@ -407,7 +407,7 @@ func tableNameWithTenant_NotifierSlackhook() func(tenant_hash string) string {
 		fmt.Sprintf("%v.tenant_id = %v.id", aliasTC, aliasT),
 		fmt.Sprintf("%v.uuid = %v.channel_uuid", aliasC, aliasTC),
 		fmt.Sprintf("%v.deleted IS NULL", aliasC),
-		fmt.Sprintf("%v.uuid = %v.uuid", NS, aliasC),
+		fmt.Sprintf("%v.uuid = %v.uuid", aliasNS, aliasC),
 	}
 
 	format := fmt.Sprintf("( SELECT %v FROM %v WHERE %v ) X",
