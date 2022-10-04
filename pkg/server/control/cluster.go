@@ -13,7 +13,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	clusterv3 "github.com/NexClipper/sudory/pkg/server/model/cluster/v3"
-	tenantv3 "github.com/NexClipper/sudory/pkg/server/model/tenant/v3"
+	"github.com/NexClipper/sudory/pkg/server/model/tenants/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -85,7 +85,7 @@ func (ctl ControlVanilla) CreateCluster(ctx echo.Context) (err error) {
 		}
 
 		// save tenant_clusters
-		tenant_clusters := new(tenantv3.TenantClusters)
+		tenant_clusters := new(tenants.TenantClusters)
 		tenant_clusters.TenantId = claims.ID
 		tenant_clusters.ClusterId = new_cluster.ID
 		affected, _, err = stmtex.Insert(tenant_clusters.TableName(), tenant_clusters.ColumnNames(), tenant_clusters.Values()).

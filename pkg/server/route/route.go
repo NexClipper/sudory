@@ -112,7 +112,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.Use(XAuthToken(cfg))
 
 		// /server/auth*
-		group.POST("/server/auth", ctl.Auth)
+		group.POST("/server/tenant", ctl.Tenant)
 
 		// /server/template*
 		group.GET("/server/template", ctl.FindTemplate)

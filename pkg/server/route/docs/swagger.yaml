@@ -1,4 +1,40 @@
 definitions:
+  auths.HttpReq_ServiceAccessToken:
+    properties:
+      tenant:
+        description: tenant
+        type: string
+    type: object
+  auths.HttpReqAuth:
+    properties:
+      assertion:
+        description: <bearer-token>
+        type: string
+      client_version:
+        description: client version
+        type: string
+      cluster_uuid:
+        description: cluster uuid
+        type: string
+    type: object
+  auths.HttpRsp_AccessTokenResponse:
+    properties:
+      access_token:
+        description: (required)
+        type: string
+      expires_in:
+        description: (recommended)
+        type: integer
+      refresh_token:
+        description: (optional)
+        type: string
+      scope:
+        description: (optional)
+        type: string
+      token_type:
+        description: (required)
+        type: string
+    type: object
   v1.Channel:
     properties:
       cluster_uuid:
@@ -319,42 +355,6 @@ definitions:
   v2.HttpReq_GlobalVariables_update:
     properties:
       value:
-        type: string
-    type: object
-  v2.HttpReq_ServiceAccessToken:
-    properties:
-      tenant:
-        description: tenant
-        type: string
-    type: object
-  v2.HttpReqAuth:
-    properties:
-      assertion:
-        description: <bearer-token>
-        type: string
-      client_version:
-        description: client version
-        type: string
-      cluster_uuid:
-        description: cluster uuid
-        type: string
-    type: object
-  v2.HttpRsp_AccessTokenResponse:
-    properties:
-      access_token:
-        description: (required)
-        type: string
-      expires_in:
-        description: (recommended)
-        type: integer
-      refresh_token:
-        description: (optional)
-        type: string
-      scope:
-        description: (optional)
-        type: string
-      token_type:
-        description: (required)
         type: string
     type: object
   v2.HttpRsp_Template:
@@ -1263,7 +1263,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v2.HttpReqAuth'
+          $ref: '#/definitions/auths.HttpReqAuth'
       produces:
       - application/json
       responses:
@@ -1320,29 +1320,6 @@ paths:
       - ClientAuth: []
       tags:
       - client/service
-  /server/auth:
-    post:
-      consumes:
-      - application/json
-      description: auth
-      parameters:
-      - description: v2.HttpReq_ServiceAccessToken
-        in: body
-        name: object
-        required: true
-        schema:
-          $ref: '#/definitions/v2.HttpReq_ServiceAccessToken'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v2.HttpRsp_AccessTokenResponse'
-      security:
-      - XAuthToken: []
-      tags:
-      - server/auth
   /server/channel:
     get:
       consumes:
@@ -3239,6 +3216,29 @@ paths:
       - XAuthToken: []
       tags:
       - server/template_recipe
+  /server/tenant:
+    post:
+      consumes:
+      - application/json
+      description: tenant
+      parameters:
+      - description: auths.HttpReq_ServiceAccessToken
+        in: body
+        name: object
+        required: true
+        schema:
+          $ref: '#/definitions/auths.HttpReq_ServiceAccessToken'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auths.HttpRsp_AccessTokenResponse'
+      security:
+      - XAuthToken: []
+      tags:
+      - server/tenant
 securityDefinitions:
   ClientAuth:
     in: header

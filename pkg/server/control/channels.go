@@ -17,7 +17,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	channelv3 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
-	tenantv3 "github.com/NexClipper/sudory/pkg/server/model/tenant/v3"
+	"github.com/NexClipper/sudory/pkg/server/model/tenants/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/itchyny/gojq"
@@ -103,7 +103,7 @@ func (ctl ControlVanilla) CreateChannel(ctx echo.Context) (err error) {
 		}
 
 		// save tenant_clusters
-		tenant_channels := new(tenantv3.TenantChannels)
+		tenant_channels := new(tenants.TenantChannels)
 		tenant_channels.TenantId = claims.ID
 		tenant_channels.ChannelUuid = new_channel.Uuid
 		affected, _, err = stmtex.Insert(tenant_channels.TableName(), tenant_channels.ColumnNames(), tenant_channels.Values()).

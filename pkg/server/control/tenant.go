@@ -10,24 +10,24 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	auth "github.com/NexClipper/sudory/pkg/server/model/auth/v2"
-	tenantv3 "github.com/NexClipper/sudory/pkg/server/model/tenant/v3"
+	"github.com/NexClipper/sudory/pkg/server/model/auths/v2"
+	"github.com/NexClipper/sudory/pkg/server/model/tenants/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 )
 
-// @Description auth
+// @Description tenant
 // @Security    XAuthToken
 // @Accept      json
 // @Produce     json
-// @Tags        server/auth
-// @Router      /server/auth [post]
-// @Param       object       body   v2.HttpReq_ServiceAccessToken true  "v2.HttpReq_ServiceAccessToken"
-// @Success     200 {object} v2.HttpRsp_AccessTokenResponse
-func (ctl ControlVanilla) Auth(ctx echo.Context) (err error) {
-	body := new(auth.HttpReq_ServiceAccessToken)
+// @Tags        server/tenant
+// @Router      /server/tenant [post]
+// @Param       object       body   auths.HttpReq_ServiceAccessToken true  "auths.HttpReq_ServiceAccessToken"
+// @Success     200 {object} auths.HttpRsp_AccessTokenResponse
+func (ctl ControlVanilla) Tenant(ctx echo.Context) (err error) {
+	body := new(auths.HttpReq_ServiceAccessToken)
 	err = func() (err error) {
 		err = ctx.Bind(body)
 		// err = echoutil.Bind(ctx, body)
@@ -47,7 +47,7 @@ func (ctl ControlVanilla) Auth(ctx echo.Context) (err error) {
 	var id int64
 
 	// get tenant
-	tenant := tenantv3.Tenant{
+	tenant := tenants.Tenant{
 		Hash: hash,
 	}
 	tenant_cond := stmt.Equal("hash", tenant.Hash)
@@ -64,7 +64,7 @@ func (ctl ControlVanilla) Auth(ctx echo.Context) (err error) {
 
 	if id == 0 {
 		// save tenant
-		new_tenant := tenantv3.NewTenant(hash, pattern, time_now)
+		new_tenant := tenants.NewTenant(hash, pattern, time_now)
 		updatecolumns := []string{"hash"}
 		save_tenant := stmtex.InsertOrUpdate(new_tenant.TableName(), new_tenant.ColumnNames(), updatecolumns, new_tenant.Values())
 		_, lastid, err := save_tenant.ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
@@ -74,7 +74,7 @@ func (ctl ControlVanilla) Auth(ctx echo.Context) (err error) {
 		id = lastid // get tenant id
 	}
 
-	claims := auth.ServiceAccessTokenClaims{
+	claims := auths.TenantAccessTokenClaims{
 		ID:        id,
 		Hash:      hash,
 		Tenant:    pattern,
@@ -89,7 +89,7 @@ func (ctl ControlVanilla) Auth(ctx echo.Context) (err error) {
 		return errors.Wrapf(err, "failed to create new service access token")
 	}
 
-	return ctx.JSON(http.StatusOK, auth.HttpRsp_AccessTokenResponse{
+	return ctx.JSON(http.StatusOK, auths.HttpRsp_AccessTokenResponse{
 		TokenType:   "Bearer",
 		AccessToken: token_str,
 		ExpiresIn:   int(claims.ExpiresAt - claims.IssuedAt),

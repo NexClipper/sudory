@@ -16,8 +16,12 @@ func SeHttpHeader(header http.Header, key string, value ...string) {
 	}
 }
 
+func GetAuthorizationHeader(header http.Header) string {
+	return header.Get(HTTP_HEAD_AUTHORIZATION)
+}
+
 func ParseAuthorizationHeader(header http.Header) (auth_scheme string, auth_value string, ok bool) {
-	value := header.Get("Authorization")
+	value := header.Get(HTTP_HEAD_AUTHORIZATION)
 	if len(value) == 0 {
 		return
 	}
@@ -34,5 +38,6 @@ func ParseAuthorizationHeader(header http.Header) (auth_scheme string, auth_valu
 }
 
 const (
-	AuthSchemaBearer = "Bearer"
+	HTTP_AUTH_SCHEMA_BEARER = "Bearer"
+	HTTP_HEAD_AUTHORIZATION = "Authorization"
 )

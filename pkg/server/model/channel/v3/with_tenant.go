@@ -7,7 +7,7 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/ice_cream_maker"
 	"github.com/NexClipper/sudory/pkg/server/macro/slicestrings"
-	tenantv3 "github.com/NexClipper/sudory/pkg/server/model/tenant/v3"
+	"github.com/NexClipper/sudory/pkg/server/model/tenants/v3"
 )
 
 var (
@@ -25,8 +25,8 @@ var (
 
 func tableNameWithTenant_ManagedChannel() func(tenant_hash string) string {
 	var C = ManagedChannel{}
-	var TC = tenantv3.TenantChannels{}
-	var T = tenantv3.Tenant{}
+	var TC = tenants.TenantChannels{}
+	var T = tenants.Tenant{}
 
 	aliasC := C.TableName()
 	aliasTC := TC.TableName()
@@ -110,8 +110,8 @@ func tableNameWithTenant_ManagedChannel() func(tenant_hash string) string {
 func tableNameWithTenant_ChannelStatusOption() func(tenant_hash string) string {
 	var C = ManagedChannel{}
 	var SO = ChannelStatusOption{}
-	var TC = tenantv3.TenantChannels{}
-	var T = tenantv3.Tenant{}
+	var TC = tenants.TenantChannels{}
+	var T = tenants.Tenant{}
 
 	aliasC := C.TableName()
 	aliasSO := SO.TableName()
@@ -155,8 +155,8 @@ func tableNameWithTenant_ChannelStatusOption() func(tenant_hash string) string {
 func tableNameWithTenant_Format() func(tenant_hash string) string {
 	var C = ManagedChannel{}
 	var F = Format{}
-	var TC = tenantv3.TenantChannels{}
-	var T = tenantv3.Tenant{}
+	var TC = tenants.TenantChannels{}
+	var T = tenants.Tenant{}
 
 	aliasC := C.TableName()
 	aliasF := F.TableName()
@@ -200,8 +200,8 @@ func tableNameWithTenant_Format() func(tenant_hash string) string {
 func tableNameWithTenant_NotifierEdge() func(tenant_hash string) string {
 	var C = ManagedChannel{}
 	var NE = NotifierEdge{}
-	var TC = tenantv3.TenantChannels{}
-	var T = tenantv3.Tenant{}
+	var TC = tenants.TenantChannels{}
+	var T = tenants.Tenant{}
 
 	aliasC := C.TableName()
 	aliasNE := NE.TableName()
@@ -245,8 +245,8 @@ func tableNameWithTenant_NotifierEdge() func(tenant_hash string) string {
 func tableNameWithTenant_NotifierConsole() func(tenant_hash string) string {
 	var C = ManagedChannel{}
 	var NC = NotifierConsole{}
-	var TC = tenantv3.TenantChannels{}
-	var T = tenantv3.Tenant{}
+	var TC = tenants.TenantChannels{}
+	var T = tenants.Tenant{}
 
 	aliasC := C.TableName()
 	aliasNC := NC.TableName()
@@ -290,8 +290,8 @@ func tableNameWithTenant_NotifierConsole() func(tenant_hash string) string {
 func tableNameWithTenant_NotifierWebhook() func(tenant_hash string) string {
 	var C = ManagedChannel{}
 	var NW = NotifierWebhook{}
-	var TC = tenantv3.TenantChannels{}
-	var T = tenantv3.Tenant{}
+	var TC = tenants.TenantChannels{}
+	var T = tenants.Tenant{}
 
 	aliasC := C.TableName()
 	aliasNW := NW.TableName()
@@ -335,8 +335,8 @@ func tableNameWithTenant_NotifierWebhook() func(tenant_hash string) string {
 func tableNameWithTenant_NotifierRabbitMq() func(tenant_hash string) string {
 	var C = ManagedChannel{}
 	var NR = NotifierRabbitMq{}
-	var TC = tenantv3.TenantChannels{}
-	var T = tenantv3.Tenant{}
+	var TC = tenants.TenantChannels{}
+	var T = tenants.Tenant{}
 
 	aliasC := C.TableName()
 	aliasNR := NR.TableName()
@@ -380,8 +380,8 @@ func tableNameWithTenant_NotifierRabbitMq() func(tenant_hash string) string {
 func tableNameWithTenant_NotifierSlackhook() func(tenant_hash string) string {
 	var C = ManagedChannel{}
 	var NS = NotifierSlackhook{}
-	var TC = tenantv3.TenantChannels{}
-	var T = tenantv3.Tenant{}
+	var TC = tenants.TenantChannels{}
+	var T = tenants.Tenant{}
 
 	aliasC := C.TableName()
 	aliasNS := NS.TableName()
@@ -425,8 +425,8 @@ func tableNameWithTenant_NotifierSlackhook() func(tenant_hash string) string {
 func tableNameWithTenant_ChannelStatus() func(tenant_hash string) string {
 	var C = ManagedChannel{}
 	var CS = ChannelStatus{}
-	var TC = tenantv3.TenantChannels{}
-	var T = tenantv3.Tenant{}
+	var TC = tenants.TenantChannels{}
+	var T = tenants.Tenant{}
 
 	aliasC := C.TableName()
 	aliasCS := CS.TableName()

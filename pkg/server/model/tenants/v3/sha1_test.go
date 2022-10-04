@@ -1,4 +1,4 @@
-package v3_test
+package tenants_test
 
 import (
 	"crypto/sha1"

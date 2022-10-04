@@ -23,16 +23,15 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	authv2 "github.com/NexClipper/sudory/pkg/server/model/auth/v2"
+	"github.com/NexClipper/sudory/pkg/server/model/auths/v2"
 	channelv3 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	clusterv3 "github.com/NexClipper/sudory/pkg/server/model/cluster/v3"
 	clusterinfov2 "github.com/NexClipper/sudory/pkg/server/model/cluster_infomation/v2"
 	clustertokenv3 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v3"
 	cryptov2 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v2"
 	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
-	tenantv3 "github.com/NexClipper/sudory/pkg/server/model/tenant/v3"
-
 	sessionv3 "github.com/NexClipper/sudory/pkg/server/model/session/v3"
+	"github.com/NexClipper/sudory/pkg/server/model/tenants/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/golang-jwt/jwt/v4"
 
@@ -196,7 +195,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 	}
 
 	// get tenent by cluster_uuid
-	var tenant tenantv3.Tenant
+	var tenant tenants.Tenant
 	tenant_table := clusterv3.TenantTableName(claims.ClusterUuid)
 	tenant_cond := stmt.And(
 		stmt.IsNull("deleted"),
@@ -417,7 +416,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	}
 
 	// get tenent by cluster_uuid
-	var tenant tenantv3.Tenant
+	var tenant tenants.Tenant
 	tenant_table := clusterv3.TenantTableName(claims.ClusterUuid)
 	tenant_cond := stmt.And(
 		stmt.IsNull("deleted"),
@@ -507,7 +506,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 // @Success     200 {string} ok
 // @Header      200 {string} x-sudory-client-token
 func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
-	auth := new(authv2.HttpReqAuth)
+	auth := new(auths.HttpReqAuth)
 	err = func() (err error) {
 		if err := echoutil.Bind(ctx, auth); err != nil {
 			return errors.Wrapf(err, "bind%s",
@@ -625,7 +624,7 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	ctx.Response().Header().Set(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, token_string)
 
 	// get tenent by cluster_uuid
-	var tenant tenantv3.Tenant
+	var tenant tenants.Tenant
 	tenant_table := clusterv3.TenantTableName(cluster.Uuid)
 	tenant_cond := stmt.And(
 		stmt.IsNull("deleted"),

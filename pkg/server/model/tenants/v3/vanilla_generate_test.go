@@ -1,17 +1,17 @@
-package v3_test
+package tenants_test
 
 import (
 	"os"
 	"testing"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/ice_cream_maker"
-	v3 "github.com/NexClipper/sudory/pkg/server/model/tenant/v3"
+	"github.com/NexClipper/sudory/pkg/server/model/tenants/v3"
 )
 
 var objs = []interface{}{
-	v3.Tenant{},
-	v3.TenantClusters{},
-	v3.TenantChannels{},
+	tenants.Tenant{},
+	tenants.TenantClusters{},
+	tenants.TenantChannels{},
 }
 
 func TestNoXormColumns(t *testing.T) {

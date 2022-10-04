@@ -1,4 +1,4 @@
-package v2
+package auths
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ type ServiceAccessTokenRequest struct {
 	Tenant string `json:"tenant"` // tenant
 }
 
-type ServiceAccessTokenClaims struct {
+type TenantAccessTokenClaims struct {
 	ID     int64  `json:"id,omitempty"`     // pk
 	Hash   string `json:"hash,omitempty"`   // sha1(tenant)
 	Tenant string `json:"tenant,omitempty"` // tenant
@@ -20,7 +20,7 @@ type ServiceAccessTokenClaims struct {
 	IssuedAt  int64 `json:"iat,omitempty"` // issued_at_time
 }
 
-func (claims ServiceAccessTokenClaims) Valid() error {
+func (claims TenantAccessTokenClaims) Valid() error {
 	vErr := new(jwt.ValidationError)
 	now := time.Now().UTC().Unix()
 
@@ -44,7 +44,7 @@ func (claims ServiceAccessTokenClaims) Valid() error {
 	return vErr
 }
 
-func (claims ServiceAccessTokenClaims) VerifyExpiresAt(cmp int64, req bool) bool {
+func (claims TenantAccessTokenClaims) VerifyExpiresAt(cmp int64, req bool) bool {
 	if claims.ExpiresAt == 0 {
 		return verifyExp(nil, time.Unix(cmp, 0), req)
 	}
@@ -53,7 +53,7 @@ func (claims ServiceAccessTokenClaims) VerifyExpiresAt(cmp int64, req bool) bool
 	return verifyExp(&t, time.Unix(cmp, 0), req)
 }
 
-func (claims ServiceAccessTokenClaims) VerifyIssuedAt(cmp int64, req bool) bool {
+func (claims TenantAccessTokenClaims) VerifyIssuedAt(cmp int64, req bool) bool {
 	if claims.IssuedAt == 0 {
 		return verifyIat(nil, time.Unix(cmp, 0), req)
 	}

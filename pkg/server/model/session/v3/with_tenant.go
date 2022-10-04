@@ -8,7 +8,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/ice_cream_maker"
 	"github.com/NexClipper/sudory/pkg/server/macro/slicestrings"
 	clusterv3 "github.com/NexClipper/sudory/pkg/server/model/cluster/v3"
-	tenantv3 "github.com/NexClipper/sudory/pkg/server/model/tenant/v3"
+	"github.com/NexClipper/sudory/pkg/server/model/tenants/v3"
 )
 
 var (
@@ -18,8 +18,8 @@ var (
 func tableNameWithTenant() func(tenant_hash string) string {
 	var S = Session{}
 	var C = clusterv3.Cluster{}
-	var TC = tenantv3.TenantClusters{}
-	var T = tenantv3.Tenant{}
+	var TC = tenants.TenantClusters{}
+	var T = tenants.Tenant{}
 
 	aliasS := S.TableName()
 	aliasC := C.TableName()

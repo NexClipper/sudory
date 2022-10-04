@@ -9,7 +9,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	auth "github.com/NexClipper/sudory/pkg/server/model/auth/v2"
+	"github.com/NexClipper/sudory/pkg/server/model/auths/v2"
 	clusterv3 "github.com/NexClipper/sudory/pkg/server/model/cluster/v3"
 	clusterinfov2 "github.com/NexClipper/sudory/pkg/server/model/cluster_infomation/v2"
 	sessionv3 "github.com/NexClipper/sudory/pkg/server/model/session/v3"
@@ -36,7 +36,6 @@ func SetContextValue(ctx context.Context, key ContextValueKey, v interface{}) co
 
 func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string) (*sessionv3.ClientSessionPayload, error) {
 	const (
-		// __HTTP_HEADER_KEY__   = __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__
 		__HTTP_HEADER_KEY__   = "x-sudory-client-token"
 		__CONTEXT_VALUE_KEY__ = ClientSession
 	)
@@ -47,28 +46,26 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 	case *sessionv3.ClientSessionPayload:
 		return v, nil
 	default:
-		return func() (claims *sessionv3.ClientSessionPayload, err error) {
+		fn := func() interface{} {
 			time_now := time.Now()
 			// get session token
 			header_string := ctx.Request().Header.Get(__HTTP_HEADER_KEY__)
 
 			if len(header_string) == 0 {
-				err = errors.Errorf("missing request header%v", logs.KVL(
+				err := errors.Errorf("missing request header%v", logs.KVL(
 					"header", __HTTP_HEADER_KEY__,
 				))
-			}
-			if err != nil {
-				return
+				return err
 			}
 
 			// parse to payload
-			claims = new(sessionv3.ClientSessionPayload)
+			claims := new(sessionv3.ClientSessionPayload)
 			token, err := jwt.ParseWithClaims(header_string, claims, func(token *jwt.Token) (interface{}, error) {
 				return []byte(globvar.ClientSession.SignatureSecret()), nil
 			})
-			err = errors.Wrapf(err, "jwt parse claims")
 			if err != nil {
-				return
+				err = errors.Wrapf(err, "jwt parse claims")
+				return err
 			}
 
 			// check type cast and valid
@@ -76,16 +73,8 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 				err = errors.Errorf("jwt verify%v", logs.KVL(
 					"token", header_string,
 				))
+				return err
 			}
-			if err != nil {
-				return
-			}
-
-			// smart polling interval
-			// update echo request context
-			echo_context := ctx.Request().Context()
-			echo_context = SetContextValue(echo_context, __CONTEXT_VALUE_KEY__, claims)
-			ctx.SetRequest(ctx.Request().WithContext(echo_context))
 
 			// refresh session token
 			// get cluster from db
@@ -101,9 +90,9 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 				err = errors.Wrapf(err, "cluster Scan")
 				return
 			})
-			err = errors.Wrapf(err, "failed to get cluster")
 			if err != nil {
-				return
+				err = errors.Wrapf(err, "failed to get cluster")
+				return err
 			}
 
 			// // count service from db
@@ -117,20 +106,18 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 			// }
 
 			var polling_count int
-			func() (err error) {
-				cluster_info := clusterinfov2.ClusterInformation{}
-				columnnames := []string{"polling_count"}
-				cond := stmt.Equal("cluster_uuid", claims.ClusterUuid)
+			clusterinfo := clusterinfov2.ClusterInformation{}
+			clusterinfo_columns := []string{"polling_count"}
+			clusterinfo_cond := stmt.Equal("cluster_uuid", claims.ClusterUuid)
 
-				err = stmtex.Select(cluster_info.TableName(), columnnames, cond, nil, nil).
-					QueryRowsContext(ctx.Request().Context(), tx, dialect)(func(scan stmtex.Scanner, _ int) error {
-					return scan.Scan(&polling_count)
-				})
-				if err != nil {
-					return errors.Wrapf(err, "failed to get service offset")
-				}
-				return
-			}()
+			err = stmtex.Select(clusterinfo.TableName(), clusterinfo_columns, clusterinfo_cond, nil, nil).
+				QueryRowsContext(ctx.Request().Context(), tx, dialect)(func(scan stmtex.Scanner, _ int) error {
+				return scan.Scan(&polling_count)
+			})
+			if err != nil {
+				err = errors.Wrapf(err, "failed to get service offset")
+				return err
+			}
 
 			//reflesh claims
 			polling_interval := clusterv3.ConvPollingOption(cluster.PollingOption).Interval(time.Duration(int64(globvar.ClientConfig.PollInterval())*int64(time.Second)), polling_count) / time.Second
@@ -141,9 +128,9 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 			// make response session token
 			new_token, err := jwt.NewWithClaims(usedJwtSigningMethod(*token, jwt.SigningMethodHS256), claims).
 				SignedString([]byte(globvar.ClientSession.SignatureSecret()))
-			err = errors.Wrapf(err, "failed to make client session token to formed jwt")
 			if err != nil {
-				return
+				err = errors.Wrapf(err, "failed to make client session token to formed jwt")
+				return err
 			}
 
 			// set response head
@@ -163,18 +150,16 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 
 			// found session
 			session_found, err := stmtex.ExistContext(session.TableName(), session_cond)(ctx.Request().Context(), tx, dialect)
-			err = errors.Wrapf(err, "failed to found client session")
 			if err != nil {
-				return
+				err = errors.Wrapf(err, "failed to found client session")
+				return err
 			}
 
 			if !session_found {
 				err = errors.Errorf("not found client session%v", logs.KVL(
 					"uuid", session.Uuid,
 				))
-			}
-			if err != nil {
-				return
+				return err
 			}
 
 			// update refreshed client session
@@ -186,68 +171,92 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 
 			_, err = stmtex.Update(session.TableName(), keys_values, session_cond).
 				ExecContext(ctx.Request().Context(), tx, dialect)
-			err = errors.Wrapf(err, "failed to refreshed client session%v", logs.KVL(
-				"uuid", claims.Uuid,
-				"data", keys_values,
-			))
-
 			if err != nil {
-				return
+				err = errors.Wrapf(err, "failed to refreshed client session%v", logs.KVL(
+					"uuid", claims.Uuid,
+					"data", keys_values,
+				))
+				return err
 			}
 
-			return GetClientSessionClaims(ctx, tx, dialect) // recurse
-		}()
+			return claims
+		}
+
+		// smart polling interval
+		// update echo request context
+		echo_context := ctx.Request().Context()
+		echo_context = SetContextValue(echo_context, __CONTEXT_VALUE_KEY__, fn())
+		ctx.SetRequest(ctx.Request().WithContext(echo_context))
+
+		return GetClientSessionClaims(ctx, tx, dialect) // recurse
 	}
 }
 
-func GetServiceAuthorizationClaims(ctx echo.Context) (*auth.ServiceAccessTokenClaims, error) {
+func GetServiceAuthorizationClaims(ctx echo.Context) (*auths.TenantAccessTokenClaims, error) {
 	const (
-		__CONTEXT_VALUE_KEY__ = ServiceClaims
+		__CONTEXT_VALUE_KEY__  = ServiceClaims
+		default_tenant_hash    = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+		default_tenant_pattern = ""
 	)
 
 	switch v := GetContextValue(ctx.Request().Context(), __CONTEXT_VALUE_KEY__).(type) {
 	case error:
 		return nil, v
-	case *auth.ServiceAccessTokenClaims:
+	case *auths.TenantAccessTokenClaims:
 		return v, nil
 	default:
-		return func() (claims *auth.ServiceAccessTokenClaims, err error) {
-			// get bearer token
+		fn := func() interface{} {
+			// get http authorization header
+			if len(echoutil.GetAuthorizationHeader(ctx.Request().Header)) == 0 {
+				// treat the no tenant information as a default tenant
+				claims := new(auths.TenantAccessTokenClaims)
+				claims.ID = 1
+				claims.Hash = default_tenant_hash
+				claims.Tenant = default_tenant_pattern
+				claims.IssuedAt = time.Now().Unix()
+				claims.ExpiresAt = 0
+
+				return claims
+			}
+
+			// parse bearer token
 			bearer, token, ok := echoutil.ParseAuthorizationHeader(ctx.Request().Header)
 			if !ok {
-				err = errors.New("token is not available")
-				return
+				err := errors.New("token is not available")
+				return err
 			}
-			if bearer != echoutil.AuthSchemaBearer {
-				err = errors.New("token is not available")
-				return
+			if bearer != echoutil.HTTP_AUTH_SCHEMA_BEARER {
+				err := errors.New("token is not available")
+				return err
 			}
 
 			// parse jwt
-			claims = new(auth.ServiceAccessTokenClaims)
+			claims := new(auths.TenantAccessTokenClaims)
 			jwt_token, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
 				return []byte(globvar.ServiceSession.SignatureSecret()), nil
 			})
 			if err != nil {
-				return
+				return err
 			}
 			// verify claims
-			if _, ok := jwt_token.Claims.(*auth.ServiceAccessTokenClaims); !ok || !jwt_token.Valid {
+			if _, ok := jwt_token.Claims.(*auths.TenantAccessTokenClaims); !ok || !jwt_token.Valid {
 				err = errors.Errorf("verify claims%v", logs.KVL(
 					"token", token,
 					"alg", jwt_token.Method.Alg(),
 				))
-			}
-			if err != nil {
-				return
+				if err != nil {
+					return err
+				}
 			}
 
-			// update echo request context
-			echo_context := ctx.Request().Context()
-			echo_context = SetContextValue(echo_context, __CONTEXT_VALUE_KEY__, claims)
-			ctx.SetRequest(ctx.Request().WithContext(echo_context))
+			return claims
+		}
 
-			return GetServiceAuthorizationClaims(ctx)
-		}()
+		// update echo request context
+		echo_context := ctx.Request().Context()
+		echo_context = SetContextValue(echo_context, __CONTEXT_VALUE_KEY__, fn())
+		ctx.SetRequest(ctx.Request().WithContext(echo_context))
+
+		return GetServiceAuthorizationClaims(ctx)
 	}
 }

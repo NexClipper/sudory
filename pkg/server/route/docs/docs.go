@@ -45,7 +45,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v2.HttpReqAuth"
+                            "$ref": "#/definitions/auths.HttpReqAuth"
                         }
                     }
                 ],
@@ -132,44 +132,6 @@ var doc = `{
                             "x-sudory-client-token": {
                                 "type": "string"
                             }
-                        }
-                    }
-                }
-            }
-        },
-        "/server/auth": {
-            "post": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "auth",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/auth"
-                ],
-                "parameters": [
-                    {
-                        "description": "v2.HttpReq_ServiceAccessToken",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v2.HttpReq_ServiceAccessToken"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v2.HttpRsp_AccessTokenResponse"
                         }
                     }
                 }
@@ -3229,9 +3191,98 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/server/tenant": {
+            "post": {
+                "security": [
+                    {
+                        "XAuthToken": []
+                    }
+                ],
+                "description": "tenant",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "server/tenant"
+                ],
+                "parameters": [
+                    {
+                        "description": "auths.HttpReq_ServiceAccessToken",
+                        "name": "object",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auths.HttpReq_ServiceAccessToken"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auths.HttpRsp_AccessTokenResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "auths.HttpReqAuth": {
+            "type": "object",
+            "properties": {
+                "assertion": {
+                    "description": "\u003cbearer-token\u003e",
+                    "type": "string"
+                },
+                "client_version": {
+                    "description": "client version",
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "description": "cluster uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "auths.HttpReq_ServiceAccessToken": {
+            "type": "object",
+            "properties": {
+                "tenant": {
+                    "description": "tenant",
+                    "type": "string"
+                }
+            }
+        },
+        "auths.HttpRsp_AccessTokenResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "description": "(required)",
+                    "type": "string"
+                },
+                "expires_in": {
+                    "description": "(recommended)",
+                    "type": "integer"
+                },
+                "refresh_token": {
+                    "description": "(optional)",
+                    "type": "string"
+                },
+                "scope": {
+                    "description": "(optional)",
+                    "type": "string"
+                },
+                "token_type": {
+                    "description": "(required)",
+                    "type": "string"
+                }
+            }
+        },
         "v1.Channel": {
             "type": "object",
             "properties": {
@@ -3695,61 +3746,10 @@ var doc = `{
                 }
             }
         },
-        "v2.HttpReqAuth": {
-            "type": "object",
-            "properties": {
-                "assertion": {
-                    "description": "\u003cbearer-token\u003e",
-                    "type": "string"
-                },
-                "client_version": {
-                    "description": "client version",
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "cluster uuid",
-                    "type": "string"
-                }
-            }
-        },
         "v2.HttpReq_GlobalVariables_update": {
             "type": "object",
             "properties": {
                 "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "v2.HttpReq_ServiceAccessToken": {
-            "type": "object",
-            "properties": {
-                "tenant": {
-                    "description": "tenant",
-                    "type": "string"
-                }
-            }
-        },
-        "v2.HttpRsp_AccessTokenResponse": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "description": "(required)",
-                    "type": "string"
-                },
-                "expires_in": {
-                    "description": "(recommended)",
-                    "type": "integer"
-                },
-                "refresh_token": {
-                    "description": "(optional)",
-                    "type": "string"
-                },
-                "scope": {
-                    "description": "(optional)",
-                    "type": "string"
-                },
-                "token_type": {
-                    "description": "(required)",
                     "type": "string"
                 }
             }
