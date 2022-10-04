@@ -49,7 +49,8 @@ import (
 func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 
 	//get token claims
-	claims, err := GetSudoryClientTokenClaims(ctx)
+	// claims, err := GetSudoryClientTokenClaims(ctx)
+	claims, err := GetClientSessionClaims(ctx, ctl.DB, ctl.Dialect())
 	err = errors.Wrapf(err, "failed to get client token")
 	if err != nil {
 		return HttpError(err, http.StatusBadRequest)
@@ -318,7 +319,8 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	}
 
 	// get client token claims
-	claims, err := GetSudoryClientTokenClaims(ctx)
+	// claims, err := GetSudoryClientTokenClaims(ctx)
+	claims, err := GetClientSessionClaims(ctx, ctl.DB, ctl.Dialect())
 	if err != nil {
 		err = errors.Wrapf(err, "failed to get client token")
 		return HttpError(err, http.StatusBadRequest)
@@ -863,65 +865,65 @@ func usedJwtSigningMethod(token jwt.Token, init jwt.SigningMethod) jwt.SigningMe
 	return init
 }
 
-func GetSudoryClientTokenClaims(ctx echo.Context) (claims *sessionv3.ClientSessionPayload, err error) {
-	var token string
-	if token = ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__); len(token) == 0 {
-		err = errors.Errorf("missing request header%s",
-			logs.KVL(
-				"key", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
-			))
-		return
-	}
+// func GetSudoryClientTokenClaims(ctx echo.Context) (claims *sessionv3.ClientSessionPayload, err error) {
+// 	var token string
+// 	if token = ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__); len(token) == 0 {
+// 		err = errors.Errorf("missing request header%s",
+// 			logs.KVL(
+// 				"key", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
+// 			))
+// 		return
+// 	}
 
-	claims = new(sessionv3.ClientSessionPayload)
-	var fn func() error
-	fn = func() error {
-		var jwt_token *jwt.Token
-		// JWT unverify
-		jwt_token, _, err = jwt.NewParser().ParseUnverified(token, claims)
-		if err != nil {
-			return errors.Wrapf(err, "jwt.Parser.ParseUnverified")
-		}
+// 	claims = new(sessionv3.ClientSessionPayload)
+// 	var fn func() error
+// 	fn = func() error {
+// 		var jwt_token *jwt.Token
+// 		// JWT unverify
+// 		jwt_token, _, err = jwt.NewParser().ParseUnverified(token, claims)
+// 		if err != nil {
+// 			return errors.Wrapf(err, "jwt.Parser.ParseUnverified")
+// 		}
 
-		var ok bool
-		claims, ok = jwt_token.Claims.(*sessionv3.ClientSessionPayload)
-		if !ok {
-			return errors.New("jwt.Token.Claims not matched")
-		}
+// 		var ok bool
+// 		claims, ok = jwt_token.Claims.(*sessionv3.ClientSessionPayload)
+// 		if !ok {
+// 			return errors.New("jwt.Token.Claims not matched")
+// 		}
 
-		return nil
-	}
-	if false {
-		fn = func() error {
-			var jwt_token *jwt.Token
-			// JWT verify
-			jwt_token, err = jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-				return []byte(globvar.ClientSession.SignatureSecret()), nil
-			})
-			if err != nil {
-				return errors.Wrapf(err, "jwt.Parser.ParseWithClaims")
-			}
+// 		return nil
+// 	}
+// 	if false {
+// 		fn = func() error {
+// 			var jwt_token *jwt.Token
+// 			// JWT verify
+// 			jwt_token, err = jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+// 				return []byte(globvar.ClientSession.SignatureSecret()), nil
+// 			})
+// 			if err != nil {
+// 				return errors.Wrapf(err, "jwt.Parser.ParseWithClaims")
+// 			}
 
-			var ok bool
-			claims, ok = jwt_token.Claims.(*sessionv3.ClientSessionPayload)
-			if !ok {
-				return errors.New("jwt.Token.Claims not matched")
-			}
-			if !jwt_token.Valid {
-				return errors.New("jwt.Token.Valid false")
-			}
+// 			var ok bool
+// 			claims, ok = jwt_token.Claims.(*sessionv3.ClientSessionPayload)
+// 			if !ok {
+// 				return errors.New("jwt.Token.Claims not matched")
+// 			}
+// 			if !jwt_token.Valid {
+// 				return errors.New("jwt.Token.Valid false")
+// 			}
 
-			return nil
-		}
-	}
+// 			return nil
+// 		}
+// 	}
 
-	err = fn()
-	err = errors.Wrapf(err, "failed to parse header token%v", logs.KVL(
-		"header_token", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
-		"token", token,
-	))
-	return
-}
+// 	err = fn()
+// 	err = errors.Wrapf(err, "failed to parse header token%v", logs.KVL(
+// 		"header_token", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
+// 		"token", token,
+// 	))
+// 	return
+// }
 
 // setCookie
 //lint:ignore U1000 auto-generated
