@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/prepare"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	recipev2 "github.com/NexClipper/sudory/pkg/server/model/template_recipe/v2"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
@@ -15,10 +15,10 @@ import (
 )
 
 // @Description Find TemplateRecipe
+// @Security    XAuthToken
 // @Produce     json
 // @Tags        server/template_recipe
 // @Router      /server/template_recipe [get]
-// @Param       x_auth_token header string false "client session token"
 // @Param       method       query  string false "Template Command Method"
 // @Success     200 {array} v2.HttpRsp_TemplateRecipe
 func (ctl ControlVanilla) FindTemplateRecipe(ctx echo.Context) (err error) {
@@ -33,9 +33,9 @@ func (ctl ControlVanilla) FindTemplateRecipe(ctx echo.Context) (err error) {
 	//뒤에 like 조회 와일드 카드를 붙여준다
 	buff.WriteString("%")
 
-	var p *prepare.Pagination = vanilla.Limit(50, 1).Parse()
+	var p = stmt.Limit(50, 1)
 	if 0 < len(echoutil.QueryParam(ctx)["p"]) {
-		p, err = prepare.NewPagination(echoutil.QueryParam(ctx)["p"])
+		p, err = stmt.PaginationLexer.Parse(echoutil.QueryParam(ctx)["p"])
 		err = errors.Wrapf(err, "failed to parse pagination")
 		if err != nil {
 			return HttpError(err, http.StatusBadRequest)
@@ -46,21 +46,22 @@ func (ctl ControlVanilla) FindTemplateRecipe(ctx echo.Context) (err error) {
 
 	recipe := recipev2.TemplateRecipe{}
 	recipe.Method = buff.String()
-	like_method := vanilla.Like("method", recipe.Method)
-	order := vanilla.Asc("name", "args")
+	like_method := stmt.Like("method", recipe.Method)
+	order := stmt.Asc("name", "args")
 
-	err = vanilla.Stmt.Select(recipe.TableName(), recipe.ColumnNames(), like_method.Parse(), order.Parse(), p).
-		QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
-		err = recipe.Scan(scan)
-		if err != nil {
-			return errors.Wrapf(err, "failed to scan")
-		}
-		rsp = append(rsp, recipev2.HttpRsp_TemplateRecipe(recipe))
-		return
-	})
+	err = stmtex.Select(recipe.TableName(), recipe.ColumnNames(), like_method, order, p).
+		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+		func(scan stmtex.Scanner, _ int) (err error) {
+			err = recipe.Scan(scan)
+			if err != nil {
+				return errors.Wrapf(err, "failed to scan")
+			}
+			rsp = append(rsp, recipe)
+			return
+		})
 	if err != nil {
 		return
 	}
 
-	return ctx.JSON(http.StatusOK, rsp)
+	return ctx.JSON(http.StatusOK, []recipev2.HttpRsp_TemplateRecipe(rsp))
 }

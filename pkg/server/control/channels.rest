@@ -1,0 +1,272 @@
+
+@protocolver = HTTP/1.1
+@protocol    = http
+@hostname    = localhost
+@port        = 8099
+@url         = {{protocol}}://{{hostname}}:{{port}}
+
+@test_path   = /server/channels
+
+@date = {{$datetime "YYYY-MM-DDThh:mm:ss"}}Z
+
+
+//<<<< AUTH >>>>
+# @name auth
+@tenant_pattern = channel_test
+
+POST {{url}}/server/auth {{protocolver}}
+Content-Type: application/json
+x_auth_token: SUDORY
+
+{
+  "tenant": "{{ tenant_pattern }}"
+}
+###
+
+@auth_token = Bearer {{auth.response.body.$.access_token}}
+
+@create__name = test_channel
+@create__summary = test channel
+@create__uuid = test
+
+//<<<< POST >>>> 
+# POST cluster with cordinated uuid
+# @name create_channel
+POST {{url}}{{test_path}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "event_category": 0,
+  "name": "{{ create__name }}",
+  "summary": "{{ create__summary }}",
+  "uuid": "{{ create__uuid }}"
+}
+###
+# GET cluster by cordinated uuid
+# @name get_channel
+GET {{url}}{{test_path}}/{{create__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###
+# POST cluster with generate uuid
+# @name create_channel
+POST {{url}}{{test_path}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "event_category": 0,
+  "name": "{{ create__name }}",
+  "summary": "{{ create__summary }}"
+}
+###
+@created__uuid = {{create_channel.response.body.$.uuid}}
+# GET cluster by generate uuid
+# @name get_channel
+GET {{url}}{{test_path}}/{{created__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###
+
+@channel__uuid = {{get_channel.response.body.$.uuid}}
+@channel__name = {{get_channel.response.body.$.name}}
+@channel__summary = {{get_channel.response.body.$.summary}}
+@channel__event_category = {{get_channel.response.body.$.event_category}}
+
+
+@match_uuid = (eq uuid "{{ channel__uuid }}")
+@match_name = (eq name "{{ channel__name }}")
+@match_summary = (eq summary "{{ channel__summary }}")
+
+@pagination={"limit": 20, "page": 1}
+@order={"desc": "created"}
+
+###
+# @name find_channel__match_uuid
+
+GET {{url}}{{test_path}}?q={{match_uuid}}&p={{pagination}}&o={{order}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###
+# @name find_channel__match_name
+
+GET {{url}}{{test_path}}?q={{match_name}}&p={{pagination}}&o={{order}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###
+# @name find_channel__match_summary
+
+GET {{url}}{{test_path}}?q={{match_summary}}&p={{pagination}}&o={{order}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###
+//<<<< PUT channel >>>> 
+# @name put_channel__event_category
+PUT {{url}}{{test_path}}/{{channel__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "event_category": {{$randomInt 1 4}}
+}
+
+###
+# @name put_channel__name
+PUT {{url}}{{test_path}}/{{channel__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+Accept-Encoding: gzip
+
+{
+  "event_category": {{ channel__event_category }}, 
+  "name": "{{create__name}}"
+}
+
+###
+# @name put_channel_summary
+PUT {{url}}{{test_path}}/{{channel__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "summary": "{{ create__summary }} time={{$datetime 'hhmmss'}}"
+}
+
+###
+//<<<< FORMAT >>>> 
+# @name get_channel_format
+GET {{url}}{{test_path}}/{{channel__uuid}}/format {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###
+# @name put_channel_format__disable(0)
+PUT {{url}}{{test_path}}/{{channel__uuid}}/format {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "format_type": 0
+}
+
+###
+# @name put_channel_format__fields(1)
+PUT {{url}}{{test_path}}/{{channel__uuid}}/format {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "format_data": "[\"event_name\",\"session_uuid\"]",
+  "format_type": 1
+}
+
+###
+# @name put_channel_format__jq(2)
+PUT {{url}}{{test_path}}/{{channel__uuid}}/format {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "format_data": "{event_name: .event_name, session_uuid: .session_uuid}",
+  "format_type": 2
+}
+
+###
+//<<<< EDGE >>>> 
+# @name get_channel_edges
+
+GET {{url}}{{test_path}}/{{channel__uuid}}/notifiers/edge {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###
+# @name put_set_notifier_console
+PUT {{url}}{{test_path}}/{{channel__uuid}}/notifiers/console {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+
+}
+
+###
+# @name put_set_notifier_webhook
+PUT {{url}}{{test_path}}/{{channel__uuid}}/notifiers/webhook {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "method": "POST",
+  "request_headers": {"foo":"bar"},
+  "request_timeout": 3,
+  "url": "http://example.com"
+}
+
+###
+# @name put_set_notifier_rabbitmq
+PUT {{url}}{{test_path}}/{{channel__uuid}}/notifiers/rabbitmq {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "channel_publish": {
+    "immediate": false,
+    "mandatory": false,
+    "routing_key": "test key"
+  },
+  "publishing": {},
+  "url": "amqp://example.com"
+}
+
+###
+# @name put_set_notifier_slackhook
+PUT {{url}}{{test_path}}/{{channel__uuid}}/notifiers/slackhook {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "request_timeout": 0,
+  "url": "amqp://example.com"
+}
+
+###
+//<<<< STATUS OPTION >>>> 
+# @name get_channel_status_option
+
+GET {{url}}{{test_path}}/{{channel__uuid}}/status/option {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###
+# @name put_channel_status_option
+
+PUT {{url}}{{test_path}}/{{channel__uuid}}/status/option {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "status_max_count": {{$randomInt 0 99}}
+}
+###
+//<<<< DELETE >>>> 
+# @name delete_channel
+
+DELETE {{url}}{{test_path}}/{{channel__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###
+//<<<< STATUS >>>> 
+# @name get_channel__ListChannelStatus
+
+GET {{url}}{{test_path}}/{{channel__uuid}}/status {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###

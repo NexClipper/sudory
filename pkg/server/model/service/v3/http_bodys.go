@@ -46,10 +46,6 @@ type HttpReq_Service_create struct {
 	} `json:"steps,omitempty"`
 }
 
-type HttpRsp_ServiceStep struct {
-	ServiceStep `json:",inline"`
-}
+type HttpRsp_ServiceStep = ServiceStep
 
-type HttpRsp_ServiceResult struct {
-	ServiceResult `json:",inline"`
-}
+type HttpRsp_ServiceResult = ServiceResult

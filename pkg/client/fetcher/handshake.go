@@ -8,13 +8,13 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/NexClipper/sudory/pkg/client/log"
-	authv1 "github.com/NexClipper/sudory/pkg/server/model/auth/v1"
+	"github.com/NexClipper/sudory/pkg/server/model/auths/v2"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 	"github.com/NexClipper/sudory/pkg/version"
 )
 
 func (f *Fetcher) HandShake() error {
-	body := &authv1.HttpReqAuth{AuthProperty: authv1.AuthProperty{
+	body := &auths.HttpReqAuth{AuthProperty: auths.AuthProperty{
 		ClusterUuid:   f.clusterId,
 		Assertion:     f.bearerToken,
 		ClientVersion: version.Version,

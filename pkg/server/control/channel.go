@@ -17,11 +17,11 @@ import (
 
 // @deprecated
 // @Description Create a channel
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel
 // @Router      /server/channel [post]
-// @Param       x_auth_token header string          false "client session token"
 // @Param       object       body   v1.Channel_create true  "Event_create"
 // @Success     200 {object} v1.Channel
 func (ctl Control) CreateChannel(ctx echo.Context) error {
@@ -29,7 +29,7 @@ func (ctl Control) CreateChannel(ctx echo.Context) error {
 	body := new(channelv1.Channel_create)
 	if err := echoutil.Bind(ctx, body); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+			errors.Wrapf(ErrorBindRequestObject, "bind%s",
 				logs.KVL(
 					"type", TypeName(body),
 				)))
@@ -37,7 +37,7 @@ func (ctl Control) CreateChannel(ctx echo.Context) error {
 
 	if len(body.Name) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(fmt.Sprintf("%s.Name", TypeName(body)), body.Name)...,
 				)))
@@ -45,7 +45,7 @@ func (ctl Control) CreateChannel(ctx echo.Context) error {
 
 	// if len(body.ClusterUuid) == 0 {
 	// 	return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-	// 		errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+	// 		errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 	// 			logs.KVL(
 	// 				ParamLog(fmt.Sprintf("%s.ClusterUuid", TypeName(body)), body.ClusterUuid)...,
 	// 			)))
@@ -53,7 +53,7 @@ func (ctl Control) CreateChannel(ctx echo.Context) error {
 
 	// if len(body.Pattern) == 0 {
 	// 	return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-	// 		errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+	// 		errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 	// 			logs.KVL(
 	// 				ParamLog(fmt.Sprintf("%s.Pattern", TypeName(body)), body.Pattern)...,
 	// 			)))
@@ -104,14 +104,14 @@ func (ctl Control) CreateChannel(ctx echo.Context) error {
 
 // @deprecated
 // @Description Find channel
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel
 // @Router      /server/channel [get]
-// @Param       x_auth_token header string false "client session token"
-// @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
-// @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
-// @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
+// @Param       q            query  string false "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       o            query  string false "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       p            query  string false "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Success     200 {array} v1.Channel
 func (ctl Control) FindChannel(ctx echo.Context) error {
 	//find channel
@@ -127,17 +127,17 @@ func (ctl Control) FindChannel(ctx echo.Context) error {
 
 // @deprecated
 // @Description Get a channel
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel
 // @Router      /server/channel/{uuid} [get]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid         path   string true  "Channel 의 Uuid"
 // @Success     200 {object} v1.Channel
 func (ctl Control) GetChannel(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
@@ -157,17 +157,17 @@ func (ctl Control) GetChannel(ctx echo.Context) error {
 
 // @deprecated
 // @Description Get channel edges
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel
 // @Router      /server/channel/{uuid}/notifier_edges [get]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid         path   string true  "Channel 의 Uuid"
 // @Success     200 {array} v1.ChannelNotifierEdge
 func (ctl Control) ListChannelNotifierEdges(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))
@@ -194,11 +194,11 @@ func (ctl Control) ListChannelNotifierEdges(ctx echo.Context) error {
 
 // @deprecated
 // @Description Update a channel
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel
 // @Router      /server/channel/{uuid} [put]
-// @Param       x_auth_token header string          false "client session token"
 // @Param       uuid         path   string          true  "Channel 의 Uuid"
 // @Param       object       body   v1.Channel_update true  "Event_update"
 // @Success     200 {object} v1.Channel
@@ -206,7 +206,7 @@ func (ctl Control) UpdateChannel(ctx echo.Context) error {
 	body := new(channelv1.Channel_update)
 	if err := echoutil.Bind(ctx, body); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+			errors.Wrapf(ErrorBindRequestObject, "bind%s",
 				logs.KVL(
 					"type", TypeName(body),
 				)))
@@ -238,11 +238,11 @@ func (ctl Control) UpdateChannel(ctx echo.Context) error {
 
 // @deprecated
 // @Description addtion channel notifier edge
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel
 // @Router      /server/channel/{uuid}/notifier_edges/add [put]
-// @Param       x_auth_token header string            false "client session token"
 // @Param       uuid         path   string            true  "Channel 의 Uuid"
 // @Param       object       body   []v1.NotifierEdge true "NotifierEdge"
 // @Success     200 {array} v1.ChannelNotifierEdge
@@ -250,7 +250,7 @@ func (ctl Control) AddChannelNotifierEdge(ctx echo.Context) error {
 	body := []channelv1.NotifierEdge{}
 	if err := echoutil.Bind(ctx, &body); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+			errors.Wrapf(ErrorBindRequestObject, "bind%s",
 				logs.KVL(
 					"type", TypeName(body),
 				)))
@@ -288,11 +288,11 @@ func (ctl Control) AddChannelNotifierEdge(ctx echo.Context) error {
 
 // @deprecated
 // @Description subtraction channel sub notifier
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel
 // @Router      /server/channel/{uuid}/notifier_edges/sub [put]
-// @Param       x_auth_token header string            false "client session token"
 // @Param       uuid         path   string            true  "Channel 의 Uuid"
 // @Param       object       body   []v1.NotifierEdge true  "Channel 의 NotifierEdge"
 // @Success     200 {array} v1.ChannelNotifierEdge
@@ -300,7 +300,7 @@ func (ctl Control) SubChannelNotifierEdge(ctx echo.Context) error {
 	body := []channelv1.NotifierEdge{}
 	if err := echoutil.Bind(ctx, &body); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorBindRequestObject(), "bind%s",
+			errors.Wrapf(ErrorBindRequestObject, "bind%s",
 				logs.KVL(
 					"type", TypeName(body),
 				)))
@@ -341,17 +341,17 @@ func (ctl Control) SubChannelNotifierEdge(ctx echo.Context) error {
 
 // @deprecated
 // @Description Delete a channel
+// @Security    XAuthToken
 // @Accept json
 // @Produce json
 // @Tags server/channel
 // @Router /server/channel/{uuid} [delete]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid         path   string true  "Channel 의 Uuid"
 // @Success 200
 func (ctl Control) DeleteChannel(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))

@@ -1,0 +1,120 @@
+
+@protocolver = HTTP/1.1
+@protocol    = http
+@hostname    = localhost
+@port        = 8099
+@url         = {{protocol}}://{{hostname}}:{{port}}
+
+@path_cluster   = /server/cluster
+@path_cluster_token   = /server/cluster_token
+
+@date = {{$datetime "YYYY-MM-DDThh:mm:ss"}}Z
+
+//<<<< AUTH >>>>
+# @name auth
+@tenant_pattern = cluster_token_test
+
+POST {{url}}/server/auth {{protocolver}}
+Content-Type: application/json
+x_auth_token: SUDORY
+
+{
+  "tenant": "{{ tenant_pattern }}"
+}
+###
+
+@auth_token = Bearer {{auth.response.body.$.access_token}}
+
+//<<<< POST >>>> 
+# POST cluster with cordinated uuid
+# @name cordinated_cluster
+@cordinated__uuid = cluster_token_test
+POST {{url}}{{path_cluster}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "name": "test name",
+  "polling_limit": 5,
+  "polling_option": {},
+  "summary": "test summary",
+  "uuid": "{{ cordinated__uuid }}"
+}
+###
+# GET cluster by cordinated uuid
+# @name get_cluster
+GET {{url}}{{path_cluster}}/{{cordinated__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###
+
+@cluster__id = {{get_cluster.response.body.$.id}}
+@cluster__uuid = {{get_cluster.response.body.$.uuid}}
+@cluster__name = {{get_cluster.response.body.$.name}}
+@cluster__summary = {{get_cluster.response.body.$.summary}}
+@cluster__created = {{get_cluster.response.body.$.created}}
+
+
+# POST cluster_token with cordinated uuid
+# @name create_cluster_token
+POST {{url}}{{path_cluster_token}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "uuid": "{{ cordinated__uuid }}",
+  "cluster_uuid": "{{cluster__uuid}}",
+  "name": "test name",
+  "polling_limit": 5,
+  "polling_option": {},
+  "summary": "test summary"
+
+}
+### 
+# GET cluster_token by cordinated uuid
+# @name get_cluster_token
+GET {{url}}{{path_cluster_token}}/{{cordinated__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###
+
+@cluster_token__uuid = {{get_cluster_token.response.body.$.uuid}}
+@cluster_token__name = {{get_cluster_token.response.body.$.uuid}}
+@cluster_token__summary = {{get_cluster_token.response.body.$.summary}}
+
+# PUT cluster_token by cordinated uuid
+# @name expire_cluster_token
+PUT {{url}}{{path_cluster_token}}/{{cluster_token__uuid}}/label {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+{
+  "name": "{{cluster_token__name}}_{{date}}",
+  "summary": "{{cluster_token__summary}} {{date}}"
+}
+###
+# PUT expire cluster_token by cordinated uuid
+# @name expire_cluster_token
+PUT {{url}}{{path_cluster_token}}/{{cluster_token__uuid}}/expire {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###
+# PUT refresh cluster_token by cordinated uuid
+# @name refresh_cluster_token
+PUT {{url}}{{path_cluster_token}}/{{cluster_token__uuid}}/refresh {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###
+
+//<<<< DELETE >>>> 
+# @name delete_cluster_token
+
+DELETE {{url}}{{path_cluster_token}}/{{cordinated__uuid}} {{protocolver}}
+Content-Type: application/json
+Authorization: {{auth_token}}
+
+###

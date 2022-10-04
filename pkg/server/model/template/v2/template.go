@@ -17,6 +17,12 @@ type Template struct {
 	Deleted vanilla.NullTime   `column:"deleted" json:"deleted,omitempty" swaggertype:"string"`
 }
 
+type Template_update struct {
+	Name    string             `column:"name"    json:"name,omitempty"`
+	Summary vanilla.NullString `column:"summary" json:"summary,omitempty" swaggertype:"string"`
+	Origin  string             `column:"origin"  json:"origin,omitempty"`
+}
+
 func (Template) TableName() string {
 	return "template"
 }

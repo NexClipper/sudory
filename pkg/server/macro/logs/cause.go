@@ -37,3 +37,14 @@ func StackIter(err error, fn func(string)) {
 		fn(buff.String())
 	}
 }
+
+func DeepCompare(a, b error) bool {
+	ok := false
+	CauseIter(a, func(err error) {
+		if err == b {
+			ok = true
+		}
+	})
+
+	return ok
+}

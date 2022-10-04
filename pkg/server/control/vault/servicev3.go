@@ -2,11 +2,11 @@ package vault
 
 import (
 	"context"
-	"database/sql"
 	"sort"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/prepare"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	v3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
 	"github.com/pkg/errors"
 )
@@ -19,21 +19,21 @@ var (
 
 func (servicev3) GetService(
 	ctx context.Context,
-	db vanilla.Preparer,
+	db stmtex.Preparer, dialect string,
 	cluster_uuid string, uuid string,
 ) (record *v3.Service, err error) {
 	var table v3.Service
 
 	args := make([]map[string]interface{}, 0, 2)
 	if 0 < len(cluster_uuid) {
-		args = append(args, vanilla.Equal("cluster_uuid", cluster_uuid))
+		args = append(args, stmt.Equal("cluster_uuid", cluster_uuid))
 	}
-	args = append(args, vanilla.Equal("uuid", uuid))
+	args = append(args, stmt.Equal("uuid", uuid))
 
-	cond := vanilla.And(args[0], args[1:]...)
+	cond := stmt.And(args...)
 
-	err = vanilla.Stmt.Select(table.TableName(), table.ColumnNames(), cond.Parse(), nil, nil).
-		QueryRowsContext(ctx, db)(func(scan vanilla.Scanner, _ int) error {
+	err = stmtex.Select(table.TableName(), table.ColumnNames(), cond, nil, nil).
+		QueryRowsContext(ctx, db, dialect)(func(scan stmtex.Scanner, _ int) error {
 
 		tmp := new(v3.Service)
 		err = tmp.Scan(scan)
@@ -66,7 +66,7 @@ func (servicev3) GetService(
 
 func (servicev3) GetServicesPolling(
 	ctx context.Context,
-	db vanilla.Preparer,
+	db stmtex.Preparer, dialect string,
 	cluster_uuid string, polling_offset vanilla.NullTime,
 ) (records []v3.Service_polling, err error) {
 	var record v3.Service_polling
@@ -74,10 +74,10 @@ func (servicev3) GetServicesPolling(
 
 	args := make([]map[string]interface{}, 0, 2)
 	if 0 < len(cluster_uuid) {
-		args = append(args, vanilla.Equal("cluster_uuid", cluster_uuid))
+		args = append(args, stmt.Equal("cluster_uuid", cluster_uuid))
 	}
 	if polling_offset.Valid {
-		args = append(args, vanilla.GreaterThanEqual("created", polling_offset))
+		args = append(args, stmt.GTE("created", polling_offset))
 	}
 
 	if len(args) == 0 {
@@ -85,12 +85,12 @@ func (servicev3) GetServicesPolling(
 		return
 	}
 
-	cond := vanilla.And(args[0], args[1:]...)
+	cond := stmt.And(args...)
 
 	// limit := vanilla.Limit(math.MaxInt8)
 
-	err = vanilla.Stmt.Select(record.TableName(), record.ColumnNames(), cond.Parse(), nil, nil).
-		QueryRowsContext(ctx, db)(func(scan vanilla.Scanner, i int) error {
+	err = stmtex.Select(record.TableName(), record.ColumnNames(), cond, nil, nil).
+		QueryRowsContext(ctx, db, dialect)(func(scan stmtex.Scanner, i int) error {
 
 		err = record.Scan(scan)
 		if err != nil {
@@ -131,22 +131,22 @@ func (servicev3) GetServicesPolling(
 
 func (servicev3) GetServiceStep(
 	ctx context.Context,
-	db vanilla.Preparer,
+	db stmtex.Preparer, dialect string,
 	cluster_uuid string, uuid string, sequence int,
 ) (record *v3.ServiceStep, err error) {
 	var table v3.ServiceStep
 
 	args := make([]map[string]interface{}, 0, 2)
 	if 0 < len(cluster_uuid) {
-		args = append(args, vanilla.Equal("cluster_uuid", cluster_uuid))
+		args = append(args, stmt.Equal("cluster_uuid", cluster_uuid))
 	}
-	args = append(args, vanilla.Equal("uuid", uuid))
-	args = append(args, vanilla.Equal("seq", sequence))
+	args = append(args, stmt.Equal("uuid", uuid))
+	args = append(args, stmt.Equal("seq", sequence))
 
-	cond := vanilla.And(args[0], args[1:]...)
+	cond := stmt.And(args...)
 
-	err = vanilla.Stmt.Select(table.TableName(), table.ColumnNames(), cond.Parse(), nil, nil).
-		QueryRowsContext(ctx, db)(func(scan vanilla.Scanner, _ int) error {
+	err = stmtex.Select(table.TableName(), table.ColumnNames(), cond, nil, nil).
+		QueryRowsContext(ctx, db, dialect)(func(scan stmtex.Scanner, _ int) error {
 
 		tmp := new(v3.ServiceStep)
 		err = tmp.Scan(scan)
@@ -179,40 +179,36 @@ func (servicev3) GetServiceStep(
 
 func (servicev3) GetServiceSteps(
 	ctx context.Context,
-	db vanilla.Preparer,
+	db stmtex.Preparer, dialect string,
 	cluster_uuid string, uuid string,
-) (records map[string][]v3.ServiceStep, err error) {
+) (records []v3.ServiceStep, err error) {
 
-	recordSet := make(map[string]map[int]v3.ServiceStep)
+	recordSet := make(map[int]v3.ServiceStep)
 	var record v3.ServiceStep
 
 	args := make([]map[string]interface{}, 0, 2)
 	if 0 < len(cluster_uuid) {
-		args = append(args, vanilla.Equal("cluster_uuid", cluster_uuid))
+		args = append(args, stmt.Equal("cluster_uuid", cluster_uuid))
 	}
-	args = append(args, vanilla.Equal("uuid", uuid))
+	args = append(args, stmt.Equal("uuid", uuid))
 
-	cond := vanilla.And(args[0], args[1:]...)
+	cond := stmt.And(args...)
 
-	err = vanilla.Stmt.Select(record.TableName(), record.ColumnNames(), cond.Parse(), nil, nil).
-		QueryRowsContext(ctx, db)(func(scan vanilla.Scanner, _ int) error {
+	err = stmtex.Select(record.TableName(), record.ColumnNames(), cond, nil, nil).
+		QueryRowsContext(ctx, db, dialect)(func(scan stmtex.Scanner, _ int) error {
 
 		err = record.Scan(scan)
 		if err != nil {
 			return errors.Wrapf(err, "scan service step")
 		}
-		// init sub record set
-		if recordSet[record.Uuid] == nil {
-			recordSet[record.Uuid] = make(map[int]v3.ServiceStep)
-		}
 
-		if _, ok := recordSet[record.Uuid][record.Sequence]; !ok {
-			recordSet[record.Uuid][record.Sequence] = record
+		if _, ok := recordSet[record.Sequence]; !ok {
+			recordSet[record.Sequence] = record
 		}
 
 		// find latest record by created
-		if recordSet[record.Uuid][record.Sequence].Timestamp.Before(record.Timestamp) {
-			recordSet[record.Uuid][record.Sequence] = record
+		if recordSet[record.Sequence].Timestamp.Before(record.Timestamp) {
+			recordSet[record.Sequence] = record
 		}
 
 		return nil
@@ -222,34 +218,27 @@ func (servicev3) GetServiceSteps(
 		return
 	}
 
-	records = make(map[string][]v3.ServiceStep)
-	for uuid, stepSet := range recordSet {
-		if records[uuid] == nil {
-			records[uuid] = make([]v3.ServiceStep, 0, len(stepSet))
-		}
-		for _, setp := range stepSet {
-			records[uuid] = append(records[uuid], setp)
-		}
+	records = make([]v3.ServiceStep, 0, len(recordSet))
+	for key := range recordSet {
+		records = append(records, recordSet[key])
 	}
 
-	for uuid := range records {
-		sort.Slice(records[uuid], func(i, j int) bool {
-			return records[uuid][i].Sequence < records[uuid][j].Sequence
-		})
-	}
+	sort.Slice(records, func(i, j int) bool {
+		return records[i].Sequence < records[j].Sequence
+	})
 
 	return
 }
 
 func (servicev3) GetServiceResult(
 	ctx context.Context,
-	db vanilla.Preparer,
-	cond *prepare.Condition, order *prepare.Orders, page *prepare.Pagination,
+	db stmtex.Preparer, dialect string,
+	cond stmt.ConditionStmt, order stmt.OrderStmt, page stmt.PaginationStmt,
 ) (record *v3.ServiceResult, err error) {
 	var table v3.ServiceResult
 
-	err = vanilla.Stmt.Select(table.TableName(), table.ColumnNames(), cond, order, page).
-		QueryRowsContext(ctx, db)(func(scan vanilla.Scanner, _ int) error {
+	err = stmtex.Select(table.TableName(), table.ColumnNames(), cond, order, page).
+		QueryRowsContext(ctx, db, dialect)(func(scan stmtex.Scanner, _ int) error {
 
 		tmp := new(v3.ServiceResult)
 		err = tmp.Scan(scan)
@@ -286,7 +275,7 @@ type Table interface {
 	ColumnNames() []string
 }
 
-func SaveMultiTable(tx *sql.Tx, tables []Table) error {
+func SaveMultiTable(tx stmtex.Preparer, dialect string, tables []Table) error {
 	BuildInsertValues := func(tables []Table) [][]interface{} {
 		values := make([][]interface{}, len(tables))
 		for i, table := range tables {
@@ -313,15 +302,12 @@ func SaveMultiTable(tx *sql.Tx, tables []Table) error {
 		return nil
 	}
 
-	builder, err := vanilla.Stmt.Insert(tablename, columnnames, values...)
+	affected, _, err := stmtex.Insert(tablename, columnnames, values...).
+		Exec(tx, dialect)
 	if err != nil {
-		return errors.Wrapf(err, "could not build a insert statement")
+		return errors.Wrapf(err, "could not save")
 	}
 
-	affected, err := builder.Exec(tx)
-	if err != nil {
-		return errors.Wrapf(err, "exec insert statement")
-	}
 	if affected == 0 {
 		return errors.New("no affected")
 	}

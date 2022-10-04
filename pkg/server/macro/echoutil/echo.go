@@ -3,6 +3,7 @@ package echoutil
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"strings"
 
@@ -63,23 +64,40 @@ func FormParamString(echo_ echo.Context) string {
 	return strings.Join(s, "&")
 }
 
-func Body(echo_ echo.Context) []byte {
-	//body read all
-	b, _ := ioutil.ReadAll(echo_.Request().Body) //read all body //ranout
-	//restore
-	echo_.Request().Body = ioutil.NopCloser(bytes.NewBuffer(b))
+func Body(ctx echo.Context) ([]byte, error) {
+	var err error
 
-	return b
+	// create clone
+	var a, b bytes.Buffer
+	w := io.MultiWriter(&a, &b)
+	_, err = io.Copy(w, ctx.Request().Body)
+	// check error
+	if err != nil {
+		return nil, err
+	}
+	// restore A to preserve
+	ctx.Request().Body = ioutil.NopCloser(&a)
+	// read all
+	return io.ReadAll(&b)
 }
 
-func Bind(echo_ echo.Context, v interface{}) error {
-	b := Body(echo_)
-	defer func() {
-		echo_.Request().Body = ioutil.NopCloser(bytes.NewBuffer(b))
-	}()
+func Bind(ctx echo.Context, v interface{}) error {
+	var err error
 
-	if err := echo_.Bind(v); err != nil {
+	// create clone
+	var a, b bytes.Buffer
+	w := io.MultiWriter(&a, &b)
+	_, err = io.Copy(w, ctx.Request().Body)
+	// check error
+	if err != nil {
 		return err
 	}
-	return nil
+	// restore A to read
+	ctx.Request().Body = ioutil.NopCloser(&a)
+	// bind
+	err = ctx.Bind(v)
+	// restore B to preserve
+	ctx.Request().Body = ioutil.NopCloser(&b)
+
+	return err
 }

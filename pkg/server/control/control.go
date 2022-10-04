@@ -5,11 +5,9 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/macro/block"
-	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/pkg/errors"
 	"xorm.io/xorm"
 
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	"github.com/labstack/echo/v4"
 )
 
@@ -64,13 +62,19 @@ func (ctl Control) NewSession() database.Context {
 }
 
 type ControlVanilla struct {
-	*vanilla.SqlDbEx
+	*sql.DB
+	dialect string
 }
 
-func NewVanilla(db *sql.DB) *ControlVanilla {
+func NewVanilla(db *sql.DB, dialect string) *ControlVanilla {
 	return &ControlVanilla{
-		SqlDbEx: vanilla.NewSqlDbEx(db,  state.ENV__CONTROL_TRANSACTION_TIMEOUT__()),
+		DB:      db,
+		dialect: dialect,
 	}
+}
+
+func (ctl ControlVanilla) Dialect() string {
+	return ctl.dialect
 }
 
 // HttpError

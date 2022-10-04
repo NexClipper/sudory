@@ -1,56 +1,64 @@
 package vault
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
+	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
-	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v2"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
+	channelv3 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/pkg/errors"
 )
 
 // CreateChannelStatus
-func CreateChannelStatus(db *sql.DB, uuid, message string, created time.Time, max_count uint) (err error) {
+func CreateChannelStatus(db *sql.DB, dialect string, uuid, message string, created time.Time, max_count uint) error {
+	var err error
 	// created := time.Now()
-	channel_opt := channelv2.ManagedChannel_option{}
-	channel_status := channelv2.ChannelStatus{
+	channel_opt := channelv3.ChannelStatusOption{}
+	channel_status := channelv3.ChannelStatus{
 		Uuid:    uuid,
 		Created: created,
 		Message: message,
 	}
 
-	channel_status_opt_cond := vanilla.And(
-		vanilla.Equal("uuid", uuid),
-		vanilla.IsNull("deleted"),
-	).Parse()
+	channel_status_opt_cond := stmt.And(
+		stmt.Equal("uuid", uuid),
+		stmt.IsNull("deleted"),
+	)
 
 	// valid; exist channel
-	err = vanilla.Stmt.Select(channel_opt.TableName(), channel_opt.ColumnNames(), channel_status_opt_cond, nil, nil).
-		QueryRow(db)(func(scan vanilla.Scanner) (err error) {
-		err = channel_opt.Scan(scan)
-		return
-	})
-	err = errors.Wrapf(err, "failed to query to channel opt")
+	err = stmtex.Select(channel_opt.TableName(), channel_opt.ColumnNames(), channel_status_opt_cond, nil, nil).
+		QueryRow(db, dialect)(
+		func(scan stmtex.Scanner) error {
+			return channel_opt.Scan(scan)
+		})
 	if err != nil {
-		return
+		return errors.Wrapf(err, "failed to query to channel opt")
 	}
 
-	if channel_opt.StatusOption.StatusMaxCount == 0 {
-		channel_opt.StatusOption.StatusMaxCount = max_count // default channel status max_count
+	if channel_opt.StatusMaxCount == 0 {
+		channel_opt.StatusMaxCount = max_count // default channel status max_count
 	}
 
 	// rotation; find
-	rotation_cond := vanilla.And(
-		vanilla.Equal("uuid", uuid),
-	).Parse()
-	rotation_order := vanilla.Desc("created").Parse()
-	rotation_limit := vanilla.Limit(int(channel_opt.StatusOption.StatusMaxCount)-1, 2).Parse()
-	rotation_columns := []string{"uuid", "created"}
+	rotation_cond := stmt.And(
+		stmt.Equal("uuid", uuid),
+	)
+	rotation_order := stmt.Desc("created")
+	rotation_limit := stmt.Limit(int(channel_opt.StatusMaxCount)-1, 2)
+	rotation_columns := []string{
+		"uuid",
+		"created",
+	}
 
-	uuids, createds := make([]string, 0, state.ENV__INIT_SLICE_CAPACITY__()), make([]vanilla.NullTime, 0, state.ENV__INIT_SLICE_CAPACITY__())
-	err = vanilla.Stmt.Select(channel_status.TableName(), rotation_columns, rotation_cond, rotation_order, rotation_limit).
-		QueryRows(db)(func(scan vanilla.Scanner, _ int) (err error) {
+	uuids := make([]string, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	createds := make([]vanilla.NullTime, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	err = stmtex.Select(channel_status.TableName(), rotation_columns, rotation_cond, rotation_order, rotation_limit).
+		QueryRows(db, dialect)(func(scan stmtex.Scanner, _ int) (err error) {
 		var uuid string
 		var created vanilla.NullTime
 		err = scan.Scan(&uuid, &created)
@@ -61,41 +69,36 @@ func CreateChannelStatus(db *sql.DB, uuid, message string, created time.Time, ma
 		return
 	})
 	if err != nil {
-		return
+		return err
 	}
 
 	// insert
 	// err = vanilla.Scope(db, func(tx *sql.Tx) (err error) {
 	err = func() (err error) {
-		stmt, err := vanilla.Stmt.Insert(channel_status.TableName(), channel_status.ColumnNames(), channel_status.Values())
-		if err != nil {
-			return
-		}
-
-		affected, err := stmt.Exec(db)
+		affected, _, err := stmtex.Insert(channel_status.TableName(), channel_status.ColumnNames(), channel_status.Values()).
+			Exec(db, dialect)
 		if err != nil {
 			return
 		}
 		if affected == 0 {
-			err = errors.Errorf("no affected")
-			return
+			return errors.Errorf("no affected")
 		}
 
 		return
 	}()
 	if err != nil {
-		return
+		return err
 	}
 
 	err = func() (err error) {
 		// rotation; remove
 		for i := range uuids {
 			uuid, created := uuids[i], createds[i]
-			rm_cond := vanilla.And(
-				vanilla.Equal("uuid", uuid),
-				vanilla.Equal("created", created),
-			).Parse()
-			_, err = vanilla.Stmt.Delete(channel_status.TableName(), rm_cond).Exec(db)
+			rm_cond := stmt.And(
+				stmt.Equal("uuid", uuid),
+				stmt.Equal("created", created),
+			)
+			_, err = stmtex.Delete(channel_status.TableName(), rm_cond).Exec(db, dialect)
 			if err != nil {
 				return
 			}
@@ -103,45 +106,226 @@ func CreateChannelStatus(db *sql.DB, uuid, message string, created time.Time, ma
 
 		return
 	}()
-	// })
 	if err != nil {
-		return
+		return err
 	}
 
-	return
+	return nil
 }
 
-// func MakeHttpRsp_ManagedChannel(
-// 	tx vanilla.Preparer,
-// 	channel_uuid string,
-// ) (rsp *channelv2.HttpRsp_ManagedChannel, err error) {
+func GetManagedChannel(db *sql.DB, dialect string, ctx context.Context, uuid string, tenant_hash string) (*channelv3.HttpRsp_ManagedChannel, error) {
+	var err error
+	var rst = new(channelv3.HttpRsp_ManagedChannel)
 
-// 	// NS_EG := vanilla.NS("EG")
-// 	// NS_CN := vanilla.NS("CN")
+	channel_cond := stmt.And(
+		stmt.Equal("uuid", uuid),
+	)
 
-// 	// notifier_cond := vanilla.And(
-// 	// 	vanilla.Equal(NS_EG("uuid"), channel_uuid),
-// 	// ).Parse()
-// 	channel_cond := vanilla.And(
-// 		vanilla.Equal("uuid", channel_uuid),
-// 		vanilla.IsNull("deleted"),
-// 	).Parse()
+	scoped_channel_cond := stmt.And(
+		channel_cond,
+		stmt.IsNull("deleted"),
+	)
 
-// 	channel_tangled := new(channelv2.ManagedChannel_tangled)
+	// ManagedChannel
+	var found bool
+	table_channel := channelv3.TableNameWithTenant_ManagedChannel(tenant_hash)
+	var channel channelv3.ManagedChannel
+	err = stmtex.Select(table_channel, channel.ColumnNames(), scoped_channel_cond, nil, nil).
+		QueryRowsContext(ctx, db, dialect)(
+		func(scan stmtex.Scanner, i int) error {
 
-// 	err = vanilla.Stmt.Select(channel_tangled.TableName(), channel_tangled.ColumnNames(), channel_cond, nil, nil).
-// 		QueryRow(tx)(func(scan vanilla.Scanner) (err error) {
-// 		err = channel_tangled.Scan(scan)
-// 		return
-// 	})
-// 	err = errors.Wrapf(err, "failed to query from channel")
-// 	if err != nil {
-// 		return
-// 	}
+			err := channel.Scan(scan)
+			if err != nil {
+				return err
+			}
 
-// 	rsp = &channelv2.HttpRsp_ManagedChannel{
-// 		ManagedChannel_tangled: *channel_tangled,
-// 	}
+			found = true
+			rst.ManagedChannel = channel
+			return nil
+		})
+	if err != nil {
+		return rst, errors.Wrapf(err, "failed to get %v", channel.TableName())
+	}
+	if !found {
+		return nil, nil
+	}
 
-// 	return
-// }
+	// ChannelStatusOption
+	var status_option channelv3.ChannelStatusOption
+	err = stmtex.Select(status_option.TableName(), status_option.ColumnNames(), channel_cond, nil, nil).
+		QueryRowsContext(ctx, db, dialect)(
+		func(scan stmtex.Scanner, _ int) error {
+			err := status_option.Scan(scan)
+			if err != nil {
+				return err
+			}
+
+			rst.StatusOption = status_option.ChannelStatusOption_property
+			return nil
+		})
+	if err != nil {
+		return rst, errors.Wrapf(err, "failed to get %v", status_option.TableName())
+	}
+
+	// Format
+	var format channelv3.Format
+	err = stmtex.Select(format.TableName(), format.ColumnNames(), channel_cond, nil, nil).
+		QueryRowsContext(ctx, db, dialect)(
+		func(scan stmtex.Scanner, _ int) error {
+			err := format.Scan(scan)
+			if err != nil {
+				return err
+			}
+
+			rst.Format = format.Format_property
+			return nil
+		})
+	if err != nil {
+		return rst, errors.Wrapf(err, "failed to get %v", format.TableName())
+	}
+
+	// NotifierEdge
+	var edge channelv3.NotifierEdge
+	err = stmtex.Select(edge.TableName(), edge.ColumnNames(), channel_cond, nil, nil).
+		QueryRowsContext(ctx, db, dialect)(
+		func(scan stmtex.Scanner, _ int) error {
+			err := edge.Scan(scan)
+			if err != nil {
+				return err
+			}
+
+			edge_options, err := GetChannelNotifierEdge(ctx, db, dialect, edge)
+			if err != nil {
+				return err
+			}
+
+			rst.Notifiers.NotifierEdge_property = edge_options.NotifierEdge_property
+			rst.Notifiers.Console = edge_options.Console
+			rst.Notifiers.Webhook = edge_options.Webhook
+			rst.Notifiers.RabbitMq = edge_options.RabbitMq
+			rst.Notifiers.Slackhook = edge_options.Slackhook
+
+			return nil
+		})
+	if err != nil {
+		return rst, errors.Wrapf(err, "failed to get %v", edge.TableName())
+	}
+
+	return rst, nil
+}
+
+func GetChannelNotifierEdge(ctx context.Context, db *sql.DB, dialect string, edge channelv3.NotifierEdge) (*channelv3.HttpRsp_ManagedChannel_NotifierEdge, error) {
+	var err error
+	var rsp = new(channelv3.HttpRsp_ManagedChannel_NotifierEdge)
+
+	rsp.NotifierEdge = edge
+
+	channel_cond := stmt.And(
+		stmt.Equal("uuid", edge.Uuid),
+	)
+
+	if edge.NotifierType == channelv3.NotifierTypeConsole {
+		// NotifierConsole
+		var notifier channelv3.NotifierConsole
+		err = stmtex.Select(notifier.TableName(), notifier.ColumnNames(), channel_cond, nil, nil).
+			QueryRowsContext(ctx, db, dialect)(
+			func(scan stmtex.Scanner, _ int) error {
+				err := notifier.Scan(scan)
+				if err != nil {
+					return err
+				}
+
+				rsp.Console = &notifier.NotifierConsole_property
+				return nil
+			})
+
+		if err != nil {
+			return rsp, errors.Wrapf(err, "failed to get a notifier(console)")
+		}
+
+	}
+
+	if edge.NotifierType == channelv3.NotifierTypeWebhook {
+		// NotifierWebhook
+		var notifier channelv3.NotifierWebhook
+		err = stmtex.Select(notifier.TableName(), notifier.ColumnNames(), channel_cond, nil, nil).
+			QueryRowsContext(ctx, db, dialect)(
+			func(scan stmtex.Scanner, _ int) error {
+				err := notifier.Scan(scan)
+				if err != nil {
+					return err
+				}
+
+				rsp.Webhook = &notifier.NotifierWebhook_property
+				return nil
+			})
+		if err != nil {
+			return rsp, errors.Wrapf(err, "failed to get a notifier(webhook)")
+		}
+
+	}
+
+	if edge.NotifierType == channelv3.NotifierTypeRabbitmq {
+		// NotifierRabbitMq
+		var notifier channelv3.NotifierRabbitMq
+		err = stmtex.Select(notifier.TableName(), notifier.ColumnNames(), channel_cond, nil, nil).
+			QueryRowsContext(ctx, db, dialect)(
+			func(scan stmtex.Scanner, _ int) error {
+				err := notifier.Scan(scan)
+				if err != nil {
+					return err
+				}
+
+				rsp.RabbitMq = &notifier.NotifierRabbitMq_property
+				return nil
+			})
+		if err != nil {
+			return rsp, errors.Wrapf(err, "failed to get a notifier(rabbitmq)")
+		}
+
+	}
+
+	if edge.NotifierType == channelv3.NotifierTypeSlackhook {
+		// NotifierSlackhook
+		var notifier channelv3.NotifierSlackhook
+		err = stmtex.Select(notifier.TableName(), notifier.ColumnNames(), channel_cond, nil, nil).
+			QueryRowsContext(ctx, db, dialect)(
+			func(scan stmtex.Scanner, _ int) error {
+				err := notifier.Scan(scan)
+				if err != nil {
+					return err
+				}
+
+				rsp.Slackhook = &notifier.NotifierSlackhook_property
+				return nil
+			})
+
+		if err != nil {
+			return rsp, errors.Wrapf(err, "failed to get a notifier(slackhook)")
+		}
+
+	}
+
+	return rsp, nil
+}
+
+func CheckManagedChannel(ctx context.Context, db stmtex.Preparer, dialect string, uuid string, tenant_hash string) error {
+	// check channel
+	var channel channelv3.ManagedChannel
+	channel.Uuid = uuid
+	channel_cond := stmt.And(
+		stmt.Equal("uuid", channel.Uuid),
+		stmt.IsNull("deleted"),
+	)
+	table_channel := channelv3.TableNameWithTenant_ManagedChannel(tenant_hash)
+
+	exist, err := stmtex.ExistContext(table_channel, channel_cond)(ctx, db, dialect)
+	if err != nil {
+		return errors.Wrapf(err, "failed to check a channel")
+	}
+	if !exist {
+		return errors.WithStack(database.ErrorRecordWasNotFound)
+	}
+
+	return nil
+}

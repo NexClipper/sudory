@@ -5,13 +5,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/NexClipper/sudory/pkg/server/control/vault"
+	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	clusterv2 "github.com/NexClipper/sudory/pkg/server/model/cluster/v2"
-	clustertokenv2 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v2"
+	clusterv3 "github.com/NexClipper/sudory/pkg/server/model/cluster/v3"
+	clustertokenv3 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v3"
 	cryptov2 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v2"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
@@ -20,15 +22,15 @@ import (
 )
 
 // @Description Create a Cluster Token
+// @Security    ServiceAuth
 // @Accept      json
 // @Produce     json
 // @Tags        server/cluster_token
 // @Router      /server/cluster_token [post]
-// @Param       x_auth_token header string                         false "client session token"
-// @Param       object       body   v2.HttpReq_ClusterToken_create true  "ClusterToken HttpReq_ClusterToken_create"
-// @Success     200 {object} v2.HttpRsp_ClusterToken
+// @Param       object       body   v3.HttpReq_ClusterToken_create true  "ClusterToken HttpReq_ClusterToken_create"
+// @Success     200 {object} v3.HttpRsp_ClusterToken
 func (ctl ControlVanilla) CreateClusterToken(ctx echo.Context) (err error) {
-	body := new(clustertokenv2.HttpReq_ClusterToken_create)
+	body := new(clustertokenv3.HttpReq_ClusterToken_create)
 	err = func() (err error) {
 		if err := echoutil.Bind(ctx, body); err != nil {
 			return errors.Wrapf(err, "bind%s",
@@ -37,13 +39,13 @@ func (ctl ControlVanilla) CreateClusterToken(ctx echo.Context) (err error) {
 				))
 		}
 		if len(body.Name) == 0 {
-			return errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			return errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(fmt.Sprintf("%s.Name", TypeName(body)), body.Name)...,
 				))
 		}
 		if len(body.ClusterUuid) == 0 {
-			return errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			return errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(fmt.Sprintf("%s.ClusterUuid", TypeName(body)), body.ClusterUuid)...,
 				))
@@ -52,125 +54,148 @@ func (ctl ControlVanilla) CreateClusterToken(ctx echo.Context) (err error) {
 		return
 	}()
 	if err != nil {
-		HttpError(err, http.StatusBadRequest)
+		return HttpError(err, http.StatusBadRequest)
 	}
 
-	//valvalidied token user
-	cluster := clusterv2.Cluster{}
-	cluster_uuid := vanilla.Equal("uuid", body.ClusterUuid)
-	err = vanilla.Stmt.Select(cluster.TableName(), cluster.ColumnNames(), cluster_uuid.Parse(), nil, nil).
-		QueryRow(ctl)(func(scan vanilla.Scanner) (err error) {
-		err = cluster.Scan(scan)
-		return
-	})
+	// get tenant claims
+	claims, err := GetServiceAuthorizationClaims(ctx)
+	if err != nil {
+		return HttpError(err, http.StatusForbidden)
+	}
+	err = func() error {
+		// check cluster
+		cluster_table := clusterv3.TableNameWithTenant(claims.Hash)
+		cluster_cond := stmt.And(
+			stmt.Equal("uuid", body.ClusterUuid),
+			stmt.IsNull("deleted"),
+		)
+		cluster_exist, err := stmtex.ExistContext(cluster_table, cluster_cond)(ctx.Request().Context(), ctl, ctl.Dialect())
+		if err != nil {
+			return errors.Wrapf(err, "check cluster")
+		}
+		if !cluster_exist {
+			return errors.Wrapf(database.ErrorRecordWasNotFound, "check cluster")
+		}
+		return nil
+	}()
 	if err != nil {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
+	// gen uuid
+	body.Uuid = genUuidString(body.Uuid)
+	time_now := time.Now()
+	tokenstr := macro.NewUuidString()
+
 	//property
-	token := clustertokenv2.ClusterToken{}
-	token.Uuid = func() string {
-		if 0 < len(body.Uuid) {
-			return body.Uuid
-		}
-		return macro.NewUuidString()
-	}()
-	token.Name = body.Name
-	token.Summary = func() vanilla.NullString {
-		if body.Summary != nil {
-			return *vanilla.NewNullString(*body.Summary)
-		}
-		return token.Summary
-	}()
-	token.ClusterUuid = body.ClusterUuid
-	token.IssuedAtTime = time.Now()
-	token.ExpirationTime = globvar.BearerTokenExpirationTime(token.IssuedAtTime)
-	token.Token = cryptov2.CryptoString(macro.NewUuidString())
-	token.Created = time.Now()
+	new_token := clustertokenv3.ClusterToken{}
+	new_token.Uuid = body.Uuid
+	new_token.Name = body.Name
+	new_token.Summary = body.Summary
+	new_token.ClusterUuid = body.ClusterUuid
+	new_token.IssuedAtTime = time_now
+	new_token.ExpirationTime = globvar.BearerToken.ExpirationTime(time_now)
+	new_token.Token = cryptov2.CryptoString(tokenstr)
+	new_token.Created = time_now
+	new_token.Updated = *vanilla.NewNullTime(time_now)
 
-	err = func() (err error) {
-		stmt, err := vanilla.Stmt.Insert(token.TableName(), token.ColumnNames(), token.Values())
+	err = func() error {
+		var affected int64
+		// save cluster token
+		affected, new_token.ID, err = stmtex.Insert(new_token.TableName(), new_token.ColumnNames(), new_token.Values()).
+			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
 		if err != nil {
-			return
+			return errors.Wrapf(err, "save cluster token")
 		}
-
-		affected, err := stmt.Exec(ctl)
-		if err != nil {
-			return
+		if new_token.ID == 0 {
+			return errors.Wrapf(database.ErrorNoLastInsertId, "save cluster token")
 		}
 		if affected == 0 {
-			err = errors.Errorf("no affected")
-			return
+			return errors.Wrapf(database.ErrorNoAffected, "save cluster token")
 		}
-		return
+
+		return nil
 	}()
-	err = errors.Wrapf(err, "failed to create cluster token")
 	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
+		return errors.Wrapf(err, "failed to create cluster token")
 	}
 
-	token, err = vault.GetClusterToken(ctl, token.Uuid)
-	err = errors.Wrapf(err, "not found cluster token")
-	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
-	}
-
-	return ctx.JSON(http.StatusOK, clustertokenv2.HttpRsp_ClusterToken{ClusterToken: token})
+	return ctx.JSON(http.StatusOK, clustertokenv3.HttpRsp_ClusterToken(new_token))
 }
 
 // @Description Find Cluster Token
+// @Security    ServiceAuth
 // @Accept      json
 // @Produce     json
 // @Tags        server/cluster_token
 // @Router      /server/cluster_token [get]
-// @Param       x_auth_token header string false "client session token"
-// @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
-// @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
-// @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
-// @Success     200 {array} v2.HttpRsp_ClusterToken
+// @Param       q            query  string false "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       o            query  string false "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       p            query  string false "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Success     200 {array} v3.HttpRsp_ClusterToken
 func (ctl ControlVanilla) FindClusterToken(ctx echo.Context) error {
-	q, o, p, err := ParseDecoration(echoutil.QueryParam(ctx))
-	err = errors.Wrapf(err, "ParseDecoration%v", logs.KVL(
-		"query", echoutil.QueryParamString(ctx),
-	))
-	if err != nil {
+	q, err := stmt.ConditionLexer.Parse(echoutil.QueryParam(ctx)["q"])
+	if err != nil && !logs.DeepCompare(err, stmt.ErrorInvalidArgumentEmptyString) {
 		return HttpError(err, http.StatusBadRequest)
 	}
-
-	rsp := make([]clustertokenv2.HttpRsp_ClusterToken, 0, state.ENV__INIT_SLICE_CAPACITY__())
-
-	var token clustertokenv2.ClusterToken
-	err = vanilla.Stmt.Select(token.TableName(), token.ColumnNames(), q, o, p).
-		QueryRows(ctl)(func(scan vanilla.Scanner, _ int) (err error) {
-		err = token.Scan(scan)
-		if err != nil {
-			return
-		}
-
-		rsp = append(rsp, clustertokenv2.HttpRsp_ClusterToken{ClusterToken: token})
-		return
-	})
-	err = errors.Wrapf(err, "not found cluster token")
-	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
+	o, err := stmt.OrderLexer.Parse(echoutil.QueryParam(ctx)["o"])
+	if err != nil && !logs.DeepCompare(err, stmt.ErrorInvalidArgumentEmptyString) {
+		return HttpError(err, http.StatusBadRequest)
+	}
+	p, err := stmt.PaginationLexer.Parse(echoutil.QueryParam(ctx)["p"])
+	if err != nil && !logs.DeepCompare(err, stmt.ErrorInvalidArgumentEmptyString) {
+		return HttpError(err, http.StatusBadRequest)
+	}
+	// additional conditon
+	q = stmt.And(q,
+		stmt.IsNull("deleted"),
+	)
+	// default pagination
+	if p == nil {
+		p = stmt.Limit(__DEFAULT_DECORATION_LIMIT__)
 	}
 
-	return ctx.JSON(http.StatusOK, rsp)
+	// get tenant claims
+	claims, err := GetServiceAuthorizationClaims(ctx)
+	if err != nil {
+		return HttpError(err, http.StatusForbidden)
+	}
+
+	rsp := make([]clustertokenv3.HttpRsp_ClusterToken, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	token := clustertokenv3.ClusterToken{}
+	token_table := clustertokenv3.TableNameWithTenant(claims.Hash)
+
+	err = stmtex.Select(token_table, token.ColumnNames(), q, o, p).
+		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+		func(scan stmtex.Scanner, _ int) error {
+			err := token.Scan(scan)
+			if err != nil {
+				return errors.Wrapf(err, "failed to scan")
+			}
+
+			rsp = append(rsp, token)
+			return nil
+		})
+	if err != nil {
+		return errors.Wrapf(err, "failed to find cluster token")
+	}
+
+	return ctx.JSON(http.StatusOK, []clustertokenv3.HttpRsp_ClusterToken(rsp))
 
 }
 
 // @Description Get a Cluster Token
+// @Security    ServiceAuth
 // @Accept      json
 // @Produce     json
 // @Tags        server/cluster_token
 // @Router      /server/cluster_token/{uuid} [get]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid         path   string true  "ClusterToken Uuid"
-// @Success     200 {object} v2.HttpRsp_ClusterToken
+// @Success     200 {object} v3.HttpRsp_ClusterToken
 func (ctl ControlVanilla) GetClusterToken(ctx echo.Context) (err error) {
 	err = func() (err error) {
 		if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-			return errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			return errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				))
@@ -181,29 +206,46 @@ func (ctl ControlVanilla) GetClusterToken(ctx echo.Context) (err error) {
 		HttpError(err, http.StatusBadRequest)
 	}
 
-	uuid := echoutil.Param(ctx)[__UUID__]
-
-	token, err := vault.GetClusterToken(ctl, uuid)
-	err = errors.Wrapf(err, "not found cluster token")
+	// get tenant claims
+	claims, err := GetServiceAuthorizationClaims(ctx)
 	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
+		return HttpError(err, http.StatusForbidden)
 	}
 
-	return ctx.JSON(http.StatusOK, clustertokenv2.HttpRsp_ClusterToken{ClusterToken: token})
+	uuid := echoutil.Param(ctx)[__UUID__]
+
+	token_table := clustertokenv3.TableNameWithTenant(claims.Hash)
+	token := clustertokenv3.ClusterToken{}
+	token.Uuid = uuid
+
+	token_cond := stmt.And(
+		stmt.Equal("uuid", token.Uuid),
+		stmt.IsNull("deleted"),
+	)
+	err = stmtex.Select(token_table, token.ColumnNames(), token_cond, nil, nil).
+		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+		func(scan stmtex.Scanner) (err error) {
+			return token.Scan(scan)
+		})
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to get cluster token")
+	}
+
+	return ctx.JSON(http.StatusOK, clustertokenv3.HttpRsp_ClusterToken(token))
 }
 
-// UpdateClusterTokenLabel
 // @Description Update Label of Cluster Token
+// @Security    ServiceAuth
 // @Accept      json
 // @Produce     json
 // @Tags        server/cluster_token
 // @Router		/server/cluster_token/{uuid}/label [put]
-// @Param       x_auth_token header string                         false "client session token"
 // @Param       uuid         path   string                         true  "ClusterToken Uuid"
-// @Param       object       body   v2.HttpReq_ClusterToken_update true  "ClusterToken HttpReq_ClusterToken_update"
-// @Success 	200 {object} v2.HttpRsp_ClusterToken
+// @Param       object       body   v3.HttpReq_ClusterToken_update true  "ClusterToken HttpReq_ClusterToken_update"
+// @Success 	200 {object} v3.HttpRsp_ClusterToken
 func (ctl ControlVanilla) UpdateClusterTokenLabel(ctx echo.Context) (err error) {
-	body := new(clustertokenv2.HttpReq_ClusterToken_update)
+	body := new(clustertokenv3.HttpReq_ClusterToken_update)
 	err = func() (err error) {
 		if err := echoutil.Bind(ctx, body); err != nil {
 			return errors.Wrapf(err, "bind%s",
@@ -212,7 +254,7 @@ func (ctl ControlVanilla) UpdateClusterTokenLabel(ctx echo.Context) (err error) 
 				))
 		}
 		if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-			return errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			return errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				))
@@ -223,82 +265,85 @@ func (ctl ControlVanilla) UpdateClusterTokenLabel(ctx echo.Context) (err error) 
 		HttpError(err, http.StatusBadRequest)
 	}
 
+	// get tenant claims
+	claims, err := GetServiceAuthorizationClaims(ctx)
+	if err != nil {
+		return HttpError(err, http.StatusForbidden)
+	}
+
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	// get token
-	token, err := vault.GetClusterToken(ctl, uuid)
-	err = errors.Wrapf(err, "not found cluster token")
+	// get cluster token
+	token_table := clustertokenv3.TableNameWithTenant(claims.Hash)
+	var token clustertokenv3.ClusterToken
+	token.Uuid = uuid
+	token_cond := stmt.And(
+		stmt.Equal("uuid", token.Uuid),
+		stmt.IsNull("deleted"),
+	)
+
+	err = stmtex.Select(token_table, token.ColumnNames(), token_cond, nil, nil).
+		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+		func(scan stmtex.Scanner) error {
+			return token.Scan(scan)
+		})
 	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
-	}
-	if token.Deleted.Valid {
-		err = errors.Errorf("this cluster token is already deleted%v", logs.KVL(
-			"uuid", uuid,
-		))
-		return HttpError(err, http.StatusBadRequest)
+		return errors.Wrapf(err, "get cluster token")
 	}
 
 	//property
-	token.Name = body.Name
-	token.Summary = func() vanilla.NullString {
-		if body.Summary != nil {
-			return *vanilla.NewNullString(*body.Summary)
-		}
-		return token.Summary
-	}()
-	token.Updated = *vanilla.NewNullTime(time.Now())
-
-	eq_uuid := vanilla.Equal("uuid", token.Uuid)
+	time_now := time.Now()
 
 	updateSet := map[string]interface{}{}
-	var activated bool = false
-	active := func() {
-		updateSet["updated"] = token.Updated
-		activated = true
-	}
-	if 0 < len(token.Name) {
+
+	if 0 < len(body.Name) {
+		token.Name = body.Name
 		updateSet["name"] = token.Name
-		active()
 	}
-	if token.Summary.Valid {
+	if body.Summary.Valid {
+		token.Summary = body.Summary
 		updateSet["summary"] = token.Summary
-		active()
 	}
 
-	err = func() (err error) {
-		if !activated {
-			return
-		}
+	// valied update column counts
+	if len(updateSet) == 0 {
+		return HttpError(errors.New("noting to update"), http.StatusBadRequest)
+	}
 
-		affected, err := vanilla.Stmt.Update(token.TableName(), updateSet, eq_uuid.Parse()).
-			Exec(ctl)
+	token.Updated = *vanilla.NewNullTime(time_now)
+	updateSet["updated"] = token.Updated
+
+	err = func() error {
+		// update cluster token
+		_, err := stmtex.Update(token.TableName(), updateSet, token_cond).
+			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
 		if err != nil {
-			return
+			return errors.Wrapf(err, "update cluster token")
 		}
-		if affected == 0 {
-			err = errors.New("no affectd")
-		}
-		return
+		// if affected == 0 {
+		// 	return errors.Wrapf(database.ErrorNoAffected, "update cluster token")
+		// }
+		return nil
 	}()
 	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
+		return errors.Wrapf(err, "failed to update cluster token")
 	}
 
-	return ctx.JSON(http.StatusOK, clustertokenv2.HttpRsp_ClusterToken{ClusterToken: token})
+	return ctx.JSON(http.StatusOK, clustertokenv3.HttpRsp_ClusterToken(token))
 }
 
 // @Description Refresh Time of Cluster Token
+// @Security    ServiceAuth
 // @Accept      json
 // @Produce     json
 // @Tags        server/cluster_token
 // @Router      /server/cluster_token/{uuid}/refresh [put]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid         path   string true  "ClusterToken Uuid"
-// @Success     200 {object} v2.HttpRsp_ClusterToken
+// @Success     200 {object} v3.HttpRsp_ClusterToken
 func (ctl ControlVanilla) RefreshClusterTokenTime(ctx echo.Context) (err error) {
 	err = func() (err error) {
 		if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-			return errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			return errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				))
@@ -309,63 +354,78 @@ func (ctl ControlVanilla) RefreshClusterTokenTime(ctx echo.Context) (err error) 
 		HttpError(err, http.StatusBadRequest)
 	}
 
+	// get tenant claims
+	claims, err := GetServiceAuthorizationClaims(ctx)
+	if err != nil {
+		return HttpError(err, http.StatusForbidden)
+	}
+
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	token, err := vault.GetClusterToken(ctl, uuid)
-	err = errors.Wrapf(err, "not found cluster token")
+	// get cluster token
+	token_table := clustertokenv3.TableNameWithTenant(claims.Hash)
+	var token clustertokenv3.ClusterToken
+	token.Uuid = uuid
+	token_cond := stmt.And(
+		stmt.Equal("uuid", token.Uuid),
+		stmt.IsNull("deleted"),
+	)
+
+	err = stmtex.Select(token_table, token.ColumnNames(), token_cond, nil, nil).
+		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+		func(scan stmtex.Scanner) error {
+			return token.Scan(scan)
+		})
 	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
-	}
-	if token.Deleted.Valid {
-		err = errors.Errorf("this cluster token is already deleted%v", logs.KVL(
-			"uuid", uuid,
-		))
-		return HttpError(err, http.StatusBadRequest)
+		return errors.Wrapf(err, "get cluster token")
 	}
 
 	//property
-	token.IssuedAtTime = time.Now()
-	token.ExpirationTime = globvar.BearerTokenExpirationTime(time.Now()) //만료시간 연장
-	token.Updated = *vanilla.NewNullTime(time.Now())
+	time_now := time.Now()
 
-	eq_uuid := vanilla.Equal("uuid", token.Uuid)
 	updateSet := map[string]interface{}{}
 	if true {
+		token.IssuedAtTime = time_now
 		updateSet["issued_at_time"] = token.IssuedAtTime
 	}
+
+	token.ExpirationTime = globvar.BearerToken.ExpirationTime(time_now) //만료시간 연장
 	updateSet["expiration_time"] = token.ExpirationTime
+
+	token.Updated = *vanilla.NewNullTime(time_now)
 	updateSet["updated"] = token.Updated
 
-	err = func() (err error) {
-		affected, err := vanilla.Stmt.Update(token.TableName(), updateSet, eq_uuid.Parse()).
-			Exec(ctl)
+	err = func() error {
+		// update cluster token
+		_, err := stmtex.Update(token.TableName(), updateSet, token_cond).
+			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
 		if err != nil {
-			return
+			return errors.Wrapf(err, "update cluster token")
 		}
-		if affected == 0 {
-			err = errors.New("no affectd")
-		}
-		return
+		// if affected == 0 {
+		// 	return errors.Wrapf(database.ErrorNoAffected, "update cluster token")
+		// }
+		return nil
 	}()
 	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
+		return errors.Wrapf(err, "failed to update cluster token")
 	}
 
-	return ctx.JSON(http.StatusOK, clustertokenv2.HttpRsp_ClusterToken{ClusterToken: token})
+	return ctx.JSON(http.StatusOK, clustertokenv3.HttpRsp_ClusterToken(token))
 }
 
 // @Description Expire Cluster Token
+// @Security    ServiceAuth
 // @Accept      json
 // @Produce     json
 // @Tags        server/cluster_token
 // @Router      /server/cluster_token/{uuid}/expire [put]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid         path   string true  "ClusterToken Uuid"
-// @Success     200 {object} v2.HttpRsp_ClusterToken
+// @Success     200 {object} v3.HttpRsp_ClusterToken
 func (ctl ControlVanilla) ExpireClusterToken(ctx echo.Context) (err error) {
 	err = func() (err error) {
 		if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-			return errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			return errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				))
@@ -376,64 +436,78 @@ func (ctl ControlVanilla) ExpireClusterToken(ctx echo.Context) (err error) {
 		HttpError(err, http.StatusBadRequest)
 	}
 
+	// get tenant claims
+	claims, err := GetServiceAuthorizationClaims(ctx)
+	if err != nil {
+		return HttpError(err, http.StatusForbidden)
+	}
+
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	// get a cluster token
-	token, err := vault.GetClusterToken(ctl, uuid)
-	err = errors.Wrapf(err, "not found cluster token")
+	// get cluster token
+	token_table := clustertokenv3.TableNameWithTenant(claims.Hash)
+	var token clustertokenv3.ClusterToken
+	token.Uuid = uuid
+	token_cond := stmt.And(
+		stmt.Equal("uuid", token.Uuid),
+		stmt.IsNull("deleted"),
+	)
+
+	err = stmtex.Select(token_table, token.ColumnNames(), token_cond, nil, nil).
+		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+		func(scan stmtex.Scanner) error {
+			return token.Scan(scan)
+		})
 	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
-	}
-	if token.Deleted.Valid {
-		err = errors.Errorf("this cluster token is already deleted%v", logs.KVL(
-			"uuid", uuid,
-		))
-		return HttpError(err, http.StatusBadRequest)
+		return errors.Wrapf(err, "get cluster token")
 	}
 
 	//property
-	token.IssuedAtTime = time.Now()
-	token.ExpirationTime = time.Now() // 현 시간으로 만료시간 설정
-	token.Updated = *vanilla.NewNullTime(time.Now())
+	time_now := time.Now()
 
-	eq_uuid := vanilla.Equal("uuid", token.Uuid)
 	updateSet := map[string]interface{}{}
 	if false {
+		token.IssuedAtTime = time_now
 		updateSet["issued_at_time"] = token.IssuedAtTime
 	}
+
+	token.ExpirationTime = time_now // 현 시간으로 만료시간 설정
 	updateSet["expiration_time"] = token.ExpirationTime
+
+	token.Updated = *vanilla.NewNullTime(time_now)
 	updateSet["updated"] = token.Updated
 
-	err = func() (err error) {
-		affected, err := vanilla.Stmt.Update(token.TableName(), updateSet, eq_uuid.Parse()).
-			Exec(ctl)
+	err = func() error {
+		// update cluster token
+		_, err := stmtex.Update(token.TableName(), updateSet, token_cond).
+			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
 		if err != nil {
-			return
+			return errors.Wrapf(err, "update cluster token")
 		}
-		if affected == 0 {
-			err = errors.New("no affectd")
-		}
-		return
+		// if affected == 0 {
+		// 	return errors.Wrapf(database.ErrorNoAffected, "update cluster token")
+		// }
+		return nil
 	}()
 	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
+		return errors.Wrapf(err, "failed to update cluster token")
 	}
 
-	return ctx.JSON(http.StatusOK, clustertokenv2.HttpRsp_ClusterToken{ClusterToken: token})
+	return ctx.JSON(http.StatusOK, clustertokenv3.HttpRsp_ClusterToken(token))
 }
 
 // @Description Delete a Cluster Token
+// @Security    ServiceAuth
 // @Accept      json
 // @Produce     json
 // @Tags        server/cluster_token
 // @Router      /server/cluster_token/{uuid} [delete]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid         path   string true  "ClusterToken Uuid"
 // @Success     200
 func (ctl ControlVanilla) DeleteClusterToken(ctx echo.Context) (err error) {
 	err = func() (err error) {
 		if len(echoutil.Param(ctx)[__UUID__]) == 0 {
-			return errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			return errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				))
@@ -444,30 +518,52 @@ func (ctl ControlVanilla) DeleteClusterToken(ctx echo.Context) (err error) {
 		HttpError(err, http.StatusBadRequest)
 	}
 
+	// get tenant claims
+	claims, err := GetServiceAuthorizationClaims(ctx)
+	if err != nil {
+		return HttpError(err, http.StatusForbidden)
+	}
+
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	// property
-	token := clustertokenv2.ClusterToken{}
+	// get cluster token
+	token_table := clustertokenv3.TableNameWithTenant(claims.Hash)
+	var token clustertokenv3.ClusterToken
 	token.Uuid = uuid
-	token.Deleted = *vanilla.NewNullTime(time.Now())
+	token_cond := stmt.And(
+		stmt.Equal("uuid", token.Uuid),
+	)
 
-	eq_uuid := vanilla.Equal("uuid", token.Uuid)
+	err = stmtex.Select(token_table, token.ColumnNames(), token_cond, nil, nil).
+		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+		func(scan stmtex.Scanner) error {
+			return token.Scan(scan)
+		})
+	if err != nil {
+		return errors.Wrapf(err, "get cluster token")
+	}
+
+	// property
+	time_now := time.Now()
+
+	token.Deleted = *vanilla.NewNullTime(time_now)
 	updateSet := map[string]interface{}{}
 	updateSet["deleted"] = token.Deleted
 
-	err = func() (err error) {
-		affected, err := vanilla.Stmt.Update(token.TableName(), updateSet, eq_uuid.Parse()).
-			Exec(ctl)
+	err = func() error {
+		// update cluster token
+		_, err := stmtex.Update(token.TableName(), updateSet, token_cond).
+			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
 		if err != nil {
-			return
+			return errors.Wrapf(err, "update cluster token")
 		}
-		if affected == 0 {
-			err = errors.New("no affectd")
-		}
-		return
+		// if affected == 0 {
+		// 	return errors.Wrapf(database.ErrorNoAffected, "update cluster token")
+		// }
+		return nil
 	}()
 	if err != nil {
-		return HttpError(err, http.StatusInternalServerError)
+		return errors.Wrapf(err, "failed to delete cluster token")
 	}
 
 	return ctx.JSON(http.StatusOK, OK())
