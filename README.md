@@ -173,7 +173,7 @@ Here is the sample response from the api.
 }
 ```
 
-Sudory client can be installed at the Kubernetes cluster that you want to manage. 
+Sudory client shall be installed at the Kubernetes cluster that you want to manage. 
 Configure these in environment.yaml for uuid and token for client. You can limit sudoRy's roles by configuring cluster role in sa.yaml. With the following configuration, sudoRy will perform only for namespace and pods. You can configure "*" for all the resources for Sudory to access & execute the commands. 
 
 ```c
