@@ -74,7 +74,7 @@ func ErrorComposef(a, b error, format string, args ...interface{}) error {
 		return errors.Wrapf(a, errors.Wrapf(b, format, args...).Error())
 	}
 
-	return errors.Wrapf(b, format, args)
+	return errors.Wrapf(b, format, args...)
 }
 func ErrorCompose(a, b error) error {
 	if b == nil {
