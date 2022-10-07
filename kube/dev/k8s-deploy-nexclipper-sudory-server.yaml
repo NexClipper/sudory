@@ -77,7 +77,20 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8099
-          resources: {}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1002
+            capabilities:
+              drop:
+                - SETUID
+                - SETGID
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 2048Mi
+            requests:
+              cpu: 1500m
+              memory: 1024Mi
           envFrom:
             - configMapRef:
                 name: ${APP_IMAGE_NAME}-configmap

@@ -1,4 +1,4 @@
-FROM alpine:latest  as build-stage
+FROM alpine:latest  as common-build-stage
 LABEL version=0.1.0
 
 RUN apk update && apk add --no-cache openssh-client bash dbus
