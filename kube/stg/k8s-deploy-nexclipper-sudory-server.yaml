@@ -14,7 +14,7 @@ metadata:
   name: ${APP_IMAGE_NAME}-configmap
   namespace: sudory
 data:
-  SUDORY_DB_HOST: "ncdb.prd.nexclipper.local"
+  SUDORY_DB_HOST: "ncdb-mariadb-primary.ncdb.svc.cluster.local"
   SUDORY_DB_PORT: "3306"
   SUDORY_DB_SCHEME: "nc_sudory"
   SUDORY_DB_EXPORT_PATH: "."
@@ -45,20 +45,6 @@ data:
         cipher-salt: null
         padding: none
         strconv: plain
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ${APP_IMAGE_NAME}
-  namespace: sudory
-spec:
-  type: LoadBalancer
-  ports:
-    - port: 8099
-      targetPort: 8099
-  selector:
-    sudory: server
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -79,15 +65,9 @@ spec:
         vault.hashicorp.com/agent-inject-secret-ncdb-admin-login: 'kv/database/ncdb'
         vault.hashicorp.com/agent-inject-template-ncdb-admin-login: |
           {{- with secret "kv/database/ncdb" -}}
-          SUDORY_DB_SERVER_USERNAME={{ .Data.data.server_username }}
-          SUDORY_DB_SERVER_PASSWORD={{ .Data.data.server_password }}
-          {{- end -}}
-        vault.hashicorp.com/agent-inject-secret-events.yml: 'kv/sudory/server/events'
-        vault.hashicorp.com/agent-inject-template-events.yml: |
-          {{- with secret "kv/sudory/server/events" -}}
-          {{ .Data.data.events }}
-          {{- end -}}
-        vault.hashicorp.com/secret-volume-path-events.yml: "/app/conf/rules/"
+          SUDORY_DB_SERVER_USERNAME={{ .Data.data.username }}
+          SUDORY_DB_SERVER_PASSWORD={{ .Data.data.password }}
+          {{- end -}}       
       labels:
         sudory: server
     spec:
@@ -98,7 +78,20 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8099
-          resources: {}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1002
+            capabilities:
+              drop:
+                - SETUID
+                - SETGID
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 2048Mi
+            requests:
+              cpu: 1500m
+              memory: 1024Mi
           envFrom:
             - configMapRef:
                 name: ${APP_IMAGE_NAME}-configmap
@@ -116,3 +109,16 @@ spec:
             defaultMode: 420
             name: ${APP_IMAGE_NAME}-rules-configmap
           name: server-rules-configmap
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${APP_IMAGE_NAME}
+  namespace: sudory
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8099
+      targetPort: 8099
+  selector:
+    sudory: server
