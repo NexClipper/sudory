@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"strings"
+	"sync"
 
 	"fmt"
 
@@ -87,6 +88,7 @@ func Flat(e ...[]interface{}) ([]interface{}, error) {
 
 type Preparer interface {
 	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+	Prepare(query string) (*sql.Stmt, error)
 }
 
 type SqlUpdator interface {
@@ -111,29 +113,29 @@ func ExecContext(ctx context.Context, tx Preparer, query string, args []interfac
 	}
 
 	stmt, err := tx.PrepareContext(ctx, query)
-	err = errors.Wrapf(err, "sql.Tx.Prepare")
 	if err != nil {
+		err = errors.Wrapf(err, "sql.Tx.Prepare")
 		return
 	}
 	defer func() {
-		err = vanilla.ErrorComposef(err, stmt.Close(), "sql.Stmt.Close")
+		err = vanilla.ErrorCompose(err, errors.Wrapf(stmt.Close(), "sql.Stmt.Close"))
 	}()
 
 	result, err := stmt.ExecContext(ctx, args...)
-	err = errors.Wrapf(err, "sql.Stmt.Exec")
 	if err != nil {
+		err = errors.Wrapf(err, "sql.Stmt.Exec")
 		return
 	}
 
 	affected, err = result.RowsAffected()
-	err = errors.Wrapf(err, "sql.Result.RowsAffected")
 	if err != nil {
+		err = errors.Wrapf(err, "sql.Result.RowsAffected")
 		return
 	}
 
 	lastid, err = result.LastInsertId()
-	err = errors.Wrapf(err, "sql.Result.LastInsertId")
 	if err != nil {
+		err = errors.Wrapf(err, "sql.Result.LastInsertId")
 		return
 	}
 
@@ -242,24 +244,41 @@ func QueryRowContext(ctx context.Context, tx Preparer, query string, args []inte
 
 	return func(scan CallbackScanner) (err error) {
 		stmt, err := tx.PrepareContext(ctx, query)
-		err = errors.Wrapf(err, "sql.Tx.Prepare")
 		if err != nil {
+			err = errors.Wrapf(err, "sql.Tx.Prepare")
 			return
 		}
 		defer func() {
-			err = vanilla.ErrorComposef(err, stmt.Close(), "sql.Stmt.Close")
+			err = vanilla.ErrorCompose(err, errors.Wrapf(stmt.Close(), "sql.Stmt.Close"))
 		}()
 
 		row := stmt.QueryRowContext(ctx, args...)
-		err = scan(row)
-		if sql.ErrNoRows == err {
-			return errors.WithStack(database.ErrorRecordWasNotFound)
+		if row.Err() != nil {
+			err = errors.Wrapf(row.Err(), "sql.Row.Err")
+			return
 		}
-		err = errors.Wrapf(err, "sql.Row.Scan")
-		err = errors.Wrapf(err, "faild to query row\nquery=\"%v\"\nargs=\"%+v\"",
-			query,
-			args,
-		)
+
+		err = scan(row)
+
+		if err != nil {
+			err = errors.Wrapf(err, "sql.Row.Scan")
+			err = errors.Wrapf(err, "faild to query row\nquery=\"%v\"\nargs=\"%+v\"",
+				query,
+				args,
+			)
+
+			var once sync.Once
+			vanilla.CauseIter(err, func(er error) {
+				if er == sql.ErrNoRows {
+					once.Do(func() {
+						err = errors.Wrapf(err, database.ErrorRecordWasNotFound.Error())
+					})
+				}
+			})
+
+			return
+		}
+
 		return
 	}
 }
@@ -277,29 +296,44 @@ func QueryRowsContext(ctx context.Context, tx Preparer, query string, args []int
 			return
 		}
 		defer func() {
-			err = vanilla.ErrorComposef(err, stmt.Close(), "sql.Stmt.Close")
+			err = vanilla.ErrorCompose(err, errors.Wrapf(stmt.Close(), "sql.Stmt.Close"))
 		}()
 
 		var rows *sql.Rows
 		rows, err = stmt.QueryContext(ctx, args...)
-		err = errors.Wrapf(err, "sql.Stmt.Query")
 		if err != nil {
+			err = errors.Wrapf(err, "sql.Stmt.Query")
 			return
 		}
-
 		defer func() {
-			err = vanilla.ErrorComposef(err, rows.Close(), "sql.Rows.Close")
+			err = vanilla.ErrorCompose(err, errors.Wrapf(rows.Close(), "sql.Rows.Close"))
 		}()
+
+		if rows.Err() != nil {
+			err = errors.Wrapf(rows.Err(), "sql.Rows.Err")
+			return
+		}
 
 		i := 0
 		for rows.Next() {
 			err = scan(rows, i)
-			err = errors.Wrapf(err, "sql.Row.Scan")
-			err = errors.Wrapf(err, "faild to query rows\nquery=\"%v\"\nargs=\"%+v\"",
-				query,
-				args,
-			)
+
 			if err != nil {
+				err = errors.Wrapf(err, "sql.Row.Scan")
+				err = errors.Wrapf(err, "faild to query rows\nquery=\"%v\"\nargs=\"%+v\"",
+					query,
+					args,
+				)
+
+				var once sync.Once
+				vanilla.CauseIter(err, func(er error) {
+					if er == sql.ErrNoRows {
+						once.Do(func() {
+							err = errors.Wrapf(err, database.ErrorRecordWasNotFound.Error())
+						})
+					}
+				})
+
 				break
 			}
 			i++

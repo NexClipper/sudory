@@ -220,7 +220,7 @@ func (pub *Event) BuildMuxerByEventCategory(tenant_hash string, event_category c
 	column_names := []string{"uuid"}
 
 	// var channel channelv3.ManagedChannel
-
+	var set_channel_uuid = map[string]struct{}{}
 	channel_table := channelv3.TableNameWithTenant_ManagedChannel(tenant_hash)
 	err = stmtex.Select(channel_table, column_names, channel_cond, nil, nil).
 		QueryRowsContext(ctx, pub, pub.Dialect())(func(scan stmtex.Scanner, _ int) (err error) {
@@ -231,10 +231,20 @@ func (pub *Event) BuildMuxerByEventCategory(tenant_hash string, event_category c
 			return errors.Wrapf(err, "failed to scan")
 		}
 
+		set_channel_uuid[channel_uuid] = struct{}{}
+
+		return
+	})
+	if err != nil {
+		return
+	}
+
+	for channel_uuid := range set_channel_uuid {
+		var set_edge = map[channelv3.NotifierEdge]struct{}{}
 		// get notifier edge with option
 		var edge channelv3.NotifierEdge
 		edge.Uuid = channel_uuid
-		edge_cond := stmt.Equal("uuid", channel_uuid)
+		edge_cond := stmt.Equal("uuid", edge.Uuid)
 
 		err = stmtex.Select(edge.TableName(), edge.ColumnNames(), edge_cond, nil, nil).
 			QueryRowsContext(ctx, pub, pub.Dialect())(
@@ -244,59 +254,14 @@ func (pub *Event) BuildMuxerByEventCategory(tenant_hash string, event_category c
 					return errors.Wrapf(err, "failed to scan")
 				}
 
-				edge_opt, err := vault.GetChannelNotifierEdge(ctx, pub.DB, pub.Dialect(), edge)
-				if err != nil {
-					return errors.Wrapf(err, "failed to get a NotifierEdge_option")
-				}
-
-				// valied notifier
-				err = ValidNotifier(edge_opt)
-				if err != nil {
-					return errors.Wrapf(err, "valied notifier")
-				}
-
-				// notifier factory
-				notifier, err := NotifierFactory(channel_uuid, edge_opt)
-				if err != nil {
-					return errors.Wrapf(err, "channel notifier factory")
-				}
-
-				// append notifier
-				muxer.Notifiers().Add(channel_uuid, notifier)
-
+				set_edge[edge] = struct{}{}
 				return nil
 			})
-		return
-	})
-	if err != nil {
-		return
-	}
+		if err != nil {
+			return
+		}
 
-	return nil
-}
-
-func (pub *Event) BuildMuxerByChannelUuid(tenant_hash string, channel_uuid string) error {
-	var ctx = context.Background()
-	// new muxer
-	muxer := NewManagedEventNotifierMux()
-	// regist muxer to event publisher
-	muxer.Regist(pub)
-
-	// get notifier edge with option
-
-	var edge channelv3.NotifierEdge
-	edge.Uuid = channel_uuid
-	edge_cond := stmt.Equal("uuid", channel_uuid)
-	edge_table := channelv3.TableNameWithTenant_NotifierEdge(tenant_hash)
-
-	err := stmtex.Select(edge_table, edge.ColumnNames(), edge_cond, nil, nil).
-		QueryRowsContext(ctx, pub, pub.Dialect())(
-		func(scan stmtex.Scanner, _ int) error {
-			err := edge.Scan(scan)
-			if err != nil {
-				return errors.Wrapf(err, "failed to scan")
-			}
-
+		for edge := range set_edge {
 			edge_opt, err := vault.GetChannelNotifierEdge(ctx, pub.DB, pub.Dialect(), edge)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get a NotifierEdge_option")
@@ -314,11 +279,62 @@ func (pub *Event) BuildMuxerByChannelUuid(tenant_hash string, channel_uuid strin
 				return errors.Wrapf(err, "channel notifier factory")
 			}
 
+			// append notifier
 			muxer.Notifiers().Add(channel_uuid, notifier)
+		}
+	}
+	return nil
+}
+
+func (pub *Event) BuildMuxerByChannelUuid(tenant_hash string, channel_uuid string) error {
+	var ctx = context.Background()
+	// new muxer
+	muxer := NewManagedEventNotifierMux()
+	// regist muxer to event publisher
+	muxer.Regist(pub)
+
+	// get notifier edge with option
+	var set_edge = map[channelv3.NotifierEdge]struct{}{}
+	var edge channelv3.NotifierEdge
+	edge.Uuid = channel_uuid
+	edge_cond := stmt.Equal("uuid", channel_uuid)
+	edge_table := channelv3.TableNameWithTenant_NotifierEdge(tenant_hash)
+
+	err := stmtex.Select(edge_table, edge.ColumnNames(), edge_cond, nil, nil).
+		QueryRowsContext(ctx, pub, pub.Dialect())(
+		func(scan stmtex.Scanner, _ int) error {
+			err := edge.Scan(scan)
+			if err != nil {
+				return errors.Wrapf(err, "failed to scan")
+			}
+
+			set_edge[edge] = struct{}{}
+
 			return nil
 		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to get notifiers")
+	}
+
+	for edge := range set_edge {
+		edge_opt, err := vault.GetChannelNotifierEdge(ctx, pub.DB, pub.Dialect(), edge)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get a NotifierEdge_option")
+		}
+
+		// valied notifier
+		err = ValidNotifier(edge_opt)
+		if err != nil {
+			return errors.Wrapf(err, "valied notifier")
+		}
+
+		// notifier factory
+		notifier, err := NotifierFactory(channel_uuid, edge_opt)
+		if err != nil {
+			return errors.Wrapf(err, "channel notifier factory")
+		}
+
+		muxer.Notifiers().Add(channel_uuid, notifier)
 	}
 
 	return err

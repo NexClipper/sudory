@@ -185,6 +185,7 @@ func GetManagedChannel(db *sql.DB, dialect string, ctx context.Context, uuid str
 	}
 
 	// NotifierEdge
+	var set_edge = map[channelv3.NotifierEdge]struct{}{}
 	var edge channelv3.NotifierEdge
 	err = stmtex.Select(edge.TableName(), edge.ColumnNames(), channel_cond, nil, nil).
 		QueryRowsContext(ctx, db, dialect)(
@@ -194,21 +195,25 @@ func GetManagedChannel(db *sql.DB, dialect string, ctx context.Context, uuid str
 				return err
 			}
 
-			edge_options, err := GetChannelNotifierEdge(ctx, db, dialect, edge)
-			if err != nil {
-				return err
-			}
-
-			rst.Notifiers.NotifierEdge_property = edge_options.NotifierEdge_property
-			rst.Notifiers.Console = edge_options.Console
-			rst.Notifiers.Webhook = edge_options.Webhook
-			rst.Notifiers.RabbitMq = edge_options.RabbitMq
-			rst.Notifiers.Slackhook = edge_options.Slackhook
+			set_edge[edge] = struct{}{}
 
 			return nil
 		})
 	if err != nil {
 		return rst, errors.Wrapf(err, "failed to get %v", edge.TableName())
+	}
+
+	for edge := range set_edge {
+		edge_options, err := GetChannelNotifierEdge(ctx, db, dialect, edge)
+		if err != nil {
+			return rst, errors.Wrapf(err, "failed to get channel notifier edge")
+		}
+
+		rst.Notifiers.NotifierEdge_property = edge_options.NotifierEdge_property
+		rst.Notifiers.Console = edge_options.Console
+		rst.Notifiers.Webhook = edge_options.Webhook
+		rst.Notifiers.RabbitMq = edge_options.RabbitMq
+		rst.Notifiers.Slackhook = edge_options.Slackhook
 	}
 
 	return rst, nil

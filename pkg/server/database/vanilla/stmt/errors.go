@@ -15,16 +15,16 @@ var (
 	ErrorUnsupportedOrderKeys       = fmt.Errorf("unsupported order keys")
 )
 
-func ErrorComposef(a, b error, format string, args ...interface{}) error {
-	if b == nil {
-		return a
-	}
-	if a != nil {
-		return errors.Wrapf(a, errors.Wrapf(b, format, args...).Error())
-	}
+// func ErrorComposef(a, b error, format string, args ...interface{}) error {
+// 	if b == nil {
+// 		return a
+// 	}
+// 	if a != nil {
+// 		return errors.Wrapf(a, errors.Wrapf(b, format, args...).Error())
+// 	}
 
-	return errors.Wrapf(b, format, args)
-}
+// 	return errors.Wrapf(b, format, args)
+// }
 
 func ErrorCompose(a, b error) error {
 	if b == nil {
@@ -35,4 +35,22 @@ func ErrorCompose(a, b error) error {
 	}
 
 	return b
+}
+
+func CauseIter(err error, iter func(er error)) error {
+	type causer interface {
+		Cause() error
+	}
+
+	for err != nil {
+		// call iter
+		iter(err)
+
+		cause, ok := err.(causer)
+		if !ok {
+			break
+		}
+		err = cause.Cause()
+	}
+	return err
 }

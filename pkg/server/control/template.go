@@ -243,8 +243,8 @@ func (ctl ControlVanilla) FindTemplate(ctx echo.Context) error {
 	}
 
 	rsp := make([]templatev2.HttpRsp_Template, 0, state.ENV__INIT_SLICE_CAPACITY__())
-
-	template := templatev2.Template{}
+	var set_template = map[templatev2.Template]struct{}{}
+	var template templatev2.Template
 	err = stmtex.Select(template.TableName(), template.ColumnNames(), q, o, p).
 		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(func(scan stmtex.Scanner, _ int) error {
 		err := template.Scan(scan)
@@ -252,15 +252,19 @@ func (ctl ControlVanilla) FindTemplate(ctx echo.Context) error {
 			return errors.Wrapf(err, "failed to scan")
 		}
 
+		set_template[template] = struct{}{}
+		return nil
+	})
+	if err != nil {
+		return errors.Wrapf(err, "failed to find template")
+	}
+
+	for template := range set_template {
 		commands, err := ListTemplateCommand(ctx.Request().Context(), ctl, template.Uuid)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get list")
 		}
 		rsp = append(rsp, templatev2.HttpRsp_Template{Template: template, Commands: commands})
-		return nil
-	})
-	if err != nil {
-		return errors.Wrapf(err, "failed to find template")
 	}
 
 	return ctx.JSON(http.StatusOK, rsp)

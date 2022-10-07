@@ -94,7 +94,7 @@ func (ctl ControlVanilla) CreateChannel(ctx echo.Context) (err error) {
 	err = stmtex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
 		var affected int64
 		affedted, _, err := stmtex.Insert(new_channel.TableName(), new_channel.ColumnNames(), new_channel.Values()).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+			ExecContext(ctx.Request().Context(), tx, ctl.Dialect())
 		if err != nil {
 			return errors.Wrapf(err, "save a new channel")
 		}
@@ -107,7 +107,7 @@ func (ctl ControlVanilla) CreateChannel(ctx echo.Context) (err error) {
 		tenant_channels.TenantId = claims.ID
 		tenant_channels.ChannelUuid = new_channel.Uuid
 		affected, _, err = stmtex.Insert(tenant_channels.TableName(), tenant_channels.ColumnNames(), tenant_channels.Values()).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+			ExecContext(ctx.Request().Context(), tx, ctl.Dialect())
 		if err != nil {
 			return errors.Wrapf(err, "save a new tenant channel")
 		}

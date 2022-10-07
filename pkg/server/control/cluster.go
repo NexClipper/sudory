@@ -73,7 +73,7 @@ func (ctl ControlVanilla) CreateCluster(ctx echo.Context) (err error) {
 		var affected int64
 		// save cluster
 		affected, new_cluster.ID, err = stmtex.Insert(new_cluster.TableName(), new_cluster.ColumnNames(), new_cluster.Values()).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+			ExecContext(ctx.Request().Context(), tx, ctl.Dialect())
 		if err != nil {
 			return errors.Wrapf(err, "save cluster")
 		}
@@ -89,7 +89,7 @@ func (ctl ControlVanilla) CreateCluster(ctx echo.Context) (err error) {
 		tenant_clusters.TenantId = claims.ID
 		tenant_clusters.ClusterId = new_cluster.ID
 		affected, _, err = stmtex.Insert(tenant_clusters.TableName(), tenant_clusters.ColumnNames(), tenant_clusters.Values()).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+			ExecContext(ctx.Request().Context(), tx, ctl.Dialect())
 		if err != nil {
 			return errors.Wrapf(err, "save tenant clusters")
 		}

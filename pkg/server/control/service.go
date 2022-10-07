@@ -361,24 +361,42 @@ func (ctl ControlVanilla) FindService(ctx echo.Context) (err error) {
 
 	// get service stepSet
 	var stepSet map[string][]servicev3.ServiceStep = make(map[string][]servicev3.ServiceStep)
+
 	for _, service := range serviceSet {
+		step_table := servicev3.TableNameWithTenant_ServiceStep(claims.Hash)
+		var step servicev3.ServiceStep
+		step_cond := stmt.And(
+			stmt.Equal("uuid", service.Uuid),
+		)
 
-		steps, err := vault.Servicev3.GetServiceSteps(ctx.Request().Context(), ctl, ctl.Dialect(), service.ClusterUuid, service.Uuid)
+		err = stmtex.Select(step_table, step.ColumnNames(), step_cond, nil, nil).
+			QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+			func(scan stmtex.Scanner, _ int) error {
+				err := step.Scan(scan)
+				if err != nil {
+					return errors.Wrapf(err, "scan service step")
+				}
+				if stepSet[service.Uuid] == nil {
+					stepSet[service.Uuid] = make([]servicev3.ServiceStep, 0, state.ENV__INIT_SLICE_CAPACITY__())
+				}
+
+				stepSet[service.Uuid] = append(stepSet[service.Uuid], step)
+				return nil
+			})
 		if err != nil {
-			return errors.Wrapf(err, "failed to found service steps%v", logs.KVL(
-				"cluster_uuid", service.ClusterUuid,
-				"uuid", service.Uuid,
-			))
+			return err
 		}
-
-		stepSet[service.Uuid] = steps
 	}
-
 	// make response body
 	rsp := make([]servicev3.HttpRsp_Service, len(serviceSet))
 	var i int
 	for uuid, service := range serviceSet {
 		rsp[i].Service = service
+
+		sort.Slice(stepSet[uuid], func(i, j int) bool {
+			return stepSet[uuid][i].Sequence < stepSet[uuid][j].Sequence
+		})
+
 		rsp[i].Steps = stepSet[uuid]
 		i++
 	}
@@ -426,11 +444,12 @@ func (ctl ControlVanilla) GetService(ctx echo.Context) (err error) {
 	}
 
 	// get service steps
-	steps := make([]servicev3.ServiceStep, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	var steps = make([]servicev3.ServiceStep, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	step_table := servicev3.TableNameWithTenant_ServiceStep(claims.Hash)
 	var service_step servicev3.ServiceStep
 	step_cond := stmt.Equal("uuid", uuid)
 
-	err = stmtex.Select(service_step.TableName(), service_step.ColumnNames(), step_cond, nil, nil).
+	err = stmtex.Select(step_table, service_step.ColumnNames(), step_cond, nil, nil).
 		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
 		func(scan stmtex.Scanner, _ int) error {
 
@@ -494,6 +513,10 @@ func (ctl ControlVanilla) GetServiceResult(ctx echo.Context) (err error) {
 		func(scan stmtex.Scanner) error {
 			return result.Scan(scan)
 		})
+	if err != nil {
+		err = errors.Wrapf(err, "failed to get a service result")
+		return err
+	}
 
 	return ctx.JSON(http.StatusOK, servicev3.HttpRsp_ServiceResult(result))
 }
