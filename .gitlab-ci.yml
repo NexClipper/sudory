@@ -52,6 +52,23 @@ docker-build-commit-sudory-server:
   rules:
     - if: $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
 
+deploy-nexclipper-sudory-server-commit:
+  stage: dev
+  image: repo.nexclipper.io/nexclipper/helm-kubectl:latest
+  variables:
+    HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
+    APP_IMAGE_NAME: "nexclipper-sudory-server"
+  before_script:
+    - echo -e "\nLogin to Kubernetes"
+    - source /data/scripts/login-cluster.sh dev
+  script:
+    - "source /data/scripts/deploy.sh dev sudory"
+  needs: 
+    - job: docker-build-commit-sudory-server
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+      when: manual
+
 
 docker-build-sudory-server-dev:
   stage: dev
@@ -72,9 +89,10 @@ docker-build-sudory-server-dev:
       --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${APP_VERSION}"
       --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:latest"
       --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${CI_COMMIT_SHORT_SHA}"
+  needs:
+    - job: code-build-server
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
-
 
 deploy-nexclipper-sudory-server-dev:
   stage: dev
@@ -87,10 +105,10 @@ deploy-nexclipper-sudory-server-dev:
     - source /data/scripts/login-cluster.sh dev
   script:
     - "source /data/scripts/deploy.sh dev sudory"
+  needs: 
+    - job: docker-build-sudory-server-dev
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
-    - if: $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
-      when: manual
 
 
 docker-build-sudory-server-stg:
