@@ -101,6 +101,22 @@ func (r *Request) SetParam(key string, values ...string) *Request {
 	return r
 }
 
+func (r *Request) SetParamFromQuery(query url.Values) *Request {
+	if query == nil || len(query) <= 0 {
+		return r
+	}
+
+	if r.params == nil {
+		r.params = make(url.Values)
+	}
+	for k, v := range query {
+		for _, vv := range v {
+			r.params.Add(k, vv)
+		}
+	}
+	return r
+}
+
 func (r *Request) SetBody(bodyType string, body interface{}) *Request {
 	r.SetHeader("Content-Type", bodyType)
 	r.body = body
