@@ -13,14 +13,14 @@ import (
 
 // @deprecated
 // @Description Find channel notifier status
+// @Security    XAuthToken
 // @Accept      json
 // @Produce     json
 // @Tags        server/channel_notifier_status
 // @Router      /server/channel_notifier_status [get]
-// @Param       x_auth_token header string false "client session token"
-// @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
-// @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
-// @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
+// @Param       q            query  string false "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       o            query  string false "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       p            query  string false "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Success     200 {array} v1.NotifierStatus
 func (ctl Control) FindChannelNotifierStatus(ctx echo.Context) error {
 	//find event
@@ -36,17 +36,17 @@ func (ctl Control) FindChannelNotifierStatus(ctx echo.Context) error {
 
 // @deprecated
 // @Description Delete a channel notifier status
+// @Security    XAuthToken
 // @Accept json
 // @Produce json
 // @Tags server/channel_notifier_status
 // @Router /server/channel_notifier_status/{uuid} [delete]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid         path   string true  "EventNotifierStatus 의 Uuid"
 // @Success 200
 func (ctl Control) DeleteChannelNotifierStatus(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
-			errors.Wrapf(ErrorInvalidRequestParameter(), "valid param%s",
+			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
 					ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
 				)))

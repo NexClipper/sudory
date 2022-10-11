@@ -2,6 +2,8 @@ DROP TABLE IF EXISTS `service`;
 DROP TABLE IF EXISTS `service_step`;
 DROP TABLE IF EXISTS `service_result`;
 
+-- create new tables
+
 --
 -- Table structure for table `service`
 --
@@ -77,3 +79,6 @@ PARTITIONS 5;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 
+-- service.priority
+ALTER TABLE `service`
+	ADD COLUMN IF NOT EXISTS `priority` TINYINT UNSIGNED NOT NULL DEFAULT '0' AFTER `step_count`;

@@ -14,19 +14,6 @@ func (TemplateRecipe) ColumnNames() []string {
 	}
 }
  
-func (TemplateRecipe) ColumnNamesWithAlias() []string {
-	return []string{
- 		"id",
- 		"name",
- 		"summary",
- 		"method",
- 		"args",
- 		"created",
- 		"updated",
- 		"deleted",
-	}
-}
- 
 func (row TemplateRecipe) Values() []interface{} {
 	return []interface{}{
 		row.ID,

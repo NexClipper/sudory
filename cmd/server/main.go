@@ -18,6 +18,7 @@ import (
 	"github.com/NexClipper/sudory/conf/script/migrations"
 	"github.com/NexClipper/sudory/pkg/server/config"
 	"github.com/NexClipper/sudory/pkg/server/database"
+	flavor "github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/resolvers/mysql"
 	"github.com/NexClipper/sudory/pkg/server/event"
 	"github.com/NexClipper/sudory/pkg/server/event/managed_channel"
 	"github.com/NexClipper/sudory/pkg/server/event/managed_event"
@@ -116,7 +117,7 @@ func main() {
 	}
 
 	//init managed channel
-	mc := managed_channel.NewEvent(db.Engine().DB().DB)
+	mc := managed_channel.NewEvent(db.Engine().DB().DB, flavor.Dialect())
 
 	mc.ErrorHandlers.Add(managed_event.DefaultErrorHandler)
 	mc.NofitierErrorHandlers.Add(
@@ -413,7 +414,7 @@ func newGlobalVariablesCron(db *sql.DB) (func(), error) {
 	const interval = 10 * time.Second
 
 	//환경설정 updater 생성
-	updator := globvar.NewGlobalVariablesUpdate(db)
+	updator := globvar.NewGlobalVariablesUpdate(db, flavor.Dialect())
 	//환경변수 리스트 검사
 	if err := updator.WhiteListCheck(); err != nil {
 		//빠져있는 환경변수 추가

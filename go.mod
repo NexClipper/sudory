@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/NexClipper/logger v1.1.6
+	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/fsnotify/fsnotify v1.5.3
 	github.com/go-openapi/strfmt v0.21.2
 	github.com/go-sql-driver/mysql v1.6.0

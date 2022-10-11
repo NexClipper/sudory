@@ -18,12 +18,6 @@ var (
 	}
 )
 
-var VanilaFlavor = []FuncPart{
-	PrintWarning,
-	VanillaFlavorPackage("vanilla_flavor"),
-	VanillaFlavorQueries,
-}
-
 type FuncPart = func(...interface{}) (string, error)
 
 func GenerateParts(objs []interface{}, parts []FuncPart) (string, error) {

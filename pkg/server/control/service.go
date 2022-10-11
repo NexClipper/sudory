@@ -6,19 +6,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/prepare"
-	"github.com/NexClipper/sudory/pkg/server/macro"
+	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
+	"github.com/NexClipper/sudory/pkg/server/status/state"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
-	clusterv2 "github.com/NexClipper/sudory/pkg/server/model/cluster/v2"
+	clusterv3 "github.com/NexClipper/sudory/pkg/server/model/cluster/v3"
 	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
-	v3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
 	templatev2 "github.com/NexClipper/sudory/pkg/server/model/template/v2"
 
 	"github.com/labstack/echo/v4"
@@ -26,13 +28,12 @@ import (
 	"github.com/qri-io/jsonschema"
 )
 
-// Create Service
 // @Description Create a Service
+// @Security    ServiceAuth
 // @Accept      json
 // @Produce     json
 // @Tags        server/service
 // @Router      /server/service [post]
-// @Param       x_auth_token header string                    false "client session token"
 // @Param       service      body   v3.HttpReq_Service_create true  "HttpReq_Service_create"
 // @Success     200 {object} v3.HttpRsp_Service_create
 func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
@@ -45,7 +46,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 		return HttpError(err, http.StatusBadRequest)
 	}
 	if len(body.Name) == 0 {
-		err := ErrorInvalidRequestParameter()
+		err := ErrorInvalidRequestParameter
 		err = errors.Wrapf(err, "valid param%s",
 			logs.KVL(
 				ParamLog(fmt.Sprintf("%s.Name", TypeName(body)), body.Name)...,
@@ -53,7 +54,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 		return HttpError(err, http.StatusBadRequest)
 	}
 	if len(body.TemplateUuid) == 0 {
-		err := ErrorInvalidRequestParameter()
+		err := ErrorInvalidRequestParameter
 		err = errors.Wrapf(err, "valid param%s",
 			logs.KVL(
 				ParamLog(fmt.Sprintf("%s.TemplateUuid", TypeName(body)), body.TemplateUuid)...,
@@ -61,7 +62,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 		return HttpError(err, http.StatusBadRequest)
 	}
 	if len(body.ClusterUuid) == 0 {
-		err := ErrorInvalidRequestParameter()
+		err := ErrorInvalidRequestParameter
 		err = errors.Wrapf(err, "valid param%s",
 			logs.KVL(
 				ParamLog(fmt.Sprintf("%s.ClusterUuid", TypeName(body)), body.ClusterUuid)...,
@@ -70,54 +71,82 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 	}
 
 	// check cluster
-	cluster_cond := vanilla.And(
-		vanilla.Equal("uuid", body.ClusterUuid),
-		vanilla.IsNull("deleted"),
-	)
+	// cluster_cond := vanilla.And(
+	// 	vanilla.Equal("uuid", body.ClusterUuid),
+	// 	vanilla.IsNull("deleted"),
+	// )
 
-	cluster := clusterv2.Cluster{}
-	cluster_found, err := vanilla.Stmt.Exist(cluster.TableName(), cluster_cond.Parse())(ctx.Request().Context(), ctl)
+	// cluster := clusterv2.Cluster{}
+	// cluster_found, err := vanilla.Stmt.Exist(cluster.TableName(), cluster_cond.Parse())(ctx.Request().Context(), ctl)
+	// if err != nil {
+	// 	return errors.Wrapf(err, "faild to check cluster")
+	// }
+	// if !cluster_found {
+	// 	return errors.Wrapf(err, "cluster does not exist ")
+	// }
+
+	// get tenant claims
+	claims, err := GetServiceAuthorizationClaims(ctx)
 	if err != nil {
-		return errors.Wrapf(err, "faild to check cluster")
+		return HttpError(err, http.StatusForbidden)
 	}
-	if !cluster_found {
-		return errors.Wrapf(err, "cluster does not exist ")
+	err = func() error {
+		// check cluster
+		cluster_table := clusterv3.TableNameWithTenant(claims.Hash)
+		cluster_cond := stmt.And(
+			stmt.Equal("uuid", body.ClusterUuid),
+			stmt.IsNull("deleted"),
+		)
+		cluster_exist, err := stmtex.ExistContext(cluster_table, cluster_cond)(ctx.Request().Context(), ctl, ctl.Dialect())
+		if err != nil {
+			return errors.Wrapf(err, "check cluster")
+		}
+		if !cluster_exist {
+			return errors.Wrapf(database.ErrorRecordWasNotFound, "check cluster")
+		}
+		return nil
+	}()
+	if err != nil {
+		return HttpError(err, http.StatusBadRequest)
 	}
 
 	// get template
-	template_cond := vanilla.And(
-		vanilla.Equal("uuid", body.TemplateUuid),
-		vanilla.IsNull("deleted"),
+	template_cond := stmt.And(
+		stmt.Equal("uuid", body.TemplateUuid),
+		stmt.IsNull("deleted"),
 	)
 
 	template := templatev2.Template{}
-	template_scan := func(scan vanilla.Scanner) (err error) {
-		return template.Scan(scan)
-	}
-	stmt := vanilla.Stmt.Select(template.TableName(), template.ColumnNames(), template_cond.Parse(), nil, nil)
-	if err = stmt.QueryRow(ctl)(template_scan); err != nil {
+	err = stmtex.Select(template.TableName(), template.ColumnNames(), template_cond, nil, nil).
+		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+		func(scan stmtex.Scanner) error {
+			return template.Scan(scan)
+		})
+	if err != nil {
 		return errors.Wrapf(err, "faild to get template")
 	}
 
 	// get commands
 	commandSet := make(map[int]templatev2.TemplateCommand)
-	command_cond := vanilla.And(
-		vanilla.Equal("template_uuid", body.TemplateUuid),
-		vanilla.IsNull("deleted"),
+	command_cond := stmt.And(
+		stmt.Equal("template_uuid", body.TemplateUuid),
+		stmt.IsNull("deleted"),
 	)
 
 	command := templatev2.TemplateCommand{}
-	command_scan := func(scan vanilla.Scanner, _ int) (err error) {
-		err = command.Scan(scan)
-		if err != nil {
-			return err
-		}
+	err = stmtex.Select(command.TableName(), command.ColumnNames(), command_cond, nil, nil).
+		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+		func(scan stmtex.Scanner) error {
+			err := command.Scan(scan)
 
-		commandSet[command.Sequence] = command
-		return
-	}
-	stmt = vanilla.Stmt.Select(command.TableName(), command.ColumnNames(), command_cond.Parse(), nil, nil)
-	if err := stmt.QueryRows(ctl)(command_scan); err != nil {
+			if err != nil {
+				return err
+			}
+			commandSet[command.Sequence] = command
+
+			return nil
+		})
+	if err != nil {
 		return errors.Wrapf(err, "failed to get template commands")
 	}
 
@@ -190,10 +219,8 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 
 	// set service data
 	now_time := time.Now()
-	uuid := body.Uuid
-	if len(uuid) == 0 {
-		uuid = macro.NewUuidString()
-	}
+	// gen uuid
+	body.Uuid = genUuidString(body.Uuid)
 
 	getPriority := func(template templatev2.Template) servicev3.Priority {
 		if template.Origin == templatev2.OriginSystem.String() {
@@ -206,7 +233,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 	service := servicev3.Service_create{}
 	service.PartitionDate = now_time
 	service.ClusterUuid = body.ClusterUuid
-	service.Uuid = uuid
+	service.Uuid = body.Uuid
 	service.Timestamp = now_time
 	service.Name = body.Name
 	service.Summary = *vanilla.NewNullString(body.Summary)
@@ -228,7 +255,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 		step := servicev3.ServiceStep_create{}
 		step.PartitionDate = now_time
 		step.ClusterUuid = body.ClusterUuid
-		step.Uuid = uuid
+		step.Uuid = body.Uuid
 		step.Sequence = i
 		step.Timestamp = now_time
 		step.Name = command.Name
@@ -244,10 +271,10 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 	}
 
 	// save
-	err = ctl.ScopeTx(ctx.Request().Context(), func(tx *sql.Tx) error {
+	err = stmtex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
 
 		// save service
-		if err := vault.SaveMultiTable(tx, []vault.Table{service}); err != nil {
+		if err := vault.SaveMultiTable(tx, ctl.Dialect(), []vault.Table{service}); err != nil {
 			return errors.Wrapf(err, "faild to save service")
 		}
 
@@ -260,7 +287,7 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 			return tables
 		}(steps)
 
-		if err := vault.SaveMultiTable(tx, steps_); err != nil {
+		if err := vault.SaveMultiTable(tx, ctl.Dialect(), steps_); err != nil {
 			return errors.Wrapf(err, "faild to save service steps")
 		}
 
@@ -275,108 +302,120 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 	rsp.Service_create = service
 	rsp.Steps = steps
 
-	return ctx.JSON(http.StatusOK, rsp)
+	return ctx.JSON(http.StatusOK, servicev3.HttpRsp_Service_create(rsp))
 }
 
-// Find []Service
 // @Description Find []Service
+// @Security    ServiceAuth
 // @Accept      json
 // @Produce     json
 // @Tags        server/service
 // @Router      /server/service [get]
-// @Param       x_auth_token header string false "client session token"
-// @Param       q            query  string false "query  pkg/server/database/prepared/README.md"
-// @Param       o            query  string false "order  pkg/server/database/prepared/README.md"
-// @Param       p            query  string false "paging pkg/server/database/prepared/README.md"
+// @Param       q            query  string false "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       o            query  string false "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       p            query  string false "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Success     200 {array} v3.HttpRsp_Service
 func (ctl ControlVanilla) FindService(ctx echo.Context) (err error) {
-	q, o, p, err := ParseDecoration(echoutil.QueryParam(ctx))
-	if err != nil {
-		err = errors.Wrapf(err, "ParseDecoration%v", logs.KVL(
-			"query", echoutil.QueryParamString(ctx),
-		))
+	q, err := stmt.ConditionLexer.Parse(echoutil.QueryParam(ctx)["q"])
+	if err != nil && !logs.DeepCompare(err, stmt.ErrorInvalidArgumentEmptyString) {
 		return HttpError(err, http.StatusBadRequest)
 	}
+	o, err := stmt.OrderLexer.Parse(echoutil.QueryParam(ctx)["o"])
+	if err != nil && !logs.DeepCompare(err, stmt.ErrorInvalidArgumentEmptyString) {
+		return HttpError(err, http.StatusBadRequest)
+	}
+	p, err := stmt.PaginationLexer.Parse(echoutil.QueryParam(ctx)["p"])
+	if err != nil && !logs.DeepCompare(err, stmt.ErrorInvalidArgumentEmptyString) {
+		return HttpError(err, http.StatusBadRequest)
+	}
+	// default pagination
+	if p == nil {
+		p = stmt.Limit(__DEFAULT_DECORATION_LIMIT__)
+	}
 
-	// find service
-	tablename := `(
-SELECT A.cluster_uuid,A.uuid,A.pdate,A.timestamp,A.name,A.summary,A.template_uuid,A.step_count,A.priority,A.subscribed_channel,A.assigned_client_uuid,A.step_position,A.status,A.message,A.created
-       FROM service A
- INNER JOIN ( SELECT C.cluster_uuid,C.uuid,C.pdate,MAX(C.timestamp) AS timestamp FROM service AS C
-                     GROUP BY C.cluster_uuid,C.uuid,C.pdate 
-            ) B ON B.cluster_uuid = A.cluster_uuid AND B.uuid = A.uuid AND B.pdate = A.pdate AND B.timestamp = A.timestamp 
-) X`
+	// get tenant claims
+	claims, err := GetServiceAuthorizationClaims(ctx)
+	if err != nil {
+		return HttpError(err, http.StatusForbidden)
+	}
+
+	service_table := servicev3.TableNameWithTenant_Service(claims.Hash)
+
 	serviceSet := make(map[string]servicev3.Service)
 	service := servicev3.Service{}
-	err = vanilla.Stmt.Select(tablename, service.ColumnNames(), q, o, p).
-		QueryRowsContext(ctx.Request().Context(), ctl)(func(scan vanilla.Scanner, _ int) error {
+	err = stmtex.Select(service_table, service.ColumnNames(), q, o, p).
+		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+		func(scan stmtex.Scanner, _ int) error {
 
-		err := service.Scan(scan)
-		if err != nil {
-			return errors.Wrapf(err, "scan service")
-		}
+			err := service.Scan(scan)
+			if err != nil {
+				return errors.Wrapf(err, "scan service")
+			}
 
-		serviceSet[service.Uuid] = service
-		return nil
-	})
+			serviceSet[service.Uuid] = service
+			return nil
+		})
 	if err != nil {
 		return err
 	}
 
-	// get service steps
-	var steps map[string]map[int]servicev3.ServiceStep = make(map[string]map[int]servicev3.ServiceStep)
+	// get service stepSet
+	var stepSet map[string][]servicev3.ServiceStep = make(map[string][]servicev3.ServiceStep)
+
 	for _, service := range serviceSet {
+		step_table := servicev3.TableNameWithTenant_ServiceStep(claims.Hash)
+		var step servicev3.ServiceStep
+		step_cond := stmt.And(
+			stmt.Equal("uuid", service.Uuid),
+		)
 
-		stepSet, err := vault.Servicev3.GetServiceSteps(ctx.Request().Context(), ctl, service.ClusterUuid, service.Uuid)
+		err = stmtex.Select(step_table, step.ColumnNames(), step_cond, nil, nil).
+			QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+			func(scan stmtex.Scanner, _ int) error {
+				err := step.Scan(scan)
+				if err != nil {
+					return errors.Wrapf(err, "scan service step")
+				}
+				if stepSet[service.Uuid] == nil {
+					stepSet[service.Uuid] = make([]servicev3.ServiceStep, 0, state.ENV__INIT_SLICE_CAPACITY__())
+				}
+
+				stepSet[service.Uuid] = append(stepSet[service.Uuid], step)
+				return nil
+			})
 		if err != nil {
-			return errors.Wrapf(err, "failed to found service steps%v", logs.KVL(
-				"cluster_uuid", service.ClusterUuid,
-				"uuid", service.Uuid,
-			))
-		}
-
-		for uuid, seqSet := range stepSet {
-			// init sub record set
-			if steps[uuid] == nil {
-				steps[uuid] = make(map[int]v3.ServiceStep)
-			}
-			// move to buffer set
-			for seq, step := range seqSet {
-				steps[uuid][seq] = step
-			}
+			return err
 		}
 	}
-
 	// make response body
 	rsp := make([]servicev3.HttpRsp_Service, len(serviceSet))
 	var i int
 	for uuid, service := range serviceSet {
-		steps_ := make([]servicev3.ServiceStep, 0, len(steps[uuid]))
-		for _, step := range steps[uuid] {
-			steps_ = append(steps_, step)
-		}
-
 		rsp[i].Service = service
-		rsp[i].Steps = steps_
+
+		sort.Slice(stepSet[uuid], func(i, j int) bool {
+			return stepSet[uuid][i].Sequence < stepSet[uuid][j].Sequence
+		})
+
+		rsp[i].Steps = stepSet[uuid]
 		i++
 	}
 
-	return ctx.JSON(http.StatusOK, rsp)
+	return ctx.JSON(http.StatusOK, []servicev3.HttpRsp_Service(rsp))
 }
 
-// Get Service
 // @Description Get a Service
+// @Security    ServiceAuth
 // @Accept      json
 // @Produce     json
 // @Tags        server/service
 // @Router      /server/service/{uuid} [get]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid         path   string true  "Service 의 Uuid"
 // @Success     200 {object} v3.HttpRsp_Service
 func (ctl ControlVanilla) GetService(ctx echo.Context) (err error) {
 	var uuid string
 	if uuid = echoutil.Param(ctx)[__UUID__]; len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		err = ErrorInvalidRequestParameter()
+		err = ErrorInvalidRequestParameter
 		err = errors.Wrapf(err, "valid param%s",
 			logs.KVL(
 				ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
@@ -384,43 +423,73 @@ func (ctl ControlVanilla) GetService(ctx echo.Context) (err error) {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	// get service
-	service, err := vault.Servicev3.GetService(ctx.Request().Context(), ctl, "", uuid)
+	// get tenant claims
+	claims, err := GetServiceAuthorizationClaims(ctx)
 	if err != nil {
-		return err
+		return HttpError(err, http.StatusForbidden)
+	}
+
+	service_cond := stmt.Equal("uuid", uuid)
+	service_table := servicev3.TableNameWithTenant_Service(claims.Hash)
+	var service servicev3.Service
+
+	err = stmtex.Select(service_table, service.ColumnNames(), service_cond, nil, nil).
+		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+		func(scan stmtex.Scanner) error {
+			return service.Scan(scan)
+		})
+	if err != nil {
+		err = errors.Wrapf(err, "failed to get service")
+		return
 	}
 
 	// get service steps
-	stepSet, err := vault.Servicev3.GetServiceSteps(ctx.Request().Context(), ctl, "", uuid)
+	var steps = make([]servicev3.ServiceStep, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	step_table := servicev3.TableNameWithTenant_ServiceStep(claims.Hash)
+	var service_step servicev3.ServiceStep
+	step_cond := stmt.Equal("uuid", uuid)
+
+	err = stmtex.Select(step_table, service_step.ColumnNames(), step_cond, nil, nil).
+		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+		func(scan stmtex.Scanner, _ int) error {
+
+			err = service_step.Scan(scan)
+			if err != nil {
+				return errors.Wrapf(err, "scan service step")
+			}
+
+			steps = append(steps, service_step)
+			return nil
+		})
 	if err != nil {
-		return err
+		err = errors.Wrapf(err, "failed to found service step")
+		return
 	}
+
+	sort.Slice(steps, func(i, j int) bool {
+		return steps[i].Sequence < steps[j].Sequence
+	})
 
 	// make response body
 	rst := new(servicev3.HttpRsp_Service)
-	rst.Service = *service
-	for _, seqSet := range stepSet {
-		rst.Steps = make([]servicev3.ServiceStep, 0, len(stepSet))
-		for _, step := range seqSet {
-			rst.Steps = append(rst.Steps, step)
-		}
-	}
+	rst.Service = service
+	rst.Steps = steps
 
-	return ctx.JSON(http.StatusOK, rst)
+	return ctx.JSON(http.StatusOK, (*servicev3.HttpRsp_Service)(rst))
 }
 
 // @Description Get a Service Result
+// @Security    ServiceAuth
 // @Accept      json
 // @Produce     json
 // @Tags        server/service
 // @Router      /server/service/{uuid}/result [get]
-// @Param       x_auth_token header string false "client session token"
 // @Param       uuid         path   string true  "Service 의 Uuid"
 // @Success     200 {object} v3.HttpRsp_ServiceResult
 func (ctl ControlVanilla) GetServiceResult(ctx echo.Context) (err error) {
 	var uuid string
 	if uuid = echoutil.Param(ctx)[__UUID__]; len(echoutil.Param(ctx)[__UUID__]) == 0 {
-		err = ErrorInvalidRequestParameter()
+		err = ErrorInvalidRequestParameter
 		err = errors.Wrapf(err, "valid param%s",
 			logs.KVL(
 				ParamLog(__UUID__, echoutil.Param(ctx)[__UUID__])...,
@@ -428,24 +497,37 @@ func (ctl ControlVanilla) GetServiceResult(ctx echo.Context) (err error) {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	// get service result
-	cond_service := vanilla.Equal("uuid", uuid)
-
-	service_result, err := vault.Servicev3.GetServiceResult(ctx.Request().Context(), ctl, cond_service.Parse(), nil, nil)
+	// get tenant claims
+	claims, err := GetServiceAuthorizationClaims(ctx)
 	if err != nil {
+		return HttpError(err, http.StatusForbidden)
+	}
+
+	// get service result
+	result_table := servicev3.TableNameWithTenant_ServiceResult(claims.Hash)
+	result := servicev3.ServiceResult{}
+	result_cond := stmt.Equal("uuid", uuid)
+
+	err = stmtex.Select(result_table, result.ColumnNames(), result_cond, nil, nil).
+		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
+		func(scan stmtex.Scanner) error {
+			return result.Scan(scan)
+		})
+	if err != nil {
+		err = errors.Wrapf(err, "failed to get a service result")
 		return err
 	}
 
-	return ctx.JSON(http.StatusOK, service_result)
+	return ctx.JSON(http.StatusOK, servicev3.HttpRsp_ServiceResult(result))
 }
 
 const __DEFAULT_DECORATION_LIMIT__ = 20
 
-func ParseDecoration(m map[string]string) (q *prepare.Condition, o *prepare.Orders, p *prepare.Pagination, err error) {
-	q, o, p, err = prepare.NewParser(m)
-	if p == nil {
-		p = vanilla.Limit(__DEFAULT_DECORATION_LIMIT__).Parse()
-	}
+// func ParseDecoration(m map[string]string) (q *prepare.Condition, o *prepare.Orders, p *prepare.Pagination, err error) {
+// 	q, o, p, err = prepare.NewParser(m)
+// 	if p == nil {
+// 		p = vanilla.Limit(__DEFAULT_DECORATION_LIMIT__).Parse()
+// 	}
 
-	return
-}
+// 	return
+// }

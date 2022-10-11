@@ -1,4 +1,4 @@
-FROM alpine:latest   as build-stage
+FROM alpine:latest   as common-build-stage
 
 LABEL version=0.0.1
 
@@ -25,11 +25,11 @@ COPY docker-entrypoint.sh ${WORKDIR}/
 
 RUN chmod +x  ${WORKDIR}/docker-entrypoint.sh
 
-# RUN addgroup ${GROUP} && \
-#     adduser -D ${USER} -g ${GROUP} -u ${USER_ID} && \
-#     chown -R ${USER}:${GROUP} ${WORKDIR}/
+RUN addgroup ${GROUP} && \
+    adduser -D ${USER} -g ${GROUP} -u ${USER_ID} && \
+    chown -R ${USER}:${GROUP} ${WORKDIR}/
 
-# USER ${USER}
+USER ${USER}
 
 EXPOSE 8099
 

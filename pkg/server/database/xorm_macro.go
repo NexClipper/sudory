@@ -20,7 +20,7 @@ func XormCreate(tx *xorm.Session, i xorm_names.TableName) error {
 				"table", i.TableName(),
 			))
 	} else if !(0 < affect) {
-		return errors.Wrapf(ErrorNoAffected(), "xorm insert%v",
+		return errors.Wrapf(ErrorNoAffected, "xorm insert%v",
 			logs.KVL(
 				"type_name", TypeName(i),
 				"table", i.TableName(),
@@ -46,7 +46,7 @@ func XormGet(tx *xorm.Session, i xorm_names.TableName) error {
 			))
 	}
 	if !has {
-		return errors.Wrapf(ErrorRecordWasNotFound(), "xorm get%v",
+		return errors.Wrapf(ErrorRecordWasNotFound, "xorm get%v",
 			logs.KVL(
 				"type_name", TypeName(i),
 				"table", i.TableName(),
@@ -108,7 +108,7 @@ func XormUpdate(tx *xorm.Session, i xorm_names.TableName) error {
 			))
 	}
 	if !has {
-		return errors.Wrapf(ErrorNoAffected(), "xorm update%v",
+		return errors.Wrapf(ErrorNoAffected, "xorm update%v",
 			logs.KVL(
 				"replica_type_name", TypeName(replica),
 				"replica_table", replica.(xorm_names.TableName).TableName(),

@@ -1,16 +1,11 @@
 variables:
-  DOCKER_DRIVER: overlay
-  APP_DOCKERFILE_LOCATION: "Dockerfile"
   APP_IMAGE_NAME: "nexclipper-sudory"
-  APP_VERSION: "0.2.78"
+  APP_VERSION: "0.2.80"
 
 default:
-  services:
-    - docker:dind
   tags:
     - gitlab-runner-k8s
   retry: 2
-  image: docker:latest
 
 
 stages:
@@ -35,22 +30,69 @@ code-build-server:
   rules:
     - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "staging" ||  $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
 
-docker-build-sudory-server-dev:
-  stage: dev
-  before_script:
-    - "apk add --no-cache git"
+docker-build-commit-sudory-server:
+  stage: build-code
   variables:
-    BUILD_TARGET_STAGE: build-stage
     HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
-    APP_DOCKERFILE_LOCATION: "Dockerfile.server"
     APP_IMAGE_NAME: "nexclipper-sudory-server"
+  image:
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: [""]
+  before_script:
+    - echo "{\"auths\":{\"$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME\":{\"username\":\"$HARBOR_USER\",\"password\":\"$HARBOR_PASS\"}}}" > /kaniko/.docker/config.json
   script:
     - echo "building docker image for $APP_IMAGE_NAME "
-    - "source /data/scripts/build_v3.sh $APP_IMAGE_NAME"
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --target "common-build-stage"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.server"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${CI_COMMIT_SHORT_SHA}"
+  needs:
+    - code-build-server
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+
+deploy-nexclipper-sudory-server-commit:
+  stage: dev
+  image: repo.nexclipper.io/nexclipper/helm-kubectl:latest
+  variables:
+    HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
+    APP_IMAGE_NAME: "nexclipper-sudory-server"
+  before_script:
+    - echo -e "\nLogin to Kubernetes"
+    - source /data/scripts/login-cluster.sh dev
+  script:
+    - "source /data/scripts/deploy.sh dev sudory"
+  needs: 
+    - job: docker-build-commit-sudory-server
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+      when: manual
+
+
+docker-build-sudory-server-dev:
+  stage: dev
+  variables:
+    HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
+    APP_IMAGE_NAME: "nexclipper-sudory-server"
+  image:
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: [""]
+  before_script:
+    - echo "{\"auths\":{\"$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME\":{\"username\":\"$HARBOR_USER\",\"password\":\"$HARBOR_PASS\"}}}" > /kaniko/.docker/config.json
+  script:
+    - echo "building docker image for $APP_IMAGE_NAME "
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --target "common-build-stage"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.server"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${APP_VERSION}"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:latest"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${CI_COMMIT_SHORT_SHA}"
   needs:
     - job: code-build-server
   rules:
-    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+    - if: $CI_COMMIT_BRANCH == "develop"
 
 deploy-nexclipper-sudory-server-dev:
   stage: dev
@@ -62,29 +104,36 @@ deploy-nexclipper-sudory-server-dev:
     - echo -e "\nLogin to Kubernetes"
     - source /data/scripts/login-cluster.sh dev
   script:
-    - "source /data/scripts/deploy_v3.sh dev sudory"
-  needs:
+    - "source /data/scripts/deploy.sh dev sudory"
+  needs: 
     - job: docker-build-sudory-server-dev
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
-    - if: $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
-      when: manual
 
 
 docker-build-sudory-server-stg:
   stage: stg
-  before_script:
-    - "apk add --no-cache git"
   variables:
-    BUILD_TARGET_STAGE: build-stage
     HARBOR_NEXCLIPPER_PROJECT: "nexclipper"
-    APP_DOCKERFILE_LOCATION: "Dockerfile.server"
     APP_IMAGE_NAME: "nexclipper-sudory-server"
+  image:
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: [""]
+  before_script:
+    - echo "{\"auths\":{\"$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME\":{\"username\":\"$HARBOR_USER\",\"password\":\"$HARBOR_PASS\"}}}" > /kaniko/.docker/config.json
   script:
     - echo "building docker image for $APP_IMAGE_NAME "
-    - "source /data/scripts/build_v3.sh $APP_IMAGE_NAME"
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --target "common-build-stage"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.server"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${APP_VERSION}"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:latest"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${CI_COMMIT_SHORT_SHA}"
+  needs:
+    - job: code-build-server
   rules:
-    - if: $CI_COMMIT_BRANCH == "staging"
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
 
 deploy-nexclipper-sudory-server-stg:
   stage: stg
@@ -94,13 +143,13 @@ deploy-nexclipper-sudory-server-stg:
     APP_IMAGE_NAME: "nexclipper-sudory-server"
   before_script:
     - echo -e "\nLogin to Kubernetes"
-    - aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name nxc-prd-01
+    - source /data/scripts/login-cluster.sh stg
   script:
-   - "source /data/scripts/deploy_v3.sh stg sudory"
+   - "source /data/scripts/deploy.sh stg sudory"
   needs:
     - job: docker-build-sudory-server-stg
   rules:
-    - if: $CI_COMMIT_BRANCH == "staging"
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
 
 
 code-build-client:
@@ -120,57 +169,71 @@ code-build-client:
   rules:
     - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
 
-docker-build-sudory-client-dev:
-  stage: dev
-  before_script:
-    - "apk add --no-cache git"
+docker-build-commit-sudory-client:
+  stage: build-code
   variables:
-    BUILD_TARGET_STAGE: build-stage
     HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
-    APP_DOCKERFILE_LOCATION: "Dockerfile.client"
     APP_IMAGE_NAME: "nexclipper-sudory-client"
-  needs:
-    - job: code-build-client
+  image:
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: [""]
+  before_script:
+    - echo "{\"auths\":{\"$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME\":{\"username\":\"$HARBOR_USER\",\"password\":\"$HARBOR_PASS\"}}}" > /kaniko/.docker/config.json
   script:
     - echo "building docker image for $APP_IMAGE_NAME "
-    - "source /data/scripts/build_v3.sh $APP_IMAGE_NAME"
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --target "common-build-stage"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.client"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${CI_COMMIT_SHORT_SHA}"
+  needs:
+    - job: code-build-client
   rules:
-    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+    - if: $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+
+docker-build-sudory-client-dev:
+  stage: dev
+  variables:
+    HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
+    APP_IMAGE_NAME: "nexclipper-sudory-client"
+  image:
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: [""]
+  before_script:
+    - echo "{\"auths\":{\"$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME\":{\"username\":\"$HARBOR_USER\",\"password\":\"$HARBOR_PASS\"}}}" > /kaniko/.docker/config.json
+  script:
+    - echo "building docker image for $APP_IMAGE_NAME "
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --target "common-build-stage"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.client"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${APP_VERSION}"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:latest"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${CI_COMMIT_SHORT_SHA}"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop" 
 
 docker-build-sudory-client-stg:
   stage: stg
-  before_script:
-    - "apk add --no-cache git"
   variables:
-    BUILD_TARGET_STAGE: build-stage
     HARBOR_NEXCLIPPER_PROJECT: "nexclipper"
-    APP_DOCKERFILE_LOCATION: "Dockerfile.client"
     APP_IMAGE_NAME: "nexclipper-sudory-client"
-  needs:
-    - job: code-build-client
+  image:
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: [""]
+  before_script:
+    - echo "{\"auths\":{\"$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME\":{\"username\":\"$HARBOR_USER\",\"password\":\"$HARBOR_PASS\"}}}" > /kaniko/.docker/config.json
   script:
     - echo "building docker image for $APP_IMAGE_NAME "
-    - "source /data/scripts/build_v3.sh $APP_IMAGE_NAME"
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --target "common-build-stage"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.client"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${APP_VERSION}"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:latest"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${CI_COMMIT_SHORT_SHA}"
+  needs:
+    - job: code-build-client
   rules:
-    - if: $CI_COMMIT_BRANCH == "staging"
+    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
 
-
-# deploy-nexclipper-sudory-client-dev:
-#   stage: dev
-#   image: repo.nexclipper.io/nexclipper/helm-kubectl:latest
-#   variables:
-#     HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
-#     APP_IMAGE_NAME: "nexclipper-sudory-client"
-#   before_script:
-#     - echo -e "\nLogin to Kubernetes"
-#     - source /data/scripts/login-cluster.sh dev
-#   script:
-#     - echo "Retrieve uuid and token for sudory client"
-#     - "source kube/getClientToken.sh $S_SERVER_URL"
-#     - "source /data/scripts/deploy_v3.sh dev sudory"
-#   needs:
-#     - job: docker-build-sudory-client-dev
-#   rules:
-#     - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
-#       when: manual
-#   allow_failure: true

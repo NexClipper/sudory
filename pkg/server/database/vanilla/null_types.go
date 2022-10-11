@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var json_null = []byte{'n', 'u', 'l', 'l'}
+var json_null = []byte("null")
 
 func IsJsonNull(data []byte) bool {
 	return bytes.Equal(json_null, data)

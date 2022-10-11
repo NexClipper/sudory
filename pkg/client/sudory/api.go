@@ -11,7 +11,7 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/log"
-	authv1 "github.com/NexClipper/sudory/pkg/server/model/auth/v1"
+	"github.com/NexClipper/sudory/pkg/server/model/auths/v2"
 	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 )
@@ -55,7 +55,7 @@ func (s *SudoryAPI) GetToken() string {
 	// return s.authToken
 }
 
-func (s *SudoryAPI) Auth(ctx context.Context, auth *authv1.HttpReqAuth) error {
+func (s *SudoryAPI) Auth(ctx context.Context, auth *auths.HttpReqAuth) error {
 	if auth == nil {
 		return fmt.Errorf("auth is nil")
 	}

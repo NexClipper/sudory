@@ -31,36 +31,6 @@ func (TemplateCommand) ColumnNames() []string {
 	}
 }
  
-func (Template) ColumnNamesWithAlias() []string {
-	return []string{
- 		"id",
- 		"uuid",
- 		"name",
- 		"summary",
- 		"origin",
- 		"created",
- 		"updated",
- 		"deleted",
-	}
-}
- 
-func (TemplateCommand) ColumnNamesWithAlias() []string {
-	return []string{
- 		"id",
- 		"uuid",
- 		"name",
- 		"summary",
- 		"template_uuid",
- 		"sequence",
- 		"method",
- 		"args",
- 		"result_filter",
- 		"created",
- 		"updated",
- 		"deleted",
-	}
-}
- 
 func (row Template) Values() []interface{} {
 	return []interface{}{
 		row.Id,
