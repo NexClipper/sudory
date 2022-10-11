@@ -69,6 +69,11 @@ func (c *Client) ResourcePatch(gv schema.GroupVersion, resource string, params m
 			if err != nil {
 				break
 			}
+		case "secrets":
+			result, err = c.client.CoreV1().Secrets(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
 		default:
 			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
 		}
