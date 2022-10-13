@@ -31,6 +31,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database"
 	flavor "github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/resolvers/mysql"
 	"github.com/NexClipper/sudory/pkg/version"
+	"github.com/pkg/errors"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
