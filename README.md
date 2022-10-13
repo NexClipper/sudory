@@ -217,11 +217,7 @@ with the follwoing body -
   "polling_option": {
     "additionalProp1": {}
   },
-<<<<<<< HEAD
   "polling_limit": 10
-=======
-  "polling_limit:: 10
->>>>>>> bc3761c (Update README.md)
   "summary": "cluser description"
 }
 ```
