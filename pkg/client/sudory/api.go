@@ -38,7 +38,6 @@ func NewSudoryAPIWithClient(client *httpclient.HttpClient) *SudoryAPI {
 
 func (s *SudoryAPI) IsTokenExpired() bool {
 	claims := new(sessionv1.ClientSessionPayload)
-	// jwt_token, _, err := jwt.NewParser().ParseUnverified(s.authToken, claims)
 	jwt_token, _, err := jwt.NewParser().ParseUnverified(s.GetToken(), claims)
 	if _, ok := jwt_token.Claims.(*sessionv1.ClientSessionPayload); !ok || err != nil {
 		log.Warnf("jwt.ParseUnverified error : %v\n", err)
@@ -52,7 +51,6 @@ func (s *SudoryAPI) GetToken() string {
 	x := s.authToken.Load()
 
 	return x.(string)
-	// return s.authToken
 }
 
 func (s *SudoryAPI) Auth(ctx context.Context, auth *auths.HttpReqAuth) error {
@@ -71,7 +69,6 @@ func (s *SudoryAPI) Auth(ctx context.Context, auth *auths.HttpReqAuth) error {
 	if headers := result.Headers(); headers != nil {
 		if token := headers.Get(sudoryAuthTokenHeaderName); token != "" {
 			s.authToken.Store(token)
-			// s.authToken = token
 		}
 	}
 
@@ -90,13 +87,14 @@ func (s *SudoryAPI) GetServices(ctx context.Context) ([]servicev3.HttpRsp_Client
 		return nil, fmt.Errorf("session token is empty")
 	}
 
-	result := s.client.Get("/client/service").SetHeader(sudoryAuthTokenHeaderName, token).Do(ctx)
+	result := s.client.Get("/client/service").
+		SetHeader(sudoryAuthTokenHeaderName, token).
+		Do(ctx)
 
 	// get session token
 	if headers := result.Headers(); headers != nil {
 		if token := headers.Get(sudoryAuthTokenHeaderName); token != "" {
 			s.authToken.Store(token)
-			// s.authToken = token
 		}
 	}
 
@@ -123,13 +121,16 @@ func (s *SudoryAPI) UpdateServices(ctx context.Context, service *servicev3.HttpR
 		return fmt.Errorf("session token is empty")
 	}
 
-	result := s.client.Put("/client/service").SetHeader(sudoryAuthTokenHeaderName, token).SetBody("application/json", b).Do(ctx)
+	result := s.client.Put("/client/service").
+		SetHeader(sudoryAuthTokenHeaderName, token).
+		SetGzip(true).
+		SetBody("application/json", b).
+		Do(ctx)
 
 	// get session token
 	if headers := result.Headers(); headers != nil {
 		if token := headers.Get(sudoryAuthTokenHeaderName); token != "" {
 			s.authToken.Store(token)
-			// s.authToken = token
 		}
 	}
 
