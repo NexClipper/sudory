@@ -2,9 +2,9 @@ appname: sudory-server
 
 host:
   port: 8099
-  tls-enable: true
-  tls-crt-filename: /app/conf/secret/server.crt
-  tls-key-filename: /app/conf/secret/server.key
+  # tls-enable: true
+  # tls-crt-filename: /app/conf/secret/server.crt
+  # tls-key-filename: /app/conf/secret/server.key
   # xauthtoken: true
 
 database:
