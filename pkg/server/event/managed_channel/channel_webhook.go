@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	"github.com/pkg/errors"
 )
@@ -77,7 +78,9 @@ func (channel ChannelWebhook) OnNotify(factory *MarshalFactory) error {
 	}
 
 	if err := HttpReq(&opt, httpclient, content_type, b); err != nil {
-		return errors.Wrapf(err, "http request")
+		return errors.Wrapf(err, "http request%v", logs.KVL(
+			"options", channel.opt,
+		))
 	}
 	return nil
 }

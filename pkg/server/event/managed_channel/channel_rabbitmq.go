@@ -126,11 +126,8 @@ func (ChannelRabbitMQ) Publish(opt *channelv2.RabbitMqConfig, ch *amqp.Channel, 
 		publishing,
 	); err != nil {
 		return errors.Wrapf(err, "publish to rabbitmq%s",
-			logs.KVL("exchange", opt.ChannelPublish.Exchange,
-				"routing_key", opt.ChannelPublish.RoutingKey,
-				"mandatory", opt.ChannelPublish.Mandatory,
-				"immediate", opt.ChannelPublish.Immediate,
-				"publishing", publishing,
+			logs.KVL(
+				"options", opt,
 			))
 	}
 
