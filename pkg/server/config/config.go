@@ -10,8 +10,12 @@ type Config struct {
 	APPName string `default:"sudory-server"`
 
 	Host struct {
-		Port       int32 `default:"8099"`
-		XAuthToken bool  `default:"false"`
+		Port                   int32  `env:"SUDORY_HOST_PORT"             yaml:"port"             default:"8099"`
+		TlsEnable              bool   `env:"SUDORY_HOST_TLS_ENABLE"       yaml:"tls-enable"       default:"false"`
+		TlsCertificateFilename string `env:"SUDORY_HOST_TLS_CRT_FILENAME" yaml:"tls-crt-filename" default:"server.crt"`
+		TlsPrivateKeyFilename  string `env:"SUDORY_HOST_TLS_KEY_FILENAME" yaml:"tls-key-filename" default:"server.key"`
+
+		XAuthToken bool `default:"false"`
 	}
 
 	Database struct {
@@ -40,8 +44,10 @@ type Config struct {
 
 	Encryption string `yaml:"encryption" default:"enigma.yml"`
 
+	// @Deprecated
 	Events string `yaml:"events" default:"events.yml"`
 
+	// @Deprecated
 	RespitePeriod time.Duration `default:"60m" yaml:"respite-period"` //(minute) 0: no use
 }
 
