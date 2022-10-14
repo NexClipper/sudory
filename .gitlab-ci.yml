@@ -1,6 +1,6 @@
 variables:
   APP_IMAGE_NAME: "nexclipper-sudory"
-  APP_VERSION: "0.2.84"
+  APP_VERSION: "0.2.85"
 
 default:
   tags:
