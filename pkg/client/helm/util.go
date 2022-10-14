@@ -48,7 +48,13 @@ func convertArgsToStruct(args map[string]interface{}, obj interface{}) error {
 					v.Field(i).Set(argValue)
 				}
 			} else {
-				return fmt.Errorf("argument(%s)'s type is invalid: want(%v), got(%v)", tagName, v.Field(i).Type(), argValue.Type())
+				if argValue.Kind() == reflect.Float64 && v.Field(i).Kind() == reflect.Int {
+					if v.Field(i).CanSet() && argValue.CanConvert(v.Field(i).Type()) {
+						v.Field(i).Set(argValue.Convert(v.Field(i).Type()))
+					}
+				} else {
+					return fmt.Errorf("argument(%s)'s type is invalid: want(%v), got(%v)", tagName, v.Field(i).Type(), argValue.Type())
+				}
 			}
 		}
 	}
