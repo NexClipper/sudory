@@ -1,6 +1,9 @@
 variables:
   APP_IMAGE_NAME: "nexclipper-sudory"
-  APP_VERSION: "0.2.86"
+  APP_VERSION_DEV: "0.2.86"
+  APP_VERSION_STG: "0.2.86"
+  APP_VERSION_SUDORY_CLIENT: "0.2.86"
+
 
 default:
   tags:
@@ -28,7 +31,7 @@ code-build-server:
       - bin/
       - pkg/
   rules:
-    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "staging" ||  $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
 
 docker-build-commit-sudory-server:
   stage: build-code
@@ -51,6 +54,7 @@ docker-build-commit-sudory-server:
     - code-build-server
   rules:
     - if: $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+      when: manual
 
 deploy-nexclipper-sudory-server-commit:
   stage: dev
@@ -62,18 +66,17 @@ deploy-nexclipper-sudory-server-commit:
     - echo -e "\nLogin to Kubernetes"
     - source /data/scripts/login-cluster.sh dev
   script:
-    - "source /data/scripts/deploy.sh dev sudory"
+    - "source /data/scripts/deploy.sh dev sudory ${CI_COMMIT_SHORT_SHA}"
   needs: 
     - job: docker-build-commit-sudory-server
   rules:
     - if: $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
       when: manual
 
-
-docker-build-sudory-server-dev:
+docker-build-sudory-server:
   stage: dev
   variables:
-    HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
+    HARBOR_NEXCLIPPER_PROJECT: "nexclipper"
     APP_IMAGE_NAME: "nexclipper-sudory-server"
   image:
     name: gcr.io/kaniko-project/executor:v1.9.0-debug
@@ -86,7 +89,7 @@ docker-build-sudory-server-dev:
       --context "${CI_PROJECT_DIR}"
       --target "common-build-stage"
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile.server"
-      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${APP_VERSION}"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${APP_VERSION_DEV}"
       --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:latest"
       --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${CI_COMMIT_SHORT_SHA}"
   needs:
@@ -104,36 +107,12 @@ deploy-nexclipper-sudory-server-dev:
     - echo -e "\nLogin to Kubernetes"
     - source /data/scripts/login-cluster.sh dev
   script:
-    - "source /data/scripts/deploy.sh dev sudory"
+    - "source /data/scripts/deploy.sh dev sudory ${APP_VERSION_DEV}"
   needs: 
-    - job: docker-build-sudory-server-dev
+    - job: docker-build-sudory-server
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
 
-
-docker-build-sudory-server-stg:
-  stage: stg
-  variables:
-    HARBOR_NEXCLIPPER_PROJECT: "nexclipper"
-    APP_IMAGE_NAME: "nexclipper-sudory-server"
-  image:
-    name: gcr.io/kaniko-project/executor:v1.9.0-debug
-    entrypoint: [""]
-  before_script:
-    - echo "{\"auths\":{\"$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME\":{\"username\":\"$HARBOR_USER\",\"password\":\"$HARBOR_PASS\"}}}" > /kaniko/.docker/config.json
-  script:
-    - echo "building docker image for $APP_IMAGE_NAME "
-    - /kaniko/executor
-      --context "${CI_PROJECT_DIR}"
-      --target "common-build-stage"
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.server"
-      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${APP_VERSION}"
-      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:latest"
-      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${CI_COMMIT_SHORT_SHA}"
-  needs:
-    - job: code-build-server
-  rules:
-    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
 
 deploy-nexclipper-sudory-server-stg:
   stage: stg
@@ -145,11 +124,11 @@ deploy-nexclipper-sudory-server-stg:
     - echo -e "\nLogin to Kubernetes"
     - source /data/scripts/login-cluster.sh stg
   script:
-   - "source /data/scripts/deploy.sh stg sudory"
-  needs:
-    - job: docker-build-sudory-server-stg
+   - "source /data/scripts/deploy.sh stg sudory ${APP_VERSION_STG}"
   rules:
-    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+    - if: $CI_COMMIT_BRANCH == "staging" 
+
+
 
 
 code-build-client:
@@ -167,7 +146,7 @@ code-build-client:
       - bin/
       - pkg/
   rules:
-    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+    - if: $CI_COMMIT_BRANCH == "develop"  || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
 
 docker-build-commit-sudory-client:
   stage: build-code
@@ -190,31 +169,10 @@ docker-build-commit-sudory-client:
     - job: code-build-client
   rules:
     - if: $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
+      when: manual
 
-docker-build-sudory-client-dev:
+docker-build-sudory-client:
   stage: dev
-  variables:
-    HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
-    APP_IMAGE_NAME: "nexclipper-sudory-client"
-  image:
-    name: gcr.io/kaniko-project/executor:v1.9.0-debug
-    entrypoint: [""]
-  before_script:
-    - echo "{\"auths\":{\"$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME\":{\"username\":\"$HARBOR_USER\",\"password\":\"$HARBOR_PASS\"}}}" > /kaniko/.docker/config.json
-  script:
-    - echo "building docker image for $APP_IMAGE_NAME "
-    - /kaniko/executor
-      --context "${CI_PROJECT_DIR}"
-      --target "common-build-stage"
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile.client"
-      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${APP_VERSION}"
-      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:latest"
-      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${CI_COMMIT_SHORT_SHA}"
-  rules:
-    - if: $CI_COMMIT_BRANCH == "develop" 
-
-docker-build-sudory-client-stg:
-  stage: stg
   variables:
     HARBOR_NEXCLIPPER_PROJECT: "nexclipper"
     APP_IMAGE_NAME: "nexclipper-sudory-client"
@@ -229,11 +187,8 @@ docker-build-sudory-client-stg:
       --context "${CI_PROJECT_DIR}"
       --target "common-build-stage"
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile.client"
-      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${APP_VERSION}"
+      --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${APP_VERSION_SUDORY_CLIENT}"
       --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:latest"
       --destination "$HARBOR_URL/$HARBOR_NEXCLIPPER_PROJECT/$APP_IMAGE_NAME:${CI_COMMIT_SHORT_SHA}"
-  needs:
-    - job: code-build-client
   rules:
-    - if: $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH =~ /\b^(issue|feature|bugfix|improvement).*$\b/
-
+    - if: $CI_COMMIT_BRANCH == "develop" 
