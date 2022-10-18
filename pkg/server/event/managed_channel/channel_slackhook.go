@@ -1,11 +1,11 @@
 package managed_channel
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	"github.com/pkg/errors"
 )
@@ -60,34 +60,19 @@ func (channel ChannelSlackhook) OnNotify(factory *MarshalFactory) (err error) {
 		RequestTimeout: time.Duration(channel.opt.RequestTimeout) * time.Second,
 	}
 
-	var v interface{}
-	if factory.Formatter != nil {
-		v, err = factory.Formatter.Format(factory.Value)
-	} else {
-		v = factory.Value
-	}
-
-	format_data := map[string]interface{}{"text": ""}
-	switch v := v.(type) {
-	case string:
-		format_data["text"] = v
-	default:
-		var b []byte
-		b, err = json.Marshal(v)
-		err = errors.Wrapf(err, "marshal to json")
-		format_data["text"] = string(b)
-	}
+	payload, err := factory.Marshal(content_type)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "marshal factory")
 	}
 
-	payload, err := json.Marshal(format_data)
 	if err != nil {
 		return errors.Wrapf(err, "convert to slack-incoming-webhook format")
 	}
 
 	if err := HttpReq(&opt, httpclient, content_type, payload); err != nil {
-		return errors.Wrapf(err, "http request")
+		return errors.Wrapf(err, "http request%v", logs.KVL(
+			"options", channel.opt,
+		))
 	}
 	return nil
 }

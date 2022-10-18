@@ -31,6 +31,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database"
 	flavor "github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/resolvers/mysql"
 	"github.com/NexClipper/sudory/pkg/version"
+	"github.com/pkg/errors"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -39,8 +40,18 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/route/docs"
 )
 
+func init() {
+	//swago docs version
+	docs.SwaggerInfo.Version = version.Version
+}
+
 type Route struct {
 	e *echo.Echo
+
+	Port                   int32
+	UseTls                 bool
+	TlsCertificateFilename string
+	TlsPrivateKeyFilename  string
 }
 
 func New(cfg *config.Config, db *database.DBManipulator) *Route {
@@ -91,8 +102,6 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 
 	//swago
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
-	//swago docs version
-	docs.SwaggerInfo.Version = version.Version
 
 	{
 		// /client/auth*
@@ -227,14 +236,38 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.PUT("/server/channels/:uuid/format", ctl.UpdateChannelFormat)
 	}
 
-	return &Route{e: e}
+	return &Route{
+		e:                      e,
+		Port:                   cfg.Host.Port,
+		UseTls:                 cfg.Host.TlsEnable,
+		TlsCertificateFilename: cfg.Host.TlsCertificateFilename,
+		TlsPrivateKeyFilename:  cfg.Host.TlsPrivateKeyFilename,
+	}
 }
 
-func (r *Route) Start(port int32) error {
+func (r *Route) Start() error {
+	if r.UseTls {
+		crt, err := os.ReadFile(r.TlsCertificateFilename)
+		if err != nil {
+			err = errors.Wrapf(err, "faild to read tls certificate file name=%v", r.TlsCertificateFilename)
+			return err
+		}
+		key, err := os.ReadFile(r.TlsPrivateKeyFilename)
+		if err != nil {
+			err = errors.Wrapf(err, "faild to read tls privateKey file name=%v", r.TlsPrivateKeyFilename)
+			return err
+		}
+
+		return StartTLS(r.e, r.Port, crt, key)
+	}
+	return Start(r.e, r.Port)
+}
+
+func Start(e *echo.Echo, port int32) error {
 	go func() {
 		address := fmt.Sprintf(":%d", port)
-		if err := r.e.Start(address); err != nil {
-			r.e.Logger.Info("shut down the server")
+		if err := e.Start(address); err != nil {
+			e.Logger.Info("shut down the server")
 		}
 	}()
 
@@ -244,7 +277,28 @@ func (r *Route) Start(port int32) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := r.e.Shutdown(ctx); err != nil {
+	if err := e.Shutdown(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func StartTLS(e *echo.Echo, port int32, crt, key []byte) error {
+	go func() {
+		address := fmt.Sprintf(":%d", port)
+		if err := e.StartTLS(address, crt, key); err != nil {
+			e.Logger.Info("shut down the server")
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := e.Shutdown(ctx); err != nil {
 		return err
 	}
 

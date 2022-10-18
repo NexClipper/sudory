@@ -3,6 +3,7 @@ package httpclient
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -31,6 +32,7 @@ func NewHttpClient(address string, defaultTLS bool, retryMax, retryInterval int)
 
 	client.HTTPClient.Transport.(*http.Transport).MaxIdleConns = 100
 	client.HTTPClient.Transport.(*http.Transport).MaxIdleConnsPerHost = 100
+	client.HTTPClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	client.Logger = &log.RetryableHttpLogger{}
 	client.RetryMax = retryMax

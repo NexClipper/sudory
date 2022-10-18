@@ -2,6 +2,9 @@ appname: sudory-server
 
 host:
   port: 8099
+  # tls-enable: true
+  # tls-crt-filename: /app/conf/secret/server.crt
+  # tls-key-filename: /app/conf/secret/server.key
   # xauthtoken: true
 
 database:
@@ -41,4 +44,5 @@ events: /app/conf/rules/events.yml
 #   allow-origins:  google.com, example.com
 #   allow-methods:  get, put, delete
 
-respite-period: 60m
+# @Deprecated
+respite-period: 60m     

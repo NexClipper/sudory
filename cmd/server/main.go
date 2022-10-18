@@ -92,7 +92,7 @@ func main() {
 		panic(err)
 	}
 
-	if true {
+	if false {
 		//init event
 		eventsConfigYaml := cfg.Events
 		if !path.IsAbs(cfg.Events) {
@@ -144,7 +144,31 @@ func main() {
 	}
 
 	r := route.New(cfg, db)
-	r.Start(cfg.Host.Port)
+	if err := r.Start(); err != nil {
+		nullstring := func(p *string) string {
+			if p != nil {
+				return *p
+			}
+			return "none"
+		}
+
+		var stack *string
+		//stack for surface
+		logs.StackIter(err, func(s string) {
+			stack = &s
+		})
+		//stack for internal
+		logs.CauseIter(err, func(err error) {
+			logs.StackIter(err, func(s string) {
+				stack = &s
+			})
+		})
+
+		err = errors.Wrapf(err, "failed to start route")
+		logger.Errorf("%v%v", err.Error(), logs.KVL(
+			"stack", nullstring(stack),
+		))
+	}
 
 	logger.Debugf("%s is DONE", path.Base(strings.ReplaceAll(os.Args[0], "\\", "/")))
 }
