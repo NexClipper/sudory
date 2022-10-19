@@ -56,6 +56,15 @@ func (c *Client) ApiRequest(api, resource, verb string, params map[string]interf
 			default:
 				return "", fmt.Errorf("unknown verb name(%s)", verb)
 			}
+		case "hypervisors":
+			switch verb {
+			case "get":
+				data, err = c.GetComputeV2_1Hypervisors(api, params)
+			case "list":
+				data, err = c.ListComputeV2_1Hypervisors(api, params)
+			default:
+				return "", fmt.Errorf("unknown verb name(%s)", verb)
+			}
 		default:
 			return "", fmt.Errorf("unknown resource name(%s)", resource)
 		}
