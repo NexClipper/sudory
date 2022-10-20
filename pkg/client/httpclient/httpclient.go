@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -33,6 +34,7 @@ func NewHttpClient(address string, defaultTLS bool, retryMax, retryInterval int)
 
 	client.HTTPClient.Transport.(*http.Transport).MaxIdleConns = 100
 	client.HTTPClient.Transport.(*http.Transport).MaxIdleConnsPerHost = 100
+	client.HTTPClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	client.Logger = &log.RetryableHttpLogger{}
 	client.RetryMax = retryMax
@@ -100,6 +102,22 @@ func (r *Request) SetParam(key string, values ...string) *Request {
 	}
 	for _, v := range values {
 		r.params.Add(key, v)
+	}
+	return r
+}
+
+func (r *Request) SetParamFromQuery(query url.Values) *Request {
+	if query == nil || len(query) <= 0 {
+		return r
+	}
+
+	if r.params == nil {
+		r.params = make(url.Values)
+	}
+	for k, v := range query {
+		for _, vv := range v {
+			r.params.Add(k, vv)
+		}
 	}
 	return r
 }
