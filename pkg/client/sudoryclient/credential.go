@@ -14,15 +14,15 @@ import (
 )
 
 var (
-	sudoryclientNamespace  = "default"
-	sudoryclientSecretName = "sudoryclient-credential"
+	SudoryclientNamespace  = "default"
+	SudoryclientSecretName = "sudoryclient-credential"
 )
 
 func init() {
 	// get namespace
 	namespace, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err == nil {
-		sudoryclientNamespace = string(namespace)
+		SudoryclientNamespace = string(namespace)
 	}
 }
 
@@ -31,7 +31,7 @@ func (c *Client) Credential(verb string, params map[string]interface{}) (string,
 	defer cancel()
 
 	found := true
-	secret, err := c.k8sClient.GetK8sClientset().CoreV1().Secrets(sudoryclientNamespace).Get(ctx, sudoryclientSecretName, metav1.GetOptions{})
+	secret, err := c.k8sClient.GetK8sClientset().CoreV1().Secrets(SudoryclientNamespace).Get(ctx, SudoryclientSecretName, metav1.GetOptions{})
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			return "", err
@@ -65,13 +65,13 @@ func (c *Client) Credential(verb string, params map[string]interface{}) (string,
 
 	if !found {
 		// k8s create secret
-		_, err := c.k8sClient.GetK8sClientset().CoreV1().Secrets(sudoryclientNamespace).Create(ctx, secret, metav1.CreateOptions{})
+		_, err := c.k8sClient.GetK8sClientset().CoreV1().Secrets(SudoryclientNamespace).Create(ctx, secret, metav1.CreateOptions{})
 		if err != nil {
 			return "", err
 		}
 	} else {
 		// k8s update secret
-		_, err := c.k8sClient.GetK8sClientset().CoreV1().Secrets(sudoryclientNamespace).Update(ctx, secret, metav1.UpdateOptions{})
+		_, err := c.k8sClient.GetK8sClientset().CoreV1().Secrets(SudoryclientNamespace).Update(ctx, secret, metav1.UpdateOptions{})
 		if err != nil {
 			return "", err
 		}
@@ -235,8 +235,8 @@ func newSecretForSudoryclient() *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      sudoryclientSecretName,
-			Namespace: sudoryclientNamespace,
+			Name:      SudoryclientSecretName,
+			Namespace: SudoryclientNamespace,
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{},

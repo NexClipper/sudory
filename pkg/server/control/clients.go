@@ -425,7 +425,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		stmt.IsNull("deleted"),
 	)
 	err = stmtex.Select(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil).
-		QueryRowsContext(ctx.Request().Context(), ctl.DB, ctl.Dialect())(
+		QueryRowsContext(context.Background(), ctl.DB, ctl.Dialect())(
 		func(scan stmtex.Scanner, _ int) error {
 			err := tenant.Scan(scan)
 			if err != nil {

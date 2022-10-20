@@ -40,6 +40,8 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 		__CONTEXT_VALUE_KEY__ = ClientSession
 	)
 
+	var timeout = context.Background()
+
 	switch v := GetContextValue(ctx.Request().Context(), __CONTEXT_VALUE_KEY__).(type) {
 	case error:
 		return nil, v
@@ -85,7 +87,7 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 				stmt.IsNull("deleted"),
 			)
 			err = stmtex.Select(cluster.TableName(), cluster.ColumnNames(), cluster_cond, nil, nil).
-				QueryRowContext(ctx.Request().Context(), tx, dialect)(func(s stmtex.Scanner) (err error) {
+				QueryRowContext(timeout, tx, dialect)(func(s stmtex.Scanner) (err error) {
 				err = cluster.Scan(s)
 				err = errors.Wrapf(err, "cluster Scan")
 				return
@@ -111,7 +113,7 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 			clusterinfo_cond := stmt.Equal("cluster_uuid", claims.ClusterUuid)
 
 			err = stmtex.Select(clusterinfo.TableName(), clusterinfo_columns, clusterinfo_cond, nil, nil).
-				QueryRowsContext(ctx.Request().Context(), tx, dialect)(func(scan stmtex.Scanner, _ int) error {
+				QueryRowsContext(timeout, tx, dialect)(func(scan stmtex.Scanner, _ int) error {
 				return scan.Scan(&polling_count)
 			})
 			if err != nil {
@@ -149,7 +151,7 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 			)
 
 			// found session
-			session_found, err := stmtex.ExistContext(session.TableName(), session_cond)(ctx.Request().Context(), tx, dialect)
+			session_found, err := stmtex.ExistContext(session.TableName(), session_cond)(timeout, tx, dialect)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to found client session")
 				return err
@@ -170,7 +172,7 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 			}
 
 			_, err = stmtex.Update(session.TableName(), keys_values, session_cond).
-				ExecContext(ctx.Request().Context(), tx, dialect)
+				ExecContext(timeout, tx, dialect)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to refreshed client session%v", logs.KVL(
 					"uuid", claims.Uuid,
