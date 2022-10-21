@@ -59,6 +59,16 @@ func (c *Client) ResourcePatch(gv schema.GroupVersion, resource string, params m
 			if err != nil {
 				break
 			}
+		case "endpoints":
+			result, err = c.client.CoreV1().Endpoints(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		case "namespaces":
+			result, err = c.client.CoreV1().Namespaces().Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
 		case "persistentvolumes":
 			result, err = c.client.CoreV1().PersistentVolumes().Patch(ctx, name, pt, data, metav1.PatchOptions{})
 			if err != nil {
@@ -84,8 +94,123 @@ func (c *Client) ResourcePatch(gv schema.GroupVersion, resource string, params m
 		}
 	case "apps/v1":
 		switch resource {
+		case "daemonsets":
+			result, err = c.client.AppsV1().DaemonSets(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
 		case "deployments":
 			result, err = c.client.AppsV1().Deployments(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		case "statefulsets":
+			result, err = c.client.AppsV1().StatefulSets(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "networking.k8s.io/v1":
+		switch resource {
+		case "ingresses":
+			result, err = c.client.NetworkingV1().Ingresses(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "monitoring.coreos.com/v1":
+		switch resource {
+		case "prometheuses":
+			result, err = c.mclient.MonitoringV1().Prometheuses(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		case "prometheusrules":
+			result, err = c.mclient.MonitoringV1().PrometheusRules(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		case "servicemonitors":
+			result, err = c.mclient.MonitoringV1().ServiceMonitors(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		case "alertmanagers":
+			result, err = c.mclient.MonitoringV1().Alertmanagers(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		case "podmonitors":
+			result, err = c.mclient.MonitoringV1().PodMonitors(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		case "probes":
+			result, err = c.mclient.MonitoringV1().Probes(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		case "thanosrulers":
+			result, err = c.mclient.MonitoringV1().ThanosRulers(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "monitoring.coreos.com/v1alpha1":
+		switch resource {
+		case "alertmanagerconfigs":
+			result, err = c.mclient.MonitoringV1alpha1().AlertmanagerConfigs(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "batch/v1":
+		switch resource {
+		case "cronjobs":
+			result, err = c.client.BatchV1().CronJobs(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "autoscaling/v2":
+		switch resource {
+		case "horizontalpodautoscalers":
+			result, err = c.client.AutoscalingV2().HorizontalPodAutoscalers(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		default:
+			err = fmt.Errorf("group version(%s)'s unsupported resource(%s)", gv.Identifier(), resource)
+		}
+	case "rbac.authorization.k8s.io/v1":
+		switch resource {
+		case "clusterrolebindings":
+			result, err = c.client.RbacV1().ClusterRoleBindings().Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		case "clusterroles":
+			result, err = c.client.RbacV1().ClusterRoles().Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		case "rolebindings":
+			result, err = c.client.RbacV1().RoleBindings(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
+			if err != nil {
+				break
+			}
+		case "roles":
+			result, err = c.client.RbacV1().Roles(namespace).Patch(ctx, name, pt, data, metav1.PatchOptions{})
 			if err != nil {
 				break
 			}
