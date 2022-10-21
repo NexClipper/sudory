@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/client/log"
@@ -450,21 +451,25 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	m["status_description"] = service.Status.String()
 	m["result_type"] = service_result.ResultSaveType.String()
 	m["result"] = func() interface{} {
-		var b = []byte(body.Result)
 
-		var obj map[string]interface{}
-		if err := json.Unmarshal(b, &obj); err == nil {
-			return json.RawMessage(body.Result)
+		var b = []byte(strings.TrimSpace(body.Result))
+		if len(b) == 0 {
+			// empty string
+			return map[string]interface{}{
+				"message": body.Result,
+			}
 		}
 
-		var arr []interface{}
-		if err := json.Unmarshal(b, &arr); err == nil {
-			return json.RawMessage(body.Result)
+		head, tail := b[0], b[len(b)-1]
+		if ok := (head == '{' && tail == '}') || (head == '[' && tail == ']'); !ok {
+			// not json
+			return map[string]interface{}{
+				"message": body.Result,
+			}
 		}
 
-		return map[string]interface{}{
-			"message": body.Result,
-		}
+		// json
+		return json.RawMessage(body.Result)
 	}()
 	m["step_count"] = service.StepCount
 	m["step_position"] = service.StepPosition
