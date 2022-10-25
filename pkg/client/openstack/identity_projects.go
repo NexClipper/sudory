@@ -1,19 +1,17 @@
 package openstack
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
+
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack"
+	"github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
 )
 
-const (
-	identityApiV3BasePath   = "/identity/v3"
-	identityApiProjectsPath = "/projects"
-)
-
-func (c *Client) GetIdentityV3Project(api string, params map[string]interface{}) (string, error) {
-	var path = identityApiV3BasePath + identityApiProjectsPath
+func (c *Client) GetIdentityV3Project(params map[string]interface{}) (string, error) {
 	var id string
-	var query = make(map[string]interface{})
 
 	if found, err := FindCastFromMap(params, "id", &id); found && err != nil {
 		return "", err
@@ -23,60 +21,91 @@ func (c *Client) GetIdentityV3Project(api string, params map[string]interface{})
 		return "", fmt.Errorf("project_id is empty")
 	}
 
-	if found, err := FindCastFromMap(params, "query", &query); found && err != nil {
-		return "", err
-	}
-
-	q := convertQuery(query)
-
-	path += "/" + id
-
-	apikey, err := c.getApiKeyFn()
+	client, err := openstack.NewIdentityV3(c.pClient, gophercloud.EndpointOpts{})
 	if err != nil {
 		return "", err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), defaultApiTimeout)
-	defer cancel()
+	r := projects.Get(client, id)
+	if r.Err != nil {
+		return "", r.Err
+	}
 
-	body, err := c.client.Get(path).
-		SetHeader(xAuthTokenHeaderName, string(apikey)).
-		SetHeader("Accept", "application/json").
-		SetParamFromQuery(q).
-		Do(ctx).Raw()
+	b, err := json.Marshal(r.Body)
 	if err != nil {
 		return "", err
 	}
 
-	return string(body), nil
+	return string(b), nil
 }
 
-func (c *Client) ListIdentityV3Projects(apiPath string, params map[string]interface{}) (string, error) {
-	var path = identityApiV3BasePath + identityApiProjectsPath
+func (c *Client) ListIdentityV3Projects(params map[string]interface{}) (string, error) {
 	var query = make(map[string]interface{})
 
 	if found, err := FindCastFromMap(params, "query", &query); found && err != nil {
 		return "", err
 	}
 
-	q := convertQuery(query)
-
-	apikey, err := c.getApiKeyFn()
+	lo, err := convertQueryToProjectsListOpts(query)
 	if err != nil {
 		return "", err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), defaultApiTimeout)
-	defer cancel()
-
-	body, err := c.client.Get(path).
-		SetHeader(xAuthTokenHeaderName, string(apikey)).
-		SetHeader("Accept", "application/json").
-		SetParamFromQuery(q).
-		Do(ctx).Raw()
+	client, err := openstack.NewIdentityV3(c.pClient, gophercloud.EndpointOpts{})
 	if err != nil {
 		return "", err
 	}
 
-	return string(body), nil
+	allPages, err := projects.List(client, lo).AllPages()
+	if err != nil {
+		return "", err
+	}
+
+	b, err := json.Marshal(allPages.GetBody())
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
+}
+
+func convertQueryToProjectsListOpts(query map[string]interface{}) (projects.ListOpts, error) {
+	if len(query) <= 0 {
+		return projects.ListOpts{}, nil
+	}
+
+	lo := projects.ListOpts{}
+
+	for k, v := range query {
+		switch k {
+		case "domain_id":
+			lo.DomainID = fmt.Sprintf("%s", v)
+		case "enabled":
+			b, err := strconv.ParseBool(fmt.Sprintf("%s", v))
+			if err != nil {
+				return lo, err
+			}
+			lo.Enabled = &b
+		case "is_domain":
+			b, err := strconv.ParseBool(fmt.Sprintf("%s", v))
+			if err != nil {
+				return lo, err
+			}
+			lo.IsDomain = &b
+		case "name":
+			lo.Name = fmt.Sprintf("%s", v)
+		case "parent_id":
+			lo.ParentID = fmt.Sprintf("%s", v)
+		case "tags":
+			lo.Tags = fmt.Sprintf("%s", v)
+		case "tags-any":
+			lo.TagsAny = fmt.Sprintf("%s", v)
+		case "not-tags":
+			lo.NotTags = fmt.Sprintf("%s", v)
+		case "not-tags-any":
+			lo.NotTagsAny = fmt.Sprintf("%s", v)
+		}
+	}
+
+	return lo, nil
 }

@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -112,12 +113,22 @@ func addCredential(secret *corev1.Secret, params map[string]interface{}) ([]stri
 			return nil, fmt.Errorf("credential %q already exists", key)
 		}
 
-		d, ok := data.(string)
+		cred, ok := data.(map[string]interface{})
 		if !ok {
-			return nil, fmt.Errorf("failed type assertion for credential %q's data: want be string, not %T", key, data)
+			return nil, fmt.Errorf("failed type assertion for credential %q's data: want be map[string]interface{}, not %T", key, data)
 		}
 
-		secret.Data[key] = []byte(d)
+		jsonb, err := json.Marshal(cred)
+		if err != nil {
+			return nil, err
+		}
+
+		b, err := yaml.JSONToYAML(jsonb)
+		if err != nil {
+			return nil, err
+		}
+
+		secret.Data[key] = b
 		result = append(result, key)
 	}
 
@@ -165,16 +176,22 @@ func updateCredential(secret *corev1.Secret, params map[string]interface{}) ([]s
 			return nil, fmt.Errorf("credential %q does not exist", key)
 		}
 
-		d, ok := data.(string)
+		cred, ok := data.(map[string]interface{})
 		if !ok {
-			return nil, fmt.Errorf("failed type assertion for %s's value(%v)", key, data)
+			return nil, fmt.Errorf("failed type assertion for credential %q's data: want be map[string]interface{}, not %T", key, data)
 		}
 
-		if d == "" {
-			return nil, fmt.Errorf("credential %q's data is empty", key)
+		jsonb, err := json.Marshal(cred)
+		if err != nil {
+			return nil, err
 		}
 
-		secret.Data[key] = []byte(d)
+		b, err := yaml.JSONToYAML(jsonb)
+		if err != nil {
+			return nil, err
+		}
+
+		secret.Data[key] = b
 		result = append(result, key)
 	}
 
