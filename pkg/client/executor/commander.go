@@ -493,11 +493,6 @@ func (c *OpenstackCommander) ParseCommand(command *service.StepCommand) error {
 
 	c.params = command.Args
 
-	url, ok := macro.MapString(command.Args, "url")
-	if !ok || len(url) == 0 {
-		return fmt.Errorf("openstack url is empty")
-	}
-
 	credentialKey, ok := macro.MapString(command.Args, "credential_key")
 	if !ok || len(credentialKey) == 0 {
 		return fmt.Errorf("openstack credential_key is empty")
