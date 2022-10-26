@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/service"
 	"github.com/NexClipper/sudory/pkg/client/sudoryclient"
 	"github.com/NexClipper/sudory/pkg/server/macro"
+	"github.com/gophercloud/utils/openstack/clientconfig"
 )
 
 type CommandType int
@@ -421,17 +423,27 @@ func (c *GrafanaCommander) ParseCommand(command *service.StepCommand) error {
 			return nil, err
 		}
 
-		secret, err := kc.GetK8sClientset().CoreV1().Secrets(sudoryclient.SudoryclientNamespace).Get(context.Background(), sudoryclient.SudoryclientSecretName, metav1.GetOptions{})
+		secret, err := kc.GetK8sClientset().CoreV1().Secrets("sudoryclient").Get(context.Background(), sudoryclient.SudoryclientSecretName, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 
-		apikey, ok := secret.Data[credentialKey]
-		if !ok || len(apikey) <= 0 {
+		credentialYaml, ok := secret.Data[credentialKey]
+		if !ok || len(credentialYaml) <= 0 {
 			return nil, fmt.Errorf("could not find apikey from credential_key(%s)", credentialKey)
 		}
 
-		return apikey, nil
+		type GrafanaCredential struct {
+			Type string `yaml:"type"`
+			Data string `yaml:"data"`
+		}
+
+		gc := new(GrafanaCredential)
+		if err := yaml.Unmarshal(credentialYaml, gc); err != nil {
+			return nil, err
+		}
+
+		return []byte(gc.Data), nil
 	})
 	if err != nil {
 		return err
@@ -447,11 +459,11 @@ func (c *GrafanaCommander) Run() (string, error) {
 }
 
 type OpenstackCommander struct {
-	client     *openstack.Client
-	api        string
-	resource   string
-	verb       string
-	params     map[string]interface{}
+	client   *openstack.Client
+	api      string
+	resource string
+	verb     string
+	params   map[string]interface{}
 }
 
 func NewOpenstackCommander(command *service.StepCommand) (Commander, error) {
@@ -481,41 +493,56 @@ func (c *OpenstackCommander) ParseCommand(command *service.StepCommand) error {
 
 	c.params = command.Args
 
-	url, ok := macro.MapString(command.Args, "url")
-	if !ok || len(url) == 0 {
-		return fmt.Errorf("openstack url is empty")
-	}
-
 	credentialKey, ok := macro.MapString(command.Args, "credential_key")
 	if !ok || len(credentialKey) == 0 {
 		return fmt.Errorf("openstack credential_key is empty")
 	}
 
-	client, err := openstack.NewClient(url, func() ([]byte, error) {
-		kc, err := k8s.GetClient()
-		if err != nil {
-			return nil, err
-		}
-
-		secret, err := kc.GetK8sClientset().CoreV1().Secrets(sudoryclient.SudoryclientNamespace).Get(context.Background(), sudoryclient.SudoryclientSecretName, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		apikey, ok := secret.Data[credentialKey]
-		if !ok || len(apikey) <= 0 {
-			return nil, fmt.Errorf("could not find apikey from credential_key(%s)", credentialKey)
-		}
-
-		return apikey, nil
-	})
+	kc, err := k8s.GetClient()
 	if err != nil {
 		return err
 	}
 
-	c.client = client
+	secret, err := kc.GetK8sClientset().CoreV1().Secrets(sudoryclient.SudoryclientNamespace).Get(context.Background(), sudoryclient.SudoryclientSecretName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
 
-	return nil
+	credentialYaml, ok := secret.Data[credentialKey]
+	if !ok || len(credentialYaml) <= 0 {
+		return fmt.Errorf("could not find apikey from credential_key(%s)", credentialKey)
+	}
+
+	type OpenstackCredential struct {
+		Type string               `yaml:"type"`
+		Data *clientconfig.Clouds `yaml:"data"`
+	}
+
+	oc := new(OpenstackCredential)
+	if err := yaml.Unmarshal(credentialYaml, oc); err != nil {
+		return err
+	}
+
+	if oc.Data == nil {
+		return fmt.Errorf("openstack data is nil")
+	}
+
+	for _, cloud := range oc.Data.Clouds {
+		opts := &clientconfig.ClientOpts{
+			AuthInfo: cloud.AuthInfo,
+		}
+
+		pClient, err := clientconfig.AuthenticatedClient(opts)
+		if err != nil {
+			return err
+		}
+
+		c.client = openstack.NewClient(pClient)
+
+		return nil
+	}
+
+	return fmt.Errorf("openstack clouds.yaml auth_info is empty")
 }
 
 func (c *OpenstackCommander) Run() (string, error) {

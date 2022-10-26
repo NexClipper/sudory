@@ -34,6 +34,7 @@ func (c *Client) Upgrade(args map[string]interface{}) (string, error) {
 		ChartVersion string                 `param:"chart_version,optional"`
 		Values       map[string]interface{} `param:"values,optional"`
 		ReuseValues  bool                   `param:"reuse_values,optional"`
+		Timeout      int                    `param:"timeout,optional"`
 	}
 
 	params := &UpgradeParams{}
@@ -54,6 +55,10 @@ func (c *Client) Upgrade(args map[string]interface{}) (string, error) {
 
 	// default settings
 	setDefaultUpgradeSettings(client)
+
+	if params.Timeout > 0 {
+		client.Timeout = time.Duration(params.Timeout) * time.Minute
+	}
 
 	client.ChartPathOptions.Version = params.ChartVersion
 	client.ChartPathOptions.RepoURL = params.RepoURL

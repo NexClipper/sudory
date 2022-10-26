@@ -1,0 +1,4 @@
+DELETE FROM `template` WHERE uuid IN ('50000000000000000000000000000011', '50000000000000000000000000000012');
+DELETE FROM `template_command` WHERE uuid IN ('50000000000000000000000000000011', '50000000000000000000000000000012');
+
+DELETE FROM `template_recipe` WHERE method IN ('openstack.compute.hypervisors.get', 'openstack.compute.hypervisors.list');

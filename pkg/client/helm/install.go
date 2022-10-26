@@ -30,6 +30,7 @@ func (c *Client) Install(args map[string]interface{}) (string, error) {
 		RepoName     string                 `param:"repo_name,optional"`
 		ChartVersion string                 `param:"chart_version,optional"`
 		Values       map[string]interface{} `param:"values,optional"`
+		Timeout      int                    `param:"timeout,optional"`
 	}
 
 	params := &InstallParams{}
@@ -50,6 +51,10 @@ func (c *Client) Install(args map[string]interface{}) (string, error) {
 
 	// default settings
 	setDefaultInstallSettings(client)
+
+	if params.Timeout > 0 {
+		client.Timeout = time.Duration(params.Timeout) * time.Minute
+	}
 
 	// client.Description =
 	client.ChartPathOptions.Version = params.ChartVersion
