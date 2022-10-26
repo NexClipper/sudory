@@ -1,18 +1,17 @@
 package openstack
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
+
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/hypervisors"
 )
 
-const (
-	computeApiHypervisorsPath  = "/os-hypervisors"
-)
-
-func (c *Client) GetComputeV2_1Hypervisors(api string, params map[string]interface{}) (string, error) {
-	var path = computeApiV2_1BasePath + computeApiHypervisorsPath
+func (c *Client) GetComputeV2_1Hypervisors(params map[string]interface{}) (string, error) {
 	var id string
-	var query = make(map[string]interface{})
 
 	if found, err := FindCastFromMap(params, "id", &id); found && err != nil {
 		return "", err
@@ -22,60 +21,84 @@ func (c *Client) GetComputeV2_1Hypervisors(api string, params map[string]interfa
 		return "", fmt.Errorf("server_id is empty")
 	}
 
-	if found, err := FindCastFromMap(params, "query", &query); found && err != nil {
-		return "", err
-	}
-
-	q := convertQuery(query)
-
-	path += "/" + id
-
-	apikey, err := c.getApiKeyFn()
+	client, err := openstack.NewComputeV2(c.pClient, gophercloud.EndpointOpts{})
 	if err != nil {
 		return "", err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), defaultApiTimeout)
-	defer cancel()
+	r := hypervisors.Get(client, id)
+	if r.Err != nil {
+		return "", r.Err
+	}
 
-	body, err := c.client.Get(path).
-		SetHeader(xAuthTokenHeaderName, string(apikey)).
-		SetHeader("Accept", "application/json").
-		SetParamFromQuery(q).
-		Do(ctx).Raw()
+	b, err := json.Marshal(r.Body)
 	if err != nil {
 		return "", err
 	}
 
-	return string(body), nil
+	return string(b), nil
 }
 
-func (c *Client) ListComputeV2_1Hypervisors(apiPath string, params map[string]interface{}) (string, error) {
-	var path = computeApiV2_1BasePath + computeApiHypervisorsPath
+func (c *Client) ListComputeV2_1Hypervisors(params map[string]interface{}) (string, error) {
 	var query = make(map[string]interface{})
 
 	if found, err := FindCastFromMap(params, "query", &query); found && err != nil {
 		return "", err
 	}
 
-	q := convertQuery(query)
-
-	apikey, err := c.getApiKeyFn()
+	lo, err := convertQueryToHypervisorsListOpts(query)
 	if err != nil {
 		return "", err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), defaultApiTimeout)
-	defer cancel()
-
-	body, err := c.client.Get(path).
-		SetHeader(xAuthTokenHeaderName, string(apikey)).
-		SetHeader("Accept", "application/json").
-		SetParamFromQuery(q).
-		Do(ctx).Raw()
+	client, err := openstack.NewComputeV2(c.pClient, gophercloud.EndpointOpts{})
 	if err != nil {
 		return "", err
 	}
 
-	return string(body), nil
+	allPages, err := hypervisors.List(client, lo).AllPages()
+	if err != nil {
+		return "", err
+	}
+
+	b, err := json.Marshal(allPages.GetBody())
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
+}
+
+func convertQueryToHypervisorsListOpts(query map[string]interface{}) (hypervisors.ListOpts, error) {
+	if len(query) <= 0 {
+		return hypervisors.ListOpts{}, nil
+	}
+
+	lo := hypervisors.ListOpts{}
+
+	for k, v := range query {
+		switch k {
+		case "limit":
+			i, err := strconv.ParseInt(fmt.Sprintf("%s", v), 10, 64)
+			if err != nil {
+				return lo, err
+			}
+			ii := int(i)
+			lo.Limit = &ii
+		case "marker":
+			s := fmt.Sprintf("%s", v)
+			lo.Marker = &s
+		case "hypervisor_hostname_pattern":
+			s := fmt.Sprintf("%s", v)
+			lo.HypervisorHostnamePattern = &s
+		case "with_servers":
+			b, err := strconv.ParseBool(fmt.Sprintf("%s", v))
+			if err != nil {
+				return lo, err
+			}
+			lo.WithServers = &b
+		}
+	}
+
+	return lo, nil
 }

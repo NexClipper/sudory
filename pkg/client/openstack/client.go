@@ -2,28 +2,16 @@ package openstack
 
 import (
 	"fmt"
-	"time"
 
-	"github.com/NexClipper/sudory/pkg/client/httpclient"
-)
-
-const (
-	defaultApiTimeout    = 10 * time.Second
-	xAuthTokenHeaderName = "X-AUTH-TOKEN"
+	"github.com/gophercloud/gophercloud"
 )
 
 type Client struct {
-	client      *httpclient.HttpClient
-	getApiKeyFn func() ([]byte, error)
+	pClient *gophercloud.ProviderClient
 }
 
-func NewClient(url string, getApiKeyFn func() ([]byte, error)) (*Client, error) {
-	client, err := httpclient.NewHttpClient(url, false, 0, 0)
-	if err != nil {
-		return nil, err
-	}
-	client.SetDisableKeepAlives()
-	return &Client{client: client, getApiKeyFn: getApiKeyFn}, nil
+func NewClient(pClient *gophercloud.ProviderClient) *Client {
+	return &Client{pClient: pClient}
 }
 
 func (c *Client) ApiRequest(api, resource, verb string, params map[string]interface{}) (string, error) {
@@ -36,9 +24,9 @@ func (c *Client) ApiRequest(api, resource, verb string, params map[string]interf
 		case "projects":
 			switch verb {
 			case "get":
-				data, err = c.GetIdentityV3Project(api, params)
+				data, err = c.GetIdentityV3Project(params)
 			case "list":
-				data, err = c.ListIdentityV3Projects(api, params)
+				data, err = c.ListIdentityV3Projects(params)
 			default:
 				return "", fmt.Errorf("unknown verb name(%s)", verb)
 			}
@@ -50,18 +38,18 @@ func (c *Client) ApiRequest(api, resource, verb string, params map[string]interf
 		case "servers":
 			switch verb {
 			case "get":
-				data, err = c.GetComputeV2_1Server(api, params)
+				data, err = c.GetComputeV2_1Server(params)
 			case "list":
-				data, err = c.ListComputeV2_1Servers(api, params)
+				data, err = c.ListComputeV2_1Servers(params)
 			default:
 				return "", fmt.Errorf("unknown verb name(%s)", verb)
 			}
 		case "hypervisors":
 			switch verb {
 			case "get":
-				data, err = c.GetComputeV2_1Hypervisors(api, params)
+				data, err = c.GetComputeV2_1Hypervisors(params)
 			case "list":
-				data, err = c.ListComputeV2_1Hypervisors(api, params)
+				data, err = c.ListComputeV2_1Hypervisors(params)
 			default:
 				return "", fmt.Errorf("unknown verb name(%s)", verb)
 			}
@@ -73,27 +61,27 @@ func (c *Client) ApiRequest(api, resource, verb string, params map[string]interf
 		case "networks":
 			switch verb {
 			case "get":
-				data, err = c.GetNetworkingV2_0Network(api, params)
+				data, err = c.GetNetworkingV2_0Network(params)
 			case "list":
-				data, err = c.ListNetworkingV2_0Networks(api, params)
+				data, err = c.ListNetworkingV2_0Networks(params)
 			default:
 				return "", fmt.Errorf("unknown verb name(%s)", verb)
 			}
 		case "routers":
 			switch verb {
 			case "get":
-				data, err = c.GetNetworkingV2_0Router(api, params)
+				data, err = c.GetNetworkingV2_0Router(params)
 			case "list":
-				data, err = c.ListNetworkingV2_0Routers(api, params)
+				data, err = c.ListNetworkingV2_0Routers(params)
 			default:
 				return "", fmt.Errorf("unknown verb name(%s)", verb)
 			}
 		case "subnets":
 			switch verb {
 			case "get":
-				data, err = c.GetNetworkingV2_0Subnet(api, params)
+				data, err = c.GetNetworkingV2_0Subnet(params)
 			case "list":
-				data, err = c.ListNetworkingV2_0Subnets(api, params)
+				data, err = c.ListNetworkingV2_0Subnets(params)
 			default:
 				return "", fmt.Errorf("unknown verb name(%s)", verb)
 			}
