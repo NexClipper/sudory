@@ -151,7 +151,7 @@ code-build-client:
 docker-build-commit-sudory-client:
   stage: build-code
   variables:
-    HARBOR_NEXCLIPPER_PROJECT: "nexclipper-dev"
+    HARBOR_NEXCLIPPER_PROJECT: "nexclipper"
     APP_IMAGE_NAME: "nexclipper-sudory-client"
   image:
     name: gcr.io/kaniko-project/executor:v1.9.0-debug
