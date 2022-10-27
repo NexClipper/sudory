@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -65,12 +67,13 @@ func (c *HttpClient) Delete(path string) *Request {
 }
 
 type Request struct {
-	c       *HttpClient
-	method  string
-	path    string
-	params  url.Values
-	headers http.Header
-	body    interface{}
+	c          *HttpClient
+	method     string
+	path       string
+	params     url.Values
+	headers    http.Header
+	body       []byte
+	enableGzip bool
 }
 
 func NewRequest(c *HttpClient, method, path string) *Request {
@@ -119,9 +122,14 @@ func (r *Request) SetParamFromQuery(query url.Values) *Request {
 	return r
 }
 
-func (r *Request) SetBody(bodyType string, body interface{}) *Request {
+func (r *Request) SetBody(bodyType string, body []byte) *Request {
 	r.SetHeader("Content-Type", bodyType)
 	r.body = body
+	return r
+}
+
+func (r *Request) SetGzip(b bool) *Request {
+	r.enableGzip = b
 	return r
 }
 
@@ -145,7 +153,31 @@ func (r *Request) Do(ctx context.Context) Result {
 	}
 
 	url := r.URL().String()
-	req, err := retryablehttp.NewRequest(r.method, url, r.body)
+
+	var buf bytes.Buffer
+
+	if r.enableGzip {
+		r.headers.Set("Content-Encoding", "gzip")
+
+		gw := gzipPool.Get().(*gzip.Writer)
+		gw.Reset(&buf)
+
+		if _, err := gw.Write(r.body); err != nil {
+			return Result{err: err}
+		}
+		defer func() {
+			gw.Reset(nil)
+			gzipPool.Put(gw)
+		}()
+
+		if err := gw.Close(); err != nil {
+			log.Warnf("gzip close error: %v\n", err)
+		}
+	} else {
+		buf = *bytes.NewBuffer(r.body)
+	}
+
+	req, err := retryablehttp.NewRequest(r.method, url, &buf)
 	if err != nil {
 		return Result{err: err}
 	}
@@ -235,4 +267,11 @@ func (r Result) Error() error {
 func (r Result) SetError(err error) Result {
 	r.err = err
 	return r
+}
+
+var gzipPool = &sync.Pool{
+	New: func() interface{} {
+		gw, _ := gzip.NewWriterLevel(nil, gzip.BestCompression)
+		return gw
+	},
 }
