@@ -38,18 +38,18 @@ func (c *Client) ApiRequest(api, resource, verb string, params map[string]interf
 		case "servers":
 			switch verb {
 			case "get":
-				data, err = c.GetComputeV2_1Server(params)
+				data, err = c.GetComputeV2Server(params)
 			case "list":
-				data, err = c.ListComputeV2_1Servers(params)
+				data, err = c.ListComputeV2Servers(params)
 			default:
 				return "", fmt.Errorf("unknown verb name(%s)", verb)
 			}
 		case "hypervisors":
 			switch verb {
 			case "get":
-				data, err = c.GetComputeV2_1Hypervisors(params)
+				data, err = c.GetComputeV2Hypervisors(params)
 			case "list":
-				data, err = c.ListComputeV2_1Hypervisors(params)
+				data, err = c.ListComputeV2Hypervisors(params)
 			default:
 				return "", fmt.Errorf("unknown verb name(%s)", verb)
 			}
