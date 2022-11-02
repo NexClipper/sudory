@@ -10,8 +10,9 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
 )
 
-func (c *Client) GetComputeV2_1Server(params map[string]interface{}) (string, error) {
+func (c *Client) GetComputeV2Server(params map[string]interface{}) (string, error) {
 	var id string
+	var microversion string
 
 	if found, err := FindCastFromMap(params, "id", &id); found && err != nil {
 		return "", err
@@ -21,9 +22,17 @@ func (c *Client) GetComputeV2_1Server(params map[string]interface{}) (string, er
 		return "", fmt.Errorf("server_id is empty")
 	}
 
+	if found, err := FindCastFromMap(params, "microversion", &microversion); found && err != nil {
+		return "", err
+	}
+
 	client, err := openstack.NewComputeV2(c.pClient, gophercloud.EndpointOpts{})
 	if err != nil {
 		return "", err
+	}
+
+	if microversion != "" {
+		client.Microversion = microversion
 	}
 
 	r := servers.Get(client, id)
@@ -39,10 +48,15 @@ func (c *Client) GetComputeV2_1Server(params map[string]interface{}) (string, er
 	return string(b), nil
 }
 
-func (c *Client) ListComputeV2_1Servers(params map[string]interface{}) (string, error) {
+func (c *Client) ListComputeV2Servers(params map[string]interface{}) (string, error) {
 	var query = make(map[string]interface{})
+	var microversion string
 
 	if found, err := FindCastFromMap(params, "query", &query); found && err != nil {
+		return "", err
+	}
+
+	if found, err := FindCastFromMap(params, "microversion", &microversion); found && err != nil {
 		return "", err
 	}
 
@@ -54,6 +68,10 @@ func (c *Client) ListComputeV2_1Servers(params map[string]interface{}) (string, 
 	client, err := openstack.NewComputeV2(c.pClient, gophercloud.EndpointOpts{})
 	if err != nil {
 		return "", err
+	}
+
+	if microversion != "" {
+		client.Microversion = microversion
 	}
 
 	allPages, err := servers.List(client, lo).AllPages()
