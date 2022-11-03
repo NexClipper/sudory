@@ -1,6 +1,7 @@
 package globvar
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
@@ -8,8 +9,8 @@ import (
 
 	"github.com/NexClipper/logger"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	globvarv2 "github.com/NexClipper/sudory/pkg/server/model/global_variables/v2"
@@ -19,20 +20,20 @@ import (
 
 type GlobalVariantUpdate struct {
 	*sql.DB
-	dialect string
+	dialect excute.SqlExcutor
 	offset  time.Time //updated column
 }
 
-func NewGlobalVariablesUpdate(db *sql.DB, dialect string) *GlobalVariantUpdate {
+func NewGlobalVariablesUpdate(db *sql.DB, dialect excute.SqlExcutor) *GlobalVariantUpdate {
 	return &GlobalVariantUpdate{
 		DB:      db,
 		dialect: dialect,
 	}
 }
 
-func (worker *GlobalVariantUpdate) Dialect() string {
-	return worker.dialect
-}
+// func (worker *GlobalVariantUpdate) Dialect() string {
+// 	return worker.dialect
+// }
 
 // Update
 //  Update = read db -> global_variables
@@ -43,15 +44,19 @@ func (worker *GlobalVariantUpdate) Update() (err error) {
 
 	globvar_cond := stmt.GT("updated", globvar.Updated)
 
-	err = stmtex.Select(globvar.TableName(), globvar.ColumnNames(), globvar_cond, nil, nil).
-		QueryRows(worker, worker.Dialect())(func(scan stmtex.Scanner, _ int) (err error) {
-		err = globvar.Scan(scan)
-		if err != nil {
-			return errors.Wrapf(err, "failed to scan")
-		}
-		records = append(records, globvar)
-		return
-	})
+	err = worker.dialect.QueryRows(globvar.TableName(), globvar.ColumnNames(), globvar_cond, nil, nil)(
+		context.Background(), worker)(
+		func(scan excute.Scanner, _ int) error {
+			err := globvar.Scan(scan)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
+			}
+
+			records = append(records, globvar)
+
+			return err
+		})
 	if err != nil {
 		return
 	}
@@ -91,15 +96,19 @@ func (worker *GlobalVariantUpdate) WhiteListCheck() (err error) {
 	globvar.Updated = *vanilla.NewNullTime(worker.offset)
 	globvar_cond := stmt.IsNull("deleted")
 
-	err = stmtex.Select(globvar.TableName(), globvar.ColumnNames(), globvar_cond, nil, nil).
-		QueryRows(worker, worker.Dialect())(func(scan stmtex.Scanner, _ int) (err error) {
-		err = globvar.Scan(scan)
-		if err != nil {
-			return errors.Wrapf(err, "failed to scan")
-		}
-		records = append(records, globvar)
-		return
-	})
+	err = worker.dialect.QueryRows(globvar.TableName(), globvar.ColumnNames(), globvar_cond, nil, nil)(
+		context.Background(), worker)(
+		func(scan excute.Scanner, _ int) error {
+			err := globvar.Scan(scan)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
+			}
+
+			records = append(records, globvar)
+
+			return err
+		})
 	if err != nil {
 		return
 	}
@@ -135,15 +144,19 @@ func (worker *GlobalVariantUpdate) Merge() (err error) {
 
 	globvar_cond := stmt.IsNull("deleted")
 
-	err = stmtex.Select(globvar.TableName(), globvar.ColumnNames(), globvar_cond, nil, nil).
-		QueryRows(worker, worker.Dialect())(func(scan stmtex.Scanner, _ int) (err error) {
-		err = globvar.Scan(scan)
-		if err != nil {
-			return errors.Wrapf(err, "failed to scan")
-		}
-		records = append(records, globvar)
-		return
-	})
+	err = worker.dialect.QueryRows(globvar.TableName(), globvar.ColumnNames(), globvar_cond, nil, nil)(
+		context.Background(), worker)(
+		func(scan excute.Scanner, _ int) error {
+			err := globvar.Scan(scan)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
+			}
+
+			records = append(records, globvar)
+
+			return err
+		})
 	if err != nil {
 		return
 	}
@@ -174,8 +187,8 @@ func (worker *GlobalVariantUpdate) Merge() (err error) {
 					))
 			}
 
-			_, _, err = stmtex.InsertOrUpdate(globvar.TableName(), globvar.ColumnNames(), updated_columns, globvar.Values()).
-				Exec(worker, worker.Dialect())
+			_, _, err = worker.dialect.InsertOrUpdate(globvar.TableName(), globvar.ColumnNames(), updated_columns, globvar.Values())(
+				context.Background(), worker)
 			if err != nil {
 				return errors.Wrapf(err, "failed to create or update global_variables")
 			}

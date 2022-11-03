@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	_ "github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/resolvers/mysql"
+	_ "github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/dialects/mysql"
 )
 
 func TestConditionStmt(t *testing.T) {
@@ -52,7 +52,7 @@ func TestConditionStmt(t *testing.T) {
 		t.Run(test_case.name, func(t *testing.T) {
 
 			// build sql query
-			o, err := stmt.GetConditionStmtResolver(test_case.dialect).Build(test_case.args)
+			o, err := stmt.GetConditionStmtBuilder(test_case.dialect).Build(test_case.args)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -82,7 +82,7 @@ func TestConditionStmt_and(t *testing.T) {
 		"foo", "bar",
 	))
 
-	o, err := stmt.GetConditionStmtResolver("mysql").Build(q)
+	o, err := stmt.GetConditionStmtBuilder("mysql").Build(q)
 	if err != nil {
 		t.Fatal(err)
 	}

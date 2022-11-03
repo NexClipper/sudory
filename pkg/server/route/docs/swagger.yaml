@@ -35,7 +35,26 @@ definitions:
         description: (required)
         type: string
     type: object
-  v1.Channel:
+  cluster_token.HttpReq_ClusterToken_create:
+    properties:
+      cluster_uuid:
+        type: string
+      name:
+        type: string
+      summary:
+        type: string
+      uuid:
+        description: optional
+        type: string
+    type: object
+  cluster_token.HttpReq_ClusterToken_update:
+    properties:
+      name:
+        type: string
+      summary:
+        type: string
+    type: object
+  cluster_token.HttpRsp_ClusterToken:
     properties:
       cluster_uuid:
         type: string
@@ -43,292 +62,390 @@ definitions:
         type: string
       deleted:
         type: string
+      expiration_time:
+        type: string
       id:
+        description: pk
         type: integer
+      issued_at_time:
+        type: string
       name:
         type: string
       summary:
         type: string
+      token:
+        type: string
       updated:
         type: string
       uuid:
+        description: uuid
         type: string
     type: object
-  v1.Channel_create:
+  service.HttpReq_ClientServiceUpdate:
+    properties:
+      ended:
+        type: string
+      result:
+        description: StepStatus 값에 따라; 결과 혹은 에러 메시지
+        type: string
+      sequence:
+        description: pk
+        type: integer
+      started:
+        type: string
+      status:
+        type: integer
+      uuid:
+        description: pk
+        type: string
+    type: object
+  service.HttpReq_Service_create:
     properties:
       cluster_uuid:
         type: string
       name:
         type: string
-      notifier_edges:
+      steps:
         items:
-          $ref: '#/definitions/v1.NotifierEdge'
+          properties:
+            args:
+              additionalProperties: true
+              type: object
+          type: object
         type: array
+      subscribed_channel:
+        type: string
       summary:
         type: string
+      template_uuid:
+        type: string
+      uuid:
+        description: pk
+        type: string
     type: object
-  v1.Channel_update:
+  service.HttpRsp_ClientServicePolling:
+    properties:
+      assigned_client_uuid:
+        type: string
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      created:
+        type: string
+      message:
+        type: string
+      name:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      priority:
+        type: integer
+      status:
+        type: integer
+      step_count:
+        type: integer
+      step_position:
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/service.ServiceStep'
+        type: array
+      subscribed_channel:
+        type: string
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      timestamp:
+        description: pk datetime(6)
+        type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  service.HttpRsp_Service:
+    properties:
+      assigned_client_uuid:
+        type: string
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      created:
+        type: string
+      message:
+        type: string
+      name:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      priority:
+        type: integer
+      status:
+        type: integer
+      step_count:
+        type: integer
+      step_position:
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/service.ServiceStep'
+        type: array
+      subscribed_channel:
+        type: string
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      timestamp:
+        description: pk datetime(6)
+        type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  service.HttpRsp_Service_create:
     properties:
       cluster_uuid:
-        type: string
-      name:
-        type: string
-      summary:
-        type: string
-    type: object
-  v1.ChannelNotifierEdge:
-    properties:
-      channel_uuid:
+        description: pk char(32) cluster.uuid
         type: string
       created:
         type: string
-      deleted:
-        type: string
-      id:
-        type: integer
-      notifier_type:
-        type: string
-      notifier_uuid:
-        type: string
-      updated:
-        type: string
-    type: object
-  v1.NotifierConsole:
-    properties:
-      Content-Type:
-        type: string
-      created:
-        type: string
-      deleted:
-        type: string
-      id:
-        type: integer
       name:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      priority:
+        type: integer
+      status:
+        type: integer
+      step_count:
+        type: integer
+      step_position:
+        type: integer
+      steps:
+        items:
+          $ref: '#/definitions/service.ServiceStep_create'
+        type: array
+      subscribed_channel:
         type: string
       summary:
         type: string
-      updated:
+      template_uuid:
+        type: string
+      timestamp:
+        description: pk datetime(6)
         type: string
       uuid:
+        description: pk char(32) service.uuid
         type: string
     type: object
-  v1.NotifierConsole_create:
+  service.HttpRsp_ServiceResult:
     properties:
-      Content-Type:
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
         type: string
-      name:
+      partition_date:
+        description: pk date
         type: string
-      summary:
+      result:
         type: string
-    type: object
-  v1.NotifierEdge:
-    properties:
-      notifier_type:
-        type: string
-      notifier_uuid:
-        type: string
-    type: object
-  v1.NotifierRabbitMq:
-    properties:
-      Content-Type:
-        type: string
-      created:
-        type: string
-      deleted:
-        type: string
-      exchange:
-        description: amqp.Channel.Publish
-        type: string
-      id:
+      result_type:
         type: integer
-      immediate:
-        type: boolean
-      mandatory:
-        type: boolean
-      message_app_id:
-        description: application use - creating application
+      timestamp:
+        description: pk datetime(6)
         type: string
-      message_content_encoding:
-        description: MIME content encoding
+      uuid:
+        description: pk char(32) service.uuid
         type: string
-      message_content_type:
-        description: MIME content type
-        type: string
-      message_correlation_id:
-        description: application use - correlation identifier
-        type: string
-      message_delivery_mode:
-        description: queue implementation use - Transient (1) or Persistent (2)
-        type: integer
-      message_expiration:
-        description: implementation use - message expiration spec
-        type: string
-      message_headers:
-        additionalProperties: true
-        description: amqp.Publishing
+    type: object
+  service.HttpRsp_ServiceStep:
+    properties:
+      args:
         type: object
-      message_message_id:
-        description: application use - message identifier
-        type: string
-      message_priority:
-        description: queue implementation use - 0 to 9
-        type: integer
-      message_reply_to:
-        description: 'application use - address to to reply to (ex: RPC)'
-        type: string
-      message_timestamp:
-        description: application use - message timestamp
-        type: boolean
-      message_type:
-        description: application use - message type name
-        type: string
-      message_user_id:
-        description: application use - creating user id
-        type: string
-      name:
-        type: string
-      routing_key:
-        type: string
-      summary:
-        type: string
-      updated:
-        type: string
-      url:
-        description: amqp Dial
-        type: string
-      uuid:
-        type: string
-    type: object
-  v1.NotifierRabbitMq_create:
-    properties:
-      Content-Type:
-        type: string
-      exchange:
-        description: amqp.Channel.Publish
-        type: string
-      immediate:
-        type: boolean
-      mandatory:
-        type: boolean
-      message_app_id:
-        description: application use - creating application
-        type: string
-      message_content_encoding:
-        description: MIME content encoding
-        type: string
-      message_content_type:
-        description: MIME content type
-        type: string
-      message_correlation_id:
-        description: application use - correlation identifier
-        type: string
-      message_delivery_mode:
-        description: queue implementation use - Transient (1) or Persistent (2)
-        type: integer
-      message_expiration:
-        description: implementation use - message expiration spec
-        type: string
-      message_headers:
-        additionalProperties: true
-        description: amqp.Publishing
-        type: object
-      message_message_id:
-        description: application use - message identifier
-        type: string
-      message_priority:
-        description: queue implementation use - 0 to 9
-        type: integer
-      message_reply_to:
-        description: 'application use - address to to reply to (ex: RPC)'
-        type: string
-      message_timestamp:
-        description: application use - message timestamp
-        type: boolean
-      message_type:
-        description: application use - message type name
-        type: string
-      message_user_id:
-        description: application use - creating user id
-        type: string
-      name:
-        type: string
-      routing_key:
-        type: string
-      summary:
-        type: string
-      url:
-        description: amqp Dial
-        type: string
-    type: object
-  v1.NotifierStatus:
-    properties:
-      created:
-        type: string
-      deleted:
-        type: string
-      error:
-        type: string
-      id:
-        type: integer
-      notifier_type:
-        type: string
-      notifier_uuid:
-        type: string
-      updated:
-        type: string
-      uuid:
-        type: string
-    type: object
-  v1.NotifierWebhook:
-    properties:
-      Content-Type:
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
         type: string
       created:
         type: string
-      deleted:
-        type: string
-      id:
-        type: integer
-      method:
-        description: http
-        type: string
-      name:
-        type: string
-      request_headers:
-        additionalProperties:
-          type: string
-        type: object
-      request_timeout:
-        description: for timeout context
-        type: string
-      summary:
-        type: string
-      updated:
-        type: string
-      url:
-        type: string
-      uuid:
-        type: string
-    type: object
-  v1.NotifierWebhook_create:
-    properties:
-      Content-Type:
+      ended:
         type: string
       method:
-        description: http
         type: string
       name:
         type: string
-      request_headers:
-        additionalProperties:
-          type: string
+      partition_date:
+        description: pk date
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        description: pk tinyint
+        type: integer
+      started:
+        type: string
+      status:
+        type: integer
+      summary:
+        type: string
+      timestamp:
+        description: pk datetime(6)
+        type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  service.ServiceStep:
+    properties:
+      args:
         type: object
-      request_timeout:
-        description: for timeout context
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      created:
+        type: string
+      ended:
+        type: string
+      method:
+        type: string
+      name:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        description: pk tinyint
+        type: integer
+      started:
+        type: string
+      status:
+        type: integer
+      summary:
+        type: string
+      timestamp:
+        description: pk datetime(6)
+        type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  service.ServiceStep_create:
+    properties:
+      args:
+        type: object
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      created:
+        type: string
+      method:
+        type: string
+      name:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        description: pk tinyint
+        type: integer
+      status:
+        type: integer
+      summary:
+        type: string
+      timestamp:
+        description: pk datetime(6)
+        type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  template.HttpRsp_Template:
+    properties:
+      commands:
+        items:
+          $ref: '#/definitions/template.TemplateCommand'
+        type: array
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      name:
+        type: string
+      origin:
         type: string
       summary:
         type: string
-      url:
+      updated:
+        type: string
+      uuid:
+        description: uuid
+        type: string
+    type: object
+  template.HttpRsp_TemplateCommand:
+    properties:
+      args:
+        type: object
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      method:
+        type: string
+      name:
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        type: integer
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
+        type: string
+    type: object
+  template.TemplateCommand:
+    properties:
+      args:
+        type: object
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      method:
+        type: string
+      name:
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        type: integer
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
         type: string
     type: object
   v2.GlobalVariables:
@@ -357,60 +474,6 @@ definitions:
       value:
         type: string
     type: object
-  v2.HttpRsp_Template:
-    properties:
-      commands:
-        items:
-          $ref: '#/definitions/v2.TemplateCommand'
-        type: array
-      created:
-        type: string
-      deleted:
-        type: string
-      id:
-        description: pk
-        type: integer
-      name:
-        type: string
-      origin:
-        type: string
-      summary:
-        type: string
-      updated:
-        type: string
-      uuid:
-        description: uuid
-        type: string
-    type: object
-  v2.HttpRsp_TemplateCommand:
-    properties:
-      args:
-        type: object
-      created:
-        type: string
-      deleted:
-        type: string
-      id:
-        description: pk
-        type: integer
-      method:
-        type: string
-      name:
-        type: string
-      result_filter:
-        type: string
-      sequence:
-        type: integer
-      summary:
-        type: string
-      template_uuid:
-        type: string
-      updated:
-        type: string
-      uuid:
-        description: uuid
-        type: string
-    type: object
   v2.HttpRsp_TemplateRecipe:
     properties:
       args:
@@ -431,35 +494,6 @@ definitions:
       updated:
         type: string
     type: object
-  v2.TemplateCommand:
-    properties:
-      args:
-        type: object
-      created:
-        type: string
-      deleted:
-        type: string
-      id:
-        description: pk
-        type: integer
-      method:
-        type: string
-      name:
-        type: string
-      result_filter:
-        type: string
-      sequence:
-        type: integer
-      summary:
-        type: string
-      template_uuid:
-        type: string
-      updated:
-        type: string
-      uuid:
-        description: uuid
-        type: string
-    type: object
   v3.ChannelStatusOption_property:
     properties:
       status_max_count:
@@ -476,24 +510,6 @@ definitions:
         - 1
         - 2
         type: integer
-    type: object
-  v3.HttpReq_ClientServiceUpdate:
-    properties:
-      ended:
-        type: string
-      result:
-        description: StepStatus 값에 따라; 결과 혹은 에러 메시지
-        type: string
-      sequence:
-        description: pk
-        type: integer
-      started:
-        type: string
-      status:
-        type: integer
-      uuid:
-        description: pk
-        type: string
     type: object
   v3.HttpReq_Cluster_create:
     properties:
@@ -517,25 +533,6 @@ definitions:
         type: integer
       polling_option:
         type: object
-      summary:
-        type: string
-    type: object
-  v3.HttpReq_ClusterToken_create:
-    properties:
-      cluster_uuid:
-        type: string
-      name:
-        type: string
-      summary:
-        type: string
-      uuid:
-        description: optional
-        type: string
-    type: object
-  v3.HttpReq_ClusterToken_update:
-    properties:
-      name:
-        type: string
       summary:
         type: string
     type: object
@@ -677,71 +674,6 @@ definitions:
       summary:
         type: string
     type: object
-  v3.HttpReq_Service_create:
-    properties:
-      cluster_uuid:
-        type: string
-      name:
-        type: string
-      steps:
-        items:
-          properties:
-            args:
-              additionalProperties: true
-              type: object
-          type: object
-        type: array
-      subscribed_channel:
-        type: string
-      summary:
-        type: string
-      template_uuid:
-        type: string
-      uuid:
-        description: pk
-        type: string
-    type: object
-  v3.HttpRsp_ClientServicePolling:
-    properties:
-      assigned_client_uuid:
-        type: string
-      cluster_uuid:
-        description: pk char(32) cluster.uuid
-        type: string
-      created:
-        type: string
-      message:
-        type: string
-      name:
-        type: string
-      partition_date:
-        description: pk date
-        type: string
-      priority:
-        type: integer
-      status:
-        type: integer
-      step_count:
-        type: integer
-      step_position:
-        type: integer
-      steps:
-        items:
-          $ref: '#/definitions/v3.ServiceStep'
-        type: array
-      subscribed_channel:
-        type: string
-      summary:
-        type: string
-      template_uuid:
-        type: string
-      timestamp:
-        description: pk datetime(6)
-        type: string
-      uuid:
-        description: pk char(32) service.uuid
-        type: string
-    type: object
   v3.HttpRsp_Cluster:
     properties:
       created:
@@ -758,33 +690,6 @@ definitions:
       polling_option:
         type: object
       summary:
-        type: string
-      updated:
-        type: string
-      uuid:
-        description: uuid
-        type: string
-    type: object
-  v3.HttpRsp_ClusterToken:
-    properties:
-      cluster_uuid:
-        type: string
-      created:
-        type: string
-      deleted:
-        type: string
-      expiration_time:
-        type: string
-      id:
-        description: pk
-        type: integer
-      issued_at_time:
-        type: string
-      name:
-        type: string
-      summary:
-        type: string
-      token:
         type: string
       updated:
         type: string
@@ -883,139 +788,6 @@ definitions:
         type: string
       webhook:
         $ref: '#/definitions/v3.NotifierWebhook_property'
-    type: object
-  v3.HttpRsp_Service:
-    properties:
-      assigned_client_uuid:
-        type: string
-      cluster_uuid:
-        description: pk char(32) cluster.uuid
-        type: string
-      created:
-        type: string
-      message:
-        type: string
-      name:
-        type: string
-      partition_date:
-        description: pk date
-        type: string
-      priority:
-        type: integer
-      status:
-        type: integer
-      step_count:
-        type: integer
-      step_position:
-        type: integer
-      steps:
-        items:
-          $ref: '#/definitions/v3.ServiceStep'
-        type: array
-      subscribed_channel:
-        type: string
-      summary:
-        type: string
-      template_uuid:
-        type: string
-      timestamp:
-        description: pk datetime(6)
-        type: string
-      uuid:
-        description: pk char(32) service.uuid
-        type: string
-    type: object
-  v3.HttpRsp_Service_create:
-    properties:
-      cluster_uuid:
-        description: pk char(32) cluster.uuid
-        type: string
-      created:
-        type: string
-      name:
-        type: string
-      partition_date:
-        description: pk date
-        type: string
-      priority:
-        type: integer
-      status:
-        type: integer
-      step_count:
-        type: integer
-      step_position:
-        type: integer
-      steps:
-        items:
-          $ref: '#/definitions/v3.ServiceStep_create'
-        type: array
-      subscribed_channel:
-        type: string
-      summary:
-        type: string
-      template_uuid:
-        type: string
-      timestamp:
-        description: pk datetime(6)
-        type: string
-      uuid:
-        description: pk char(32) service.uuid
-        type: string
-    type: object
-  v3.HttpRsp_ServiceResult:
-    properties:
-      cluster_uuid:
-        description: pk char(32) cluster.uuid
-        type: string
-      partition_date:
-        description: pk date
-        type: string
-      result:
-        type: string
-      result_type:
-        type: integer
-      timestamp:
-        description: pk datetime(6)
-        type: string
-      uuid:
-        description: pk char(32) service.uuid
-        type: string
-    type: object
-  v3.HttpRsp_ServiceStep:
-    properties:
-      args:
-        type: object
-      cluster_uuid:
-        description: pk char(32) cluster.uuid
-        type: string
-      created:
-        type: string
-      ended:
-        type: string
-      method:
-        type: string
-      name:
-        type: string
-      partition_date:
-        description: pk date
-        type: string
-      result_filter:
-        type: string
-      sequence:
-        description: pk tinyint
-        type: integer
-      started:
-        type: string
-      status:
-        type: integer
-      summary:
-        type: string
-      timestamp:
-        description: pk datetime(6)
-        type: string
-      uuid:
-        description: pk char(32) service.uuid
-        type: string
     type: object
   v3.HttpRsq_ManagedChannel_Format:
     properties:
@@ -1144,74 +916,6 @@ definitions:
     type: object
   v3.RegularPollingOption:
     type: object
-  v3.ServiceStep:
-    properties:
-      args:
-        type: object
-      cluster_uuid:
-        description: pk char(32) cluster.uuid
-        type: string
-      created:
-        type: string
-      ended:
-        type: string
-      method:
-        type: string
-      name:
-        type: string
-      partition_date:
-        description: pk date
-        type: string
-      result_filter:
-        type: string
-      sequence:
-        description: pk tinyint
-        type: integer
-      started:
-        type: string
-      status:
-        type: integer
-      summary:
-        type: string
-      timestamp:
-        description: pk datetime(6)
-        type: string
-      uuid:
-        description: pk char(32) service.uuid
-        type: string
-    type: object
-  v3.ServiceStep_create:
-    properties:
-      args:
-        type: object
-      cluster_uuid:
-        description: pk char(32) cluster.uuid
-        type: string
-      created:
-        type: string
-      method:
-        type: string
-      name:
-        type: string
-      partition_date:
-        description: pk date
-        type: string
-      result_filter:
-        type: string
-      sequence:
-        description: pk tinyint
-        type: integer
-      status:
-        type: integer
-      summary:
-        type: string
-      timestamp:
-        description: pk datetime(6)
-        type: string
-      uuid:
-        description: pk char(32) service.uuid
-        type: string
-    type: object
   v3.Session:
     properties:
       cluster_uuid:
@@ -1248,7 +952,7 @@ info:
   contact:
     email: jaehoon@nexclipper.io
     url: https://nexclipper.io
-  description: limit for access sudory api
+  description: this is a sudory server.
   title: SUDORY
   version: 0.0.1
 paths:
@@ -1291,7 +995,7 @@ paths:
               type: string
           schema:
             items:
-              $ref: '#/definitions/v3.HttpRsp_ClientServicePolling'
+              $ref: '#/definitions/service.HttpRsp_ClientServicePolling'
             type: array
       security:
       - ClientAuth: []
@@ -1307,12 +1011,12 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/v3.HttpReq_ClientServiceUpdate'
+          $ref: '#/definitions/service.HttpReq_ClientServiceUpdate'
       produces:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
           headers:
             x-sudory-client-token:
               type: string
@@ -1320,654 +1024,6 @@ paths:
       - ClientAuth: []
       tags:
       - client/service
-  /server/channel:
-    get:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Find channel
-      parameters:
-      - description: query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: q
-        type: string
-      - description: order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: o
-        type: string
-      - description: paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: p
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/v1.Channel'
-            type: array
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel
-    post:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Create a channel
-      parameters:
-      - description: Event_create
-        in: body
-        name: object
-        required: true
-        schema:
-          $ref: '#/definitions/v1.Channel_create'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.Channel'
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel
-  /server/channel/{uuid}:
-    delete:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Delete a channel
-      parameters:
-      - description: Channel 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel
-    get:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Get a channel
-      parameters:
-      - description: Channel 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.Channel'
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel
-    put:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Update a channel
-      parameters:
-      - description: Channel 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      - description: Event_update
-        in: body
-        name: object
-        required: true
-        schema:
-          $ref: '#/definitions/v1.Channel_update'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.Channel'
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel
-  /server/channel/{uuid}/notifier_edges:
-    get:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Get channel edges
-      parameters:
-      - description: Channel 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/v1.ChannelNotifierEdge'
-            type: array
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel
-  /server/channel/{uuid}/notifier_edges/add:
-    put:
-      consumes:
-      - application/json
-      deprecated: true
-      description: addtion channel notifier edge
-      parameters:
-      - description: Channel 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      - description: NotifierEdge
-        in: body
-        name: object
-        required: true
-        schema:
-          items:
-            $ref: '#/definitions/v1.NotifierEdge'
-          type: array
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/v1.ChannelNotifierEdge'
-            type: array
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel
-  /server/channel/{uuid}/notifier_edges/sub:
-    put:
-      consumes:
-      - application/json
-      deprecated: true
-      description: subtraction channel sub notifier
-      parameters:
-      - description: Channel 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      - description: Channel 의 NotifierEdge
-        in: body
-        name: object
-        required: true
-        schema:
-          items:
-            $ref: '#/definitions/v1.NotifierEdge'
-          type: array
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/v1.ChannelNotifierEdge'
-            type: array
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel
-  /server/channel_notifier/console:
-    get:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Find channel notifier console
-      parameters:
-      - description: query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: q
-        type: string
-      - description: order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: o
-        type: string
-      - description: paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: p
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/v1.NotifierConsole'
-            type: array
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-    post:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Create a channel notifier console
-      parameters:
-      - description: EventNotifierConsole_create
-        in: body
-        name: object
-        required: true
-        schema:
-          $ref: '#/definitions/v1.NotifierConsole_create'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.NotifierConsole'
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-  /server/channel_notifier/console/{uuid}:
-    delete:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Delete a channel notifier console
-      parameters:
-      - description: Channel 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-    get:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Get a channel notifier
-      parameters:
-      - description: channel notifier 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.NotifierConsole'
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-    put:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Update a console channel notifier
-      parameters:
-      - description: Channel 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      - description: NotifierConsole_create
-        in: body
-        name: object
-        required: true
-        schema:
-          $ref: '#/definitions/v1.NotifierConsole_create'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.NotifierConsole'
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-  /server/channel_notifier/rabbitmq:
-    get:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Find channel notifier
-      parameters:
-      - description: query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: q
-        type: string
-      - description: order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: o
-        type: string
-      - description: paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: p
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/v1.NotifierRabbitMq'
-            type: array
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-    post:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Create a channel notifier rabbitmq
-      parameters:
-      - description: NotifierRabbitMq_create
-        in: body
-        name: object
-        required: true
-        schema:
-          $ref: '#/definitions/v1.NotifierRabbitMq_create'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.NotifierRabbitMq'
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-  /server/channel_notifier/rabbitmq/{uuid}:
-    delete:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Delete a channel notifier rabbitmq
-      parameters:
-      - description: Channel 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-    get:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Get a channel notifier rabbitmq
-      parameters:
-      - description: channel notifier 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.NotifierRabbitMq'
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-    put:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Update a rabbitmq channel notifier
-      parameters:
-      - description: Channel 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      - description: NotifierRabbitMq_create
-        in: body
-        name: object
-        required: true
-        schema:
-          $ref: '#/definitions/v1.NotifierRabbitMq_create'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.NotifierRabbitMq'
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-  /server/channel_notifier/webhook:
-    get:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Find channel notifier webhook
-      parameters:
-      - description: query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: q
-        type: string
-      - description: order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: o
-        type: string
-      - description: paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: p
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/v1.NotifierWebhook'
-            type: array
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-    post:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Create a channel notifier webhook
-      parameters:
-      - description: EventNotifierWebhook_create
-        in: body
-        name: object
-        required: true
-        schema:
-          $ref: '#/definitions/v1.NotifierWebhook_create'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.NotifierWebhook'
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-  /server/channel_notifier/webhook/{uuid}:
-    delete:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Delete a channel notifier webhook
-      parameters:
-      - description: Channel 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-    get:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Get a channel notifier webhook
-      parameters:
-      - description: channel notifier 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.NotifierWebhook'
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-    put:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Update a webhook channel notifier
-      parameters:
-      - description: Channel 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      - description: NotifierWebhook_create
-        in: body
-        name: object
-        required: true
-        schema:
-          $ref: '#/definitions/v1.NotifierWebhook_create'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/v1.NotifierWebhook'
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier
-  /server/channel_notifier_status:
-    get:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Find channel notifier status
-      parameters:
-      - description: query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: q
-        type: string
-      - description: order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: o
-        type: string
-      - description: paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
-        in: query
-        name: p
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/v1.NotifierStatus'
-            type: array
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier_status
-  /server/channel_notifier_status/{uuid}:
-    delete:
-      consumes:
-      - application/json
-      deprecated: true
-      description: Delete a channel notifier status
-      parameters:
-      - description: EventNotifierStatus 의 Uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      security:
-      - XAuthToken: []
-      tags:
-      - server/channel_notifier_status
   /server/channels:
     get:
       consumes:
@@ -2036,7 +1092,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ServiceAuth: []
       tags:
@@ -2360,7 +1416,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ServiceAuth: []
       tags:
@@ -2464,7 +1520,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ServiceAuth: []
       tags:
@@ -2598,7 +1654,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v3.HttpRsp_ClusterToken'
+              $ref: '#/definitions/cluster_token.HttpRsp_ClusterToken'
             type: array
       security:
       - ServiceAuth: []
@@ -2614,14 +1670,14 @@ paths:
         name: object
         required: true
         schema:
-          $ref: '#/definitions/v3.HttpReq_ClusterToken_create'
+          $ref: '#/definitions/cluster_token.HttpReq_ClusterToken_create'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v3.HttpRsp_ClusterToken'
+            $ref: '#/definitions/cluster_token.HttpRsp_ClusterToken'
       security:
       - ServiceAuth: []
       tags:
@@ -2641,7 +1697,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ServiceAuth: []
       tags:
@@ -2662,7 +1718,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v3.HttpRsp_ClusterToken'
+            $ref: '#/definitions/cluster_token.HttpRsp_ClusterToken'
       security:
       - ServiceAuth: []
       tags:
@@ -2684,7 +1740,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v3.HttpRsp_ClusterToken'
+            $ref: '#/definitions/cluster_token.HttpRsp_ClusterToken'
       security:
       - ServiceAuth: []
       tags:
@@ -2705,14 +1761,14 @@ paths:
         name: object
         required: true
         schema:
-          $ref: '#/definitions/v3.HttpReq_ClusterToken_update'
+          $ref: '#/definitions/cluster_token.HttpReq_ClusterToken_update'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v3.HttpRsp_ClusterToken'
+            $ref: '#/definitions/cluster_token.HttpRsp_ClusterToken'
       security:
       - ServiceAuth: []
       tags:
@@ -2734,7 +1790,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v3.HttpRsp_ClusterToken'
+            $ref: '#/definitions/cluster_token.HttpRsp_ClusterToken'
       security:
       - ServiceAuth: []
       tags:
@@ -2843,7 +1899,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v3.HttpRsp_Service'
+              $ref: '#/definitions/service.HttpRsp_Service'
             type: array
       security:
       - ServiceAuth: []
@@ -2859,14 +1915,14 @@ paths:
         name: service
         required: true
         schema:
-          $ref: '#/definitions/v3.HttpReq_Service_create'
+          $ref: '#/definitions/service.HttpReq_Service_create'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v3.HttpRsp_Service_create'
+            $ref: '#/definitions/service.HttpRsp_Service_create'
       security:
       - ServiceAuth: []
       tags:
@@ -2888,7 +1944,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v3.HttpRsp_Service'
+            $ref: '#/definitions/service.HttpRsp_Service'
       security:
       - ServiceAuth: []
       tags:
@@ -2910,7 +1966,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v3.HttpRsp_ServiceResult'
+            $ref: '#/definitions/service.HttpRsp_ServiceResult'
       security:
       - ServiceAuth: []
       tags:
@@ -2933,7 +1989,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v3.HttpRsp_ServiceStep'
+              $ref: '#/definitions/service.HttpRsp_ServiceStep'
             type: array
       security:
       - ServiceAuth: []
@@ -2961,7 +2017,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v3.HttpRsp_ServiceStep'
+            $ref: '#/definitions/service.HttpRsp_ServiceStep'
       security:
       - ServiceAuth: []
       tags:
@@ -2991,7 +2047,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v3.HttpRsp_ServiceStep'
+              $ref: '#/definitions/service.HttpRsp_ServiceStep'
             type: array
       security:
       - ServiceAuth: []
@@ -3043,7 +2099,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - ServiceAuth: []
       tags:
@@ -3116,7 +2172,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v2.HttpRsp_Template'
+              $ref: '#/definitions/template.HttpRsp_Template'
             type: array
       security:
       - XAuthToken: []
@@ -3140,7 +2196,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v2.HttpRsp_TemplateCommand'
+              $ref: '#/definitions/template.HttpRsp_TemplateCommand'
             type: array
       security:
       - XAuthToken: []
@@ -3168,7 +2224,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v2.HttpRsp_TemplateCommand'
+            $ref: '#/definitions/template.HttpRsp_TemplateCommand'
       security:
       - XAuthToken: []
       tags:
@@ -3190,7 +2246,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v2.HttpRsp_Template'
+            $ref: '#/definitions/template.HttpRsp_Template'
       security:
       - XAuthToken: []
       tags:
@@ -3241,14 +2297,17 @@ paths:
       - server/tenant
 securityDefinitions:
   ClientAuth:
+    description: token for client api
     in: header
     name: x-sudory-client-token
     type: apiKey
   ServiceAuth:
+    description: Bearer token for service api
     in: header
     name: Authorization
     type: apiKey
   XAuthToken:
+    description: limit for access sudory api
     in: header
     name: x_auth_token
     type: apiKey

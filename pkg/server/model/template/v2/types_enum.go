@@ -4,7 +4,7 @@
 // Build Date:
 // Built By:
 
-package v2
+package template
 
 import (
 	"fmt"

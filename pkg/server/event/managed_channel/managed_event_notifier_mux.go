@@ -1,7 +1,9 @@
 package managed_channel
 
 import (
-	"github.com/NexClipper/sudory/pkg/server/event"
+	"bytes"
+	"strconv"
+
 	"github.com/pkg/errors"
 )
 
@@ -74,7 +76,7 @@ func (mux *ManagedEventNotifierMux) Update(v map[string]interface{}) {
 					mux.EventPublisher().OnNotifierError(
 						future.Notifier,
 						errors.Wrapf(future.Error, "on notify %v",
-							event.MapString(future.Notifier.Property())))
+							MapString(future.Notifier.Property())))
 				}
 			}
 		}
@@ -98,4 +100,17 @@ func (mux *ManagedEventNotifierMux) Regist(pub Publisher) EventNotifierMuxer {
 
 func (mux *ManagedEventNotifierMux) EventPublisher() Publisher {
 	return mux.pub
+}
+
+func MapString(m map[string]string) string {
+	buff := bytes.Buffer{}
+	for key, value := range m {
+		if 0 < buff.Len() {
+			buff.WriteString(" ")
+		}
+		buff.WriteString(key)
+		buff.WriteString("=")
+		buff.WriteString(strconv.Quote(value))
+	}
+	return buff.String()
 }

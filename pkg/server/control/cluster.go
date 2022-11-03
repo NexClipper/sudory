@@ -8,12 +8,13 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/sqlex"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	clusterv3 "github.com/NexClipper/sudory/pkg/server/model/cluster/v3"
-	"github.com/NexClipper/sudory/pkg/server/model/tenants/v3"
+	tenants "github.com/NexClipper/sudory/pkg/server/model/tenants/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -69,11 +70,11 @@ func (ctl ControlVanilla) CreateCluster(ctx echo.Context) (err error) {
 	new_cluster.PoliingLimit = body.PoliingLimit.Int()
 	new_cluster.Created = time_now
 
-	err = stmtex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
+	err = sqlex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
 		var affected int64
 		// save cluster
-		affected, new_cluster.ID, err = stmtex.Insert(new_cluster.TableName(), new_cluster.ColumnNames(), new_cluster.Values()).
-			ExecContext(ctx.Request().Context(), tx, ctl.Dialect())
+		affected, new_cluster.ID, err = ctl.dialect.Insert(new_cluster.TableName(), new_cluster.ColumnNames(), new_cluster.Values())(
+			ctx.Request().Context(), tx)
 		if err != nil {
 			return errors.Wrapf(err, "save cluster")
 		}
@@ -88,8 +89,8 @@ func (ctl ControlVanilla) CreateCluster(ctx echo.Context) (err error) {
 		tenant_clusters := new(tenants.TenantClusters)
 		tenant_clusters.TenantId = claims.ID
 		tenant_clusters.ClusterId = new_cluster.ID
-		affected, _, err = stmtex.Insert(tenant_clusters.TableName(), tenant_clusters.ColumnNames(), tenant_clusters.Values()).
-			ExecContext(ctx.Request().Context(), tx, ctl.Dialect())
+		affected, _, err = ctl.dialect.Insert(tenant_clusters.TableName(), tenant_clusters.ColumnNames(), tenant_clusters.Values())(
+			ctx.Request().Context(), tx)
 		if err != nil {
 			return errors.Wrapf(err, "save tenant clusters")
 		}
@@ -149,15 +150,18 @@ func (ctl ControlVanilla) FindCluster(ctx echo.Context) (err error) {
 	cluster_table := clusterv3.TableNameWithTenant(claims.Hash)
 	cluster := clusterv3.Cluster{}
 
-	err = stmtex.Select(cluster_table, cluster.ColumnNames(), q, o, p).
-		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner, _ int) error {
+	err = ctl.dialect.QueryRows(cluster_table, cluster.ColumnNames(), q, o, p)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner, _ int) error {
 			err = cluster.Scan(scan)
 			if err != nil {
-				return errors.Wrapf(err, "failed to scan")
+				err = errors.WithStack(err)
+				return err
 			}
+
 			rsp = append(rsp, cluster)
-			return nil
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to find clusters")
@@ -205,14 +209,13 @@ func (ctl ControlVanilla) GetCluster(ctx echo.Context) (err error) {
 		stmt.IsNull("deleted"),
 	)
 
-	err = stmtex.Select(cluster_table, cluster.ColumnNames(), cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) (err error) {
+	err = ctl.dialect.QueryRow(cluster_table, cluster.ColumnNames(), cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
 			err = cluster.Scan(scan)
-			if err != nil {
-				return errors.Wrapf(err, "failed to scan")
-			}
-			return
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return
@@ -270,10 +273,13 @@ func (ctl ControlVanilla) UpdateCluster(ctx echo.Context) (err error) {
 	)
 
 	cluster_table := clusterv3.TableNameWithTenant(claims.Hash)
-	err = stmtex.Select(cluster_table, cluster.ColumnNames(), cluster_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) error {
-			return cluster.Scan(scan)
+	err = ctl.dialect.QueryRow(cluster_table, cluster.ColumnNames(), cluster_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := cluster.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "get cluster")
@@ -321,8 +327,8 @@ func (ctl ControlVanilla) UpdateCluster(ctx echo.Context) (err error) {
 		// 	return errors.Wrapf(database.ErrorRecordWasNotFound, "check cluster")
 		// }
 		// update cluster
-		_, err := stmtex.Update(cluster.TableName(), updateSet, cluster_cond).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		_, err := ctl.dialect.Update(cluster.TableName(), updateSet, cluster_cond)(
+			ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "update cluster")
 		}
@@ -387,10 +393,13 @@ func (ctl ControlVanilla) UpdateClusterPollingRegular(ctx echo.Context) (err err
 	)
 
 	cluster_table := clusterv3.TableNameWithTenant(claims.Hash)
-	err = stmtex.Select(cluster_table, cluster.ColumnNames(), cluster_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) error {
-			return cluster.Scan(scan)
+	err = ctl.dialect.QueryRow(cluster_table, cluster.ColumnNames(), cluster_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := cluster.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "get cluster")
@@ -409,8 +418,8 @@ func (ctl ControlVanilla) UpdateClusterPollingRegular(ctx echo.Context) (err err
 	err = func() error {
 
 		// update cluster
-		_, err := stmtex.Update(cluster.TableName(), updateSet, cluster_cond).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		_, err := ctl.dialect.Update(cluster.TableName(), updateSet, cluster_cond)(
+			ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "update cluster")
 		}
@@ -475,10 +484,13 @@ func (ctl ControlVanilla) UpdateClusterPollingSmart(ctx echo.Context) (err error
 	)
 
 	cluster_table := clusterv3.TableNameWithTenant(claims.Hash)
-	err = stmtex.Select(cluster_table, cluster.ColumnNames(), cluster_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) error {
-			return cluster.Scan(scan)
+	err = ctl.dialect.QueryRow(cluster_table, cluster.ColumnNames(), cluster_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := cluster.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "get cluster")
@@ -497,8 +509,8 @@ func (ctl ControlVanilla) UpdateClusterPollingSmart(ctx echo.Context) (err error
 	// update
 	err = func() error {
 		// update cluster
-		_, err := stmtex.Update(cluster.TableName(), updateSet, cluster_cond).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		_, err := ctl.dialect.Update(cluster.TableName(), updateSet, cluster_cond)(
+			ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "update cluster")
 		}
@@ -551,10 +563,13 @@ func (ctl ControlVanilla) DeleteCluster(ctx echo.Context) (err error) {
 	)
 
 	cluster_table := clusterv3.TableNameWithTenant(claims.Hash)
-	err = stmtex.Select(cluster_table, cluster.ColumnNames(), cluster_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) error {
-			return cluster.Scan(scan)
+	err = ctl.dialect.QueryRow(cluster_table, cluster.ColumnNames(), cluster_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := cluster.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "get cluster")
@@ -574,8 +589,8 @@ func (ctl ControlVanilla) DeleteCluster(ctx echo.Context) (err error) {
 
 	err = func() error {
 		// update cluster
-		_, err := stmtex.Update(cluster.TableName(), updateSet, cluster_cond).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		_, err := ctl.dialect.Update(cluster.TableName(), updateSet, cluster_cond)(
+			ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "update cluster")
 		}

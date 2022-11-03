@@ -13,7 +13,7 @@ func TestColumnPackage(t *testing.T) {
 		ServiceStep{},
 	}
 
-	s, err := ice_cream_maker.ColumnValues(objs)
+	s, err := ice_cream_maker.ColumnPackage(objs...)
 	if err != nil {
 		t.Fatal(err)
 	}

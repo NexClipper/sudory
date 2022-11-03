@@ -1,4 +1,4 @@
-package v3
+package cluster_token
 
 type HttpReq_ClusterToken_create = ClusterToken_create
 

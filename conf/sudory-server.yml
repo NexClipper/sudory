@@ -38,11 +38,6 @@ logger:
 
 encryption: /app/conf/rules/enigma.yml
 
-events: /app/conf/rules/events.yml
-
 # cors-config:
 #   allow-origins:  google.com, example.com
 #   allow-methods:  get, put, delete
-
-# @Deprecated
-respite-period: 60m     

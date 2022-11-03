@@ -37,7 +37,7 @@ func TestOrderStmt(t *testing.T) {
 
 	for _, test_case := range scenarios {
 		t.Run(test_case.name, func(t *testing.T) {
-			o, err := stmt.GetOrderStmtResolver(test_case.dialect).Build(test_case.args)
+			o, err := stmt.GetOrderStmtBuilder(test_case.dialect).Build(test_case.args)
 			if err != nil {
 				panic(err)
 			}

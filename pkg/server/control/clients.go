@@ -12,15 +12,14 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
-	"github.com/NexClipper/sudory/pkg/server/event"
 	"github.com/NexClipper/sudory/pkg/server/event/managed_channel"
-	"github.com/NexClipper/sudory/pkg/server/event/managed_event"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/pkg/errors"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/sqlex"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
@@ -28,7 +27,7 @@ import (
 	channelv3 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	clusterv3 "github.com/NexClipper/sudory/pkg/server/model/cluster/v3"
 	clusterinfov2 "github.com/NexClipper/sudory/pkg/server/model/cluster_infomation/v2"
-	clustertokenv3 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v3"
+	"github.com/NexClipper/sudory/pkg/server/model/cluster_token/v3"
 	cryptov2 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v2"
 	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
 	sessionv3 "github.com/NexClipper/sudory/pkg/server/model/session/v3"
@@ -45,13 +44,13 @@ import (
 // @Produce     json
 // @Tags        client/service
 // @Router      /client/service [get]
-// @Success     200 {array}  v3.HttpRsp_ClientServicePolling
+// @Success     200 {array}  service.HttpRsp_ClientServicePolling
 // @Header      200 {string} x-sudory-client-token
 func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 
 	//get token claims
 	// claims, err := GetSudoryClientTokenClaims(ctx)
-	claims, err := GetClientSessionClaims(ctx, ctl.DB, ctl.Dialect())
+	claims, err := GetClientSessionClaims(ctx, ctl, ctl.dialect)
 	err = errors.Wrapf(err, "failed to get client token")
 	if err != nil {
 		return HttpError(err, http.StatusBadRequest)
@@ -62,28 +61,33 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 	cluster.Uuid = claims.ClusterUuid
 	eq_uuid := stmt.Equal("uuid", cluster.Uuid)
 
-	err = stmtex.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(func(s stmtex.Scanner) (err error) {
-		err = cluster.Scan(s)
-		err = errors.Wrapf(err, "scan cluster")
-		return
-	})
+	err = ctl.dialect.QueryRow(cluster.TableName(), cluster.ColumnNames(), eq_uuid, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := cluster.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
+		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to get cluster")
 	}
 
 	// gather service
 	// get service offset
-	var polling_offest vanilla.NullTime
+	var polling_offset vanilla.NullTime
 	func() (err error) {
 		cluster_info := clusterinfov2.ClusterInformation{}
 		columnnames := []string{"polling_offset"}
 		cond := stmt.Equal("cluster_uuid", claims.ClusterUuid)
 
-		err = stmtex.Select(cluster_info.TableName(), columnnames, cond, nil, nil).
-			QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(func(scan stmtex.Scanner, _ int) error {
-			return scan.Scan(&polling_offest)
-		})
+		err = ctl.dialect.QueryRows(cluster_info.TableName(), columnnames, cond, nil, nil)(ctx.Request().Context(), ctl)(
+			func(scan excute.Scanner, _ int) error {
+				err = scan.Scan(&polling_offset)
+				err = errors.WithStack(err)
+
+				return err
+			})
 		if err != nil {
 			return errors.Wrapf(err, "failed to get service offset")
 		}
@@ -92,7 +96,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 
 	// polling limit filter
 	polling_filter := newPollingFilter(cluster.PoliingLimit)
-	services, steps, err := pollingService(ctx.Request().Context(), ctl, ctl.Dialect(), claims.ClusterUuid, polling_offest, polling_filter)
+	services, steps, err := pollingService(ctx.Request().Context(), ctl, ctl.dialect, claims.ClusterUuid, polling_offset, polling_filter)
 
 	// set polling_offest
 	var polling_offest_ time.Time
@@ -107,22 +111,30 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 	}
 
 	if !polling_offest_.IsZero() {
-		polling_offest = *vanilla.NewNullTime(polling_offest_)
+		polling_offset = *vanilla.NewNullTime(polling_offest_)
 	}
 
 	// save polling_count to cluster_infomation
 	cluster_info := clusterinfov2.ClusterInformation{}
 	cluster_info.ClusterUuid = cluster.Uuid
 	cluster_info.PollingCount = *vanilla.NewNullInt(len(services))
-	cluster_info.PollingOffset = polling_offest
+	cluster_info.PollingOffset = polling_offset
 	cluster_info.Created = time.Now()
 	cluster_info.Updated = *vanilla.NewNullTime(cluster_info.Created)
 
-	cluster_info_update_columns := []string{
-		"polling_count", "polling_offset", "updated",
+	cluster_info_update_columns := make([]string, 0, 3)
+	if cluster_info.PollingCount.Valid {
+		cluster_info_update_columns = append(cluster_info_update_columns, "polling_count")
 	}
-	_, _, err = stmtex.InsertOrUpdate(cluster_info.TableName(), cluster_info.ColumnNames(), cluster_info_update_columns, cluster_info.Values()).
-		ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+	if cluster_info.PollingOffset.Valid {
+		cluster_info_update_columns = append(cluster_info_update_columns, "polling_offset")
+	}
+	if cluster_info.Updated.Valid {
+		cluster_info_update_columns = append(cluster_info_update_columns, "updated")
+	}
+
+	_, _, err = ctl.dialect.InsertOrUpdate(cluster_info.TableName(), cluster_info.ColumnNames(), cluster_info_update_columns, cluster_info.Values())(
+		ctx.Request().Context(), ctl)
 	if err != nil {
 		return errors.Wrapf(err, "exec insert|update statement")
 	}
@@ -172,13 +184,13 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 			new_step_status = append(new_step_status, a)
 		})
 
-	err = stmtex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
+	err = sqlex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
 
-		if err = vault.SaveMultiTable(tx, ctl.Dialect(), new_service_status); err != nil {
+		if err = vault.SaveMultiTable(tx, ctl.dialect, new_service_status); err != nil {
 			return errors.Wrapf(err, "faild to save service")
 		}
 
-		if err = vault.SaveMultiTable(tx, ctl.Dialect(), new_step_status); err != nil {
+		if err = vault.SaveMultiTable(tx, ctl.dialect, new_step_status); err != nil {
 			return errors.Wrapf(err, "faild to save service step")
 		}
 
@@ -202,15 +214,13 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 	tenant_cond := stmt.And(
 		stmt.IsNull("deleted"),
 	)
-	err = stmtex.Select(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil).
-		QueryRowsContext(ctx.Request().Context(), ctl.DB, ctl.Dialect())(
-		func(scan stmtex.Scanner, _ int) error {
+	err = ctl.dialect.QueryRows(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner, _ int) error {
 			err := tenant.Scan(scan)
-			if err != nil {
-				return errors.Wrapf(err, "failed to scan")
-			}
+			err = errors.WithStack(err)
 
-			return nil
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to get a tenent by cluster_uuid")
@@ -233,10 +243,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 		m["step_count"] = service.StepCount
 		m["step_position"] = service.StepPosition
 
-		event.Invoke(event_name, m)
-		managed_event.Invoke(event_name, m)
 		// invoke event by event category
-
 		managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryServicePollingOut, m)
 	}
 
@@ -249,7 +256,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 // @Produce     json
 // @Tags        client/service
 // @Router      /client/service [put]
-// @Param       body body v3.HttpReq_ClientServiceUpdate true "HttpReq_ClientServiceUpdate"
+// @Param       body body service.HttpReq_ClientServiceUpdate true "HttpReq_ClientServiceUpdate"
 // @Success     200
 // @Header      200 {string} x-sudory-client-token
 func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
@@ -321,7 +328,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 
 	// get client token claims
 	// claims, err := GetSudoryClientTokenClaims(ctx)
-	claims, err := GetClientSessionClaims(ctx, ctl.DB, ctl.Dialect())
+	claims, err := GetClientSessionClaims(ctx, ctl.DB, ctl.dialect)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to get client token")
 		return HttpError(err, http.StatusBadRequest)
@@ -332,7 +339,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	service.ClusterUuid = claims.ClusterUuid
 	service.Uuid = body.Uuid
 
-	service, err = vault.Servicev3.GetService(context.Background(), ctl, ctl.Dialect(), service.ClusterUuid, service.Uuid)
+	service, err = vault.GetService(context.Background(), ctl, ctl.dialect, service.ClusterUuid, service.Uuid)
 	if err != nil {
 		return errors.Wrapf(err, "failed to found service%v", logs.KVL(
 			"cluster_uuid", claims.ClusterUuid,
@@ -346,7 +353,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	service_step.Uuid = body.Uuid
 	service_step.Sequence = body.Sequence
 
-	service_step, err = vault.Servicev3.GetServiceStep(context.Background(), ctl, ctl.Dialect(), service_step.ClusterUuid, service_step.Uuid, service_step.Sequence)
+	service_step, err = vault.GetServiceStep(context.Background(), ctl, ctl.dialect, service_step.ClusterUuid, service_step.Uuid, service_step.Sequence)
 	if err != nil {
 		return errors.Wrapf(err, "failed to found service step%v", logs.KVL(
 			"cluster_uuid", claims.ClusterUuid,
@@ -391,22 +398,22 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	}
 
 	// save to db
-	err = stmtex.ScopeTx(context.Background(), ctl, func(tx *sql.Tx) (err error) {
+	err = sqlex.ScopeTx(context.Background(), ctl, func(tx *sql.Tx) (err error) {
 
 		// save service
-		if err = vault.SaveMultiTable(tx, ctl.Dialect(), []vault.Table{service}); err != nil {
+		if err = vault.SaveMultiTable(tx, ctl.dialect, []vault.Table{service}); err != nil {
 			return errors.Wrapf(err, "failed to save service_status")
 		}
 
 		// save service step
-		if err = vault.SaveMultiTable(tx, ctl.Dialect(), []vault.Table{service_step}); err != nil {
+		if err = vault.SaveMultiTable(tx, ctl.dialect, []vault.Table{service_step}); err != nil {
 			return errors.Wrapf(err, "failed to save service_step_status")
 		}
 
 		// check servcie result save type
 		if service_result.ResultSaveType != servicev3.ResultSaveTypeNone {
 			// save service result
-			if err = vault.SaveMultiTable(tx, ctl.Dialect(), []vault.Table{service_result}); err != nil {
+			if err = vault.SaveMultiTable(tx, ctl.dialect, []vault.Table{service_result}); err != nil {
 				return errors.Wrapf(err, "failed to save service_result")
 			}
 		}
@@ -424,15 +431,13 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 	tenant_cond := stmt.And(
 		stmt.IsNull("deleted"),
 	)
-	err = stmtex.Select(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil).
-		QueryRowsContext(context.Background(), ctl.DB, ctl.Dialect())(
-		func(scan stmtex.Scanner, _ int) error {
+	err = ctl.dialect.QueryRows(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil)(
+		context.Background(), ctl.DB)(
+		func(scan excute.Scanner, _ int) error {
 			err := tenant.Scan(scan)
-			if err != nil {
-				return errors.Wrapf(err, "failed to scan")
-			}
+			err = errors.WithStack(err)
 
-			return nil
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to get a tenent by cluster_uuid")
@@ -478,8 +483,6 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		log.Debugf("channel(poll-in-service): %+v", m)
 	}
 
-	event.Invoke(service.SubscribedChannel.String, m)         //Subscribe 등록된 구독 이벤트 이름으로 호출
-	managed_event.Invoke(service.SubscribedChannel.String, m) //Subscribe 등록된 구독 이벤트 이름으로 호출
 	// invoke event by channel uuid
 	if 0 < len(service.SubscribedChannel.String) {
 		// find channel
@@ -490,7 +493,7 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 			stmt.IsNull("deleted"),
 		)
 		channel_table := channelv3.TableNameWithTenant_ManagedChannel(tenant.Hash)
-		found, err := stmtex.ExistContext(channel_table, channel_cond)(context.Background(), ctl, ctl.Dialect())
+		found, err := ctl.dialect.Exist(channel_table, channel_cond)(context.Background(), ctl)
 		if err != nil {
 			return err
 		}
@@ -530,7 +533,8 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	cluster := clusterv3.Cluster{}
 	cluster.Uuid = auth.ClusterUuid
 	cluster_eq_uuid := stmt.Equal("uuid", cluster.Uuid)
-	cluster_found, err := stmtex.ExistContext(cluster.TableName(), cluster_eq_uuid)(ctx.Request().Context(), ctl, ctl.Dialect())
+	cluster_found, err := ctl.dialect.Exist(cluster.TableName(), cluster_eq_uuid)(
+		ctx.Request().Context(), ctl)
 	if err != nil {
 		return HttpError(err, http.StatusInternalServerError)
 	}
@@ -543,7 +547,7 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	}
 
 	//valid token
-	token := clustertokenv3.ClusterToken{}
+	token := cluster_token.ClusterToken{}
 	token.ClusterUuid = auth.ClusterUuid
 	token.Token = cryptov2.CryptoString(auth.Assertion)
 
@@ -552,11 +556,14 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 		stmt.Equal("token", token.Token),
 	)
 
-	err = stmtex.Select(token.TableName(), token.ColumnNames(), token_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(func(scan stmtex.Scanner) (err error) {
-		err = token.Scan(scan)
-		return
-	})
+	err = ctl.dialect.QueryRow(token.TableName(), token.ColumnNames(), token_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := token.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
+		})
 	if err != nil {
 		return HttpError(err, http.StatusInternalServerError)
 	}
@@ -614,7 +621,8 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 
 	err = func() (err error) {
 		var affected int64
-		affected, session.ID, err = stmtex.Insert(session.TableName(), session.ColumnNames(), session.Values()).ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		affected, session.ID, err = ctl.dialect.Insert(session.TableName(), session.ColumnNames(), session.Values())(
+			ctx.Request().Context(), ctl)
 		if err != nil {
 			return err
 		}
@@ -636,15 +644,14 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	tenant_cond := stmt.And(
 		stmt.IsNull("deleted"),
 	)
-	err = stmtex.Select(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil).
-		QueryRowsContext(ctx.Request().Context(), ctl.DB, ctl.Dialect())(
-		func(scan stmtex.Scanner, _ int) error {
-			err := tenant.Scan(scan)
-			if err != nil {
-				return errors.Wrapf(err, "failed to scan")
-			}
 
-			return nil
+	err = ctl.dialect.QueryRows(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil)(
+		ctx.Request().Context(), ctl.DB)(
+		func(scan excute.Scanner, _ int) error {
+			err := tenant.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to get a tenent by cluster_uuid")
@@ -657,8 +664,7 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 		"cluster_uuid": payload.ClusterUuid,
 		"session_uuid": payload.Uuid,
 	}
-	event.Invoke(event_name, m)
-	managed_event.Invoke(event_name, m)
+
 	// invoke event by event category
 	managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryClientAuthAccept, m)
 
@@ -746,10 +752,14 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 	cluster := clusterv3.Cluster{}
 	err = func() (err error) {
 		eq_uuid := stmt.Equal("uuid", claims.ClusterUuid)
-		err = stmtex.Select(cluster.TableName(), cluster.ColumnNames(), eq_uuid, nil, nil).
-			QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-			func(s stmtex.Scanner) (err error) {
-				return cluster.Scan(s)
+
+		err = ctl.dialect.QueryRow(cluster.TableName(), cluster.ColumnNames(), eq_uuid, nil, nil)(
+			ctx.Request().Context(), ctl)(
+			func(s excute.Scanner) error {
+				err := cluster.Scan(s)
+				err = errors.WithStack(err)
+
+				return err
 			})
 
 		err = errors.Wrapf(err, "failed to get cluster")
@@ -765,10 +775,14 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 		columnnames := []string{"polling_count"}
 		cond := stmt.Equal("cluster_uuid", claims.ClusterUuid)
 
-		err = stmtex.Select(cluster_info.TableName(), columnnames, cond, nil, nil).
-			QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(func(scan stmtex.Scanner, _ int) error {
-			return scan.Scan(&service_count)
-		})
+		err = ctl.dialect.QueryRows(cluster_info.TableName(), columnnames, cond, nil, nil)(
+			ctx.Request().Context(), ctl)(
+			func(scan excute.Scanner, _ int) error {
+				err := scan.Scan(&service_count)
+				err = errors.WithStack(err)
+
+				return err
+			})
 
 		// cond := pollingServiceCondition(claims.ClusterUuid)
 		// service := servicev3.Service{}
@@ -820,7 +834,8 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 		stmt.IsNull("deleted"),
 	)
 	err = func() (err error) {
-		session_found, err := stmtex.ExistContext(session.TableName(), cond_session)(ctx.Request().Context(), ctl, ctl.Dialect())
+		session_found, err := ctl.dialect.Exist(session.TableName(), cond_session)(
+			ctx.Request().Context(), ctl)
 		if err != nil {
 			return err
 		}
@@ -842,8 +857,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 			"updated":         session.Updated,
 		}
 
-		_, err = stmtex.Update(session.TableName(), keys_values, cond_session).
-			Exec(ctl, ctl.Dialect())
+		_, err = ctl.dialect.Update(session.TableName(), keys_values, cond_session)(ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "failed to refresh client session%v", logs.KVL(
 				"uuid", claims.Uuid,
@@ -1015,13 +1029,13 @@ func newPollingFilter(limit int) PollingFilter {
 	}
 }
 
-func pollingService(ctx context.Context, tx stmtex.Preparer, dialect string,
+func pollingService(ctx context.Context, tx excute.Preparer, dialect excute.SqlExcutor,
 	cluster_uuid string, polling_offest vanilla.NullTime,
 	polling_filter PollingFilter,
 ) (services []servicev3.Service, stepSet map[string][]servicev3.ServiceStep, err error) {
 
 	// check polling
-	polling_keys, err := vault.Servicev3.GetServicesPolling(ctx, tx, dialect, cluster_uuid, polling_offest)
+	polling_keys, err := vault.GetServicesPolling(ctx, tx, dialect, cluster_uuid, polling_offest)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to found services%v", logs.KVL(
 			"cluster_uuid", cluster_uuid,
@@ -1042,7 +1056,7 @@ func pollingService(ctx context.Context, tx stmtex.Preparer, dialect string,
 	services = make([]servicev3.Service, 0, len(filtered_keys))
 	for _, service_key := range filtered_keys {
 		var service *servicev3.Service
-		service, err = vault.Servicev3.GetService(ctx, tx, dialect, cluster_uuid, service_key.Uuid)
+		service, err = vault.GetService(ctx, tx, dialect, cluster_uuid, service_key.Uuid)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to found service %v", logs.KVL(
 				"cluster_uuid", cluster_uuid,
@@ -1056,18 +1070,18 @@ func pollingService(ctx context.Context, tx stmtex.Preparer, dialect string,
 
 	// gather service step
 	stepSet = make(map[string][]servicev3.ServiceStep)
-	for _, service := range filtered_keys {
+	for _, service_ := range filtered_keys {
 		var steps []servicev3.ServiceStep
-		steps, err = vault.Servicev3.GetServiceSteps(ctx, tx, dialect, cluster_uuid, service.Uuid)
+		steps, err = vault.GetServiceSteps(ctx, tx, dialect, cluster_uuid, service_.Uuid)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to found service steps%v", logs.KVL(
 				"cluster_uuid", cluster_uuid,
-				"uuid", service.Uuid,
+				"uuid", service_.Uuid,
 			))
 			return
 		}
 
-		stepSet[service.Uuid] = steps
+		stepSet[service_.Uuid] = steps
 
 	}
 

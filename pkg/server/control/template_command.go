@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	templatev2 "github.com/NexClipper/sudory/pkg/server/model/template/v2"
+	template_v2 "github.com/NexClipper/sudory/pkg/server/model/template/v2"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -161,9 +161,9 @@ import (
 // @Tags        server/template_command
 // @Router      /server/template/{template_uuid}/command [get]
 // @Param       template_uuid path   string true  "HttpReqTemplate Uuid"
-// @Success 200 {array} v2.HttpRsp_TemplateCommand
+// @Success 200 {array} template.HttpRsp_TemplateCommand
 func (ctl ControlVanilla) ListTemplateCommand(ctx echo.Context) (err error) {
-	template_uuid := echoutil.Param(ctx)[__TEMPLATE_UUID__]
+	tmpl_uuid := echoutil.Param(ctx)[__TEMPLATE_UUID__]
 
 	err = echoutil.WrapHttpError(http.StatusBadRequest,
 		func() (err error) {
@@ -180,35 +180,41 @@ func (ctl ControlVanilla) ListTemplateCommand(ctx echo.Context) (err error) {
 		return
 	}
 
-	commands, err := ListTemplateCommand(ctx.Request().Context(), ctl, template_uuid)
+	commands, err := ListTemplateCommand(ctx.Request().Context(), ctl, tmpl_uuid)
 	if err != nil {
 		return
 	}
 
-	rsp := make([]templatev2.HttpRsp_TemplateCommand, len(commands))
+	rsp := make([]template_v2.HttpRsp_TemplateCommand, len(commands))
 	for i := range commands {
-		rsp[i] = templatev2.HttpRsp_TemplateCommand(commands[i])
+		rsp[i] = template_v2.HttpRsp_TemplateCommand(commands[i])
 	}
 
 	return ctx.JSON(http.StatusOK, rsp)
 
 }
 
-func ListTemplateCommand(ctx context.Context, ctl ControlVanilla, template_uuid string) ([]templatev2.TemplateCommand, error) {
-	rsp := make([]templatev2.TemplateCommand, 0, state.ENV__INIT_SLICE_CAPACITY__())
+func ListTemplateCommand(ctx context.Context, ctl ControlVanilla, template_uuid string) ([]template_v2.TemplateCommand, error) {
+	rsp := make([]template_v2.TemplateCommand, 0, state.ENV__INIT_SLICE_CAPACITY__())
 
-	command := templatev2.TemplateCommand{}
+	command := template_v2.TemplateCommand{}
 	command.TemplateUuid = template_uuid
 
 	eq_uuid := stmt.Equal("template_uuid", command.TemplateUuid)
 	order := stmt.Asc("sequence")
 
-	err := stmtex.Select(command.TableName(), command.ColumnNames(), eq_uuid, order, nil).
-		QueryRowsContext(ctx, ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner, _ int) error {
+	err := ctl.dialect.QueryRows(command.TableName(), command.ColumnNames(), eq_uuid, order, nil)(
+		ctx, ctl)(
+		func(scan excute.Scanner, _ int) error {
 			err := command.Scan(scan)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
+			}
+
 			rsp = append(rsp, command)
-			return errors.Wrapf(err, "failed to scan")
+
+			return err
 		})
 
 	return rsp, err
@@ -222,7 +228,7 @@ func ListTemplateCommand(ctx context.Context, ctl ControlVanilla, template_uuid 
 // @Router      /server/template/{template_uuid}/command/{uuid} [get]
 // @Param       template_uuid path   string true  "HttpReqTemplate Uuid"
 // @Param       uuid          path   string true  "HttpReqTemplateCommand 의 Uuid"
-// @Success 200 {object} v2.HttpRsp_TemplateCommand
+// @Success 200 {object} template.HttpRsp_TemplateCommand
 func (ctl ControlVanilla) GetTemplateCommand(ctx echo.Context) (err error) {
 	_ = echoutil.Param(ctx)[__TEMPLATE_UUID__]
 	uuid := echoutil.Param(ctx)[__UUID__]
@@ -251,16 +257,19 @@ func (ctl ControlVanilla) GetTemplateCommand(ctx echo.Context) (err error) {
 		return
 	}
 
-	command := templatev2.TemplateCommand{}
+	command := template_v2.TemplateCommand{}
 	command.Uuid = uuid
 
 	eq_uuid := stmt.Equal("uuid", command.Uuid)
 
-	err = stmtex.Select(command.TableName(), command.ColumnNames(), eq_uuid, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(func(scan stmtex.Scanner) error {
-		err := command.Scan(scan)
-		return errors.Wrapf(err, "failed to scan")
-	})
+	err = ctl.dialect.QueryRow(command.TableName(), command.ColumnNames(), eq_uuid, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := command.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
+		})
 	if err != nil {
 		return
 	}

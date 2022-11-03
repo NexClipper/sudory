@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/sexp"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/internal/sexp"
 	"github.com/pkg/errors"
 )
 

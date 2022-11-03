@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/model/auths/v2"
@@ -34,7 +34,7 @@ func SetContextValue(ctx context.Context, key ContextValueKey, v interface{}) co
 	return context.WithValue(ctx, key, v)
 }
 
-func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string) (*sessionv3.ClientSessionPayload, error) {
+func GetClientSessionClaims(ctx echo.Context, tx excute.Preparer, dialect excute.SqlExcutor) (*sessionv3.ClientSessionPayload, error) {
 	const (
 		__HTTP_HEADER_KEY__   = "x-sudory-client-token"
 		__CONTEXT_VALUE_KEY__ = ClientSession
@@ -86,12 +86,14 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 				stmt.Equal("uuid", cluster.Uuid),
 				stmt.IsNull("deleted"),
 			)
-			err = stmtex.Select(cluster.TableName(), cluster.ColumnNames(), cluster_cond, nil, nil).
-				QueryRowContext(timeout, tx, dialect)(func(s stmtex.Scanner) (err error) {
-				err = cluster.Scan(s)
-				err = errors.Wrapf(err, "cluster Scan")
-				return
-			})
+			err = dialect.QueryRow(cluster.TableName(), cluster.ColumnNames(), cluster_cond, nil, nil)(
+				timeout, tx)(
+				func(s excute.Scanner) error {
+					err = cluster.Scan(s)
+					err = errors.WithStack(err)
+
+					return err
+				})
 			if err != nil {
 				err = errors.Wrapf(err, "failed to get cluster")
 				return err
@@ -112,10 +114,14 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 			clusterinfo_columns := []string{"polling_count"}
 			clusterinfo_cond := stmt.Equal("cluster_uuid", claims.ClusterUuid)
 
-			err = stmtex.Select(clusterinfo.TableName(), clusterinfo_columns, clusterinfo_cond, nil, nil).
-				QueryRowsContext(timeout, tx, dialect)(func(scan stmtex.Scanner, _ int) error {
-				return scan.Scan(&polling_count)
-			})
+			err = dialect.QueryRows(clusterinfo.TableName(), clusterinfo_columns, clusterinfo_cond, nil, nil)(
+				timeout, tx)(
+				func(scan excute.Scanner, _ int) error {
+					err := scan.Scan(&polling_count)
+					err = errors.WithStack(err)
+
+					return err
+				})
 			if err != nil {
 				err = errors.Wrapf(err, "failed to get service offset")
 				return err
@@ -151,7 +157,7 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 			)
 
 			// found session
-			session_found, err := stmtex.ExistContext(session.TableName(), session_cond)(timeout, tx, dialect)
+			session_found, err := dialect.Exist(session.TableName(), session_cond)(timeout, tx)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to found client session")
 				return err
@@ -171,8 +177,7 @@ func GetClientSessionClaims(ctx echo.Context, tx stmtex.Preparer, dialect string
 				"updated":         session.Updated,
 			}
 
-			_, err = stmtex.Update(session.TableName(), keys_values, session_cond).
-				ExecContext(timeout, tx, dialect)
+			_, err = dialect.Update(session.TableName(), keys_values, session_cond)(timeout, tx)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to refreshed client session%v", logs.KVL(
 					"uuid", claims.Uuid,

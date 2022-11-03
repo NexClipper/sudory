@@ -13,7 +13,7 @@
 # @name auth
 @tenant_pattern = cluster_test
 
-POST {{url}}/server/auth {{protocolver}}
+POST {{url}}/server/tenant {{protocolver}}
 Content-Type: application/json
 x_auth_token: SUDORY
 

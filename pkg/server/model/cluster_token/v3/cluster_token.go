@@ -1,4 +1,4 @@
-package v3
+package cluster_token
 
 import (
 	"time"

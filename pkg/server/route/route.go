@@ -19,6 +19,7 @@ package route
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"os"
 	"os/signal"
@@ -28,8 +29,8 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/config"
 	"github.com/NexClipper/sudory/pkg/server/control"
-	"github.com/NexClipper/sudory/pkg/server/database"
-	flavor "github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/resolvers/mysql"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
+	mysqlFlavor "github.com/NexClipper/sudory/pkg/server/database/vanilla/excute/dialects/mysql"
 	"github.com/NexClipper/sudory/pkg/version"
 	"github.com/pkg/errors"
 
@@ -54,11 +55,10 @@ type Route struct {
 	TlsPrivateKeyFilename  string
 }
 
-func New(cfg *config.Config, db *database.DBManipulator) *Route {
+func New(cfg *config.Config, db *sql.DB) *Route {
 
 	e := echo.New()
-	controller := control.New(db)
-	ctl := control.NewVanilla(db.Engine().DB().DB, flavor.Dialect())
+	ctl := control.NewVanilla(db, excute.GetSqlExcutor(mysqlFlavor.Dialect()))
 
 	//echo cors config
 	e.Use(echoCORSConfig(cfg))
@@ -109,7 +109,7 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 
 		group := e.Group("")
 		// @Security ClientSessionToken
-		group.Use(ClientSessionToken(db.Engine().DB().DB))
+		group.Use(ClientSessionToken(db, excute.GetSqlExcutor(mysqlFlavor.Dialect())))
 		// /client/service*
 		group.GET("/client/service", ctl.PollingService)
 		group.PUT("/client/service", ctl.UpdateService)
@@ -142,35 +142,6 @@ func New(cfg *config.Config, db *database.DBManipulator) *Route {
 		group.GET("/server/global_variables", ctl.FindGlobalVariables)
 		group.GET("/server/global_variables/:uuid", ctl.GetGlobalVariables)
 		group.PUT("/server/global_variables/:uuid", ctl.UpdateGlobalVariablesValue)
-
-		// /server/channel*
-		group.POST("/server/channel", controller.CreateChannel)
-		group.GET("/server/channel", controller.FindChannel)
-		group.GET("/server/channel/:uuid", controller.GetChannel)
-		group.PUT("/server/channel/:uuid", controller.UpdateChannel)
-		group.GET("/server/channel/:uuid/notifier_edges", controller.ListChannelNotifierEdges)
-		group.PUT("/server/channel/:uuid/notifier_edges/add", controller.AddChannelNotifierEdge)
-		group.PUT("/server/channel/:uuid/notifier_edges/sub", controller.SubChannelNotifierEdge)
-		group.DELETE("/server/channel/:uuid", controller.DeleteChannel)
-		// /server/channel_notifier*
-		group.POST("/server/channel_notifier/console", controller.CreateChannelNotifierConsole)
-		group.POST("/server/channel_notifier/webhook", controller.CreateChannelNotifierWebhook)
-		group.POST("/server/channel_notifier/rabbitmq", controller.CreateChannelNotifierRabbitMq)
-		group.GET("/server/channel_notifier/console", controller.FindChannelNotifierConsole)
-		group.GET("/server/channel_notifier/webhook", controller.FindChannelNotifierWebhook)
-		group.GET("/server/channel_notifier/rabbitmq", controller.FindChannelNotifierRabbitmq)
-		group.GET("/server/channel_notifier/console/:uuid", controller.GetChannelNotifierConsole)
-		group.GET("/server/channel_notifier/webhook/:uuid", controller.GetChannelNotifierWebhook)
-		group.GET("/server/channel_notifier/rabbitmq/:uuid", controller.GetChannelNotifierRabbitmq)
-		group.PUT("/server/channel_notifier/console/:uuid", controller.UpdateChannelNotifierConsole)
-		group.PUT("/server/channel_notifier/webhook/:uuid", controller.UpdateChannelNotifierWebhook)
-		group.PUT("/server/channel_notifier/rabbitmq/:uuid", controller.UpdateChannelNotifierRabbitMq)
-		group.DELETE("/server/channel_notifier/console/:uuid", controller.DeleteChannelNotifierConsole)
-		group.DELETE("/server/channel_notifier/webhook/:uuid", controller.DeleteChannelNotifierWebhook)
-		group.DELETE("/server/channel_notifier/rabbitmq/:uuid", controller.DeleteChannelNotifierRabbitmq)
-		// /server/channel_notifier_status*
-		group.GET("/server/channel_notifier_status", controller.FindChannelNotifierStatus)
-		group.DELETE("/server/channel_notifier_status/:uuid", controller.DeleteChannelNotifierStatus)
 	}
 
 	{

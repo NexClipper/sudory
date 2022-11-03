@@ -1,5 +1,15 @@
 package vault
 
+import (
+	"context"
+	"sort"
+
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
+	"github.com/NexClipper/sudory/pkg/server/model/template/v2"
+	"github.com/pkg/errors"
+)
+
 // import (
 // 	"github.com/NexClipper/sudory/pkg/server/database"
 // 	"github.com/NexClipper/sudory/pkg/server/database/prepare"
@@ -115,3 +125,56 @@ package vault
 
 // 	return nil
 // }
+
+func GetTemplate(ctx context.Context, tx excute.Preparer, dialect excute.SqlExcutor,
+	template_uuid string,
+) (*template.Template, []template.TemplateCommand, error) {
+
+	// get template
+	tmpl_cond := stmt.And(
+		stmt.Equal("uuid", template_uuid),
+		stmt.IsNull("deleted"),
+	)
+
+	tmpl := template.Template{}
+	err := dialect.QueryRow(tmpl.TableName(), tmpl.ColumnNames(), tmpl_cond, nil, nil)(ctx, tx)(
+		func(scan excute.Scanner) error {
+			err := tmpl.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
+		})
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "failed to get template")
+	}
+
+	// get commands
+	commands := make([]template.TemplateCommand, 0)
+	command_cond := stmt.And(
+		stmt.Equal("template_uuid", template_uuid),
+		stmt.IsNull("deleted"),
+	)
+
+	var command template.TemplateCommand
+	err = dialect.QueryRow(command.TableName(), command.ColumnNames(), command_cond, nil, nil)(ctx, tx)(
+		func(scan excute.Scanner) error {
+			err := command.Scan(scan)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
+			}
+
+			commands = append(commands, command)
+
+			return err
+		})
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "failed to get template commands")
+	}
+
+	sort.Slice(commands, func(i, j int) bool {
+		return commands[i].Sequence < commands[j].Sequence
+	})
+
+	return &tmpl, commands, nil
+}

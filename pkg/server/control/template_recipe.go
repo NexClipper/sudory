@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	recipev2 "github.com/NexClipper/sudory/pkg/server/model/template_recipe/v2"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
@@ -49,15 +49,18 @@ func (ctl ControlVanilla) FindTemplateRecipe(ctx echo.Context) (err error) {
 	like_method := stmt.Like("method", recipe.Method)
 	order := stmt.Asc("name", "args")
 
-	err = stmtex.Select(recipe.TableName(), recipe.ColumnNames(), like_method, order, p).
-		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner, _ int) (err error) {
+	err = ctl.dialect.QueryRows(recipe.TableName(), recipe.ColumnNames(), like_method, order, p)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner, _ int) error {
 			err = recipe.Scan(scan)
 			if err != nil {
-				return errors.Wrapf(err, "failed to scan")
+				err = errors.WithStack(err)
+				return err
 			}
+
 			rsp = append(rsp, recipe)
-			return
+
+			return err
 		})
 	if err != nil {
 		return

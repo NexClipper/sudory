@@ -1,16 +1,16 @@
-package v2_test
+package template_test
 
 import (
 	"os"
 	"testing"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/ice_cream_maker"
-	v2 "github.com/NexClipper/sudory/pkg/server/model/template/v2"
+	"github.com/NexClipper/sudory/pkg/server/model/template/v2"
 )
 
 var objs = []interface{}{
-	v2.Template{},
-	v2.TemplateCommand{},
+	template.Template{},
+	template.TemplateCommand{},
 }
 
 func TestNoXormColumns(t *testing.T) {

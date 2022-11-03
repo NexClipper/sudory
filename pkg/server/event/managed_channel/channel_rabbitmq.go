@@ -8,7 +8,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	"github.com/pkg/errors"
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type ChannelRabbitMQ struct {

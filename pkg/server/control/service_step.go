@@ -5,11 +5,11 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
+	service "github.com/NexClipper/sudory/pkg/server/model/service/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -24,7 +24,7 @@ import (
 // @Param       q            query  string false "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Param       o            query  string false "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Param       p            query  string false "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
-// @Success     200 {array} v3.HttpRsp_ServiceStep
+// @Success     200 {array} service.HttpRsp_ServiceStep
 func (ctl ControlVanilla) FindServiceStep(ctx echo.Context) error {
 	q, err := stmt.ConditionLexer.Parse(echoutil.QueryParam(ctx)["q"])
 	if err != nil && !logs.DeepCompare(err, stmt.ErrorInvalidArgumentEmptyString) {
@@ -47,28 +47,28 @@ func (ctl ControlVanilla) FindServiceStep(ctx echo.Context) error {
 	if err != nil {
 		return HttpError(err, http.StatusForbidden)
 	}
-	rsp := make([]servicev3.HttpRsp_ServiceStep, 0, state.ENV__INIT_SLICE_CAPACITY__())
-	step_table := servicev3.TableNameWithTenant_ServiceStep(claims.Hash)
-	var step servicev3.ServiceStep
+	rsp := make([]service.HttpRsp_ServiceStep, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	step_table := service.TableNameWithTenant_ServiceStep(claims.Hash)
+	var step service.ServiceStep
 
-	err = stmtex.Select(step_table, step.ColumnNames(), q, o, p).
-		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner, _ int) error {
+	err = ctl.dialect.QueryRows(step_table, step.ColumnNames(), q, o, p)(ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner, _ int) error {
 			err := step.Scan(scan)
 			if err != nil {
+				err = errors.WithStack(err)
 				return err
 			}
 
 			rsp = append(rsp, step)
 
-			return nil
+			return err
 		})
 	if err != nil {
 		return err
 	}
 
 	// make response body
-	return ctx.JSON(http.StatusOK, []servicev3.HttpRsp_ServiceStep(rsp))
+	return ctx.JSON(http.StatusOK, []service.HttpRsp_ServiceStep(rsp))
 }
 
 // @Description Get Service Steps
@@ -78,7 +78,7 @@ func (ctl ControlVanilla) FindServiceStep(ctx echo.Context) error {
 // @Tags        server/service
 // @Router      /server/service/{uuid}/step [get]
 // @Param       uuid         path   string true  "ServiceStep 의 uuid"
-// @Success     200 {array} v3.HttpRsp_ServiceStep
+// @Success     200 {array} service.HttpRsp_ServiceStep
 func (ctl ControlVanilla) GetServiceSteps(ctx echo.Context) (err error) {
 	var uuid string
 	if uuid = echoutil.Param(ctx)[__UUID__]; len(uuid) == 0 {
@@ -97,24 +97,25 @@ func (ctl ControlVanilla) GetServiceSteps(ctx echo.Context) (err error) {
 	}
 
 	// get service step
-	step_table := servicev3.TableNameWithTenant_ServiceStep(claims.Hash)
-	var step servicev3.ServiceStep
+	step_table := service.TableNameWithTenant_ServiceStep(claims.Hash)
+	var step service.ServiceStep
 	step_cond := stmt.And(
 		stmt.Equal("uuid", uuid),
 	)
 
-	steps := make([]servicev3.HttpRsp_ServiceStep, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	steps := make([]service.HttpRsp_ServiceStep, 0, state.ENV__INIT_SLICE_CAPACITY__())
 
-	err = stmtex.Select(step_table, step.ColumnNames(), step_cond, nil, nil).
-		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner, _ int) error {
+	err = ctl.dialect.QueryRows(step_table, step.ColumnNames(), step_cond, nil, nil)(ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner, _ int) error {
 			err := step.Scan(scan)
 			if err != nil {
-				return errors.Wrapf(err, "scan service step")
+				err = errors.WithStack(err)
+				return err
 			}
 
 			steps = append(steps, step)
-			return nil
+
+			return err
 		})
 	if err != nil {
 		return err
@@ -125,7 +126,7 @@ func (ctl ControlVanilla) GetServiceSteps(ctx echo.Context) (err error) {
 	})
 
 	// make response body
-	return ctx.JSON(http.StatusOK, []servicev3.HttpRsp_ServiceStep(steps))
+	return ctx.JSON(http.StatusOK, []service.HttpRsp_ServiceStep(steps))
 }
 
 // @Description Get Service Step
@@ -136,7 +137,7 @@ func (ctl ControlVanilla) GetServiceSteps(ctx echo.Context) (err error) {
 // @Router      /server/service/{uuid}/step/{sequence} [get]
 // @Param       uuid     path string true "ServiceStep 의 uuid"
 // @Param       sequence path string true "ServiceStep 의 sequence"
-// @Success     200 {object} v3.HttpRsp_ServiceStep
+// @Success     200 {object} service.HttpRsp_ServiceStep
 func (ctl ControlVanilla) GetServiceStep(ctx echo.Context) (err error) {
 	var uuid string
 	if uuid = echoutil.Param(ctx)[__UUID__]; len(uuid) == 0 {
@@ -163,22 +164,24 @@ func (ctl ControlVanilla) GetServiceStep(ctx echo.Context) (err error) {
 	}
 
 	// get service step
-	step_table := servicev3.TableNameWithTenant_ServiceStep(claims.Hash)
-	var step servicev3.ServiceStep
+	step_table := service.TableNameWithTenant_ServiceStep(claims.Hash)
+	var step service.ServiceStep
 	step_cond := stmt.And(
 		stmt.Equal("uuid", uuid),
 		stmt.Equal("seq", sequence),
 	)
 
-	err = stmtex.Select(step_table, step.ColumnNames(), step_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) error {
-			return step.Scan(scan)
+	err = ctl.dialect.QueryRow(step_table, step.ColumnNames(), step_cond, nil, nil)(ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := step.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return err
 	}
 
 	// make response body
-	return ctx.JSON(http.StatusOK, servicev3.HttpRsp_ServiceStep(step))
+	return ctx.JSON(http.StatusOK, service.HttpRsp_ServiceStep(step))
 }

@@ -6,8 +6,8 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	sessionv3 "github.com/NexClipper/sudory/pkg/server/model/session/v3"
@@ -26,7 +26,7 @@ import (
 // @Param       o            query  string false "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Param       p            query  string false "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Success     200 {array} v3.Session
-func (ctl ControlVanilla) FindSession(ctx echo.Context) (err error) {
+func (ctl ControlVanilla) FindSession(ctx echo.Context) error {
 	q, err := stmt.ConditionLexer.Parse(echoutil.QueryParam(ctx)["q"])
 	if err != nil && !logs.DeepCompare(err, stmt.ErrorInvalidArgumentEmptyString) {
 		return HttpError(err, http.StatusBadRequest)
@@ -58,18 +58,22 @@ func (ctl ControlVanilla) FindSession(ctx echo.Context) (err error) {
 	session := sessionv3.Session{}
 	session_table := sessionv3.TableNameWithTenant(claims.Hash)
 
-	err = stmtex.Select(session_table, session.ColumnNames(), q, o, p).
-		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner, _ int) error {
-			err = session.Scan(scan)
+	err = ctl.dialect.QueryRows(session_table, session.ColumnNames(), q, o, p)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner, _ int) error {
+			err := session.Scan(scan)
 			if err != nil {
-				return errors.Wrapf(err, "failed to scan")
+				err = errors.WithStack(err)
+				return err
 			}
+
 			rsp = append(rsp, session)
-			return nil
+
+			return err
 		})
 	if err != nil {
-		return errors.Wrapf(err, "failed to find sessions")
+		err = errors.Wrapf(err, "failed to find sessions")
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, []sessionv3.Session(rsp))
@@ -83,8 +87,8 @@ func (ctl ControlVanilla) FindSession(ctx echo.Context) (err error) {
 // @Router      /server/session/{uuid} [get]
 // @Param       uuid         path   string true  "Session Uuid"
 // @Success     200 {object} v3.Session
-func (ctl ControlVanilla) GetSession(ctx echo.Context) (err error) {
-	err = func() (err error) {
+func (ctl ControlVanilla) GetSession(ctx echo.Context) error {
+	err := func() (err error) {
 		if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 			return errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
@@ -114,14 +118,17 @@ func (ctl ControlVanilla) GetSession(ctx echo.Context) (err error) {
 		stmt.IsNull("deleted"),
 	)
 
-	err = stmtex.Select(session_table, session.ColumnNames(), cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) (err error) {
-			err = session.Scan(scan)
-			return
+	err = ctl.dialect.QueryRow(session_table, session.ColumnNames(), cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := session.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
-		return errors.Wrapf(err, "failed to get session")
+		err = errors.Wrapf(err, "failed to get session")
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, sessionv3.Session(session))
@@ -135,10 +142,10 @@ func (ctl ControlVanilla) GetSession(ctx echo.Context) (err error) {
 // @Router      /server/session/cluster/{cluster_uuid}/alive [get]
 // @Param       cluster_uuid path   string true  "Cluster Uuid"
 // @Success     200 {object} boolean
-func (ctl ControlVanilla) AliveClusterSession(ctx echo.Context) (err error) {
+func (ctl ControlVanilla) AliveClusterSession(ctx echo.Context) error {
 	const __CLUSTER_UUID__ = "cluster_uuid"
 
-	err = func() (err error) {
+	err := func() (err error) {
 		if len(echoutil.Param(ctx)[__CLUSTER_UUID__]) == 0 {
 			return errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
 				logs.KVL(
@@ -169,10 +176,14 @@ func (ctl ControlVanilla) AliveClusterSession(ctx echo.Context) (err error) {
 	)
 	order := stmt.Desc("expiration_time")
 	page := stmt.Limit(1)
-	err = stmtex.Select(session_table, session.ColumnNames(), cond, order, page).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(func(scan stmtex.Scanner) error {
-		return session.Scan(scan)
-	})
+	err = ctl.dialect.QueryRow(session_table, session.ColumnNames(), cond, order, page)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := session.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
+		})
 	if err != nil {
 		return err
 	}
@@ -193,7 +204,7 @@ func (ctl ControlVanilla) AliveClusterSession(ctx echo.Context) (err error) {
 // @Router      /server/session/{uuid} [delete]
 // @Param       uuid         path   string true  "Session Uuid"
 // @Success     200
-func (ctl ControlVanilla) DeleteSession(ctx echo.Context) (err error) {
+func (ctl ControlVanilla) DeleteSession(ctx echo.Context) error {
 	if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest).SetInternal(
 			errors.Wrapf(ErrorInvalidRequestParameter, "valid param%s",
@@ -216,13 +227,17 @@ func (ctl ControlVanilla) DeleteSession(ctx echo.Context) (err error) {
 	session.Uuid = uuid
 
 	session_cond := stmt.Equal("uuid", session.Uuid)
-	err = stmtex.Select(session_table, session.ColumnNames(), session_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) error {
-			return session.Scan(scan)
+	err = ctl.dialect.QueryRow(session_table, session.ColumnNames(), session_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := session.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
-		return errors.Wrapf(err, "check session")
+		err = errors.Wrapf(err, "check session")
+		return err
 	}
 
 	if session.Deleted.Valid {
@@ -239,19 +254,22 @@ func (ctl ControlVanilla) DeleteSession(ctx echo.Context) (err error) {
 
 	err = func() error {
 		// delete session
-		affected, err := stmtex.Update(session.TableName(), updateSet, session_cond).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		affected, err := ctl.dialect.Update(session.TableName(), updateSet, session_cond)(
+			ctx.Request().Context(), ctl)
 		if err != nil {
-			return errors.Wrapf(err, "delete session")
+			err = errors.Wrapf(err, "delete session")
+			return err
 		}
 		if affected == 0 {
-			return errors.Wrapf(database.ErrorNoAffected, "delete session")
+			err = errors.Wrapf(database.ErrorNoAffected, "delete session")
+			return err
 		}
 
 		return nil
 	}()
 	if err != nil {
-		return errors.Wrapf(err, "failed to delete session")
+		err = errors.Wrapf(err, "failed to delete session")
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, OK())

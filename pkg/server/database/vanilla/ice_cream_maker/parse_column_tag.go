@@ -15,7 +15,17 @@ func PkgNameDir(_type reflect.Type) string {
 }
 
 func PkgNameBase(_type reflect.Type) string {
-	return path.Base(_type.PkgPath())
+	return Name(_type)
+}
+
+func Name(t reflect.Type) string {
+
+	s := t.String()
+	i := len(s) - 1
+	for i >= 0 && s[i] != '.' {
+		i--
+	}
+	return s[:i]
 }
 
 func FieldNames(_type reflect.Type) []string {

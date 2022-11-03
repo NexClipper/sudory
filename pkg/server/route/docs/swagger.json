@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "limit for access sudory api",
+        "description": "this is a sudory server.",
         "title": "SUDORY",
         "contact": {
             "url": "https://nexclipper.io",
@@ -71,7 +71,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v3.HttpRsp_ClientServicePolling"
+                                "$ref": "#/definitions/service.HttpRsp_ClientServicePolling"
                             }
                         },
                         "headers": {
@@ -105,1051 +105,18 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v3.HttpReq_ClientServiceUpdate"
+                            "$ref": "#/definitions/service.HttpReq_ClientServiceUpdate"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "",
+                        "description": "OK",
                         "headers": {
                             "x-sudory-client-token": {
                                 "type": "string"
                             }
                         }
-                    }
-                }
-            }
-        },
-        "/server/channel": {
-            "get": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Find channel",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "q",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "o",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "p",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.Channel"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Create a channel",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "description": "Event_create",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.Channel_create"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.Channel"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/channel/{uuid}": {
-            "get": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Get a channel",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Channel 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.Channel"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Update a channel",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Channel 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Event_update",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.Channel_update"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.Channel"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Delete a channel",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Channel 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/server/channel/{uuid}/notifier_edges": {
-            "get": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Get channel edges",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Channel 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.ChannelNotifierEdge"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/server/channel/{uuid}/notifier_edges/add": {
-            "put": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "addtion channel notifier edge",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Channel 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "NotifierEdge",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.NotifierEdge"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.ChannelNotifierEdge"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/server/channel/{uuid}/notifier_edges/sub": {
-            "put": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "subtraction channel sub notifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Channel 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Channel 의 NotifierEdge",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.NotifierEdge"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.ChannelNotifierEdge"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/server/channel_notifier/console": {
-            "get": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Find channel notifier console",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "q",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "o",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "p",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.NotifierConsole"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Create a channel notifier console",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "description": "EventNotifierConsole_create",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierConsole_create"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierConsole"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/channel_notifier/console/{uuid}": {
-            "get": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Get a channel notifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "channel notifier 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierConsole"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Update a console channel notifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Channel 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "NotifierConsole_create",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierConsole_create"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierConsole"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Delete a channel notifier console",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Channel 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/server/channel_notifier/rabbitmq": {
-            "get": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Find channel notifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "q",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "o",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "p",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.NotifierRabbitMq"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Create a channel notifier rabbitmq",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "description": "NotifierRabbitMq_create",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierRabbitMq_create"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierRabbitMq"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/channel_notifier/rabbitmq/{uuid}": {
-            "get": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Get a channel notifier rabbitmq",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "channel notifier 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierRabbitMq"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Update a rabbitmq channel notifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Channel 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "NotifierRabbitMq_create",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierRabbitMq_create"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierRabbitMq"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Delete a channel notifier rabbitmq",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Channel 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/server/channel_notifier/webhook": {
-            "get": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Find channel notifier webhook",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "q",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "o",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "p",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.NotifierWebhook"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Create a channel notifier webhook",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "description": "EventNotifierWebhook_create",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierWebhook_create"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierWebhook"
-                        }
-                    }
-                }
-            }
-        },
-        "/server/channel_notifier/webhook/{uuid}": {
-            "get": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Get a channel notifier webhook",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "channel notifier 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierWebhook"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Update a webhook channel notifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Channel 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "NotifierWebhook_create",
-                        "name": "object",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierWebhook_create"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/v1.NotifierWebhook"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Delete a channel notifier webhook",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Channel 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/server/channel_notifier_status": {
-            "get": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Find channel notifier status",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier_status"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "q",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "o",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md",
-                        "name": "p",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/v1.NotifierStatus"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/server/channel_notifier_status/{uuid}": {
-            "delete": {
-                "security": [
-                    {
-                        "XAuthToken": []
-                    }
-                ],
-                "description": "Delete a channel notifier status",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "server/channel_notifier_status"
-                ],
-                "deprecated": true,
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "EventNotifierStatus 의 Uuid",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
                     }
                 }
             }
@@ -1395,7 +362,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -1841,7 +808,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -2037,7 +1004,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -2175,7 +1142,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v3.HttpRsp_ClusterToken"
+                                "$ref": "#/definitions/cluster_token.HttpRsp_ClusterToken"
                             }
                         }
                     }
@@ -2204,7 +1171,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v3.HttpReq_ClusterToken_create"
+                            "$ref": "#/definitions/cluster_token.HttpReq_ClusterToken_create"
                         }
                     }
                 ],
@@ -2212,7 +1179,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v3.HttpRsp_ClusterToken"
+                            "$ref": "#/definitions/cluster_token.HttpRsp_ClusterToken"
                         }
                     }
                 }
@@ -2248,7 +1215,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v3.HttpRsp_ClusterToken"
+                            "$ref": "#/definitions/cluster_token.HttpRsp_ClusterToken"
                         }
                     }
                 }
@@ -2280,7 +1247,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -2315,7 +1282,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v3.HttpRsp_ClusterToken"
+                            "$ref": "#/definitions/cluster_token.HttpRsp_ClusterToken"
                         }
                     }
                 }
@@ -2352,7 +1319,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v3.HttpReq_ClusterToken_update"
+                            "$ref": "#/definitions/cluster_token.HttpReq_ClusterToken_update"
                         }
                     }
                 ],
@@ -2360,7 +1327,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v3.HttpRsp_ClusterToken"
+                            "$ref": "#/definitions/cluster_token.HttpRsp_ClusterToken"
                         }
                     }
                 }
@@ -2396,7 +1363,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v3.HttpRsp_ClusterToken"
+                            "$ref": "#/definitions/cluster_token.HttpRsp_ClusterToken"
                         }
                     }
                 }
@@ -2573,7 +1540,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v3.HttpRsp_Service"
+                                "$ref": "#/definitions/service.HttpRsp_Service"
                             }
                         }
                     }
@@ -2602,7 +1569,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/v3.HttpReq_Service_create"
+                            "$ref": "#/definitions/service.HttpReq_Service_create"
                         }
                     }
                 ],
@@ -2610,7 +1577,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v3.HttpRsp_Service_create"
+                            "$ref": "#/definitions/service.HttpRsp_Service_create"
                         }
                     }
                 }
@@ -2659,7 +1626,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v3.HttpRsp_ServiceStep"
+                                "$ref": "#/definitions/service.HttpRsp_ServiceStep"
                             }
                         }
                     }
@@ -2696,7 +1663,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v3.HttpRsp_Service"
+                            "$ref": "#/definitions/service.HttpRsp_Service"
                         }
                     }
                 }
@@ -2732,7 +1699,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v3.HttpRsp_ServiceResult"
+                            "$ref": "#/definitions/service.HttpRsp_ServiceResult"
                         }
                     }
                 }
@@ -2770,7 +1737,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v3.HttpRsp_ServiceStep"
+                                "$ref": "#/definitions/service.HttpRsp_ServiceStep"
                             }
                         }
                     }
@@ -2814,7 +1781,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v3.HttpRsp_ServiceStep"
+                            "$ref": "#/definitions/service.HttpRsp_ServiceStep"
                         }
                     }
                 }
@@ -2968,7 +1935,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": ""
+                        "description": "OK"
                     }
                 }
             }
@@ -3016,7 +1983,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v2.HttpRsp_Template"
+                                "$ref": "#/definitions/template.HttpRsp_Template"
                             }
                         }
                     }
@@ -3055,7 +2022,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v2.HttpRsp_TemplateCommand"
+                                "$ref": "#/definitions/template.HttpRsp_TemplateCommand"
                             }
                         }
                     }
@@ -3099,7 +2066,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v2.HttpRsp_TemplateCommand"
+                            "$ref": "#/definitions/template.HttpRsp_TemplateCommand"
                         }
                     }
                 }
@@ -3135,7 +2102,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v2.HttpRsp_Template"
+                            "$ref": "#/definitions/template.HttpRsp_Template"
                         }
                     }
                 }
@@ -3267,20 +2234,11 @@
                 }
             }
         },
-        "v1.Channel": {
+        "cluster_token.HttpReq_ClusterToken_create": {
             "type": "object",
             "properties": {
                 "cluster_uuid": {
                     "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
                 },
                 "name": {
                     "type": "string"
@@ -3288,18 +2246,27 @@
                 "summary": {
                     "type": "string"
                 },
-                "updated": {
-                    "type": "string"
-                },
                 "uuid": {
+                    "description": "optional",
                     "type": "string"
                 }
             }
         },
-        "v1.ChannelNotifierEdge": {
+        "cluster_token.HttpReq_ClusterToken_update": {
             "type": "object",
             "properties": {
-                "channel_uuid": {
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            }
+        },
+        "cluster_token.HttpRsp_ClusterToken": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
                     "type": "string"
                 },
                 "created": {
@@ -3308,21 +2275,61 @@
                 "deleted": {
                     "type": "string"
                 },
-                "id": {
-                    "type": "integer"
-                },
-                "notifier_type": {
+                "expiration_time": {
                     "type": "string"
                 },
-                "notifier_uuid": {
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "issued_at_time": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "token": {
                     "type": "string"
                 },
                 "updated": {
                     "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
                 }
             }
         },
-        "v1.Channel_create": {
+        "service.HttpReq_ClientServiceUpdate": {
+            "type": "object",
+            "properties": {
+                "ended": {
+                    "type": "string"
+                },
+                "result": {
+                    "description": "StepStatus 값에 따라; 결과 혹은 에러 메시지",
+                    "type": "string"
+                },
+                "sequence": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "started": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "uuid": {
+                    "description": "pk",
+                    "type": "string"
+                }
+            }
+        },
+        "service.HttpReq_Service_create": {
             "type": "object",
             "properties": {
                 "cluster_uuid": {
@@ -3331,370 +2338,503 @@
                 "name": {
                     "type": "string"
                 },
-                "notifier_edges": {
+                "steps": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/v1.NotifierEdge"
+                        "type": "object",
+                        "properties": {
+                            "args": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
                     }
                 },
+                "subscribed_channel": {
+                    "type": "string"
+                },
                 "summary": {
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk",
                     "type": "string"
                 }
             }
         },
-        "v1.Channel_update": {
+        "service.HttpRsp_ClientServicePolling": {
+            "type": "object",
+            "properties": {
+                "assigned_client_uuid": {
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "description": "pk char(32) cluster.uuid",
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "partition_date": {
+                    "description": "pk date",
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "step_count": {
+                    "type": "integer"
+                },
+                "step_position": {
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/service.ServiceStep"
+                    }
+                },
+                "subscribed_channel": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "pk datetime(6)",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk char(32) service.uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "service.HttpRsp_Service": {
+            "type": "object",
+            "properties": {
+                "assigned_client_uuid": {
+                    "type": "string"
+                },
+                "cluster_uuid": {
+                    "description": "pk char(32) cluster.uuid",
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "partition_date": {
+                    "description": "pk date",
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "step_count": {
+                    "type": "integer"
+                },
+                "step_position": {
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/service.ServiceStep"
+                    }
+                },
+                "subscribed_channel": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "pk datetime(6)",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk char(32) service.uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "service.HttpRsp_ServiceResult": {
             "type": "object",
             "properties": {
                 "cluster_uuid": {
+                    "description": "pk char(32) cluster.uuid",
                     "type": "string"
                 },
-                "name": {
+                "partition_date": {
+                    "description": "pk date",
                     "type": "string"
                 },
-                "summary": {
+                "result": {
+                    "type": "string"
+                },
+                "result_type": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "description": "pk datetime(6)",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk char(32) service.uuid",
                     "type": "string"
                 }
             }
         },
-        "v1.NotifierConsole": {
+        "service.HttpRsp_ServiceStep": {
             "type": "object",
             "properties": {
-                "Content-Type": {
+                "args": {
+                    "type": "object"
+                },
+                "cluster_uuid": {
+                    "description": "pk char(32) cluster.uuid",
                     "type": "string"
                 },
                 "created": {
                     "type": "string"
                 },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.NotifierConsole_create": {
-            "type": "object",
-            "properties": {
-                "Content-Type": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.NotifierEdge": {
-            "type": "object",
-            "properties": {
-                "notifier_type": {
-                    "type": "string"
-                },
-                "notifier_uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.NotifierRabbitMq": {
-            "type": "object",
-            "properties": {
-                "Content-Type": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "exchange": {
-                    "description": "amqp.Channel.Publish",
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "immediate": {
-                    "type": "boolean"
-                },
-                "mandatory": {
-                    "type": "boolean"
-                },
-                "message_app_id": {
-                    "description": "application use - creating application",
-                    "type": "string"
-                },
-                "message_content_encoding": {
-                    "description": "MIME content encoding",
-                    "type": "string"
-                },
-                "message_content_type": {
-                    "description": "MIME content type",
-                    "type": "string"
-                },
-                "message_correlation_id": {
-                    "description": "application use - correlation identifier",
-                    "type": "string"
-                },
-                "message_delivery_mode": {
-                    "description": "queue implementation use - Transient (1) or Persistent (2)",
-                    "type": "integer"
-                },
-                "message_expiration": {
-                    "description": "implementation use - message expiration spec",
-                    "type": "string"
-                },
-                "message_headers": {
-                    "description": "amqp.Publishing",
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "message_message_id": {
-                    "description": "application use - message identifier",
-                    "type": "string"
-                },
-                "message_priority": {
-                    "description": "queue implementation use - 0 to 9",
-                    "type": "integer"
-                },
-                "message_reply_to": {
-                    "description": "application use - address to to reply to (ex: RPC)",
-                    "type": "string"
-                },
-                "message_timestamp": {
-                    "description": "application use - message timestamp",
-                    "type": "boolean"
-                },
-                "message_type": {
-                    "description": "application use - message type name",
-                    "type": "string"
-                },
-                "message_user_id": {
-                    "description": "application use - creating user id",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "routing_key": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "url": {
-                    "description": "amqp Dial",
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.NotifierRabbitMq_create": {
-            "type": "object",
-            "properties": {
-                "Content-Type": {
-                    "type": "string"
-                },
-                "exchange": {
-                    "description": "amqp.Channel.Publish",
-                    "type": "string"
-                },
-                "immediate": {
-                    "type": "boolean"
-                },
-                "mandatory": {
-                    "type": "boolean"
-                },
-                "message_app_id": {
-                    "description": "application use - creating application",
-                    "type": "string"
-                },
-                "message_content_encoding": {
-                    "description": "MIME content encoding",
-                    "type": "string"
-                },
-                "message_content_type": {
-                    "description": "MIME content type",
-                    "type": "string"
-                },
-                "message_correlation_id": {
-                    "description": "application use - correlation identifier",
-                    "type": "string"
-                },
-                "message_delivery_mode": {
-                    "description": "queue implementation use - Transient (1) or Persistent (2)",
-                    "type": "integer"
-                },
-                "message_expiration": {
-                    "description": "implementation use - message expiration spec",
-                    "type": "string"
-                },
-                "message_headers": {
-                    "description": "amqp.Publishing",
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "message_message_id": {
-                    "description": "application use - message identifier",
-                    "type": "string"
-                },
-                "message_priority": {
-                    "description": "queue implementation use - 0 to 9",
-                    "type": "integer"
-                },
-                "message_reply_to": {
-                    "description": "application use - address to to reply to (ex: RPC)",
-                    "type": "string"
-                },
-                "message_timestamp": {
-                    "description": "application use - message timestamp",
-                    "type": "boolean"
-                },
-                "message_type": {
-                    "description": "application use - message type name",
-                    "type": "string"
-                },
-                "message_user_id": {
-                    "description": "application use - creating user id",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "routing_key": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "url": {
-                    "description": "amqp Dial",
-                    "type": "string"
-                }
-            }
-        },
-        "v1.NotifierStatus": {
-            "type": "object",
-            "properties": {
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "error": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "notifier_type": {
-                    "type": "string"
-                },
-                "notifier_uuid": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.NotifierWebhook": {
-            "type": "object",
-            "properties": {
-                "Content-Type": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "method": {
-                    "description": "http",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "request_headers": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "request_timeout": {
-                    "description": "for timeout context",
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.NotifierWebhook_create": {
-            "type": "object",
-            "properties": {
-                "Content-Type": {
+                "ended": {
                     "type": "string"
                 },
                 "method": {
-                    "description": "http",
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
-                "request_headers": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
+                "partition_date": {
+                    "description": "pk date",
+                    "type": "string"
+                },
+                "result_filter": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "description": "pk tinyint",
+                    "type": "integer"
+                },
+                "started": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "pk datetime(6)",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk char(32) service.uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "service.HttpRsp_Service_create": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "description": "pk char(32) cluster.uuid",
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "partition_date": {
+                    "description": "pk date",
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "step_count": {
+                    "type": "integer"
+                },
+                "step_position": {
+                    "type": "integer"
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/service.ServiceStep_create"
                     }
                 },
-                "request_timeout": {
-                    "description": "for timeout context",
+                "subscribed_channel": {
                     "type": "string"
                 },
                 "summary": {
                     "type": "string"
                 },
-                "url": {
+                "template_uuid": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "pk datetime(6)",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk char(32) service.uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "service.ServiceStep": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "object"
+                },
+                "cluster_uuid": {
+                    "description": "pk char(32) cluster.uuid",
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "ended": {
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "partition_date": {
+                    "description": "pk date",
+                    "type": "string"
+                },
+                "result_filter": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "description": "pk tinyint",
+                    "type": "integer"
+                },
+                "started": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "pk datetime(6)",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk char(32) service.uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "service.ServiceStep_create": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "object"
+                },
+                "cluster_uuid": {
+                    "description": "pk char(32) cluster.uuid",
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "partition_date": {
+                    "description": "pk date",
+                    "type": "string"
+                },
+                "result_filter": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "description": "pk tinyint",
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "pk datetime(6)",
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "pk char(32) service.uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "template.HttpRsp_Template": {
+            "type": "object",
+            "properties": {
+                "commands": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/template.TemplateCommand"
+                    }
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "origin": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "template.HttpRsp_TemplateCommand": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "object"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "result_filter": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "template.TemplateCommand": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "object"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "result_filter": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "template_uuid": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "description": "uuid",
                     "type": "string"
                 }
             }
@@ -3738,86 +2878,6 @@
                 }
             }
         },
-        "v2.HttpRsp_Template": {
-            "type": "object",
-            "properties": {
-                "commands": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v2.TemplateCommand"
-                    }
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "description": "pk",
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "origin": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "uuid",
-                    "type": "string"
-                }
-            }
-        },
-        "v2.HttpRsp_TemplateCommand": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "object"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "description": "pk",
-                    "type": "integer"
-                },
-                "method": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "result_filter": {
-                    "type": "string"
-                },
-                "sequence": {
-                    "type": "integer"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "template_uuid": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "uuid",
-                    "type": "string"
-                }
-            }
-        },
         "v2.HttpRsp_TemplateRecipe": {
             "type": "object",
             "properties": {
@@ -3848,49 +2908,6 @@
                 }
             }
         },
-        "v2.TemplateCommand": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "object"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "description": "pk",
-                    "type": "integer"
-                },
-                "method": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "result_filter": {
-                    "type": "string"
-                },
-                "sequence": {
-                    "type": "integer"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "template_uuid": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "uuid",
-                    "type": "string"
-                }
-            }
-        },
         "v3.ChannelStatusOption_property": {
             "type": "object",
             "properties": {
@@ -3913,61 +2930,6 @@
                         1,
                         2
                     ]
-                }
-            }
-        },
-        "v3.HttpReq_ClientServiceUpdate": {
-            "type": "object",
-            "properties": {
-                "ended": {
-                    "type": "string"
-                },
-                "result": {
-                    "description": "StepStatus 값에 따라; 결과 혹은 에러 메시지",
-                    "type": "string"
-                },
-                "sequence": {
-                    "description": "pk",
-                    "type": "integer"
-                },
-                "started": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "uuid": {
-                    "description": "pk",
-                    "type": "string"
-                }
-            }
-        },
-        "v3.HttpReq_ClusterToken_create": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "optional",
-                    "type": "string"
-                }
-            }
-        },
-        "v3.HttpReq_ClusterToken_update": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
                 }
             }
         },
@@ -4201,102 +3163,6 @@
                 }
             }
         },
-        "v3.HttpReq_Service_create": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "steps": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "args": {
-                                "type": "object",
-                                "additionalProperties": true
-                            }
-                        }
-                    }
-                },
-                "subscribed_channel": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "template_uuid": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "pk",
-                    "type": "string"
-                }
-            }
-        },
-        "v3.HttpRsp_ClientServicePolling": {
-            "type": "object",
-            "properties": {
-                "assigned_client_uuid": {
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "pk char(32) cluster.uuid",
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "partition_date": {
-                    "description": "pk date",
-                    "type": "string"
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "step_count": {
-                    "type": "integer"
-                },
-                "step_position": {
-                    "type": "integer"
-                },
-                "steps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v3.ServiceStep"
-                    }
-                },
-                "subscribed_channel": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "template_uuid": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "description": "pk datetime(6)",
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "pk char(32) service.uuid",
-                    "type": "string"
-                }
-            }
-        },
         "v3.HttpRsp_Cluster": {
             "type": "object",
             "properties": {
@@ -4320,46 +3186,6 @@
                     "type": "object"
                 },
                 "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "uuid",
-                    "type": "string"
-                }
-            }
-        },
-        "v3.HttpRsp_ClusterToken": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "expiration_time": {
-                    "type": "string"
-                },
-                "id": {
-                    "description": "pk",
-                    "type": "integer"
-                },
-                "issued_at_time": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "token": {
                     "type": "string"
                 },
                 "updated": {
@@ -4497,199 +3323,6 @@
                 },
                 "webhook": {
                     "$ref": "#/definitions/v3.NotifierWebhook_property"
-                }
-            }
-        },
-        "v3.HttpRsp_Service": {
-            "type": "object",
-            "properties": {
-                "assigned_client_uuid": {
-                    "type": "string"
-                },
-                "cluster_uuid": {
-                    "description": "pk char(32) cluster.uuid",
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "partition_date": {
-                    "description": "pk date",
-                    "type": "string"
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "step_count": {
-                    "type": "integer"
-                },
-                "step_position": {
-                    "type": "integer"
-                },
-                "steps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v3.ServiceStep"
-                    }
-                },
-                "subscribed_channel": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "template_uuid": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "description": "pk datetime(6)",
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "pk char(32) service.uuid",
-                    "type": "string"
-                }
-            }
-        },
-        "v3.HttpRsp_ServiceResult": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "description": "pk char(32) cluster.uuid",
-                    "type": "string"
-                },
-                "partition_date": {
-                    "description": "pk date",
-                    "type": "string"
-                },
-                "result": {
-                    "type": "string"
-                },
-                "result_type": {
-                    "type": "integer"
-                },
-                "timestamp": {
-                    "description": "pk datetime(6)",
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "pk char(32) service.uuid",
-                    "type": "string"
-                }
-            }
-        },
-        "v3.HttpRsp_ServiceStep": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "object"
-                },
-                "cluster_uuid": {
-                    "description": "pk char(32) cluster.uuid",
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "ended": {
-                    "type": "string"
-                },
-                "method": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "partition_date": {
-                    "description": "pk date",
-                    "type": "string"
-                },
-                "result_filter": {
-                    "type": "string"
-                },
-                "sequence": {
-                    "description": "pk tinyint",
-                    "type": "integer"
-                },
-                "started": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "description": "pk datetime(6)",
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "pk char(32) service.uuid",
-                    "type": "string"
-                }
-            }
-        },
-        "v3.HttpRsp_Service_create": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "description": "pk char(32) cluster.uuid",
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "partition_date": {
-                    "description": "pk date",
-                    "type": "string"
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "step_count": {
-                    "type": "integer"
-                },
-                "step_position": {
-                    "type": "integer"
-                },
-                "steps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v3.ServiceStep_create"
-                    }
-                },
-                "subscribed_channel": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "template_uuid": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "description": "pk datetime(6)",
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "pk char(32) service.uuid",
-                    "type": "string"
                 }
             }
         },
@@ -4871,104 +3504,6 @@
         "v3.RegularPollingOption": {
             "type": "object"
         },
-        "v3.ServiceStep": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "object"
-                },
-                "cluster_uuid": {
-                    "description": "pk char(32) cluster.uuid",
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "ended": {
-                    "type": "string"
-                },
-                "method": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "partition_date": {
-                    "description": "pk date",
-                    "type": "string"
-                },
-                "result_filter": {
-                    "type": "string"
-                },
-                "sequence": {
-                    "description": "pk tinyint",
-                    "type": "integer"
-                },
-                "started": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "description": "pk datetime(6)",
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "pk char(32) service.uuid",
-                    "type": "string"
-                }
-            }
-        },
-        "v3.ServiceStep_create": {
-            "type": "object",
-            "properties": {
-                "args": {
-                    "type": "object"
-                },
-                "cluster_uuid": {
-                    "description": "pk char(32) cluster.uuid",
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "method": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "partition_date": {
-                    "description": "pk date",
-                    "type": "string"
-                },
-                "result_filter": {
-                    "type": "string"
-                },
-                "sequence": {
-                    "description": "pk tinyint",
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "integer"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "description": "pk datetime(6)",
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "pk char(32) service.uuid",
-                    "type": "string"
-                }
-            }
-        },
         "v3.Session": {
             "type": "object",
             "properties": {
@@ -5019,16 +3554,19 @@
     },
     "securityDefinitions": {
         "ClientAuth": {
+            "description": "token for client api",
             "type": "apiKey",
             "name": "x-sudory-client-token",
             "in": "header"
         },
         "ServiceAuth": {
+            "description": "Bearer token for service api",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
         },
         "XAuthToken": {
+            "description": "limit for access sudory api",
             "type": "apiKey",
             "name": "x_auth_token",
             "in": "header"

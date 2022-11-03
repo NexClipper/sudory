@@ -7,13 +7,13 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	clusterv3 "github.com/NexClipper/sudory/pkg/server/model/cluster/v3"
-	clustertokenv3 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v3"
+	"github.com/NexClipper/sudory/pkg/server/model/cluster_token/v3"
 	cryptov2 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v2"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
@@ -27,10 +27,10 @@ import (
 // @Produce     json
 // @Tags        server/cluster_token
 // @Router      /server/cluster_token [post]
-// @Param       object       body   v3.HttpReq_ClusterToken_create true  "ClusterToken HttpReq_ClusterToken_create"
-// @Success     200 {object} v3.HttpRsp_ClusterToken
+// @Param       object       body   cluster_token.HttpReq_ClusterToken_create true  "ClusterToken HttpReq_ClusterToken_create"
+// @Success     200 {object} cluster_token.HttpRsp_ClusterToken
 func (ctl ControlVanilla) CreateClusterToken(ctx echo.Context) (err error) {
-	body := new(clustertokenv3.HttpReq_ClusterToken_create)
+	body := new(cluster_token.HttpReq_ClusterToken_create)
 	err = func() (err error) {
 		if err := echoutil.Bind(ctx, body); err != nil {
 			return errors.Wrapf(err, "bind%s",
@@ -69,7 +69,7 @@ func (ctl ControlVanilla) CreateClusterToken(ctx echo.Context) (err error) {
 			stmt.Equal("uuid", body.ClusterUuid),
 			stmt.IsNull("deleted"),
 		)
-		cluster_exist, err := stmtex.ExistContext(cluster_table, cluster_cond)(ctx.Request().Context(), ctl, ctl.Dialect())
+		cluster_exist, err := ctl.dialect.Exist(cluster_table, cluster_cond)(ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "check cluster")
 		}
@@ -88,7 +88,7 @@ func (ctl ControlVanilla) CreateClusterToken(ctx echo.Context) (err error) {
 	tokenstr := macro.NewUuidString()
 
 	//property
-	new_token := clustertokenv3.ClusterToken{}
+	new_token := cluster_token.ClusterToken{}
 	new_token.Uuid = body.Uuid
 	new_token.Name = body.Name
 	new_token.Summary = body.Summary
@@ -102,8 +102,8 @@ func (ctl ControlVanilla) CreateClusterToken(ctx echo.Context) (err error) {
 	err = func() error {
 		var affected int64
 		// save cluster token
-		affected, new_token.ID, err = stmtex.Insert(new_token.TableName(), new_token.ColumnNames(), new_token.Values()).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		affected, new_token.ID, err = ctl.dialect.Insert(new_token.TableName(), new_token.ColumnNames(), new_token.Values())(
+			ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "save cluster token")
 		}
@@ -120,7 +120,7 @@ func (ctl ControlVanilla) CreateClusterToken(ctx echo.Context) (err error) {
 		return errors.Wrapf(err, "failed to create cluster token")
 	}
 
-	return ctx.JSON(http.StatusOK, clustertokenv3.HttpRsp_ClusterToken(new_token))
+	return ctx.JSON(http.StatusOK, cluster_token.HttpRsp_ClusterToken(new_token))
 }
 
 // @Description Find Cluster Token
@@ -132,7 +132,7 @@ func (ctl ControlVanilla) CreateClusterToken(ctx echo.Context) (err error) {
 // @Param       q            query  string false "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Param       o            query  string false "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Param       p            query  string false "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
-// @Success     200 {array} v3.HttpRsp_ClusterToken
+// @Success     200 {array} cluster_token.HttpRsp_ClusterToken
 func (ctl ControlVanilla) FindClusterToken(ctx echo.Context) error {
 	q, err := stmt.ConditionLexer.Parse(echoutil.QueryParam(ctx)["q"])
 	if err != nil && !logs.DeepCompare(err, stmt.ErrorInvalidArgumentEmptyString) {
@@ -161,26 +161,27 @@ func (ctl ControlVanilla) FindClusterToken(ctx echo.Context) error {
 		return HttpError(err, http.StatusForbidden)
 	}
 
-	rsp := make([]clustertokenv3.HttpRsp_ClusterToken, 0, state.ENV__INIT_SLICE_CAPACITY__())
-	token := clustertokenv3.ClusterToken{}
-	token_table := clustertokenv3.TableNameWithTenant(claims.Hash)
+	rsp := make([]cluster_token.HttpRsp_ClusterToken, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	token := cluster_token.ClusterToken{}
+	token_table := cluster_token.TableNameWithTenant(claims.Hash)
 
-	err = stmtex.Select(token_table, token.ColumnNames(), q, o, p).
-		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner, _ int) error {
+	err = ctl.dialect.QueryRows(token_table, token.ColumnNames(), q, o, p)(ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner, _ int) error {
 			err := token.Scan(scan)
 			if err != nil {
-				return errors.Wrapf(err, "failed to scan")
+				err = errors.WithStack(err)
+				return err
 			}
 
 			rsp = append(rsp, token)
-			return nil
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to find cluster token")
 	}
 
-	return ctx.JSON(http.StatusOK, []clustertokenv3.HttpRsp_ClusterToken(rsp))
+	return ctx.JSON(http.StatusOK, []cluster_token.HttpRsp_ClusterToken(rsp))
 
 }
 
@@ -191,7 +192,7 @@ func (ctl ControlVanilla) FindClusterToken(ctx echo.Context) error {
 // @Tags        server/cluster_token
 // @Router      /server/cluster_token/{uuid} [get]
 // @Param       uuid         path   string true  "ClusterToken Uuid"
-// @Success     200 {object} v3.HttpRsp_ClusterToken
+// @Success     200 {object} cluster_token.HttpRsp_ClusterToken
 func (ctl ControlVanilla) GetClusterToken(ctx echo.Context) (err error) {
 	err = func() (err error) {
 		if len(echoutil.Param(ctx)[__UUID__]) == 0 {
@@ -214,25 +215,27 @@ func (ctl ControlVanilla) GetClusterToken(ctx echo.Context) (err error) {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	token_table := clustertokenv3.TableNameWithTenant(claims.Hash)
-	token := clustertokenv3.ClusterToken{}
+	token_table := cluster_token.TableNameWithTenant(claims.Hash)
+	token := cluster_token.ClusterToken{}
 	token.Uuid = uuid
 
 	token_cond := stmt.And(
 		stmt.Equal("uuid", token.Uuid),
 		stmt.IsNull("deleted"),
 	)
-	err = stmtex.Select(token_table, token.ColumnNames(), token_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) (err error) {
-			return token.Scan(scan)
+	err = ctl.dialect.QueryRow(token_table, token.ColumnNames(), token_cond, nil, nil)(ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := token.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 
 	if err != nil {
 		return errors.Wrapf(err, "failed to get cluster token")
 	}
 
-	return ctx.JSON(http.StatusOK, clustertokenv3.HttpRsp_ClusterToken(token))
+	return ctx.JSON(http.StatusOK, cluster_token.HttpRsp_ClusterToken(token))
 }
 
 // @Description Update Label of Cluster Token
@@ -242,10 +245,10 @@ func (ctl ControlVanilla) GetClusterToken(ctx echo.Context) (err error) {
 // @Tags        server/cluster_token
 // @Router		/server/cluster_token/{uuid}/label [put]
 // @Param       uuid         path   string                         true  "ClusterToken Uuid"
-// @Param       object       body   v3.HttpReq_ClusterToken_update true  "ClusterToken HttpReq_ClusterToken_update"
-// @Success 	200 {object} v3.HttpRsp_ClusterToken
+// @Param       object       body   cluster_token.HttpReq_ClusterToken_update true  "ClusterToken HttpReq_ClusterToken_update"
+// @Success 	200 {object} cluster_token.HttpRsp_ClusterToken
 func (ctl ControlVanilla) UpdateClusterTokenLabel(ctx echo.Context) (err error) {
-	body := new(clustertokenv3.HttpReq_ClusterToken_update)
+	body := new(cluster_token.HttpReq_ClusterToken_update)
 	err = func() (err error) {
 		if err := echoutil.Bind(ctx, body); err != nil {
 			return errors.Wrapf(err, "bind%s",
@@ -274,18 +277,21 @@ func (ctl ControlVanilla) UpdateClusterTokenLabel(ctx echo.Context) (err error) 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
 	// get cluster token
-	token_table := clustertokenv3.TableNameWithTenant(claims.Hash)
-	var token clustertokenv3.ClusterToken
+	token_table := cluster_token.TableNameWithTenant(claims.Hash)
+	var token cluster_token.ClusterToken
 	token.Uuid = uuid
 	token_cond := stmt.And(
 		stmt.Equal("uuid", token.Uuid),
 		stmt.IsNull("deleted"),
 	)
 
-	err = stmtex.Select(token_table, token.ColumnNames(), token_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) error {
-			return token.Scan(scan)
+	err = ctl.dialect.QueryRow(token_table, token.ColumnNames(), token_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := token.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "get cluster token")
@@ -315,8 +321,8 @@ func (ctl ControlVanilla) UpdateClusterTokenLabel(ctx echo.Context) (err error) 
 
 	err = func() error {
 		// update cluster token
-		_, err := stmtex.Update(token.TableName(), updateSet, token_cond).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		_, err := ctl.dialect.Update(token.TableName(), updateSet, token_cond)(
+			ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "update cluster token")
 		}
@@ -329,7 +335,7 @@ func (ctl ControlVanilla) UpdateClusterTokenLabel(ctx echo.Context) (err error) 
 		return errors.Wrapf(err, "failed to update cluster token")
 	}
 
-	return ctx.JSON(http.StatusOK, clustertokenv3.HttpRsp_ClusterToken(token))
+	return ctx.JSON(http.StatusOK, cluster_token.HttpRsp_ClusterToken(token))
 }
 
 // @Description Refresh Time of Cluster Token
@@ -339,7 +345,7 @@ func (ctl ControlVanilla) UpdateClusterTokenLabel(ctx echo.Context) (err error) 
 // @Tags        server/cluster_token
 // @Router      /server/cluster_token/{uuid}/refresh [put]
 // @Param       uuid         path   string true  "ClusterToken Uuid"
-// @Success     200 {object} v3.HttpRsp_ClusterToken
+// @Success     200 {object} cluster_token.HttpRsp_ClusterToken
 func (ctl ControlVanilla) RefreshClusterTokenTime(ctx echo.Context) (err error) {
 	err = func() (err error) {
 		if len(echoutil.Param(ctx)[__UUID__]) == 0 {
@@ -363,18 +369,21 @@ func (ctl ControlVanilla) RefreshClusterTokenTime(ctx echo.Context) (err error) 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
 	// get cluster token
-	token_table := clustertokenv3.TableNameWithTenant(claims.Hash)
-	var token clustertokenv3.ClusterToken
+	token_table := cluster_token.TableNameWithTenant(claims.Hash)
+	var token cluster_token.ClusterToken
 	token.Uuid = uuid
 	token_cond := stmt.And(
 		stmt.Equal("uuid", token.Uuid),
 		stmt.IsNull("deleted"),
 	)
 
-	err = stmtex.Select(token_table, token.ColumnNames(), token_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) error {
-			return token.Scan(scan)
+	err = ctl.dialect.QueryRow(token_table, token.ColumnNames(), token_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := token.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "get cluster token")
@@ -397,8 +406,8 @@ func (ctl ControlVanilla) RefreshClusterTokenTime(ctx echo.Context) (err error) 
 
 	err = func() error {
 		// update cluster token
-		_, err := stmtex.Update(token.TableName(), updateSet, token_cond).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		_, err := ctl.dialect.Update(token.TableName(), updateSet, token_cond)(
+			ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "update cluster token")
 		}
@@ -411,7 +420,7 @@ func (ctl ControlVanilla) RefreshClusterTokenTime(ctx echo.Context) (err error) 
 		return errors.Wrapf(err, "failed to update cluster token")
 	}
 
-	return ctx.JSON(http.StatusOK, clustertokenv3.HttpRsp_ClusterToken(token))
+	return ctx.JSON(http.StatusOK, cluster_token.HttpRsp_ClusterToken(token))
 }
 
 // @Description Expire Cluster Token
@@ -421,7 +430,7 @@ func (ctl ControlVanilla) RefreshClusterTokenTime(ctx echo.Context) (err error) 
 // @Tags        server/cluster_token
 // @Router      /server/cluster_token/{uuid}/expire [put]
 // @Param       uuid         path   string true  "ClusterToken Uuid"
-// @Success     200 {object} v3.HttpRsp_ClusterToken
+// @Success     200 {object} cluster_token.HttpRsp_ClusterToken
 func (ctl ControlVanilla) ExpireClusterToken(ctx echo.Context) (err error) {
 	err = func() (err error) {
 		if len(echoutil.Param(ctx)[__UUID__]) == 0 {
@@ -445,18 +454,21 @@ func (ctl ControlVanilla) ExpireClusterToken(ctx echo.Context) (err error) {
 	uuid := echoutil.Param(ctx)[__UUID__]
 
 	// get cluster token
-	token_table := clustertokenv3.TableNameWithTenant(claims.Hash)
-	var token clustertokenv3.ClusterToken
+	token_table := cluster_token.TableNameWithTenant(claims.Hash)
+	var token cluster_token.ClusterToken
 	token.Uuid = uuid
 	token_cond := stmt.And(
 		stmt.Equal("uuid", token.Uuid),
 		stmt.IsNull("deleted"),
 	)
 
-	err = stmtex.Select(token_table, token.ColumnNames(), token_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) error {
-			return token.Scan(scan)
+	err = ctl.dialect.QueryRow(token_table, token.ColumnNames(), token_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := token.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "get cluster token")
@@ -479,8 +491,8 @@ func (ctl ControlVanilla) ExpireClusterToken(ctx echo.Context) (err error) {
 
 	err = func() error {
 		// update cluster token
-		_, err := stmtex.Update(token.TableName(), updateSet, token_cond).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		_, err := ctl.dialect.Update(token.TableName(), updateSet, token_cond)(
+			ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "update cluster token")
 		}
@@ -493,7 +505,7 @@ func (ctl ControlVanilla) ExpireClusterToken(ctx echo.Context) (err error) {
 		return errors.Wrapf(err, "failed to update cluster token")
 	}
 
-	return ctx.JSON(http.StatusOK, clustertokenv3.HttpRsp_ClusterToken(token))
+	return ctx.JSON(http.StatusOK, cluster_token.HttpRsp_ClusterToken(token))
 }
 
 // @Description Delete a Cluster Token
@@ -527,17 +539,20 @@ func (ctl ControlVanilla) DeleteClusterToken(ctx echo.Context) (err error) {
 	uuid := echoutil.Param(ctx)[__UUID__]
 
 	// get cluster token
-	token_table := clustertokenv3.TableNameWithTenant(claims.Hash)
-	var token clustertokenv3.ClusterToken
+	token_table := cluster_token.TableNameWithTenant(claims.Hash)
+	var token cluster_token.ClusterToken
 	token.Uuid = uuid
 	token_cond := stmt.And(
 		stmt.Equal("uuid", token.Uuid),
 	)
 
-	err = stmtex.Select(token_table, token.ColumnNames(), token_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) error {
-			return token.Scan(scan)
+	err = ctl.dialect.QueryRow(token_table, token.ColumnNames(), token_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := token.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "get cluster token")
@@ -552,8 +567,7 @@ func (ctl ControlVanilla) DeleteClusterToken(ctx echo.Context) (err error) {
 
 	err = func() error {
 		// update cluster token
-		_, err := stmtex.Update(token.TableName(), updateSet, token_cond).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		_, err := ctl.dialect.Update(token.TableName(), updateSet, token_cond)(ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "update cluster token")
 		}

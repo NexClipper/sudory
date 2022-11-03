@@ -7,7 +7,7 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/config"
 	"github.com/NexClipper/sudory/pkg/server/control"
-	flavor "github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/resolvers/mysql"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/labstack/echo/v4"
@@ -47,10 +47,10 @@ func XAuthToken(cfg *config.Config) echo.MiddlewareFunc {
 	}
 }
 
-func ClientSessionToken(db *sql.DB) echo.MiddlewareFunc {
+func ClientSessionToken(db *sql.DB, dialect excute.SqlExcutor) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
-			if _, err := control.GetClientSessionClaims(c, db, flavor.Dialect()); err != nil {
+			if _, err := control.GetClientSessionClaims(c, db, dialect); err != nil {
 				return echo.NewHTTPError(http.StatusUnauthorized).SetInternal(errors.Wrapf(err,
 					http.StatusText(http.StatusUnauthorized)))
 			}

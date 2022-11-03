@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	"github.com/NexClipper/sudory/pkg/server/model/auths/v2"
 	"github.com/NexClipper/sudory/pkg/server/model/tenants/v3"
@@ -51,10 +51,13 @@ func (ctl ControlVanilla) Tenant(ctx echo.Context) (err error) {
 		Hash: hash,
 	}
 	tenant_cond := stmt.Equal("hash", tenant.Hash)
-	err = stmtex.Select(tenant.TableName(), []string{"id"}, tenant_cond, nil, nil).
-		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner, i int) error {
-			return scan.Scan(&id)
+	err = ctl.dialect.QueryRows(tenant.TableName(), []string{"id"}, tenant_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner, i int) error {
+			err := scan.Scan(&id)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to get tenant")
@@ -66,8 +69,8 @@ func (ctl ControlVanilla) Tenant(ctx echo.Context) (err error) {
 		// save tenant
 		new_tenant := tenants.NewTenant(hash, pattern, time_now)
 		updatecolumns := []string{"hash"}
-		save_tenant := stmtex.InsertOrUpdate(new_tenant.TableName(), new_tenant.ColumnNames(), updatecolumns, new_tenant.Values())
-		_, lastid, err := save_tenant.ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		_, lastid, err := ctl.dialect.InsertOrUpdate(new_tenant.TableName(), new_tenant.ColumnNames(), updatecolumns, new_tenant.Values())(
+			ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "failed to save new tenant")
 		}

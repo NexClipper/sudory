@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strconv"
 	"time"
@@ -62,6 +63,13 @@ func (null *NullInt) UnmarshalJSON(data []byte) error {
 	return err
 }
 
+func (null NullInt) Print() string {
+	if null.Valid {
+		return strconv.FormatInt(null.Int64, 10)
+	}
+	return string(json_null)
+}
+
 type NullUint8 struct {
 	sql.NullByte
 }
@@ -104,6 +112,13 @@ func (null *NullUint8) UnmarshalJSON(data []byte) error {
 	return err
 }
 
+func (null NullUint8) Print() string {
+	if null.Valid {
+		return fmt.Sprintf("%v", null.NullByte)
+	}
+	return string(json_null)
+}
+
 type NullBool struct {
 	sql.NullBool
 }
@@ -143,6 +158,13 @@ func (null *NullBool) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (null NullBool) Print() string {
+	if null.Valid {
+		return strconv.FormatBool(null.Bool)
+	}
+	return string(json_null)
+}
+
 type NullString struct {
 	sql.NullString
 }
@@ -153,7 +175,7 @@ func NewNullString(s string) *NullString {
 
 func (ns NullString) Ptr() (out *string) {
 	if ns.Valid {
-		out = &ns.String
+		out = &ns.NullString.String
 	}
 
 	return
@@ -164,7 +186,7 @@ func (ns NullString) MarshalJSON() ([]byte, error) {
 		return json_null, nil
 	}
 
-	return []byte(strconv.Quote(ns.String)), nil
+	return []byte(strconv.Quote(ns.NullString.String)), nil
 }
 
 func (ns *NullString) UnmarshalJSON(data []byte) (err error) {
@@ -172,11 +194,18 @@ func (ns *NullString) UnmarshalJSON(data []byte) (err error) {
 		return nil
 	}
 
-	ns.String, err = strconv.Unquote(string(data))
+	ns.NullString.String, err = strconv.Unquote(string(data))
 
 	ns.Valid = err == nil
 
 	return nil
+}
+
+func (null NullString) Print() string {
+	if null.Valid {
+		return null.NullString.String
+	}
+	return string(json_null)
 }
 
 type NullTime struct {
@@ -212,6 +241,13 @@ func (nt *NullTime) UnmarshalJSON(data []byte) error {
 	nt.Valid = err == nil
 
 	return err
+}
+
+func (null NullTime) Print() string {
+	if null.Valid {
+		return null.Time.Format(time.RFC3339Nano)
+	}
+	return string(json_null)
 }
 
 type NullObject struct {
@@ -273,6 +309,14 @@ func (null *NullObject) UnmarshalJSON(data []byte) error {
 	return err
 }
 
+func (null NullObject) Print() string {
+	if null.Valid {
+		b, _ := json.Marshal(null.Object)
+		return string(b)
+	}
+	return string(json_null)
+}
+
 type NullKeyValue struct {
 	KeyValue map[string]string
 	Valid    bool
@@ -330,4 +374,12 @@ func (null *NullKeyValue) UnmarshalJSON(data []byte) error {
 	null.Valid = err == nil
 
 	return err
+}
+
+func (null NullKeyValue) Print() string {
+	if null.Valid {
+		b, _ := json.Marshal(null.KeyValue)
+		return string(b)
+	}
+	return string(json_null)
 }

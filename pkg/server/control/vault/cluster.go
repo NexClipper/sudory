@@ -1,5 +1,16 @@
 package vault
 
+import (
+	"context"
+
+	"github.com/NexClipper/sudory/pkg/server/database"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
+	"github.com/NexClipper/sudory/pkg/server/model/auths/v2"
+	clusters "github.com/NexClipper/sudory/pkg/server/model/cluster/v3"
+	"github.com/pkg/errors"
+)
+
 // import (
 // 	"github.com/NexClipper/sudory/pkg/server/database"
 // 	"github.com/NexClipper/sudory/pkg/server/database/prepare"
@@ -99,3 +110,23 @@ package vault
 
 // 	return nil
 // }
+
+func CheckCluster(ctx context.Context, tx excute.Preparer, dialect excute.SqlExcutor,
+	claims *auths.TenantAccessTokenClaims,
+	cluster_uuid string,
+) error {
+	// check cluster
+	cluster_table := clusters.TableNameWithTenant(claims.Hash)
+	cluster_cond := stmt.And(
+		stmt.Equal("uuid", cluster_uuid),
+		stmt.IsNull("deleted"),
+	)
+	cluster_exist, err := dialect.Exist(cluster_table, cluster_cond)(ctx, tx)
+	if err != nil {
+		return errors.Wrapf(err, "check cluster")
+	}
+	if !cluster_exist {
+		return errors.Wrapf(database.ErrorRecordWasNotFound, "check cluster")
+	}
+	return nil
+}

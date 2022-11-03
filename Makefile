@@ -5,7 +5,7 @@ BUILD_DATE=$(shell date '+%Y-%m-%dT%H:%M:%S')
 LDFLAGS=-X $(PACKAGE)/version.Version=$(VERSION) -X $(PACKAGE)/version.Commit=$(COMMIT) -X $(PACKAGE)/version.BuildDate=$(BUILD_DATE)
 
 prep:
-	go install github.com/swaggo/swag/cmd/swag@v1.7.8
+	go install github.com/swaggo/swag/cmd/swag@v1.8.7
 
 swagger:
 	cd pkg/server/route;go generate

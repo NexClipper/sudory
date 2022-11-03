@@ -5,24 +5,18 @@ import (
 	"sort"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
-	v3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
+	service "github.com/NexClipper/sudory/pkg/server/model/service/v3"
 	"github.com/pkg/errors"
 )
 
-type servicev3 struct{}
-
-var (
-	Servicev3 = new(servicev3)
-)
-
-func (servicev3) GetService(
+func GetService(
 	ctx context.Context,
-	db stmtex.Preparer, dialect string,
+	db excute.Preparer, dialect excute.SqlExcutor,
 	cluster_uuid string, uuid string,
-) (record *v3.Service, err error) {
-	var table v3.Service
+) (*service.Service, error) {
+	var table service.Service
 
 	args := make([]map[string]interface{}, 0, 2)
 	if 0 < len(cluster_uuid) {
@@ -32,45 +26,44 @@ func (servicev3) GetService(
 
 	cond := stmt.And(args...)
 
-	err = stmtex.Select(table.TableName(), table.ColumnNames(), cond, nil, nil).
-		QueryRowsContext(ctx, db, dialect)(func(scan stmtex.Scanner, _ int) error {
+	var record *service.Service
+	err := dialect.QueryRows(table.TableName(), table.ColumnNames(), cond, nil, nil)(ctx, db)(
+		func(scan excute.Scanner, _ int) error {
+			var service service.Service
+			err := service.Scan(scan)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
+			}
 
-		tmp := new(v3.Service)
-		err = tmp.Scan(scan)
-		if err != nil {
-			return errors.Wrapf(err, "scan service")
-		}
+			if record == nil {
+				record = &service
+			}
 
-		if record == nil {
-			record = tmp
-		}
+			// find latest record by created
+			if record.Timestamp.Before(service.Timestamp) {
+				record = &service
+			}
 
-		// find latest record by created
-		if record.Timestamp.Before(tmp.Timestamp) {
-			record = tmp
-		}
-
-		return nil
-	})
+			return err
+		})
 	if err != nil {
 		err = errors.Wrapf(err, "failed to found service")
-		return
+		return record, err
 	}
 	if record == nil {
 		err = errors.New("could not found service record")
-		return
+		return record, err
 	}
 
-	return
+	return record, err
 }
 
-func (servicev3) GetServicesPolling(
+func GetServicesPolling(
 	ctx context.Context,
-	db stmtex.Preparer, dialect string,
+	db excute.Preparer, dialect excute.SqlExcutor,
 	cluster_uuid string, polling_offset vanilla.NullTime,
-) (records []v3.Service_polling, err error) {
-	var record v3.Service_polling
-	recordSet_ := make(map[string]v3.Service_polling)
+) ([]service.Service_polling, error) {
 
 	args := make([]map[string]interface{}, 0, 2)
 	if 0 < len(cluster_uuid) {
@@ -81,39 +74,40 @@ func (servicev3) GetServicesPolling(
 	}
 
 	if len(args) == 0 {
-		err = errors.New("need more conditon")
-		return
+		return nil, errors.New("need more conditon")
 	}
 
 	cond := stmt.And(args...)
 
 	// limit := vanilla.Limit(math.MaxInt8)
 
-	err = stmtex.Select(record.TableName(), record.ColumnNames(), cond, nil, nil).
-		QueryRowsContext(ctx, db, dialect)(func(scan stmtex.Scanner, i int) error {
+	var recordSet_ = make(map[string]service.Service_polling)
+	var record service.Service_polling
+	err := dialect.QueryRows(record.TableName(), record.ColumnNames(), cond, nil, nil)(ctx, db)(
+		func(scan excute.Scanner, i int) error {
+			err := record.Scan(scan)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
+			}
 
-		err = record.Scan(scan)
-		if err != nil {
-			return errors.Wrapf(err, "scan service")
-		}
+			if _, ok := recordSet_[record.Uuid]; !ok {
+				recordSet_[record.Uuid] = record
+			}
 
-		if _, ok := recordSet_[record.Uuid]; !ok {
-			recordSet_[record.Uuid] = record
-		}
+			// find latest record by created
+			if recordSet_[record.Uuid].Timestamp.Before(record.Timestamp) {
+				recordSet_[record.Uuid] = record
+			}
 
-		// find latest record by created
-		if recordSet_[record.Uuid].Timestamp.Before(record.Timestamp) {
-			recordSet_[record.Uuid] = record
-		}
-
-		return nil
-	})
+			return err
+		})
 	if err != nil {
 		err = errors.Wrapf(err, "failed to found service")
-		return
+		return nil, err
 	}
 
-	records = make([]v3.Service_polling, 0, len(recordSet_))
+	var records = make([]service.Service_polling, 0, len(recordSet_))
 	for _, service := range recordSet_ {
 		records = append(records, service)
 	}
@@ -126,15 +120,14 @@ func (servicev3) GetServicesPolling(
 		return records[i].Created.Before(records[j].Created)
 	})
 
-	return
+	return records, nil
 }
 
-func (servicev3) GetServiceStep(
+func GetServiceStep(
 	ctx context.Context,
-	db stmtex.Preparer, dialect string,
+	db excute.Preparer, dialect excute.SqlExcutor,
 	cluster_uuid string, uuid string, sequence int,
-) (record *v3.ServiceStep, err error) {
-	var table v3.ServiceStep
+) (*service.ServiceStep, error) {
 
 	args := make([]map[string]interface{}, 0, 2)
 	if 0 < len(cluster_uuid) {
@@ -145,46 +138,45 @@ func (servicev3) GetServiceStep(
 
 	cond := stmt.And(args...)
 
-	err = stmtex.Select(table.TableName(), table.ColumnNames(), cond, nil, nil).
-		QueryRowsContext(ctx, db, dialect)(func(scan stmtex.Scanner, _ int) error {
+	var record *service.ServiceStep
+	var table service.ServiceStep
+	err := dialect.QueryRows(table.TableName(), table.ColumnNames(), cond, nil, nil)(ctx, db)(
+		func(scan excute.Scanner, _ int) error {
+			var step service.ServiceStep
+			err := step.Scan(scan)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
+			}
 
-		tmp := new(v3.ServiceStep)
-		err = tmp.Scan(scan)
-		if err != nil {
-			return errors.Wrapf(err, "scan service step")
-		}
+			if record == nil {
+				record = &step
+			}
 
-		if record == nil {
-			record = tmp
-		}
+			// find latest record by created
+			if record.Timestamp.Before(step.Timestamp) {
+				record = &step
+			}
 
-		// find latest record by created
-		if record.Timestamp.Before(tmp.Timestamp) {
-			record = tmp
-		}
-
-		return nil
-	})
+			return err
+		})
 	if err != nil {
 		err = errors.Wrapf(err, "failed to found service step")
-		return
+		return record, err
 	}
 	if record == nil {
 		err = errors.New("could not found service step record")
-		return
+		return record, err
 	}
 
-	return
+	return record, nil
 }
 
-func (servicev3) GetServiceSteps(
+func GetServiceSteps(
 	ctx context.Context,
-	db stmtex.Preparer, dialect string,
+	db excute.Preparer, dialect excute.SqlExcutor,
 	cluster_uuid string, uuid string,
-) (records []v3.ServiceStep, err error) {
-
-	recordSet := make(map[int]v3.ServiceStep)
-	var record v3.ServiceStep
+) ([]service.ServiceStep, error) {
 
 	args := make([]map[string]interface{}, 0, 2)
 	if 0 < len(cluster_uuid) {
@@ -194,31 +186,33 @@ func (servicev3) GetServiceSteps(
 
 	cond := stmt.And(args...)
 
-	err = stmtex.Select(record.TableName(), record.ColumnNames(), cond, nil, nil).
-		QueryRowsContext(ctx, db, dialect)(func(scan stmtex.Scanner, _ int) error {
+	var recordSet = make(map[int]service.ServiceStep)
+	var record service.ServiceStep
+	err := dialect.QueryRows(record.TableName(), record.ColumnNames(), cond, nil, nil)(ctx, db)(
+		func(scan excute.Scanner, _ int) error {
+			err := record.Scan(scan)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
+			}
 
-		err = record.Scan(scan)
-		if err != nil {
-			return errors.Wrapf(err, "scan service step")
-		}
+			if _, ok := recordSet[record.Sequence]; !ok {
+				recordSet[record.Sequence] = record
+			}
 
-		if _, ok := recordSet[record.Sequence]; !ok {
-			recordSet[record.Sequence] = record
-		}
+			// find latest record by created
+			if recordSet[record.Sequence].Timestamp.Before(record.Timestamp) {
+				recordSet[record.Sequence] = record
+			}
 
-		// find latest record by created
-		if recordSet[record.Sequence].Timestamp.Before(record.Timestamp) {
-			recordSet[record.Sequence] = record
-		}
-
-		return nil
-	})
+			return err
+		})
 	if err != nil {
 		err = errors.Wrapf(err, "failed to found service step")
-		return
+		return nil, err
 	}
 
-	records = make([]v3.ServiceStep, 0, len(recordSet))
+	var records = make([]service.ServiceStep, 0, len(recordSet))
 	for key := range recordSet {
 		records = append(records, recordSet[key])
 	}
@@ -227,46 +221,47 @@ func (servicev3) GetServiceSteps(
 		return records[i].Sequence < records[j].Sequence
 	})
 
-	return
+	return records, nil
 }
 
-func (servicev3) GetServiceResult(
+func GetServiceResult(
 	ctx context.Context,
-	db stmtex.Preparer, dialect string,
+	db excute.Preparer, dialect excute.SqlExcutor,
 	cond stmt.ConditionStmt, order stmt.OrderStmt, page stmt.PaginationStmt,
-) (record *v3.ServiceResult, err error) {
-	var table v3.ServiceResult
+) (*service.ServiceResult, error) {
 
-	err = stmtex.Select(table.TableName(), table.ColumnNames(), cond, order, page).
-		QueryRowsContext(ctx, db, dialect)(func(scan stmtex.Scanner, _ int) error {
+	var record *service.ServiceResult
+	var table service.ServiceResult
+	err := dialect.QueryRows(table.TableName(), table.ColumnNames(), cond, order, page)(ctx, db)(
+		func(scan excute.Scanner, _ int) error {
+			var result service.ServiceResult
+			err := result.Scan(scan)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
+			}
 
-		tmp := new(v3.ServiceResult)
-		err = tmp.Scan(scan)
-		if err != nil {
-			return errors.Wrapf(err, "scan service result")
-		}
+			if record == nil {
+				record = &result
+			}
 
-		if record == nil {
-			record = tmp
-		}
+			// find latest record by created
+			if record.Timestamp.Before(result.Timestamp) {
+				record = &result
+			}
 
-		// find latest record by created
-		if record.Timestamp.Before(tmp.Timestamp) {
-			record = tmp
-		}
-
-		return nil
-	})
+			return err
+		})
 	if err != nil {
 		err = errors.Wrapf(err, "failed to found service result")
-		return
+		return record, err
 	}
 	if record == nil {
 		err = errors.New("could not found service result record")
-		return
+		return record, err
 	}
 
-	return
+	return record, nil
 }
 
 type Table interface {
@@ -275,7 +270,7 @@ type Table interface {
 	ColumnNames() []string
 }
 
-func SaveMultiTable(tx stmtex.Preparer, dialect string, tables []Table) error {
+func SaveMultiTable(tx excute.Preparer, dialect excute.SqlExcutor, tables []Table) error {
 	BuildInsertValues := func(tables []Table) [][]interface{} {
 		values := make([][]interface{}, len(tables))
 		for i, table := range tables {
@@ -302,8 +297,7 @@ func SaveMultiTable(tx stmtex.Preparer, dialect string, tables []Table) error {
 		return nil
 	}
 
-	affected, _, err := stmtex.Insert(tablename, columnnames, values...).
-		Exec(tx, dialect)
+	affected, _, err := dialect.Insert(tablename, columnnames, values...)(context.Background(), tx)
 	if err != nil {
 		return errors.Wrapf(err, "could not save")
 	}

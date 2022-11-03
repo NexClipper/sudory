@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	globvarv2 "github.com/NexClipper/sudory/pkg/server/model/global_variables/v2"
@@ -25,7 +25,7 @@ import (
 // @Param       o            query  string false "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Param       p            query  string false "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Success 200 {array} v2.GlobalVariables
-func (ctl ControlVanilla) FindGlobalVariables(ctx echo.Context) (err error) {
+func (ctl ControlVanilla) FindGlobalVariables(ctx echo.Context) error {
 	q, err := stmt.ConditionLexer.Parse(echoutil.QueryParam(ctx)["q"])
 	if err != nil && !logs.DeepCompare(err, stmt.ErrorInvalidArgumentEmptyString) {
 		return HttpError(err, http.StatusBadRequest)
@@ -46,18 +46,21 @@ func (ctl ControlVanilla) FindGlobalVariables(ctx echo.Context) (err error) {
 	rsp := make([]globvarv2.GlobalVariables, 0, state.ENV__INIT_SLICE_CAPACITY__())
 
 	globvar := globvarv2.GlobalVariables{}
-	err = stmtex.Select(globvar.TableName(), globvar.ColumnNames(), q, o, p).
-		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner, _ int) (err error) {
-			err = globvar.Scan(scan)
+	err = ctl.dialect.QueryRows(globvar.TableName(), globvar.ColumnNames(), q, o, p)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner, _ int) error {
+			err := globvar.Scan(scan)
 			if err != nil {
-				return errors.Wrapf(err, "failed to scan")
+				err = errors.WithStack(err)
+				return err
 			}
+
 			rsp = append(rsp, globvar)
-			return
+
+			return err
 		})
 	if err != nil {
-		return
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, rsp)
@@ -71,8 +74,8 @@ func (ctl ControlVanilla) FindGlobalVariables(ctx echo.Context) (err error) {
 // @Router      /server/global_variables/{uuid} [get]
 // @Param       uuid         path   string true  "GlobalVariables Uuid"
 // @Success 200 {object} v2.GlobalVariables
-func (ctl ControlVanilla) GetGlobalVariables(ctx echo.Context) (err error) {
-	err = echoutil.WrapHttpError(http.StatusBadRequest,
+func (ctl ControlVanilla) GetGlobalVariables(ctx echo.Context) error {
+	err := echoutil.WrapHttpError(http.StatusBadRequest,
 		func() (err error) {
 			if len(echoutil.Param(ctx)[__UUID__]) == 0 {
 				return errors.Wrapf(ErrorInvalidRequestParameter, "valid param%v", logs.KVL(
@@ -82,7 +85,7 @@ func (ctl ControlVanilla) GetGlobalVariables(ctx echo.Context) (err error) {
 			return
 		})
 	if err != nil {
-		return
+		return err
 	}
 
 	uuid := echoutil.Param(ctx)[__UUID__]
@@ -93,13 +96,16 @@ func (ctl ControlVanilla) GetGlobalVariables(ctx echo.Context) (err error) {
 		stmt.Equal("uuid", globvar.Uuid),
 		stmt.IsNull("deleted"),
 	)
-	err = stmtex.Select(globvar.TableName(), globvar.ColumnNames(), eq_uuid, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) (err error) {
-			return globvar.Scan(scan)
+	err = ctl.dialect.QueryRow(globvar.TableName(), globvar.ColumnNames(), eq_uuid, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := globvar.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
-		return
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, globvar)
@@ -114,9 +120,9 @@ func (ctl ControlVanilla) GetGlobalVariables(ctx echo.Context) (err error) {
 // @Param       uuid         path   string                       true  "GlobalVariables Uuid"
 // @Param       enviroment   body   v2.HttpReq_GlobalVariables_update false "HttpReq_GlobalVariables_update"
 // @Success 200 {object} v2.GlobalVariables
-func (ctl ControlVanilla) UpdateGlobalVariablesValue(ctx echo.Context) (err error) {
+func (ctl ControlVanilla) UpdateGlobalVariablesValue(ctx echo.Context) error {
 	body := new(globvarv2.HttpReq_GlobalVariables_update)
-	err = echoutil.WrapHttpError(http.StatusBadRequest,
+	err := echoutil.WrapHttpError(http.StatusBadRequest,
 		func() error {
 			err := echoutil.Bind(ctx, body)
 			err = errors.Wrapf(err, "bind%s",
@@ -135,7 +141,7 @@ func (ctl ControlVanilla) UpdateGlobalVariablesValue(ctx echo.Context) (err erro
 		},
 	)
 	if err != nil {
-		return
+		return err
 	}
 
 	uuid := echoutil.Param(ctx)[__UUID__]
@@ -147,14 +153,13 @@ func (ctl ControlVanilla) UpdateGlobalVariablesValue(ctx echo.Context) (err erro
 		stmt.Equal("uuid", globvar.Uuid),
 		stmt.IsNull("deleted"),
 	)
-	err = stmtex.Select(globvar.TableName(), globvar.ColumnNames(), globvar_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) (err error) {
-			err = globvar.Scan(scan)
-			if err != nil {
-				return errors.Wrapf(err, "failed to scan")
-			}
-			return
+	err = ctl.dialect.QueryRow(globvar.TableName(), globvar.ColumnNames(), globvar_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := globvar.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.WithStack(err)
@@ -170,10 +175,14 @@ func (ctl ControlVanilla) UpdateGlobalVariablesValue(ctx echo.Context) (err erro
 	updateSet["updated"] = globvar.Updated
 
 	// update
-	affected, err := stmtex.Update(globvar.TableName(), updateSet, globvar_cond).
-		ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+	affected, err := ctl.dialect.Update(globvar.TableName(), updateSet, globvar_cond)(
+		ctx.Request().Context(), ctl)
 	if err != nil {
-		return
+		err = errors.Wrapf(err, "failed to update globvar %v=%+v %v=%+v",
+			"cond", globvar_cond,
+			"values", updateSet,
+		)
+		return err
 	}
 	if affected == 0 {
 		return errors.New("no affected")

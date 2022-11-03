@@ -3,11 +3,11 @@ package control
 import (
 	"net/http"
 
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	templatev2 "github.com/NexClipper/sudory/pkg/server/model/template/v2"
+	template_v2 "github.com/NexClipper/sudory/pkg/server/model/template/v2"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -145,7 +145,7 @@ import (
 // @Tags        server/template
 // @Router      /server/template/{uuid} [get]
 // @Param       uuid         path   string true  "Template Uuid"
-// @Success 200 {object} v2.HttpRsp_Template
+// @Success 200 {object} template.HttpRsp_Template
 func (ctl ControlVanilla) GetTemplate(ctx echo.Context) (err error) {
 	uuid := echoutil.Param(ctx)[__UUID__]
 
@@ -164,26 +164,28 @@ func (ctl ControlVanilla) GetTemplate(ctx echo.Context) (err error) {
 		return
 	}
 
-	template := templatev2.Template{}
+	template := template_v2.Template{}
 	template.Uuid = uuid
 
-	template_cond := stmt.And(
+	tmpl_cond := stmt.And(
 		stmt.Equal("uuid", template.Uuid),
 		stmt.IsNull("deleted"),
 	)
 
-	err = stmtex.Select(template.TableName(), template.ColumnNames(), template_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) error {
+	err = ctl.dialect.QueryRow(template.TableName(), template.ColumnNames(), tmpl_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
 			err := template.Scan(scan)
-			return errors.Wrapf(err, "failed to scan")
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return
 	}
 
-	commands := make([]templatev2.TemplateCommand, 0, state.ENV__INIT_SLICE_CAPACITY__())
-	command := templatev2.TemplateCommand{}
+	commands := make([]template_v2.TemplateCommand, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	command := template_v2.TemplateCommand{}
 	command.TemplateUuid = uuid
 
 	command_cond := stmt.And(
@@ -193,21 +195,24 @@ func (ctl ControlVanilla) GetTemplate(ctx echo.Context) (err error) {
 
 	order := stmt.Asc("sequence")
 
-	err = stmtex.Select(command.TableName(), command.ColumnNames(), command_cond, order, nil).
-		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner, _ int) error {
+	err = ctl.dialect.QueryRows(command.TableName(), command.ColumnNames(), command_cond, order, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner, _ int) error {
 			err := command.Scan(scan)
 			if err != nil {
-				return errors.Wrapf(err, "failed to scan")
+				err = errors.WithStack(err)
+				return err
 			}
+
 			commands = append(commands, command)
-			return nil
+
+			return err
 		})
 	if err != nil {
 		return
 	}
 
-	return ctx.JSON(http.StatusOK, templatev2.HttpRsp_Template{Template: template, Commands: commands})
+	return ctx.JSON(http.StatusOK, template_v2.HttpRsp_Template{Template: template, Commands: commands})
 }
 
 // @Description Find []template
@@ -219,7 +224,7 @@ func (ctl ControlVanilla) GetTemplate(ctx echo.Context) (err error) {
 // @Param       q            query  string false "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Param       o            query  string false "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Param       p            query  string false "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
-// @Success 200 {array} v2.HttpRsp_Template
+// @Success 200 {array} template.HttpRsp_Template
 func (ctl ControlVanilla) FindTemplate(ctx echo.Context) error {
 	q, err := stmt.ConditionLexer.Parse(echoutil.QueryParam(ctx)["q"])
 	if err != nil && !logs.DeepCompare(err, stmt.ErrorInvalidArgumentEmptyString) {
@@ -242,29 +247,32 @@ func (ctl ControlVanilla) FindTemplate(ctx echo.Context) error {
 		p = stmt.Limit(__DEFAULT_DECORATION_LIMIT__)
 	}
 
-	rsp := make([]templatev2.HttpRsp_Template, 0, state.ENV__INIT_SLICE_CAPACITY__())
-	var set_template = map[templatev2.Template]struct{}{}
-	var template templatev2.Template
-	err = stmtex.Select(template.TableName(), template.ColumnNames(), q, o, p).
-		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(func(scan stmtex.Scanner, _ int) error {
-		err := template.Scan(scan)
-		if err != nil {
-			return errors.Wrapf(err, "failed to scan")
-		}
+	rsp := make([]template_v2.HttpRsp_Template, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	var set_tmpl = map[template_v2.Template]struct{}{}
+	var tmpl template_v2.Template
+	err = ctl.dialect.QueryRows(tmpl.TableName(), tmpl.ColumnNames(), q, o, p)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner, _ int) error {
+			err := tmpl.Scan(scan)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
+			}
 
-		set_template[template] = struct{}{}
-		return nil
-	})
+			set_tmpl[tmpl] = struct{}{}
+
+			return err
+		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to find template")
 	}
 
-	for template := range set_template {
-		commands, err := ListTemplateCommand(ctx.Request().Context(), ctl, template.Uuid)
+	for tmpl := range set_tmpl {
+		commands, err := ListTemplateCommand(ctx.Request().Context(), ctl, tmpl.Uuid)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get list")
 		}
-		rsp = append(rsp, templatev2.HttpRsp_Template{Template: template, Commands: commands})
+		rsp = append(rsp, template_v2.HttpRsp_Template{Template: tmpl, Commands: commands})
 	}
 
 	return ctx.JSON(http.StatusOK, rsp)

@@ -1,15 +1,15 @@
-package v3_test
+package cluster_token_test
 
 import (
 	"os"
 	"testing"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/ice_cream_maker"
-	v3 "github.com/NexClipper/sudory/pkg/server/model/cluster_token/v3"
+	"github.com/NexClipper/sudory/pkg/server/model/cluster_token/v3"
 )
 
 var objs = []interface{}{
-	v3.ClusterToken{},
+	cluster_token.ClusterToken{},
 }
 
 func TestNoXormColumns(t *testing.T) {

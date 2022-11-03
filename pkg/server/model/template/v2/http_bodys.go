@@ -1,4 +1,4 @@
-package v2
+package template
 
 type HttpRsp_Template struct {
 	Template `json:",inline"`

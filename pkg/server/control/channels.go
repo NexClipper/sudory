@@ -11,8 +11,9 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/sqlex"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
@@ -91,10 +92,10 @@ func (ctl ControlVanilla) CreateChannel(ctx echo.Context) (err error) {
 	new_channel.EventCategory = body.EventCategory
 	new_channel.Created = time_now
 
-	err = stmtex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
+	err = sqlex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
 		var affected int64
-		affedted, _, err := stmtex.Insert(new_channel.TableName(), new_channel.ColumnNames(), new_channel.Values()).
-			ExecContext(ctx.Request().Context(), tx, ctl.Dialect())
+		affedted, _, err := ctl.dialect.Insert(new_channel.TableName(), new_channel.ColumnNames(), new_channel.Values())(
+			ctx.Request().Context(), tx)
 		if err != nil {
 			return errors.Wrapf(err, "save a new channel")
 		}
@@ -106,8 +107,8 @@ func (ctl ControlVanilla) CreateChannel(ctx echo.Context) (err error) {
 		tenant_channels := new(tenants.TenantChannels)
 		tenant_channels.TenantId = claims.ID
 		tenant_channels.ChannelUuid = new_channel.Uuid
-		affected, _, err = stmtex.Insert(tenant_channels.TableName(), tenant_channels.ColumnNames(), tenant_channels.Values()).
-			ExecContext(ctx.Request().Context(), tx, ctl.Dialect())
+		affected, _, err = ctl.dialect.Insert(tenant_channels.TableName(), tenant_channels.ColumnNames(), tenant_channels.Values())(
+			ctx.Request().Context(), tx)
 		if err != nil {
 			return errors.Wrapf(err, "save a new tenant channel")
 		}
@@ -207,17 +208,18 @@ func (ctl ControlVanilla) FindChannel(ctx echo.Context) (err error) {
 			return nil
 		}
 
-		return stmtex.Select(table, column_uuid, q, o, p).
-			QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-			func(scan stmtex.Scanner, _ int) error {
+		return ctl.dialect.QueryRows(table, column_uuid, q, o, p)(ctx.Request().Context(), ctl)(
+			func(scan excute.Scanner, _ int) error {
 				err := scan.Scan(&uuid)
 				if err != nil {
+					err = errors.WithStack(err)
 					return err
 				}
 
 				uuids = append(uuids, uuid)
 				uuidSet[uuid] = 0
-				return nil
+
+				return err
 			})
 	}
 
@@ -239,7 +241,7 @@ func (ctl ControlVanilla) FindChannel(ctx echo.Context) (err error) {
 
 		uuidSet[uuid] += 1
 
-		channel, err := vault.GetManagedChannel(ctl.DB, ctl.Dialect(), ctx.Request().Context(), uuid, claims.Hash)
+		channel, err := vault.GetManagedChannel(ctx.Request().Context(), ctl.DB, ctl.dialect, uuid, claims.Hash)
 		if err != nil {
 			return errors.Wrapf(err, "failed to search channels")
 		}
@@ -281,7 +283,7 @@ func (ctl ControlVanilla) GetChannel(ctx echo.Context) (err error) {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	channel, err := vault.GetManagedChannel(ctl.DB, ctl.Dialect(), ctx.Request().Context(), uuid, claims.Hash)
+	channel, err := vault.GetManagedChannel(ctx.Request().Context(), ctl.DB, ctl.dialect, uuid, claims.Hash)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get a channel")
 	}
@@ -342,10 +344,13 @@ func (ctl ControlVanilla) UpdateChannel(ctx echo.Context) (err error) {
 
 	channel_table := channelv3.TableNameWithTenant_ManagedChannel(claims.Hash)
 
-	err = stmtex.Select(channel_table, channel.ColumnNames(), channel_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) error {
-			return channel.Scan(scan)
+	err = ctl.dialect.QueryRow(channel_table, channel.ColumnNames(), channel_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := channel.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "get channel")
@@ -375,8 +380,8 @@ func (ctl ControlVanilla) UpdateChannel(ctx echo.Context) (err error) {
 
 	err = func() error {
 		// update channel
-		_, err := stmtex.Update(channel.TableName(), updateSet, channel_cond).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		_, err := ctl.dialect.Update(channel.TableName(), updateSet, channel_cond)(
+			ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "update channel")
 		}
@@ -428,10 +433,13 @@ func (ctl ControlVanilla) DeleteChannel(ctx echo.Context) (err error) {
 	)
 	channel_table := channelv3.TableNameWithTenant_ManagedChannel(claims.Hash)
 
-	err = stmtex.Select(channel_table, channel.ColumnNames(), channel_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) error {
-			return channel.Scan(scan)
+	err = ctl.dialect.QueryRow(channel_table, channel.ColumnNames(), channel_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := channel.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "get channel")
@@ -445,8 +453,8 @@ func (ctl ControlVanilla) DeleteChannel(ctx echo.Context) (err error) {
 			"deleted": channel.Deleted,
 		}
 
-		affected, err := stmtex.Update(channel.TableName(), updateSet, channel_cond).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		affected, err := ctl.dialect.Update(channel.TableName(), updateSet, channel_cond)(
+			ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "update channel")
 		}
@@ -456,8 +464,8 @@ func (ctl ControlVanilla) DeleteChannel(ctx echo.Context) (err error) {
 
 		// clear channel status
 		status := channelv3.ChannelStatus{}
-		_, err = stmtex.Delete(status.TableName(), channel_cond).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		_, err = ctl.dialect.Delete(status.TableName(), channel_cond)(
+			ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "clear channel status")
 		}
@@ -508,18 +516,20 @@ func (ctl ControlVanilla) GetChannelNotifierEdge(ctx echo.Context) (err error) {
 	)
 	edge_table := channelv3.TableNameWithTenant_NotifierEdge(claims.Hash)
 
-	err = stmtex.Select(edge_table, edge.ColumnNames(), channel_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) error {
+	err = ctl.dialect.QueryRow(edge_table, edge.ColumnNames(), channel_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := edge.Scan(scan)
+			err = errors.WithStack(err)
 
-			return edge.Scan(scan)
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to get %v", edge.TableName())
 	}
 
 	// get edge
-	notifier_edge, err := vault.GetChannelNotifierEdge(ctx.Request().Context(), ctl.DB, ctl.Dialect(), edge)
+	notifier_edge, err := vault.GetChannelNotifierEdge(ctx.Request().Context(), ctl.DB, ctl.dialect, edge)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get channel notifier edge")
 	}
@@ -559,10 +569,13 @@ func (ctl ControlVanilla) GetChannelStatusOption(ctx echo.Context) (err error) {
 	status_option_cond := stmt.Equal("uuid", status_option.Uuid)
 
 	status_option_table := channelv3.TableNameWithTenant_ChannelStatusOption(claims.Hash)
-	err = stmtex.Select(status_option_table, status_option.ColumnNames(), status_option_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) (err error) {
-			return status_option.Scan(scan)
+	err = ctl.dialect.QueryRow(status_option_table, status_option.ColumnNames(), status_option_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := status_option.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to get a channel status option")
@@ -619,9 +632,9 @@ func (ctl ControlVanilla) UpdateChannelNotifierConsole(ctx echo.Context) (err er
 	// notifier_cond := stmt.Equal("uuid", notifier.Uuid)
 	// notifier_table := channelv3.TableNameWithTenant_NotifierConsole(claims.Hash)
 
-	// err = stmtex.Select(notifier_table, notifier.ColumnNames(), notifier_cond, nil, nil).
+	// err = ctl.dialect.Select(notifier_table, notifier.ColumnNames(), notifier_cond, nil, nil).
 	// 	QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-	// 	func(scan stmtex.Scanner) error {
+	// 	func(scan excute.Scanner) error {
 	// 		return notifier.Scan(scan)
 	// 	})
 	// if err != nil {
@@ -634,9 +647,9 @@ func (ctl ControlVanilla) UpdateChannelNotifierConsole(ctx echo.Context) (err er
 	update_columns := []string{"uuid"}
 
 	var edge *channelv3.NotifierEdge
-	err = stmtex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
+	err = sqlex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
 		var err error
-		edge, err = updateChannelNotifier(ctx.Request().Context(), tx, ctl.Dialect(), claims.Hash, uuid, notifier, update_columns)
+		edge, err = updateChannelNotifier(ctx.Request().Context(), tx, ctl.dialect, claims.Hash, uuid, notifier, update_columns)
 		return err
 	})
 	if err != nil {
@@ -730,9 +743,9 @@ func (ctl ControlVanilla) UpdateChannelNotifierRabbitMq(ctx echo.Context) (err e
 	// notifier_cond := stmt.Equal("uuid", notifier.Uuid)
 	// notifier_table := channelv3.TableNameWithTenant_NotifierRabbitMq(claims.Hash)
 
-	// err = stmtex.Select(notifier_table, notifier.ColumnNames(), notifier_cond, nil, nil).
+	// err = ctl.dialect.Select(notifier_table, notifier.ColumnNames(), notifier_cond, nil, nil).
 	// 	QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-	// 	func(scan stmtex.Scanner) error {
+	// 	func(scan excute.Scanner) error {
 	// 		return notifier.Scan(scan)
 	// 	})
 	// if err != nil {
@@ -747,9 +760,9 @@ func (ctl ControlVanilla) UpdateChannelNotifierRabbitMq(ctx echo.Context) (err e
 	update_columns := notifier.NotifierRabbitMq_property.ColumnNames()
 
 	var edge *channelv3.NotifierEdge
-	err = stmtex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
+	err = sqlex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
 		var err error
-		edge, err = updateChannelNotifier(ctx.Request().Context(), tx, ctl.Dialect(), claims.Hash, uuid, notifier, update_columns)
+		edge, err = updateChannelNotifier(ctx.Request().Context(), tx, ctl.dialect, claims.Hash, uuid, notifier, update_columns)
 		return err
 	})
 	if err != nil {
@@ -845,9 +858,9 @@ func (ctl ControlVanilla) UpdateChannelNotifierWebhook(ctx echo.Context) (err er
 	// notifier_cond := stmt.Equal("uuid", notifier.Uuid)
 	// notifier_table := channelv3.TableNameWithTenant_NotifierWebhook(claims.Hash)
 
-	// err = stmtex.Select(notifier_table, notifier.ColumnNames(), notifier_cond, nil, nil).
+	// err = ctl.dialect.Select(notifier_table, notifier.ColumnNames(), notifier_cond, nil, nil).
 	// 	QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-	// 	func(scan stmtex.Scanner) error {
+	// 	func(scan excute.Scanner) error {
 	// 		return notifier.Scan(scan)
 	// 	})
 	// if err != nil {
@@ -870,9 +883,9 @@ func (ctl ControlVanilla) UpdateChannelNotifierWebhook(ctx echo.Context) (err er
 	update_columns := notifier.NotifierWebhook_property.ColumnNames()
 
 	var edge *channelv3.NotifierEdge
-	err = stmtex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
+	err = sqlex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
 		var err error
-		edge, err = updateChannelNotifier(ctx.Request().Context(), tx, ctl.Dialect(), claims.Hash, uuid, notifier, update_columns)
+		edge, err = updateChannelNotifier(ctx.Request().Context(), tx, ctl.dialect, claims.Hash, uuid, notifier, update_columns)
 		return err
 	})
 	if err != nil {
@@ -955,9 +968,9 @@ func (ctl ControlVanilla) UpdateChannelNotifierSlackhook(ctx echo.Context) (err 
 	// notifier_cond := stmt.Equal("uuid", notifier.Uuid)
 	// notifier_table := channelv3.TableNameWithTenant_NotifierRabbitMq(claims.Hash)
 
-	// err = stmtex.Select(notifier_table, notifier.ColumnNames(), notifier_cond, nil, nil).
+	// err = ctl.dialect.Select(notifier_table, notifier.ColumnNames(), notifier_cond, nil, nil).
 	// 	QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-	// 	func(scan stmtex.Scanner) error {
+	// 	func(scan excute.Scanner) error {
 	// 		return notifier.Scan(scan)
 	// 	})
 	// if err != nil {
@@ -978,9 +991,9 @@ func (ctl ControlVanilla) UpdateChannelNotifierSlackhook(ctx echo.Context) (err 
 	update_columns := notifier.NotifierSlackhook_property.ColumnNames()
 
 	var edge *channelv3.NotifierEdge
-	err = stmtex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
+	err = sqlex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
 		var err error
-		edge, err = updateChannelNotifier(ctx.Request().Context(), tx, ctl.Dialect(), claims.Hash, uuid, notifier, update_columns)
+		edge, err = updateChannelNotifier(ctx.Request().Context(), tx, ctl.dialect, claims.Hash, uuid, notifier, update_columns)
 		return err
 	})
 	if err != nil {
@@ -1031,10 +1044,13 @@ func (ctl ControlVanilla) GetChannelFormat(ctx echo.Context) (err error) {
 
 	channel_format_cond := stmt.Equal("uuid", uuid)
 	channel_format_table := channelv3.TableNameWithTenant_Format(claims.Hash)
-	err = stmtex.Select(channel_format_table, channel_format.ColumnNames(), channel_format_cond, nil, nil).
-		QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner) (err error) {
-			return channel_format.Scan(scan)
+	err = ctl.dialect.QueryRow(channel_format_table, channel_format.ColumnNames(), channel_format_cond, nil, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner) error {
+			err := channel_format.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "get a channel format")
@@ -1114,14 +1130,14 @@ func (ctl ControlVanilla) UpdateChannelFormat(ctx echo.Context) (err error) {
 	// 	stmt.IsNull("deleted"),
 	// )
 	// channel_table := channelv3.TableNameWithTenant_ManagedChannel(claims.Hash)
-	// exist, err := stmtex.ExistContext(channel_table, channel_cond)(ctx.Request().Context(), ctl, ctl.Dialect())
+	// exist, err := ctl.dialect.ExistContext(channel_table, channel_cond)(ctx.Request().Context(), ctl, ctl.Dialect())
 	// if err != nil {
 	// 	return errors.Wrapf(err, "failed to check a channel")
 	// }
 	// if !exist {
 	// 	return errors.Wrapf(database.ErrorRecordWasNotFound, "failed to check a channel")
 	// }
-	err = vault.CheckManagedChannel(ctx.Request().Context(), ctl.DB, ctl.Dialect(), uuid, claims.Hash)
+	err = vault.CheckManagedChannel(ctx.Request().Context(), ctl.DB, ctl.dialect, uuid, claims.Hash)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check a channel")
 	}
@@ -1131,9 +1147,9 @@ func (ctl ControlVanilla) UpdateChannelFormat(ctx echo.Context) (err error) {
 
 	// channel_format_cond := stmt.Equal("uuid", uuid)
 	// channel_format_table := channelv3.TableNameWithTenant_Format(claims.Hash)
-	// err = stmtex.Select(channel_format_table, channel_format.ColumnNames(), channel_format_cond, nil, nil).
+	// err = ctl.dialect.Select(channel_format_table, channel_format.ColumnNames(), channel_format_cond, nil, nil).
 	// 	QueryRowContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-	// 	func(scan stmtex.Scanner) (err error) {
+	// 	func(scan excute.Scanner) (err error) {
 	// 		return channel_format.Scan(scan)
 	// 	})
 	// if err != nil {
@@ -1145,7 +1161,7 @@ func (ctl ControlVanilla) UpdateChannelFormat(ctx echo.Context) (err error) {
 	channel_format.Format_property = *body
 	update_columns := channel_format.Format_property.ColumnNames()
 
-	err = stmtex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
+	err = sqlex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
 		// channel
 		time_now := time.Now()
 		var channel channelv3.ManagedChannel
@@ -1159,15 +1175,15 @@ func (ctl ControlVanilla) UpdateChannelFormat(ctx echo.Context) (err error) {
 		updateSet := map[string]interface{}{}
 		updateSet["updated"] = channel.Updated
 
-		_, err = stmtex.Update(channel.TableName(), updateSet, channel_cond).
-			Exec(tx, ctl.Dialect())
+		_, err = ctl.dialect.Update(channel.TableName(), updateSet, channel_cond)(
+			ctx.Request().Context(), tx)
 		if err != nil {
 			return errors.Wrapf(err, "update channel")
 		}
 
 		// channel format
-		_, _, err = stmtex.InsertOrUpdate(channel_format.TableName(), channel_format.ColumnNames(), update_columns, channel_format.Values()).
-			Exec(tx, ctl.Dialect())
+		_, _, err = ctl.dialect.InsertOrUpdate(channel_format.TableName(), channel_format.ColumnNames(), update_columns, channel_format.Values())(
+			ctx.Request().Context(), tx)
 		if err != nil {
 			return errors.Wrapf(err, "update channel format")
 		}
@@ -1227,14 +1243,14 @@ func (ctl ControlVanilla) UpdateChannelStatusOption(ctx echo.Context) (err error
 	// 	stmt.IsNull("deleted"),
 	// )
 	// channel_table := channelv3.TableNameWithTenant_ManagedChannel(claims.Hash)
-	// exist, err := stmtex.ExistContext(channel_table, channel_cond)(ctx.Request().Context(), ctl, ctl.Dialect())
+	// exist, err := ctl.dialect.ExistContext(channel_table, channel_cond)(ctx.Request().Context(), ctl, ctl.Dialect())
 	// if err != nil {
 	// 	return errors.Wrapf(err, "failed to check a channel")
 	// }
 	// if !exist {
 	// 	return errors.Wrapf(database.ErrorRecordWasNotFound, "failed to check a channel")
 	// }
-	err = vault.CheckManagedChannel(ctx.Request().Context(), ctl.DB, ctl.Dialect(), uuid, claims.Hash)
+	err = vault.CheckManagedChannel(ctx.Request().Context(), ctl.DB, ctl.dialect, uuid, claims.Hash)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check a channel")
 	}
@@ -1246,7 +1262,7 @@ func (ctl ControlVanilla) UpdateChannelStatusOption(ctx echo.Context) (err error
 	status_option.ChannelStatusOption_property = *body
 	update_columns := status_option.ChannelStatusOption_property.ColumnNames()
 
-	err = stmtex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
+	err = sqlex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
 		// channel
 		time_now := time.Now()
 		var channel channelv3.ManagedChannel
@@ -1260,15 +1276,15 @@ func (ctl ControlVanilla) UpdateChannelStatusOption(ctx echo.Context) (err error
 		updateSet := map[string]interface{}{}
 		updateSet["updated"] = channel.Updated
 
-		_, err = stmtex.Update(channel.TableName(), updateSet, channel_cond).
-			Exec(tx, ctl.Dialect())
+		_, err = ctl.dialect.Update(channel.TableName(), updateSet, channel_cond)(
+			ctx.Request().Context(), tx)
 		if err != nil {
 			return errors.Wrapf(err, "update channel")
 		}
 
 		// channel status option
-		_, _, err := stmtex.InsertOrUpdate(status_option.TableName(), status_option.ColumnNames(), update_columns, status_option.Values()).
-			Exec(tx, ctl.Dialect())
+		_, _, err := ctl.dialect.InsertOrUpdate(status_option.TableName(), status_option.ColumnNames(), update_columns, status_option.Values())(
+			ctx.Request().Context(), tx)
 		if err != nil {
 			return errors.Wrapf(err, "update channel status option")
 		}
@@ -1319,7 +1335,7 @@ func (ctl ControlVanilla) CreateChannelStatus(ctx echo.Context) (err error) {
 	message := echoutil.QueryParam(ctx)["message"]
 	created := time.Now()
 
-	err = vault.CreateChannelStatus(ctl.DB, ctl.Dialect(), uuid, message, created, globvar.Event.NofitierStatusRotateLimit())
+	err = vault.CreateChannelStatus(ctx.Request().Context(), ctl.DB, ctl.dialect, uuid, message, created, globvar.Event.NofitierStatusRotateLimit())
 	if err != nil {
 		return HttpError(err, http.StatusInternalServerError)
 	}
@@ -1365,16 +1381,18 @@ func (ctl ControlVanilla) ListChannelStatus(ctx echo.Context) (err error) {
 	)
 	status_table := channelv3.TableNameWithTenant_ChannelStatus(claims.Hash)
 
-	err = stmtex.Select(status_table, status.ColumnNames(), status_cond, order, nil).
-		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(
-		func(scan stmtex.Scanner, _ int) error {
+	err = ctl.dialect.QueryRows(status_table, status.ColumnNames(), status_cond, order, nil)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner, _ int) error {
 			err := status.Scan(scan)
 			if err != nil {
+				err = errors.WithStack(err)
 				return err
 			}
 
 			rsp = append(rsp, status)
-			return nil
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to get channel status")
@@ -1411,7 +1429,7 @@ func (ctl ControlVanilla) PurgeChannelStatus(ctx echo.Context) (err error) {
 
 	uuid := echoutil.Param(ctx)[__UUID__]
 
-	err = vault.CheckManagedChannel(ctx.Request().Context(), ctl.DB, ctl.Dialect(), uuid, claims.Hash)
+	err = vault.CheckManagedChannel(ctx.Request().Context(), ctl.DB, ctl.dialect, uuid, claims.Hash)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check a channel")
 	}
@@ -1421,8 +1439,8 @@ func (ctl ControlVanilla) PurgeChannelStatus(ctx echo.Context) (err error) {
 	status_cond := stmt.Equal("uuid", uuid)
 
 	err = func() error {
-		_, err := stmtex.Delete(status.TableName(), status_cond).
-			ExecContext(ctx.Request().Context(), ctl, ctl.Dialect())
+		_, err := ctl.dialect.Delete(status.TableName(), status_cond)(
+			ctx.Request().Context(), ctl)
 		return err
 	}()
 	if err != nil {
@@ -1474,16 +1492,19 @@ func (ctl ControlVanilla) FindChannelStatus(ctx echo.Context) error {
 
 	var status channelv3.ChannelStatus
 	status_table := channelv3.TableNameWithTenant_ChannelStatus(claims.Hash)
-	err = stmtex.Select(status_table, status.ColumnNames(), q, o, p).
-		QueryRowsContext(ctx.Request().Context(), ctl, ctl.Dialect())(func(scan stmtex.Scanner, _ int) error {
-		err = status.Scan(scan)
-		if err != nil {
-			return errors.Wrapf(err, "find channel status")
-		}
+	err = ctl.dialect.QueryRows(status_table, status.ColumnNames(), q, o, p)(
+		ctx.Request().Context(), ctl)(
+		func(scan excute.Scanner, _ int) error {
+			err = status.Scan(scan)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
+			}
 
-		rsp = append(rsp, status)
-		return nil
-	})
+			rsp = append(rsp, status)
+
+			return err
+		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to search channel status")
 	}
@@ -1498,7 +1519,7 @@ type notifier_table interface {
 	Type() channelv3.NotifierType
 }
 
-func updateChannelNotifier(ctx context.Context, tx *sql.Tx, dialect string, cluster_hash, channel_uuid string, notifier notifier_table, notifierUpdateColumns []string) (*channelv3.NotifierEdge, error) {
+func updateChannelNotifier(ctx context.Context, tx *sql.Tx, dialect excute.SqlExcutor, cluster_hash, channel_uuid string, notifier notifier_table, notifierUpdateColumns []string) (*channelv3.NotifierEdge, error) {
 
 	time_now := time.Now()
 
@@ -1512,10 +1533,12 @@ func updateChannelNotifier(ctx context.Context, tx *sql.Tx, dialect string, clus
 	)
 
 	channel_table := channelv3.TableNameWithTenant_ManagedChannel(cluster_hash)
-	err := stmtex.Select(channel_table, channel.ColumnNames(), channel_cond, nil, nil).
-		QueryRowContext(ctx, tx, dialect)(
-		func(scan stmtex.Scanner) error {
-			return channel.Scan(scan)
+	err := dialect.QueryRow(channel_table, channel.ColumnNames(), channel_cond, nil, nil)(ctx, tx)(
+		func(scan excute.Scanner) error {
+			err := channel.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return nil, err
@@ -1524,8 +1547,7 @@ func updateChannelNotifier(ctx context.Context, tx *sql.Tx, dialect string, clus
 	updateSet := map[string]interface{}{}
 	updateSet["updated"] = channel.Updated
 
-	_, err = stmtex.Update(channel.TableName(), updateSet, channel_cond).
-		ExecContext(ctx, tx, dialect)
+	_, err = dialect.Update(channel.TableName(), updateSet, channel_cond)(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -1541,8 +1563,7 @@ func updateChannelNotifier(ctx context.Context, tx *sql.Tx, dialect string, clus
 	}
 
 	// insert or update; notifier edge
-	_, _, err = stmtex.InsertOrUpdate(edge.TableName(), edge.ColumnNames(), edgeUpdateColumns, edge.Values()).
-		Exec(tx, dialect)
+	_, _, err = dialect.InsertOrUpdate(edge.TableName(), edge.ColumnNames(), edgeUpdateColumns, edge.Values())(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -1551,8 +1572,7 @@ func updateChannelNotifier(ctx context.Context, tx *sql.Tx, dialect string, clus
 	// }
 
 	// insert or update; notifier X
-	_, _, err = stmtex.InsertOrUpdate(notifier.TableName(), notifier.ColumnNames(), notifierUpdateColumns, notifier.Values()).
-		Exec(tx, dialect)
+	_, _, err = dialect.InsertOrUpdate(notifier.TableName(), notifier.ColumnNames(), notifierUpdateColumns, notifier.Values())(ctx, tx)
 	if err != nil {
 		return nil, err
 	}

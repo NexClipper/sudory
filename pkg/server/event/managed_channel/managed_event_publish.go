@@ -4,14 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/NexClipper/logger"
 
 	"github.com/NexClipper/sudory/pkg/server/control/vault"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
-	"github.com/NexClipper/sudory/pkg/server/event"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	channelv3 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
@@ -24,35 +24,61 @@ var InvokeByEventCategory func(tenant_hash string, ec channelv3.EventCategory, v
 
 // var _ EventPublisher = (*ManagedChannel)(nil)
 
+type HashsetErrorHandlers map[uintptr]func(error)
+
+func (hashset HashsetErrorHandlers) Add(fn ...func(error)) HashsetErrorHandlers {
+	for _, fn := range fn {
+		ptr := reflect.ValueOf(fn).Pointer()
+		hashset[ptr] = fn
+	}
+
+	return hashset
+}
+func (hashset HashsetErrorHandlers) Remove(fn ...func(error)) HashsetErrorHandlers {
+	for _, fn := range fn {
+		ptr := reflect.ValueOf(fn).Pointer()
+		delete(hashset, ptr)
+	}
+
+	return hashset
+}
+func (hashset HashsetErrorHandlers) OnError(err error) {
+	for _, handler := range hashset {
+		handler(err)
+	}
+}
+
 type Event struct {
+	ctx context.Context
 	*sql.DB
-	dialect string
+	dialect excute.SqlExcutor
 	// *vanilla.SqlDbEx
 
 	// HashsetEventNotifierMuxer
 	EventNotifierMuxer
 
-	ErrorHandlers         event.HashsetErrorHandlers
+	ErrorHandlers         HashsetErrorHandlers
 	NofitierErrorHandlers HashsetNofitierErrorHandler
 }
 
-func NewEvent(db *sql.DB, dialect string) *Event {
+func NewEvent(db *sql.DB, dialect excute.SqlExcutor) *Event {
 
 	me := Event{}
+	me.ctx = context.TODO()
 	me.DB = db
 	me.dialect = dialect
 	// me.SqlDbEx = &vanilla.SqlDbEx{DB: db}
 	// me.HashsetEventNotifierMuxer = HashsetEventNotifierMuxer{}
 
-	me.ErrorHandlers = event.HashsetErrorHandlers{}
+	me.ErrorHandlers = HashsetErrorHandlers{}
 	me.NofitierErrorHandlers = HashsetNofitierErrorHandler{}
 
 	return &me
 }
 
-func (pub *Event) Dialect() string {
-	return pub.dialect
-}
+// func (pub *Event) Dialect() string {
+// 	return pub.dialect
+// }
 
 func (pub *Event) SetEventNotifierMuxer(mux EventNotifierMuxer) {
 	pub.EventNotifierMuxer = mux
@@ -63,7 +89,7 @@ func (pub *Event) SetEventNotifierMuxer(mux EventNotifierMuxer) {
 // }
 
 func (pub Event) InvokeByChannelUuid(tenant_hash string, channel_uuid string, v map[string]interface{}) {
-	clone := NewEvent(pub.DB, pub.Dialect())
+	clone := NewEvent(pub.DB, pub.dialect)
 	clone.ErrorHandlers = pub.ErrorHandlers
 	clone.NofitierErrorHandlers = pub.NofitierErrorHandlers
 
@@ -86,38 +112,41 @@ func (pub Event) InvokeByChannelUuid(tenant_hash string, channel_uuid string, v 
 }
 
 func (pub Event) BuildChannelFormatter(channel_uuid string) (err error) {
+
 	eq_uuid := stmt.Equal("uuid", channel_uuid)
 	format := channelv3.Format{}
-	err = stmtex.Select(format.TableName(), format.ColumnNames(), eq_uuid, nil, nil).
-		QueryRows(pub, pub.Dialect())(func(scan stmtex.Scanner, _ int) (err error) {
-		err = format.Scan(scan)
-		if err != nil {
-			return
-		}
-		switch format.FormatType {
-		case channelv3.FormatTypeFields:
-			formatter := &Formatter_fields{
-				FormatData: format.FormatData,
+	err = pub.dialect.QueryRows(format.TableName(), format.ColumnNames(), eq_uuid, nil, nil)(pub.ctx, pub)(
+		func(scan excute.Scanner, _ int) error {
+			err := format.Scan(scan)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
 			}
-			pub.EventNotifierMuxer.Formatters().Add(channel_uuid, formatter)
-		case channelv3.FormatTypeJq:
-			formatter := &Formatter_jq{
-				FormatData: format.FormatData,
-			}
-			pub.EventNotifierMuxer.Formatters().Add(channel_uuid, formatter)
-		default:
-			// do nothing
-		}
 
-		return
-	})
+			switch format.FormatType {
+			case channelv3.FormatTypeFields:
+				formatter := &Formatter_fields{
+					FormatData: format.FormatData,
+				}
+				pub.EventNotifierMuxer.Formatters().Add(channel_uuid, formatter)
+			case channelv3.FormatTypeJq:
+				formatter := &Formatter_jq{
+					FormatData: format.FormatData,
+				}
+				pub.EventNotifierMuxer.Formatters().Add(channel_uuid, formatter)
+			default:
+				// do nothing
+			}
+
+			return err
+		})
 	err = errors.Wrapf(err, "build channel formatter")
 
 	return
 }
 
 func (pub Event) InvokeByEventCategory(tenant_hash string, ec channelv3.EventCategory, v map[string]interface{}) {
-	clone := NewEvent(pub.DB, pub.Dialect())
+	clone := NewEvent(pub.DB, pub.dialect)
 	clone.ErrorHandlers = pub.ErrorHandlers
 	clone.NofitierErrorHandlers = pub.NofitierErrorHandlers
 
@@ -187,7 +216,7 @@ var (
 			created := time.Now()
 			message := fmt.Sprintf("%s%s", err.Error(), stack)
 
-			if err_ := vault.CreateChannelStatus(pub.DB, pub.Dialect(), uuid, message, created, globvar.Event.NofitierStatusRotateLimit()); err_ != nil {
+			if err_ := vault.CreateChannelStatus(pub.ctx, pub.DB, pub.dialect, uuid, message, created, globvar.Event.NofitierStatusRotateLimit()); err_ != nil {
 				err_ = errors.Wrapf(err_, "failed to logging to channel status")
 				pub.ErrorHandlers.OnError(err_)
 			}
@@ -207,7 +236,7 @@ func (pub *Event) OnNotifierError(notifier Notifier, err error) {
 }
 
 func (pub *Event) BuildMuxerByEventCategory(tenant_hash string, event_category channelv3.EventCategory) (err error) {
-	var ctx = context.Background()
+
 	// new muxer
 	muxer := NewManagedEventNotifierMux()
 	// regist muxer to event publisher
@@ -222,19 +251,20 @@ func (pub *Event) BuildMuxerByEventCategory(tenant_hash string, event_category c
 	// var channel channelv3.ManagedChannel
 	var set_channel_uuid = map[string]struct{}{}
 	channel_table := channelv3.TableNameWithTenant_ManagedChannel(tenant_hash)
-	err = stmtex.Select(channel_table, column_names, channel_cond, nil, nil).
-		QueryRowsContext(ctx, pub, pub.Dialect())(func(scan stmtex.Scanner, _ int) (err error) {
+	err = pub.dialect.QueryRows(channel_table, column_names, channel_cond, nil, nil)(pub.ctx, pub)(
+		func(scan excute.Scanner, _ int) error {
 
-		var channel_uuid string
-		err = scan.Scan(&channel_uuid)
-		if err != nil {
-			return errors.Wrapf(err, "failed to scan")
-		}
+			var channel_uuid string
+			err := scan.Scan(&channel_uuid)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
+			}
 
-		set_channel_uuid[channel_uuid] = struct{}{}
+			set_channel_uuid[channel_uuid] = struct{}{}
 
-		return
-	})
+			return err
+		})
 	if err != nil {
 		return
 	}
@@ -246,23 +276,24 @@ func (pub *Event) BuildMuxerByEventCategory(tenant_hash string, event_category c
 		edge.Uuid = channel_uuid
 		edge_cond := stmt.Equal("uuid", edge.Uuid)
 
-		err = stmtex.Select(edge.TableName(), edge.ColumnNames(), edge_cond, nil, nil).
-			QueryRowsContext(ctx, pub, pub.Dialect())(
-			func(scan stmtex.Scanner, _ int) error {
+		err = pub.dialect.QueryRows(edge.TableName(), edge.ColumnNames(), edge_cond, nil, nil)(pub.ctx, pub)(
+			func(scan excute.Scanner, _ int) error {
 				err := edge.Scan(scan)
 				if err != nil {
-					return errors.Wrapf(err, "failed to scan")
+					err = errors.WithStack(err)
+					return err
 				}
 
 				set_edge[edge] = struct{}{}
-				return nil
+
+				return err
 			})
 		if err != nil {
 			return
 		}
 
 		for edge := range set_edge {
-			edge_opt, err := vault.GetChannelNotifierEdge(ctx, pub.DB, pub.Dialect(), edge)
+			edge_opt, err := vault.GetChannelNotifierEdge(pub.ctx, pub.DB, pub.dialect, edge)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get a NotifierEdge_option")
 			}
@@ -287,7 +318,7 @@ func (pub *Event) BuildMuxerByEventCategory(tenant_hash string, event_category c
 }
 
 func (pub *Event) BuildMuxerByChannelUuid(tenant_hash string, channel_uuid string) error {
-	var ctx = context.Background()
+
 	// new muxer
 	muxer := NewManagedEventNotifierMux()
 	// regist muxer to event publisher
@@ -300,24 +331,24 @@ func (pub *Event) BuildMuxerByChannelUuid(tenant_hash string, channel_uuid strin
 	edge_cond := stmt.Equal("uuid", channel_uuid)
 	edge_table := channelv3.TableNameWithTenant_NotifierEdge(tenant_hash)
 
-	err := stmtex.Select(edge_table, edge.ColumnNames(), edge_cond, nil, nil).
-		QueryRowsContext(ctx, pub, pub.Dialect())(
-		func(scan stmtex.Scanner, _ int) error {
+	err := pub.dialect.QueryRows(edge_table, edge.ColumnNames(), edge_cond, nil, nil)(pub.ctx, pub)(
+		func(scan excute.Scanner, _ int) error {
 			err := edge.Scan(scan)
 			if err != nil {
-				return errors.Wrapf(err, "failed to scan")
+				err = errors.WithStack(err)
+				return err
 			}
 
 			set_edge[edge] = struct{}{}
 
-			return nil
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to get notifiers")
 	}
 
 	for edge := range set_edge {
-		edge_opt, err := vault.GetChannelNotifierEdge(ctx, pub.DB, pub.Dialect(), edge)
+		edge_opt, err := vault.GetChannelNotifierEdge(pub.ctx, pub.DB, pub.dialect, edge)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get a NotifierEdge_option")
 		}

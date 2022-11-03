@@ -7,15 +7,15 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/server/database"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
+	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
-	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmtex"
 	channelv3 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/pkg/errors"
 )
 
 // CreateChannelStatus
-func CreateChannelStatus(db *sql.DB, dialect string, uuid, message string, created time.Time, max_count uint) error {
+func CreateChannelStatus(ctx context.Context, db *sql.DB, dialect excute.SqlExcutor, uuid, message string, created time.Time, max_count uint) error {
 	var err error
 	// created := time.Now()
 	channel_opt := channelv3.ChannelStatusOption{}
@@ -31,10 +31,12 @@ func CreateChannelStatus(db *sql.DB, dialect string, uuid, message string, creat
 	)
 
 	// valid; exist channel
-	err = stmtex.Select(channel_opt.TableName(), channel_opt.ColumnNames(), channel_status_opt_cond, nil, nil).
-		QueryRow(db, dialect)(
-		func(scan stmtex.Scanner) error {
-			return channel_opt.Scan(scan)
+	err = dialect.QueryRow(channel_opt.TableName(), channel_opt.ColumnNames(), channel_status_opt_cond, nil, nil)(ctx, db)(
+		func(scan excute.Scanner) error {
+			err := channel_opt.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
 		})
 	if err != nil {
 		return errors.Wrapf(err, "failed to query to channel opt")
@@ -57,17 +59,22 @@ func CreateChannelStatus(db *sql.DB, dialect string, uuid, message string, creat
 
 	uuids := make([]string, 0, state.ENV__INIT_SLICE_CAPACITY__())
 	createds := make([]vanilla.NullTime, 0, state.ENV__INIT_SLICE_CAPACITY__())
-	err = stmtex.Select(channel_status.TableName(), rotation_columns, rotation_cond, rotation_order, rotation_limit).
-		QueryRows(db, dialect)(func(scan stmtex.Scanner, _ int) (err error) {
-		var uuid string
-		var created vanilla.NullTime
-		err = scan.Scan(&uuid, &created)
-		if err == nil {
+	err = dialect.QueryRows(channel_status.TableName(), rotation_columns, rotation_cond, rotation_order, rotation_limit)(ctx, db)(
+		func(scan excute.Scanner, _ int) error {
+			var uuid string
+			var created vanilla.NullTime
+
+			err = scan.Scan(&uuid, &created)
+			if err != nil {
+				err = errors.WithStack(err)
+				return err
+			}
+
 			uuids = append(uuids, uuid)
 			createds = append(createds, created)
-		}
-		return
-	})
+
+			return err
+		})
 	if err != nil {
 		return err
 	}
@@ -75,8 +82,7 @@ func CreateChannelStatus(db *sql.DB, dialect string, uuid, message string, creat
 	// insert
 	// err = vanilla.Scope(db, func(tx *sql.Tx) (err error) {
 	err = func() (err error) {
-		affected, _, err := stmtex.Insert(channel_status.TableName(), channel_status.ColumnNames(), channel_status.Values()).
-			Exec(db, dialect)
+		affected, _, err := dialect.Insert(channel_status.TableName(), channel_status.ColumnNames(), channel_status.Values())(ctx, db)
 		if err != nil {
 			return
 		}
@@ -98,7 +104,7 @@ func CreateChannelStatus(db *sql.DB, dialect string, uuid, message string, creat
 				stmt.Equal("uuid", uuid),
 				stmt.Equal("created", created),
 			)
-			_, err = stmtex.Delete(channel_status.TableName(), rm_cond).Exec(db, dialect)
+			_, err = dialect.Delete(channel_status.TableName(), rm_cond)(ctx, db)
 			if err != nil {
 				return
 			}
@@ -113,7 +119,7 @@ func CreateChannelStatus(db *sql.DB, dialect string, uuid, message string, creat
 	return nil
 }
 
-func GetManagedChannel(db *sql.DB, dialect string, ctx context.Context, uuid string, tenant_hash string) (*channelv3.HttpRsp_ManagedChannel, error) {
+func GetManagedChannel(ctx context.Context, db *sql.DB, dialect excute.SqlExcutor, uuid string, tenant_hash string) (*channelv3.HttpRsp_ManagedChannel, error) {
 	var err error
 	var rst = new(channelv3.HttpRsp_ManagedChannel)
 
@@ -130,18 +136,19 @@ func GetManagedChannel(db *sql.DB, dialect string, ctx context.Context, uuid str
 	var found bool
 	table_channel := channelv3.TableNameWithTenant_ManagedChannel(tenant_hash)
 	var channel channelv3.ManagedChannel
-	err = stmtex.Select(table_channel, channel.ColumnNames(), scoped_channel_cond, nil, nil).
-		QueryRowsContext(ctx, db, dialect)(
-		func(scan stmtex.Scanner, i int) error {
+	err = dialect.QueryRows(table_channel, channel.ColumnNames(), scoped_channel_cond, nil, nil)(ctx, db)(
+		func(scan excute.Scanner, i int) error {
 
 			err := channel.Scan(scan)
 			if err != nil {
+				err = errors.WithStack(err)
 				return err
 			}
 
 			found = true
 			rst.ManagedChannel = channel
-			return nil
+
+			return err
 		})
 	if err != nil {
 		return rst, errors.Wrapf(err, "failed to get %v", channel.TableName())
@@ -152,16 +159,17 @@ func GetManagedChannel(db *sql.DB, dialect string, ctx context.Context, uuid str
 
 	// ChannelStatusOption
 	var status_option channelv3.ChannelStatusOption
-	err = stmtex.Select(status_option.TableName(), status_option.ColumnNames(), channel_cond, nil, nil).
-		QueryRowsContext(ctx, db, dialect)(
-		func(scan stmtex.Scanner, _ int) error {
+	err = dialect.QueryRows(status_option.TableName(), status_option.ColumnNames(), channel_cond, nil, nil)(ctx, db)(
+		func(scan excute.Scanner, _ int) error {
 			err := status_option.Scan(scan)
 			if err != nil {
+				err = errors.WithStack(err)
 				return err
 			}
 
 			rst.StatusOption = status_option.ChannelStatusOption_property
-			return nil
+
+			return err
 		})
 	if err != nil {
 		return rst, errors.Wrapf(err, "failed to get %v", status_option.TableName())
@@ -169,16 +177,17 @@ func GetManagedChannel(db *sql.DB, dialect string, ctx context.Context, uuid str
 
 	// Format
 	var format channelv3.Format
-	err = stmtex.Select(format.TableName(), format.ColumnNames(), channel_cond, nil, nil).
-		QueryRowsContext(ctx, db, dialect)(
-		func(scan stmtex.Scanner, _ int) error {
+	err = dialect.QueryRows(format.TableName(), format.ColumnNames(), channel_cond, nil, nil)(ctx, db)(
+		func(scan excute.Scanner, _ int) error {
 			err := format.Scan(scan)
 			if err != nil {
+				err = errors.WithStack(err)
 				return err
 			}
 
 			rst.Format = format.Format_property
-			return nil
+
+			return err
 		})
 	if err != nil {
 		return rst, errors.Wrapf(err, "failed to get %v", format.TableName())
@@ -187,17 +196,17 @@ func GetManagedChannel(db *sql.DB, dialect string, ctx context.Context, uuid str
 	// NotifierEdge
 	var set_edge = map[channelv3.NotifierEdge]struct{}{}
 	var edge channelv3.NotifierEdge
-	err = stmtex.Select(edge.TableName(), edge.ColumnNames(), channel_cond, nil, nil).
-		QueryRowsContext(ctx, db, dialect)(
-		func(scan stmtex.Scanner, _ int) error {
+	err = dialect.QueryRows(edge.TableName(), edge.ColumnNames(), channel_cond, nil, nil)(ctx, db)(
+		func(scan excute.Scanner, _ int) error {
 			err := edge.Scan(scan)
 			if err != nil {
+				err = errors.WithStack(err)
 				return err
 			}
 
 			set_edge[edge] = struct{}{}
 
-			return nil
+			return err
 		})
 	if err != nil {
 		return rst, errors.Wrapf(err, "failed to get %v", edge.TableName())
@@ -219,7 +228,7 @@ func GetManagedChannel(db *sql.DB, dialect string, ctx context.Context, uuid str
 	return rst, nil
 }
 
-func GetChannelNotifierEdge(ctx context.Context, db *sql.DB, dialect string, edge channelv3.NotifierEdge) (*channelv3.HttpRsp_ManagedChannel_NotifierEdge, error) {
+func GetChannelNotifierEdge(ctx context.Context, db *sql.DB, dialect excute.SqlExcutor, edge channelv3.NotifierEdge) (*channelv3.HttpRsp_ManagedChannel_NotifierEdge, error) {
 	var err error
 	var rsp = new(channelv3.HttpRsp_ManagedChannel_NotifierEdge)
 
@@ -232,16 +241,17 @@ func GetChannelNotifierEdge(ctx context.Context, db *sql.DB, dialect string, edg
 	if edge.NotifierType == channelv3.NotifierTypeConsole {
 		// NotifierConsole
 		var notifier channelv3.NotifierConsole
-		err = stmtex.Select(notifier.TableName(), notifier.ColumnNames(), channel_cond, nil, nil).
-			QueryRowsContext(ctx, db, dialect)(
-			func(scan stmtex.Scanner, _ int) error {
+		err = dialect.QueryRows(notifier.TableName(), notifier.ColumnNames(), channel_cond, nil, nil)(ctx, db)(
+			func(scan excute.Scanner, _ int) error {
 				err := notifier.Scan(scan)
 				if err != nil {
+					err = errors.WithStack(err)
 					return err
 				}
 
 				rsp.Console = &notifier.NotifierConsole_property
-				return nil
+
+				return err
 			})
 
 		if err != nil {
@@ -253,16 +263,17 @@ func GetChannelNotifierEdge(ctx context.Context, db *sql.DB, dialect string, edg
 	if edge.NotifierType == channelv3.NotifierTypeWebhook {
 		// NotifierWebhook
 		var notifier channelv3.NotifierWebhook
-		err = stmtex.Select(notifier.TableName(), notifier.ColumnNames(), channel_cond, nil, nil).
-			QueryRowsContext(ctx, db, dialect)(
-			func(scan stmtex.Scanner, _ int) error {
+		err = dialect.QueryRows(notifier.TableName(), notifier.ColumnNames(), channel_cond, nil, nil)(ctx, db)(
+			func(scan excute.Scanner, _ int) error {
 				err := notifier.Scan(scan)
 				if err != nil {
+					err = errors.WithStack(err)
 					return err
 				}
 
 				rsp.Webhook = &notifier.NotifierWebhook_property
-				return nil
+
+				return err
 			})
 		if err != nil {
 			return rsp, errors.Wrapf(err, "failed to get a notifier(webhook)")
@@ -273,16 +284,17 @@ func GetChannelNotifierEdge(ctx context.Context, db *sql.DB, dialect string, edg
 	if edge.NotifierType == channelv3.NotifierTypeRabbitmq {
 		// NotifierRabbitMq
 		var notifier channelv3.NotifierRabbitMq
-		err = stmtex.Select(notifier.TableName(), notifier.ColumnNames(), channel_cond, nil, nil).
-			QueryRowsContext(ctx, db, dialect)(
-			func(scan stmtex.Scanner, _ int) error {
+		err = dialect.QueryRows(notifier.TableName(), notifier.ColumnNames(), channel_cond, nil, nil)(ctx, db)(
+			func(scan excute.Scanner, _ int) error {
 				err := notifier.Scan(scan)
 				if err != nil {
+					err = errors.WithStack(err)
 					return err
 				}
 
 				rsp.RabbitMq = &notifier.NotifierRabbitMq_property
-				return nil
+
+				return err
 			})
 		if err != nil {
 			return rsp, errors.Wrapf(err, "failed to get a notifier(rabbitmq)")
@@ -293,16 +305,17 @@ func GetChannelNotifierEdge(ctx context.Context, db *sql.DB, dialect string, edg
 	if edge.NotifierType == channelv3.NotifierTypeSlackhook {
 		// NotifierSlackhook
 		var notifier channelv3.NotifierSlackhook
-		err = stmtex.Select(notifier.TableName(), notifier.ColumnNames(), channel_cond, nil, nil).
-			QueryRowsContext(ctx, db, dialect)(
-			func(scan stmtex.Scanner, _ int) error {
+		err = dialect.QueryRows(notifier.TableName(), notifier.ColumnNames(), channel_cond, nil, nil)(ctx, db)(
+			func(scan excute.Scanner, _ int) error {
 				err := notifier.Scan(scan)
 				if err != nil {
+					err = errors.WithStack(err)
 					return err
 				}
 
 				rsp.Slackhook = &notifier.NotifierSlackhook_property
-				return nil
+
+				return err
 			})
 
 		if err != nil {
@@ -314,7 +327,7 @@ func GetChannelNotifierEdge(ctx context.Context, db *sql.DB, dialect string, edg
 	return rsp, nil
 }
 
-func CheckManagedChannel(ctx context.Context, db stmtex.Preparer, dialect string, uuid string, tenant_hash string) error {
+func CheckManagedChannel(ctx context.Context, db excute.Preparer, dialect excute.SqlExcutor, uuid string, tenant_hash string) error {
 	// check channel
 	var channel channelv3.ManagedChannel
 	channel.Uuid = uuid
@@ -324,7 +337,7 @@ func CheckManagedChannel(ctx context.Context, db stmtex.Preparer, dialect string
 	)
 	table_channel := channelv3.TableNameWithTenant_ManagedChannel(tenant_hash)
 
-	exist, err := stmtex.ExistContext(table_channel, channel_cond)(ctx, db, dialect)
+	exist, err := dialect.Exist(table_channel, channel_cond)(ctx, db)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check a channel")
 	}
