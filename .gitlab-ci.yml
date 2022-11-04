@@ -1,6 +1,6 @@
 variables:
   APP_IMAGE_NAME: "nexclipper-sudory"
-  APP_VERSION_DEV: "0.2.94"
+  APP_VERSION_DEV: "0.2.95"
   APP_VERSION_STG: "0.2.86"
   APP_VERSION_SUDORY_CLIENT: "0.2.46"
 
