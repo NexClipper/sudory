@@ -41,6 +41,10 @@ func (c *Client) ApiRequest(api, resource, verb string, params map[string]interf
 				data, err = c.GetComputeV2Server(params)
 			case "list":
 				data, err = c.ListComputeV2Servers(params)
+			case "reboot":
+				data, err = c.RebootComputeV2Server(params)
+			case "resize":
+				data, err = c.ResizeComputeV2Server(params)
 			default:
 				return "", fmt.Errorf("unknown verb name(%s)", verb)
 			}
