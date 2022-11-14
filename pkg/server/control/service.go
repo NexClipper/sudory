@@ -34,7 +34,7 @@ import (
 // @Tags        server/service
 // @Router      /server/service [post]
 // @Param       service      body   service.HttpReq_Service_create true  "HttpReq_Service_create"
-// @Success     200 {object} service.HttpRsp_Service_create
+// @Success     200 {array} service.HttpRsp_Service_create
 func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 	var body = new(service.HttpReq_Service_create)
 	if err := echoutil.Bind(ctx, body); err != nil {
@@ -60,17 +60,26 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 			))
 		return HttpError(err, http.StatusBadRequest)
 	}
+
 	if len(body.ClusterUuid) == 0 {
 		err := ErrorInvalidRequestParameter
 		err = errors.Wrapf(err, "valid param%s",
 			logs.KVL(
-				ParamLog(fmt.Sprintf("%s.ClusterUuid", TypeName(body)), body.ClusterUuid)...,
+				ParamLog(fmt.Sprintf("%s.ClusterUuid", TypeName(body)), "empty")...,
 			))
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	// if uuid is empty then generate uuid
-	body.Uuid = genUuidString(body.Uuid)
+	for i := range body.ClusterUuid {
+		if len(body.ClusterUuid[i]) == 0 {
+			err := ErrorInvalidRequestParameter
+			err = errors.Wrapf(err, "valid param%s",
+				logs.KVL(
+					ParamLog(fmt.Sprintf("%s.ClusterUuid", TypeName(body)), body.ClusterUuid[i])...,
+				))
+			return HttpError(err, http.StatusBadRequest)
+		}
+	}
 
 	// get tenant claims
 	claims, err := GetServiceAuthorizationClaims(ctx)
@@ -78,10 +87,12 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 		return HttpError(err, http.StatusForbidden)
 	}
 
-	// check cluster
-	err = vault.CheckCluster(ctx.Request().Context(), ctl, ctl.dialect, claims, body.ClusterUuid)
-	if err != nil {
-		return err
+	for i := range body.ClusterUuid {
+		// check cluster
+		err = vault.CheckCluster(ctx.Request().Context(), ctl, ctl.dialect, claims, body.ClusterUuid[i])
+		if err != nil {
+			return err
+		}
 	}
 
 	// get template && commands
@@ -103,32 +114,32 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 	// set service data
 	now_time := time.Now()
 	// new service && validation
-	new_service, new_steps, err := newCreateServiceWithValid(*template, commands, now_time, body)
+	new_services, new_steps, err := newCreateServiceWithValid(*template, commands, now_time, *body)
 	if err != nil {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
 	// save
 	err = sqlex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
-
-		// save service
-		if err := vault.SaveMultiTable(tx, ctl.dialect, []vault.Table{new_service}); err != nil {
-			return errors.Wrapf(err, "failed to save service")
-		}
-
-		// save service steps_
-		steps_ := func(steps []service.ServiceStep_create) []vault.Table {
-			tables := make([]vault.Table, len(steps))
-			for i := range steps {
-				tables[i] = steps[i]
+		for i := range new_services {
+			// save service
+			if err := vault.SaveMultiTable(tx, ctl.dialect, []vault.Table{new_services[i]}); err != nil {
+				return errors.Wrapf(err, "failed to save service")
 			}
-			return tables
-		}(new_steps)
 
-		if err := vault.SaveMultiTable(tx, ctl.dialect, steps_); err != nil {
-			return errors.Wrapf(err, "failed to save service steps")
+			// save service steps_
+			steps_ := func(steps []service.ServiceStep_create) []vault.Table {
+				tables := make([]vault.Table, len(steps))
+				for i := range steps {
+					tables[i] = steps[i]
+				}
+				return tables
+			}(new_steps[new_services[i].Uuid])
+
+			if err := vault.SaveMultiTable(tx, ctl.dialect, steps_); err != nil {
+				return errors.Wrapf(err, "failed to save service steps")
+			}
 		}
-
 		return nil
 	})
 	if err != nil {
@@ -136,11 +147,24 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 	}
 
 	// make response body
-	rsp := service.HttpRsp_Service_create{}
-	rsp.Service_create = *new_service
-	rsp.Steps = new_steps
+	switch body.IsMultiCluster {
+	case true:
+		var rsp = []service.HttpRsp_Service_create{}
+		for i := range new_services {
+			rsp = append(rsp, service.HttpRsp_Service_create{
+				Service_create: new_services[i],
+				Steps:          new_steps[new_services[i].Uuid],
+			})
+		}
 
-	return ctx.JSON(http.StatusOK, service.HttpRsp_Service_create(rsp))
+		return ctx.JSON(http.StatusOK, []service.HttpRsp_Service_create(rsp))
+	default:
+		rsp := service.HttpRsp_Service_create{
+			Service_create: new_services[0],
+			Steps:          new_steps[new_services[0].Uuid],
+		}
+		return ctx.JSON(http.StatusOK, service.HttpRsp_Service_create(rsp))
+	}
 }
 
 // @Description Find []Service
@@ -383,9 +407,9 @@ const __DEFAULT_DECORATION_LIMIT__ = 20
 
 func newCreateServiceWithValid(
 	template templatev2.Template, commands []templatev2.TemplateCommand,
-	now_time time.Time, body *service.HttpReq_Service_create,
+	now_time time.Time, body service.HttpReq_Service_create,
 
-) (*service.Service_create, []service.ServiceStep_create, error) {
+) ([]service.Service_create, map[string][]service.ServiceStep_create, error) {
 
 	// build service step
 	for i := range body.Steps {
@@ -447,46 +471,65 @@ func newCreateServiceWithValid(
 		return service.PriorityLow
 	}
 
-	// property service
-	new_service := service.Service_create{}
-	new_service.PartitionDate = now_time
-	new_service.ClusterUuid = body.ClusterUuid
-	new_service.Uuid = body.Uuid
-	new_service.Timestamp = now_time
-	new_service.Name = body.Name
-	new_service.Summary = *vanilla.NewNullString(body.Summary)
-	new_service.TemplateUuid = body.TemplateUuid
-	new_service.StepCount = len(body.Steps)
-	new_service.SubscribedChannel = *vanilla.NewNullString(body.SubscribedChannel)
-	new_service.StepPosition = 0
-	new_service.Status = service.StepStatusRegist
-	new_service.Priority = getPriority(template)
-	new_service.Created = now_time
+	BuildService := func(body service.HttpReq_Service_create, cluster_uuid string) (new_service service.Service_create, new_steps []service.ServiceStep_create) {
 
-	// create steps
-	steps := make([]service.ServiceStep_create, 0, len(body.Steps))
-	for i := range body.Steps {
-		command := commands[i]
-		body_step := body.Steps[i]
+		// if uuid is empty then generate uuid
+		uuid := genUuidString("")
 
-		//property step
-		new_step := service.ServiceStep_create{}
-		new_step.PartitionDate = now_time
-		new_step.ClusterUuid = body.ClusterUuid
-		new_step.Uuid = body.Uuid
-		new_step.Sequence = i
-		new_step.Timestamp = now_time
-		new_step.Name = command.Name
-		new_step.Summary = command.Summary
-		new_step.Method = command.Method
-		new_step.Args = body_step.Args
-		new_step.ResultFilter = command.ResultFilter
-		new_step.Status = service.StepStatusRegist
-		new_step.Created = now_time
+		// property service
+		// new_service := service.Service_create{}
+		new_service.PartitionDate = now_time
+		new_service.ClusterUuid = cluster_uuid
+		new_service.Uuid = uuid
+		new_service.Timestamp = now_time
+		new_service.Name = body.Name
+		new_service.Summary = *vanilla.NewNullString(body.Summary)
+		new_service.TemplateUuid = body.TemplateUuid
+		new_service.StepCount = len(body.Steps)
+		new_service.SubscribedChannel = *vanilla.NewNullString(body.SubscribedChannel)
+		new_service.StepPosition = 0
+		new_service.Status = service.StepStatusRegist
+		new_service.Priority = getPriority(template)
+		new_service.Created = now_time
 
-		// append service step
-		steps = append(steps, new_step)
+		// create steps
+		new_steps = make([]service.ServiceStep_create, 0, len(body.Steps))
+		for i := range body.Steps {
+			command := commands[i]
+			body_step := body.Steps[i]
+
+			//property step
+			new_step := service.ServiceStep_create{}
+			new_step.PartitionDate = now_time
+			new_step.ClusterUuid = cluster_uuid
+			new_step.Uuid = uuid
+			new_step.Sequence = i
+			new_step.Timestamp = now_time
+			new_step.Name = command.Name
+			new_step.Summary = command.Summary
+			new_step.Method = command.Method
+			new_step.Args = body_step.Args
+			new_step.ResultFilter = command.ResultFilter
+			new_step.Status = service.StepStatusRegist
+			new_step.Created = now_time
+
+			// append service step
+			new_steps = append(new_steps, new_step)
+		}
+
+		return
 	}
 
-	return &new_service, steps, nil
+	var services = []service.Service_create{}
+	var service_steps = map[string][]service.ServiceStep_create{}
+
+	for i := range body.ClusterUuid {
+
+		new_service, new_steps := BuildService(body, body.ClusterUuid[i])
+
+		services = append(services, new_service)
+		service_steps[new_service.Uuid] = new_steps
+	}
+
+	return services, service_steps, nil
 }

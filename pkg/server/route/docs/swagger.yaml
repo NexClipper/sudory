@@ -102,7 +102,9 @@ definitions:
   service.HttpReq_Service_create:
     properties:
       cluster_uuid:
-        type: string
+        items:
+          type: string
+        type: array
       name:
         type: string
       steps:
@@ -118,9 +120,6 @@ definitions:
       summary:
         type: string
       template_uuid:
-        type: string
-      uuid:
-        description: pk
         type: string
     type: object
   service.HttpRsp_ClientServicePolling:
@@ -1922,7 +1921,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/service.HttpRsp_Service_create'
+            items:
+              $ref: '#/definitions/service.HttpRsp_Service_create'
+            type: array
       security:
       - ServiceAuth: []
       tags:

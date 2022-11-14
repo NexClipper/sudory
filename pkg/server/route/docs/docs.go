@@ -1586,7 +1586,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/service.HttpRsp_Service_create"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/service.HttpRsp_Service_create"
+                            }
                         }
                     }
                 }
@@ -2342,7 +2345,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "cluster_uuid": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "name": {
                     "type": "string"
@@ -2366,10 +2372,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "template_uuid": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "pk",
                     "type": "string"
                 }
             }
