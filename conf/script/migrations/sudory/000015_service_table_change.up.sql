@@ -30,7 +30,10 @@ CREATE TABLE IF NOT EXISTS `service` (
   `message` text COLLATE utf8mb4_bin DEFAULT NULL,
   `created` datetime NOT NULL,
   PRIMARY KEY (`cluster_uuid`,`uuid`,`pdate`,`timestamp`),
-  INDEX `service_created` (`cluster_uuid`,`created`)
+  INDEX `service_created` (`cluster_uuid`,`created`),
+  INDEX `uuid` (`uuid`),
+  INDEX `created` (`created`),
+  INDEX `cluster_uuid` (`cluster_uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
  PARTITION BY HASH (to_days(`pdate`))
 PARTITIONS 5;
@@ -49,7 +52,9 @@ CREATE TABLE IF NOT EXISTS `service_result` (
   `timestamp` datetime(6) NOT NULL,
   `result_type` int(11) NOT NULL,
   `result` longtext COLLATE utf8mb4_bin DEFAULT NULL, 
-  PRIMARY KEY (`cluster_uuid`,`uuid`,`pdate`,`timestamp`)
+  PRIMARY KEY (`cluster_uuid`,`uuid`,`pdate`,`timestamp`),
+  INDEX `uuid` (`uuid`),
+  INDEX `cluster_uuid` (`cluster_uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
  PARTITION BY HASH (to_days(`pdate`))
 PARTITIONS 5;
@@ -76,7 +81,10 @@ CREATE TABLE IF NOT EXISTS `service_step` (
   `started` datetime DEFAULT NULL,
   `ended` datetime DEFAULT NULL, 
   `created` datetime NOT NULL,
-  PRIMARY KEY (`cluster_uuid`,`uuid`,`seq`,`pdate`,`timestamp`)
+  PRIMARY KEY (`cluster_uuid`,`uuid`,`seq`,`pdate`,`timestamp`),
+  INDEX `uuid` (`uuid`),
+  INDEX `created` (`created`),
+  INDEX `cluster_uuid` (`cluster_uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
  PARTITION BY HASH (to_days(`pdate`))
 PARTITIONS 5;
