@@ -307,7 +307,7 @@ func (ctl ControlVanilla) UpdateCluster(ctx echo.Context) (err error) {
 		updateSet["polling_limit"] = cluster.PoliingLimit
 	}
 
-	// valied update column counts
+	// valid update column counts
 	if len(updateSet) == 0 {
 		return HttpError(errors.New("noting to update"), http.StatusBadRequest)
 	}

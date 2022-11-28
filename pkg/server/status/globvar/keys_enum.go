@@ -28,13 +28,17 @@ const (
 	KeyClientConfigServiceValidTimeLimit
 	// KeyEventNotifierStatusRotateLimit is a Key of type Event-Notifier-Status-Rotate-Limit.
 	KeyEventNotifierStatusRotateLimit
+	// KeyEventNotifierRabbitMqTimeout is a Key of type Event-Notifier-RabbitMq-Timeout.
+	KeyEventNotifierRabbitMqTimeout
 	// KeyServiceSessionSignatureSecret is a Key of type Service-Session-Signature-Secret.
 	KeyServiceSessionSignatureSecret
 	// KeyServiceSessionExpirationTime is a Key of type Service-Session-Expiration-Time.
 	KeyServiceSessionExpirationTime
 )
 
-const _KeyName = "bearer-token-signature-secretbearer-token-expiration-timeclient-session-signature-secretclient-session-expiration-timeclient-config-poll-intervalclient-config-loglevelclient-config-service-valid-time-limitevent-notifier-status-rotate-limitservice-session-signature-secretservice-session-expiration-time"
+var ErrInvalidKey = fmt.Errorf("not a valid Key, try [%s]", strings.Join(_KeyNames, ", "))
+
+const _KeyName = "bearer-token-signature-secretbearer-token-expiration-timeclient-session-signature-secretclient-session-expiration-timeclient-config-poll-intervalclient-config-loglevelclient-config-service-valid-time-limitevent-notifier-status-rotate-limitevent-notifier-rabbitMq-timeoutservice-session-signature-secretservice-session-expiration-time"
 
 var _KeyNames = []string{
 	_KeyName[0:29],
@@ -45,8 +49,9 @@ var _KeyNames = []string{
 	_KeyName[145:167],
 	_KeyName[167:205],
 	_KeyName[205:239],
-	_KeyName[239:271],
-	_KeyName[271:302],
+	_KeyName[239:270],
+	_KeyName[270:302],
+	_KeyName[302:333],
 }
 
 // KeyNames returns a list of possible string values of Key.
@@ -65,8 +70,9 @@ var _KeyMap = map[Key]string{
 	KeyClientConfigLoglevel:              _KeyName[145:167],
 	KeyClientConfigServiceValidTimeLimit: _KeyName[167:205],
 	KeyEventNotifierStatusRotateLimit:    _KeyName[205:239],
-	KeyServiceSessionSignatureSecret:     _KeyName[239:271],
-	KeyServiceSessionExpirationTime:      _KeyName[271:302],
+	KeyEventNotifierRabbitMqTimeout:      _KeyName[239:270],
+	KeyServiceSessionSignatureSecret:     _KeyName[270:302],
+	KeyServiceSessionExpirationTime:      _KeyName[302:333],
 }
 
 // String implements the Stringer interface.
@@ -94,10 +100,12 @@ var _KeyValue = map[string]Key{
 	strings.ToLower(_KeyName[167:205]): KeyClientConfigServiceValidTimeLimit,
 	_KeyName[205:239]:                  KeyEventNotifierStatusRotateLimit,
 	strings.ToLower(_KeyName[205:239]): KeyEventNotifierStatusRotateLimit,
-	_KeyName[239:271]:                  KeyServiceSessionSignatureSecret,
-	strings.ToLower(_KeyName[239:271]): KeyServiceSessionSignatureSecret,
-	_KeyName[271:302]:                  KeyServiceSessionExpirationTime,
-	strings.ToLower(_KeyName[271:302]): KeyServiceSessionExpirationTime,
+	_KeyName[239:270]:                  KeyEventNotifierRabbitMqTimeout,
+	strings.ToLower(_KeyName[239:270]): KeyEventNotifierRabbitMqTimeout,
+	_KeyName[270:302]:                  KeyServiceSessionSignatureSecret,
+	strings.ToLower(_KeyName[270:302]): KeyServiceSessionSignatureSecret,
+	_KeyName[302:333]:                  KeyServiceSessionExpirationTime,
+	strings.ToLower(_KeyName[302:333]): KeyServiceSessionExpirationTime,
 }
 
 // ParseKey attempts to convert a string to a Key.
@@ -109,5 +117,5 @@ func ParseKey(name string) (Key, error) {
 	if x, ok := _KeyValue[strings.ToLower(name)]; ok {
 		return x, nil
 	}
-	return Key(0), fmt.Errorf("%s is not a valid Key, try [%s]", name, strings.Join(_KeyNames, ", "))
+	return Key(0), fmt.Errorf("%s is %w", name, ErrInvalidKey)
 }

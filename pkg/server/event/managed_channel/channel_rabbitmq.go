@@ -1,12 +1,14 @@
 package managed_channel
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
 	channelv2 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
+	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/pkg/errors"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -85,8 +87,17 @@ func (channel *ChannelRabbitMQ) OnNotify(factory *MarshalFactory) error {
 	return nil
 }
 
+const (
+	defaultHeartbeat = 10 * time.Second
+	defaultLocale    = "en_US"
+)
+
 func (ChannelRabbitMQ) Dial(url string) (*amqp.Connection, *amqp.Channel, error) {
-	conn, err := amqp.Dial(url)
+	conn, err := amqp.DialConfig(url, amqp.Config{
+		Heartbeat: defaultHeartbeat,
+		Locale:    defaultLocale,
+		Dial:      amqp.DefaultDial(globvar.Event.NotifierRabbitMqTimeout()),
+	})
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "dial to amqp url=%s", url)
 	}
@@ -118,7 +129,11 @@ func (ChannelRabbitMQ) Publish(opt *channelv2.RabbitMqConfig, ch *amqp.Channel, 
 	publishing.AppId = opt.Publishing.MessageAppId.String
 	publishing.Body = b
 
-	if err := ch.Publish(
+	ctx, cancel := context.WithTimeout(context.Background(), globvar.Event.NotifierRabbitMqTimeout())
+	defer cancel()
+
+	if err := ch.PublishWithContext(
+		ctx,
 		opt.ChannelPublish.Exchange.String,
 		opt.ChannelPublish.RoutingKey.String,
 		opt.ChannelPublish.Mandatory.Bool,

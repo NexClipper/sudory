@@ -7,9 +7,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate go run github.com/abice/go-enum --file=keys.go --names --nocase
+//go:generate go run -mod=mod github.com/abice/go-enum@v0.5.3 --file=keys.go --names --nocase
 
-/* ENUM(
+/*
+	ENUM(
+
 bearer-token-signature-secret
 bearer-token-expiration-time
 
@@ -21,6 +23,7 @@ client-config-loglevel
 client-config-service-valid-time-limit
 
 event-notifier-status-rotate-limit
+event-notifier-rabbitMq-timeout
 
 service-session-signature-secret
 service-session-expiration-time
@@ -123,10 +126,18 @@ func (value clientConfig) ServiceValidTimeLimit() int {
 type event struct {
 	// 이벤트 알림 상태 rotate limit
 	nofitierStatusRotateLimit uint
+	notifierRabbitMqTimeout   time.Duration
 }
 
 func (value event) NofitierStatusRotateLimit() uint {
 	return value.nofitierStatusRotateLimit
+}
+
+func (value event) NotifierRabbitMqTimeout() time.Duration {
+	if value.notifierRabbitMqTimeout == 0 {
+		return 3 * time.Second // default
+	}
+	return value.notifierRabbitMqTimeout
 }
 
 type serviceSession struct {
@@ -166,6 +177,7 @@ var (
 
 	Event = event{
 		nofitierStatusRotateLimit: 20,
+		notifierRabbitMqTimeout:   3 * time.Second, //
 	}
 
 	ServiceSession = serviceSession{

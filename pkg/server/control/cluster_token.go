@@ -311,7 +311,7 @@ func (ctl ControlVanilla) UpdateClusterTokenLabel(ctx echo.Context) (err error) 
 		updateSet["summary"] = token.Summary
 	}
 
-	// valied update column counts
+	// valid update column counts
 	if len(updateSet) == 0 {
 		return HttpError(errors.New("noting to update"), http.StatusBadRequest)
 	}

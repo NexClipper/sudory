@@ -109,6 +109,9 @@ func (pub Event) InvokeByChannelUuid(tenant_hash string, channel_uuid string, v 
 
 	//update message
 	clone.Update(v)
+
+	// notifier close
+	clone.Close()
 }
 
 func (pub Event) BuildChannelFormatter(channel_uuid string) (err error) {
@@ -168,8 +171,12 @@ func (pub Event) InvokeByEventCategory(tenant_hash string, ec channelv3.EventCat
 			return
 		}
 	}
+
 	//update message
 	clone.Update(v)
+
+	// notifier close
+	clone.Close()
 }
 
 var (
@@ -225,7 +232,9 @@ var (
 )
 
 func (pub *Event) Close() {
-
+	for _, notifier := range pub.EventNotifierMuxer.Notifiers() {
+		notifier.Close()
+	}
 }
 
 func (pub *Event) OnError(err error) {
@@ -298,10 +307,10 @@ func (pub *Event) BuildMuxerByEventCategory(tenant_hash string, event_category c
 				return errors.Wrapf(err, "failed to get a NotifierEdge_option")
 			}
 
-			// valied notifier
+			// valid notifier
 			err = ValidNotifier(edge_opt)
 			if err != nil {
-				return errors.Wrapf(err, "valied notifier")
+				return errors.Wrapf(err, "valid notifier")
 			}
 
 			// notifier factory
@@ -353,10 +362,10 @@ func (pub *Event) BuildMuxerByChannelUuid(tenant_hash string, channel_uuid strin
 			return errors.Wrapf(err, "failed to get a NotifierEdge_option")
 		}
 
-		// valied notifier
+		// valid notifier
 		err = ValidNotifier(edge_opt)
 		if err != nil {
-			return errors.Wrapf(err, "valied notifier")
+			return errors.Wrapf(err, "valid notifier")
 		}
 
 		// notifier factory

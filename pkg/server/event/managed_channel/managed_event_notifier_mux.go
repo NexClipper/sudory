@@ -3,6 +3,7 @@ package managed_channel
 import (
 	"bytes"
 	"strconv"
+	"sync"
 
 	"github.com/pkg/errors"
 )
@@ -68,7 +69,11 @@ func (mux *ManagedEventNotifierMux) Update(v map[string]interface{}) {
 	//모든 리스너의 Update 호출 (async)
 	futures := mux.OnNotifyAsync(v)
 
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
+
 		for _, future := range futures {
 			for future := range future {
 				if future.Error != nil {
@@ -81,6 +86,8 @@ func (mux *ManagedEventNotifierMux) Update(v map[string]interface{}) {
 			}
 		}
 	}() //!go func()
+
+	wg.Wait()
 }
 
 func (mux *ManagedEventNotifierMux) Close() {

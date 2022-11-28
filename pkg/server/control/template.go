@@ -69,7 +69,7 @@ import (
 // 					ParamLog(fmt.Sprintf("%s.Commands", TypeName(body)), body.Commands)...,
 // 				)))
 // 	}
-// 	//valied commands
+// 	//valid commands
 // 	for _, command := range body.Commands {
 // 		if len(command.Name) == 0 {
 // 			return echo.NewHTTPError(http.StatusBadRequest).SetInternal(

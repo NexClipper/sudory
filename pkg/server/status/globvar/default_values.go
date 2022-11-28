@@ -80,6 +80,16 @@ var defaultValueSet = map[Key]defaultValue{
 
 		return nil
 	}},
+	KeyEventNotifierRabbitMqTimeout: {Uuid: "582743938d174e5c956f7621e92d3755", Value: fmt.Sprintf("%v", Event.notifierRabbitMqTimeout), Summary: "이벤트 RabbitMQ Notifier Timeout", Setter: func(s string) error {
+		d, err := time.ParseDuration(s)
+		if err != nil {
+			return err
+		}
+
+		Event.notifierRabbitMqTimeout = d
+
+		return nil
+	}},
 
 	KeyServiceSessionSignatureSecret: {Uuid: "ae806b0bc0ef4d0093a87d2635761aa3", Value: ServiceSession.signatureSecret, Summary: "서비스 세션 시그니처 생성 시크릿", Setter: func(s string) error {
 		ServiceSession.signatureSecret = s
