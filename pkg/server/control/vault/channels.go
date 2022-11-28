@@ -18,7 +18,6 @@ import (
 func CreateChannelStatus(ctx context.Context, db *sql.DB, dialect excute.SqlExcutor, uuid, message string, created time.Time, max_count uint) error {
 	var err error
 	// created := time.Now()
-	channel_opt := channelv3.ChannelStatusOption{}
 	channel_status := channelv3.ChannelStatus{
 		Uuid:    uuid,
 		Created: created,
@@ -27,12 +26,12 @@ func CreateChannelStatus(ctx context.Context, db *sql.DB, dialect excute.SqlExcu
 
 	channel_status_opt_cond := stmt.And(
 		stmt.Equal("uuid", uuid),
-		stmt.IsNull("deleted"),
 	)
 
+	var channel_opt channelv3.ChannelStatusOption
 	// valid; exist channel
-	err = dialect.QueryRow(channel_opt.TableName(), channel_opt.ColumnNames(), channel_status_opt_cond, nil, nil)(ctx, db)(
-		func(scan excute.Scanner) error {
+	err = dialect.QueryRows(channel_opt.TableName(), channel_opt.ColumnNames(), channel_status_opt_cond, nil, nil)(ctx, db)(
+		func(scan excute.Scanner, _ int) error {
 			err := channel_opt.Scan(scan)
 			err = errors.WithStack(err)
 
