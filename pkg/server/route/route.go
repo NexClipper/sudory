@@ -31,6 +31,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/control"
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/excute"
 	mysqlFlavor "github.com/NexClipper/sudory/pkg/server/database/vanilla/excute/dialects/mysql"
+	pprof "github.com/NexClipper/sudory/pkg/server/route/pprof"
 	"github.com/NexClipper/sudory/pkg/version"
 	"github.com/pkg/errors"
 
@@ -102,6 +103,8 @@ func New(cfg *config.Config, db *sql.DB) *Route {
 
 	//swago
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
+	// pprof
+	pprof.Wrap("/debug/pprof", e)
 
 	{
 		// /client/auth*
