@@ -75,14 +75,19 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 
 	// gather service
 	// get service offset
+	var cluster_info_count int
 	var polling_offset vanilla.NullTime
 	func() (err error) {
 		cluster_info := clusterinfov2.ClusterInformation{}
 		columnnames := []string{"polling_offset"}
-		cond := stmt.Equal("cluster_uuid", claims.ClusterUuid)
+		cond := stmt.And(
+			stmt.Equal("cluster_uuid", claims.ClusterUuid),
+			stmt.IsNull("deleted"),
+		)
 
 		err = ctl.dialect.QueryRows(cluster_info.TableName(), columnnames, cond, nil, nil)(ctx.Request().Context(), ctl)(
-			func(scan excute.Scanner, _ int) error {
+			func(scan excute.Scanner, i int) error {
+				cluster_info_count = i + 1
 				err = scan.Scan(&polling_offset)
 				err = errors.WithStack(err)
 
@@ -98,45 +103,75 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 	polling_filter := newPollingFilter(cluster.PoliingLimit)
 	services, steps, err := pollingService(ctx.Request().Context(), ctl, ctl.dialect, claims.ClusterUuid, polling_offset, polling_filter)
 
-	// set polling_offest
-	var polling_offest_ time.Time
-	for _, service := range services {
-		if polling_offest_.IsZero() {
-			polling_offest_ = service.Created
+	err = func() (err error) {
+		// save polling_count to cluster_infomation
+		cluster_info := clusterinfov2.ClusterInformation{}
+		cluster_info.ClusterUuid = cluster.Uuid
+		cluster_info.PollingCount = *vanilla.NewNullInt(len(services))
+		cluster_info.Created = time.Now()
+		cluster_info.Updated = *vanilla.NewNullTime(cluster_info.Created)
+
+		// set polling_offest
+		for _, service := range services {
+			// 초기화가 안되어 있으면 값을 세팅
+			if !cluster_info.PollingOffset.Valid {
+				cluster_info.PollingOffset = *vanilla.NewNullTime(service.Created)
+				continue
+			}
+
+			// 서비스 생성 시간이 작은것으로 세팅
+			// 다음 polling에서 다시 폴링해야 하기 때문에
+			if cluster_info.PollingOffset.Time.After(service.Created) {
+				cluster_info.PollingOffset = *vanilla.NewNullTime(service.Created)
+			}
 		}
 
-		if polling_offest_.After(service.Created) {
-			polling_offest_ = service.Created
+		switch cluster_info_count {
+		case 0:
+			affected, _, err := ctl.dialect.Insert(cluster_info.TableName(), cluster_info.ColumnNames(), cluster_info.Values())(
+				ctx.Request().Context(), ctl)
+			if err != nil {
+				return errors.Wrapf(err, "insert")
+			}
+			if affected == 0 {
+				err := errors.New("no affected")
+				return err
+			}
+
+			return nil
+		default:
+			keys_values := map[string]interface{}{
+				"cluster_uuid":   cluster_info.ClusterUuid,
+				"polling_count":  cluster_info.PollingCount,
+				"polling_offset": cluster_info.PollingOffset,
+				"updated":        cluster_info.Updated,
+			}
+			if !cluster_info.PollingOffset.Valid {
+				delete(keys_values, "polling_offset")
+			}
+
+			cond := stmt.And(
+				stmt.Equal("cluster_uuid", cluster_info.ClusterUuid),
+				stmt.IsNull("deleted"),
+			)
+
+			affected, err := ctl.dialect.Update(cluster_info.TableName(), keys_values, cond)(
+				ctx.Request().Context(), ctl)
+			if err != nil {
+				err := errors.Wrapf(err, "update")
+				return err
+			}
+
+			if 1 < affected {
+				err := errors.Wrapf(err, "too many affected")
+				return err
+			}
+
+			return nil
 		}
-	}
-
-	if !polling_offest_.IsZero() {
-		polling_offset = *vanilla.NewNullTime(polling_offest_)
-	}
-
-	// save polling_count to cluster_infomation
-	cluster_info := clusterinfov2.ClusterInformation{}
-	cluster_info.ClusterUuid = cluster.Uuid
-	cluster_info.PollingCount = *vanilla.NewNullInt(len(services))
-	cluster_info.PollingOffset = polling_offset
-	cluster_info.Created = time.Now()
-	cluster_info.Updated = *vanilla.NewNullTime(cluster_info.Created)
-
-	cluster_info_update_columns := make([]string, 0, 3)
-	if cluster_info.PollingCount.Valid {
-		cluster_info_update_columns = append(cluster_info_update_columns, "polling_count")
-	}
-	if cluster_info.PollingOffset.Valid {
-		cluster_info_update_columns = append(cluster_info_update_columns, "polling_offset")
-	}
-	if cluster_info.Updated.Valid {
-		cluster_info_update_columns = append(cluster_info_update_columns, "updated")
-	}
-
-	_, _, err = ctl.dialect.InsertOrUpdate(cluster_info.TableName(), cluster_info.ColumnNames(), cluster_info_update_columns, cluster_info.Values())(
-		ctx.Request().Context(), ctl)
+	}()
 	if err != nil {
-		return errors.Wrapf(err, "exec insert|update statement")
+		return errors.Wrapf(err, "save cluster_information")
 	}
 
 	UpdateServiceStatus := func(service servicev3.Service, assigned_client_uuid string, status servicev3.StepStatus, t time.Time) servicev3.Service {
@@ -945,6 +980,7 @@ func usedJwtSigningMethod(token jwt.Token, init jwt.SigningMethod) jwt.SigningMe
 // }
 
 // setCookie
+//
 //lint:ignore U1000 auto-generated
 func setCookie(ctx echo.Context, key, value string, exp time.Duration) {
 	cookie := new(http.Cookie)
@@ -955,6 +991,7 @@ func setCookie(ctx echo.Context, key, value string, exp time.Duration) {
 }
 
 // setCookie
+//
 //lint:ignore U1000 auto-generated
 func getCookie(ctx echo.Context, key string) (string, error) {
 	cookie, err := ctx.Cookie(key)

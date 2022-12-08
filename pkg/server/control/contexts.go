@@ -109,7 +109,7 @@ func GetClientSessionClaims(ctx echo.Context, tx excute.Preparer, dialect excute
 			// 	return
 			// }
 
-			var polling_count int
+			var polling_count vanilla.NullInt
 			clusterinfo := clusterinfov2.ClusterInformation{}
 			clusterinfo_columns := []string{"polling_count"}
 			clusterinfo_cond := stmt.Equal("cluster_uuid", claims.ClusterUuid)
@@ -128,7 +128,7 @@ func GetClientSessionClaims(ctx echo.Context, tx excute.Preparer, dialect excute
 			}
 
 			//reflesh claims
-			polling_interval := clusterv3.ConvPollingOption(cluster.PollingOption).Interval(time.Duration(int64(globvar.ClientConfig.PollInterval())*int64(time.Second)), polling_count) / time.Second
+			polling_interval := clusterv3.ConvPollingOption(cluster.PollingOption).Interval(time.Duration(int64(globvar.ClientConfig.PollInterval())*int64(time.Second)), polling_count.Int()) / time.Second
 			claims.PollInterval = int(polling_interval)
 			claims.ExpiresAt = globvar.ClientSession.ExpirationTime(time_now).Unix()
 			claims.Loglevel = globvar.ClientConfig.Loglevel()
