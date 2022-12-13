@@ -167,18 +167,18 @@ func (ctl ControlVanilla) AliveClusterSession(ctx echo.Context) error {
 	cluster_uuid := echoutil.Param(ctx)[__CLUSTER_UUID__]
 
 	session_table := sessionv3.TableNameWithTenant(claims.Hash)
-	session := sessionv3.Session{}
 
-	session.ClusterUuid = cluster_uuid
 	cond := stmt.And(
-		stmt.Equal("cluster_uuid", session.ClusterUuid),
+		stmt.Equal("cluster_uuid", cluster_uuid),
 		stmt.IsNull("deleted"),
 	)
 	order := stmt.Desc("expiration_time")
 	page := stmt.Limit(1)
-	err = ctl.dialect.QueryRow(session_table, session.ColumnNames(), cond, order, page)(
+
+	var session sessionv3.Session
+	err = ctl.dialect.QueryRows(session_table, session.ColumnNames(), cond, order, page)(
 		ctx.Request().Context(), ctl)(
-		func(scan excute.Scanner) error {
+		func(scan excute.Scanner, _ int) error {
 			err := session.Scan(scan)
 			err = errors.WithStack(err)
 
