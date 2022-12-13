@@ -30,6 +30,11 @@ func (c *Client) ResourceDelete(gv schema.GroupVersion, resource string, params 
 	switch gv.Identifier() {
 	case "v1":
 		switch resource {
+		case "namespaces":
+			err = c.client.CoreV1().Namespaces().Delete(ctx, name, metav1.DeleteOptions{})
+			if err != nil {
+				break
+			}
 		case "pods":
 			err = c.client.CoreV1().Pods(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 			if err != nil {
