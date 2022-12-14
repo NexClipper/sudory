@@ -82,7 +82,7 @@ type NotifierFuture struct {
 	Error    error
 }
 
-//Notifier
+// Notifier
 type Notifier interface {
 	Type() fmt.Stringer          //리스너 타입
 	Uuid() string                //uuid
@@ -103,17 +103,17 @@ func OnNotifyAsync(notifier Notifier, factory *MarshalFactory) <-chan NotifierFu
 	return future
 }
 
-//EventNotifierMuxer
+// EventNotifierMuxer
 type EventNotifierMuxer interface {
-	Notifiers() HashsetNotifier    // Notifiers
-	Formatters() HashsetFormatter  // Formatter
-	Update(map[string]interface{}) // Update 발생
+	Notifiers() HashsetNotifier      // Notifiers
+	Formatters() HashsetFormatter    // Formatter
+	Update([]map[string]interface{}) // Update 발생
 	EventPublisher() Publisher
 	Regist(Publisher) EventNotifierMuxer
 	Close() // 이벤트 구독 취소 // 전체 Notifier 제거
 }
 
-//Publisher
+// Publisher
 type Publisher interface {
 	SetEventNotifierMuxer(EventNotifierMuxer)
 	Close()
@@ -291,7 +291,8 @@ func urlencoded(v interface{}) ([]byte, error) {
 }
 
 // text/plain
-//  sep by line
+//
+//	sep by line
 func text_plain(v interface{}) ([]byte, error) {
 	conv_map := func(v map[string]interface{}) string {
 		s := make([]string, 0, len(v))

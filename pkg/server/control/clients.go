@@ -261,25 +261,28 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 		return errors.Wrapf(err, "failed to get a tenent by cluster_uuid")
 	}
 
+	var mm = make([]map[string]interface{}, len(rsp))
 	// invoke event (service-poll-out)
-	for _, service := range rsp {
+	for i, service := range rsp {
 		const event_name = "service-poll-out"
-		m := map[string]interface{}{}
-		m["event_name"] = event_name
-		m["service_uuid"] = service.Uuid
-		m["service_name"] = service.Name
-		m["template_uuid"] = service.TemplateUuid
-		m["cluster_uuid"] = service.ClusterUuid
-		m["assigned_client_uuid"] = service.AssignedClientUuid
-		m["status"] = service.Status
-		m["status_description"] = service.Status.String()
-		m["result_type"] = servicev3.ResultSaveTypeNone.String()
-		m["result"] = ""
-		m["step_count"] = service.StepCount
-		m["step_position"] = service.StepPosition
+		mm[i] = map[string]interface{}{}
+		mm[i]["event_name"] = event_name
+		mm[i]["service_uuid"] = service.Uuid
+		mm[i]["service_name"] = service.Name
+		mm[i]["template_uuid"] = service.TemplateUuid
+		mm[i]["cluster_uuid"] = service.ClusterUuid
+		mm[i]["assigned_client_uuid"] = service.AssignedClientUuid
+		mm[i]["status"] = service.Status
+		mm[i]["status_description"] = service.Status.String()
+		mm[i]["result_type"] = servicev3.ResultSaveTypeNone.String()
+		mm[i]["result"] = ""
+		mm[i]["step_count"] = service.StepCount
+		mm[i]["step_position"] = service.StepPosition
+	}
 
+	if 0 < len(mm) {
 		// invoke event by event category
-		managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryServicePollingOut, m)
+		managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryServicePollingOut, mm)
 	}
 
 	return ctx.JSON(http.StatusOK, rsp)
@@ -480,18 +483,18 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 
 	// invoke event (service-poll-in)
 	const event_name = "service-poll-in"
-	m := map[string]interface{}{}
-	m["event_name"] = event_name
-	m["service_uuid"] = service.Uuid
-	m["service_name"] = service.Name
-	m["template_uuid"] = service.TemplateUuid
-	m["cluster_uuid"] = service.ClusterUuid
-	m["assigned_client_uuid"] = service.AssignedClientUuid
-	m["status"] = service.Status
-	m["status_description"] = service.Status.String()
-	m["result_type"] = service_result.ResultSaveType.String()
-	m["result"] = func() interface{} {
-
+	mm := make([]map[string]interface{}, 1)
+	mm[0] = map[string]interface{}{}
+	mm[0]["event_name"] = event_name
+	mm[0]["service_uuid"] = service.Uuid
+	mm[0]["service_name"] = service.Name
+	mm[0]["template_uuid"] = service.TemplateUuid
+	mm[0]["cluster_uuid"] = service.ClusterUuid
+	mm[0]["assigned_client_uuid"] = service.AssignedClientUuid
+	mm[0]["status"] = service.Status
+	mm[0]["status_description"] = service.Status.String()
+	mm[0]["result_type"] = service_result.ResultSaveType.String()
+	mm[0]["result"] = func() interface{} {
 		var b = []byte(strings.TrimSpace(body.Result))
 		if len(b) == 0 {
 			// empty string
@@ -511,33 +514,36 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		// json
 		return json.RawMessage(body.Result)
 	}()
-	m["step_count"] = service.StepCount
-	m["step_position"] = service.StepPosition
+	mm[0]["step_count"] = service.StepCount
+	mm[0]["step_position"] = service.StepPosition
 
-	if service.Status == servicev3.StepStatusSuccess && len(service_result.Result.String()) == 0 {
-		log.Debugf("channel(poll-in-service): %+v", m)
-	}
+	if 0 < len(mm) {
+		if service.Status == servicev3.StepStatusSuccess && len(service_result.Result.String()) == 0 {
+			log.Debugf("channel(poll-in-service): %+v", mm)
+		}
 
-	// invoke event by channel uuid
-	if 0 < len(service.SubscribedChannel.String) {
-		// find channel
-		channel := channelv3.ManagedChannel{}
-		channel.Uuid = service.SubscribedChannel.String
-		channel_cond := stmt.And(
-			stmt.Equal("uuid", channel.Uuid),
-			stmt.IsNull("deleted"),
-		)
-		channel_table := channelv3.TableNameWithTenant_ManagedChannel(tenant.Hash)
-		found, err := ctl.dialect.Exist(channel_table, channel_cond)(context.Background(), ctl)
-		if err != nil {
-			return err
+		// invoke event by channel uuid
+		if 0 < len(service.SubscribedChannel.String) {
+			// find channel
+			channel := channelv3.ManagedChannel{}
+			channel.Uuid = service.SubscribedChannel.String
+			channel_cond := stmt.And(
+				stmt.Equal("uuid", channel.Uuid),
+				stmt.IsNull("deleted"),
+			)
+			channel_table := channelv3.TableNameWithTenant_ManagedChannel(tenant.Hash)
+			found, err := ctl.dialect.Exist(channel_table, channel_cond)(context.Background(), ctl)
+			if err != nil {
+				return err
+			}
+			if found {
+				managed_channel.InvokeByChannelUuid(tenant.Hash, service.SubscribedChannel.String, mm)
+			}
 		}
-		if found {
-			managed_channel.InvokeByChannelUuid(tenant.Hash, service.SubscribedChannel.String, m)
-		}
+
+		// invoke event by event category
+		managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryServicePollingIn, mm)
 	}
-	// invoke event by event category
-	managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryServicePollingIn, m)
 
 	return ctx.JSON(http.StatusOK, OK())
 }
@@ -694,14 +700,16 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 
 	//invoke event (client-auth-accept)
 	const event_name = "client-auth-accept"
-	m := map[string]interface{}{
-		"event_name":   event_name,
-		"cluster_uuid": payload.ClusterUuid,
-		"session_uuid": payload.Uuid,
-	}
+	mm := make([]map[string]interface{}, 1)
+	mm[0] = map[string]interface{}{}
+	mm[0]["event_name"] = event_name
+	mm[0]["cluster_uuid"] = payload.ClusterUuid
+	mm[0]["session_uuid"] = payload.Uuid
 
-	// invoke event by event category
-	managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryClientAuthAccept, m)
+	if 0 < len(mm) {
+		// invoke event by event category
+		managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryClientAuthAccept, mm)
+	}
 
 	return ctx.JSON(http.StatusOK, OK())
 }

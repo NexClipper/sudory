@@ -18,9 +18,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-var InvokeByChannelUuid func(tenant_hash string, channel_uuid string, v map[string]interface{}) = func(tenant_hash string, channel_uuid string, v map[string]interface{}) {}
+var InvokeByChannelUuid func(tenant_hash string, channel_uuid string, v []map[string]interface{}) = func(tenant_hash string, channel_uuid string, v []map[string]interface{}) {}
 
-var InvokeByEventCategory func(tenant_hash string, ec channelv3.EventCategory, v map[string]interface{}) = func(tenant_hash string, ec channelv3.EventCategory, v map[string]interface{}) {}
+var InvokeByEventCategory func(tenant_hash string, ec channelv3.EventCategory, v []map[string]interface{}) = func(tenant_hash string, ec channelv3.EventCategory, v []map[string]interface{}) {}
 
 // var _ EventPublisher = (*ManagedChannel)(nil)
 
@@ -88,7 +88,7 @@ func (pub *Event) SetEventNotifierMuxer(mux EventNotifierMuxer) {
 // 	return pub.HashsetEventNotifierMuxer
 // }
 
-func (pub Event) InvokeByChannelUuid(tenant_hash string, channel_uuid string, v map[string]interface{}) {
+func (pub Event) InvokeByChannelUuid(tenant_hash string, channel_uuid string, v []map[string]interface{}) {
 	clone := NewEvent(pub.DB, pub.dialect)
 	clone.ErrorHandlers = pub.ErrorHandlers
 	clone.NofitierErrorHandlers = pub.NofitierErrorHandlers
@@ -148,7 +148,7 @@ func (pub Event) BuildChannelFormatter(channel_uuid string) (err error) {
 	return
 }
 
-func (pub Event) InvokeByEventCategory(tenant_hash string, ec channelv3.EventCategory, v map[string]interface{}) {
+func (pub Event) InvokeByEventCategory(tenant_hash string, ec channelv3.EventCategory, v []map[string]interface{}) {
 	clone := NewEvent(pub.DB, pub.dialect)
 	clone.ErrorHandlers = pub.ErrorHandlers
 	clone.NofitierErrorHandlers = pub.NofitierErrorHandlers

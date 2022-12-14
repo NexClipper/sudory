@@ -39,19 +39,23 @@ func (mux ManagedEventNotifierMux) Notifiers() HashsetNotifier {
 	return mux.notifiers
 }
 
-func (mux ManagedEventNotifierMux) OnNotify(v map[string]interface{}) []error {
+func (mux ManagedEventNotifierMux) OnNotify(v []map[string]interface{}) []error {
 	rst := make([]error, 0, len(mux.notifiers))
 	for channel_uuid, notifier := range mux.notifiers {
 		formatter := mux.formatters[channel_uuid]
-		rst = append(rst, notifier.OnNotify(NewMarshalFactory(v, formatter)))
+		for _, v := range v {
+			rst = append(rst, notifier.OnNotify(NewMarshalFactory(v, formatter)))
+		}
 	}
 	return rst
 }
-func (mux ManagedEventNotifierMux) OnNotifyAsync(v map[string]interface{}) []<-chan NotifierFuture {
+func (mux ManagedEventNotifierMux) OnNotifyAsync(v []map[string]interface{}) []<-chan NotifierFuture {
 	futures := make([]<-chan NotifierFuture, 0, len(mux.notifiers))
 	for channel_uuid, notifier := range mux.notifiers {
 		formatter := mux.formatters[channel_uuid]
-		futures = append(futures, OnNotifyAsync(notifier, NewMarshalFactory(v, formatter)))
+		for _, v := range v {
+			futures = append(futures, OnNotifyAsync(notifier, NewMarshalFactory(v, formatter)))
+		}
 	}
 	return futures
 }
@@ -64,7 +68,7 @@ func (mux ManagedEventNotifierMux) Formatters() HashsetFormatter {
 	return mux.formatters
 }
 
-func (mux *ManagedEventNotifierMux) Update(v map[string]interface{}) {
+func (mux *ManagedEventNotifierMux) Update(v []map[string]interface{}) {
 
 	//모든 리스너의 Update 호출 (async)
 	futures := mux.OnNotifyAsync(v)
