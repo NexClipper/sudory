@@ -1,4 +1,4 @@
-package v2
+package clusterinfos
 
 import (
 	"time"

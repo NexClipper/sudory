@@ -81,6 +81,32 @@ definitions:
         description: uuid
         type: string
     type: object
+  parse.ListNode:
+    properties:
+      NodeType:
+        type: integer
+      Pos:
+        type: integer
+      nodes:
+        description: The element nodes in lexical order.
+        items: {}
+        type: array
+    type: object
+  parse.Tree:
+    properties:
+      mode:
+        description: parsing mode.
+        type: integer
+      name:
+        description: name of the template represented by the tree.
+        type: string
+      parseName:
+        description: name of the top-level template during parsing, for error messages.
+        type: string
+      root:
+        $ref: '#/definitions/parse.ListNode'
+        description: top-level root of the tree.
+    type: object
   service.HttpReq_ClientServiceUpdate:
     properties:
       ended:
@@ -364,30 +390,45 @@ definitions:
         description: pk char(32) service.uuid
         type: string
     type: object
+  sessions.Session:
+    properties:
+      cluster_uuid:
+        type: string
+      created:
+        type: string
+      deleted:
+        type: object
+      expiration_time:
+        type: object
+      id:
+        description: pk
+        type: integer
+      issued_at_time:
+        type: object
+      token:
+        type: string
+      updated:
+        type: object
+      uuid:
+        description: uuid
+        type: string
+    type: object
+  sessions.Status:
+    properties:
+      alive:
+        type: boolean
+      rebouncing:
+        type: boolean
+    type: object
   template.HttpRsp_Template:
     properties:
       commands:
         items:
           $ref: '#/definitions/template.TemplateCommand'
         type: array
-      created:
-        type: string
-      deleted:
-        type: string
-      id:
-        description: pk
-        type: integer
-      name:
-        type: string
-      origin:
-        type: string
-      summary:
-        type: string
-      updated:
-        type: string
-      uuid:
-        description: uuid
-        type: string
+      tree:
+        $ref: '#/definitions/parse.Tree'
+        description: The underlying template's parse tree, updated to be HTML-safe.
     type: object
   template.HttpRsp_TemplateCommand:
     properties:
@@ -914,29 +955,6 @@ definitions:
         type: string
     type: object
   v3.RegularPollingOption:
-    type: object
-  v3.Session:
-    properties:
-      cluster_uuid:
-        type: string
-      created:
-        type: string
-      deleted:
-        type: object
-      expiration_time:
-        type: object
-      id:
-        description: pk
-        type: integer
-      issued_at_time:
-        type: object
-      token:
-        type: string
-      updated:
-        type: object
-      uuid:
-        description: uuid
-        type: string
     type: object
   v3.SmartPollingOption:
     properties:
@@ -2079,7 +2097,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/v3.Session'
+              $ref: '#/definitions/sessions.Session'
             type: array
       security:
       - ServiceAuth: []
@@ -2121,7 +2139,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/v3.Session'
+            $ref: '#/definitions/sessions.Session'
       security:
       - ServiceAuth: []
       tags:
@@ -2143,7 +2161,7 @@ paths:
         "200":
           description: OK
           schema:
-            type: boolean
+            $ref: '#/definitions/sessions.Status'
       security:
       - ServiceAuth: []
       tags:

@@ -1842,7 +1842,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/v3.Session"
+                                "$ref": "#/definitions/sessions.Session"
                             }
                         }
                     }
@@ -1879,7 +1879,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "boolean"
+                            "$ref": "#/definitions/sessions.Status"
                         }
                     }
                 }
@@ -1915,7 +1915,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/v3.Session"
+                            "$ref": "#/definitions/sessions.Session"
                         }
                     }
                 }
@@ -2312,6 +2312,43 @@ const docTemplate = `{
                 "uuid": {
                     "description": "uuid",
                     "type": "string"
+                }
+            }
+        },
+        "parse.ListNode": {
+            "type": "object",
+            "properties": {
+                "NodeType": {
+                    "type": "integer"
+                },
+                "Pos": {
+                    "type": "integer"
+                },
+                "nodes": {
+                    "description": "The element nodes in lexical order.",
+                    "type": "array",
+                    "items": {}
+                }
+            }
+        },
+        "parse.Tree": {
+            "type": "object",
+            "properties": {
+                "mode": {
+                    "description": "parsing mode.",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "name of the template represented by the tree.",
+                    "type": "string"
+                },
+                "parseName": {
+                    "description": "name of the top-level template during parsing, for error messages.",
+                    "type": "string"
+                },
+                "root": {
+                    "description": "top-level root of the tree.",
+                    "$ref": "#/definitions/parse.ListNode"
                 }
             }
         },
@@ -2727,6 +2764,51 @@ const docTemplate = `{
                 }
             }
         },
+        "sessions.Session": {
+            "type": "object",
+            "properties": {
+                "cluster_uuid": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "deleted": {
+                    "type": "object"
+                },
+                "expiration_time": {
+                    "type": "object"
+                },
+                "id": {
+                    "description": "pk",
+                    "type": "integer"
+                },
+                "issued_at_time": {
+                    "type": "object"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "object"
+                },
+                "uuid": {
+                    "description": "uuid",
+                    "type": "string"
+                }
+            }
+        },
+        "sessions.Status": {
+            "type": "object",
+            "properties": {
+                "alive": {
+                    "type": "boolean"
+                },
+                "rebouncing": {
+                    "type": "boolean"
+                }
+            }
+        },
         "template.HttpRsp_Template": {
             "type": "object",
             "properties": {
@@ -2736,31 +2818,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/template.TemplateCommand"
                     }
                 },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "string"
-                },
-                "id": {
-                    "description": "pk",
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "origin": {
-                    "type": "string"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "description": "uuid",
-                    "type": "string"
+                "tree": {
+                    "description": "The underlying template's parse tree, updated to be HTML-safe.",
+                    "$ref": "#/definitions/parse.Tree"
                 }
             }
         },
@@ -3514,40 +3574,6 @@ const docTemplate = `{
         },
         "v3.RegularPollingOption": {
             "type": "object"
-        },
-        "v3.Session": {
-            "type": "object",
-            "properties": {
-                "cluster_uuid": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "string"
-                },
-                "deleted": {
-                    "type": "object"
-                },
-                "expiration_time": {
-                    "type": "object"
-                },
-                "id": {
-                    "description": "pk",
-                    "type": "integer"
-                },
-                "issued_at_time": {
-                    "type": "object"
-                },
-                "token": {
-                    "type": "string"
-                },
-                "updated": {
-                    "type": "object"
-                },
-                "uuid": {
-                    "description": "uuid",
-                    "type": "string"
-                }
-            }
         },
         "v3.SmartPollingOption": {
             "type": "object",

@@ -1,16 +1,16 @@
-package v3_test
+package sessions_test
 
 import (
 	"os"
 	"testing"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/ice_cream_maker"
-	v3 "github.com/NexClipper/sudory/pkg/server/model/session/v3"
+	sessions "github.com/NexClipper/sudory/pkg/server/model/session/v3"
 )
 
 var objs = []interface{}{
 	// v3.Session_essential{},
-	v3.Session{},
+	sessions.Session{},
 }
 
 func TestNoXormColumns(t *testing.T) {
