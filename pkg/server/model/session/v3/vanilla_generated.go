@@ -15,20 +15,6 @@ func (Session) ColumnNames() []string {
 	}
 }
  
-func (Session) ColumnNamesWithAlias() []string {
-	return []string{
- 		"id",
- 		"uuid",
- 		"cluster_uuid",
- 		"token",
- 		"issued_at_time",
- 		"expiration_time",
- 		"created",
- 		"updated",
- 		"deleted",
-	}
-}
- 
 func (row Session) Values() []interface{} {
 	return []interface{}{
 		row.ID,

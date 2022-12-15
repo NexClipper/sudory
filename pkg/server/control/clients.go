@@ -26,11 +26,11 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/model/auths/v2"
 	channelv3 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	clusterv3 "github.com/NexClipper/sudory/pkg/server/model/cluster/v3"
-	clusterinfov2 "github.com/NexClipper/sudory/pkg/server/model/cluster_infomation/v2"
+	clusterinfos "github.com/NexClipper/sudory/pkg/server/model/cluster_infomation/v2"
 	"github.com/NexClipper/sudory/pkg/server/model/cluster_token/v3"
 	cryptov2 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v2"
 	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
-	sessionv3 "github.com/NexClipper/sudory/pkg/server/model/session/v3"
+	sessions "github.com/NexClipper/sudory/pkg/server/model/session/v3"
 	"github.com/NexClipper/sudory/pkg/server/model/tenants/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
 	"github.com/golang-jwt/jwt/v4"
@@ -78,7 +78,7 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 	var cluster_info_count int
 	var polling_offset vanilla.NullTime
 	func() (err error) {
-		cluster_info := clusterinfov2.ClusterInformation{}
+		cluster_info := clusterinfos.ClusterInformation{}
 		columnnames := []string{"polling_offset"}
 		cond := stmt.And(
 			stmt.Equal("cluster_uuid", claims.ClusterUuid),
@@ -99,13 +99,29 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 		return
 	}()
 
+	// 오프셋이 서비스 유효시간 보다 작은 경우
+	// 혹은 오프셋이 없는 경우
+	// 오프셋 시간을 서비스 유효시간으로 설정
+	timelimit := globvar.ClientConfig.ServiceValidTimeLimit()
+	ltime := time.Now().
+		Truncate(time.Second).
+		Add(time.Duration(timelimit) * time.Minute * -1)
+
+	if !polling_offset.Valid {
+		polling_offset = *vanilla.NewNullTime(ltime)
+	}
+
+	if ltime.After(polling_offset.Time) {
+		polling_offset = *vanilla.NewNullTime(ltime)
+	}
+
 	// polling limit filter
-	polling_filter := newPollingFilter(cluster.PoliingLimit)
+	polling_filter := newPollingFilter(cluster.PoliingLimit, timelimit, ltime)
 	services, steps, err := pollingService(ctx.Request().Context(), ctl, ctl.dialect, claims.ClusterUuid, polling_offset, polling_filter)
 
 	err = func() (err error) {
 		// save polling_count to cluster_infomation
-		cluster_info := clusterinfov2.ClusterInformation{}
+		cluster_info := clusterinfos.ClusterInformation{}
 		cluster_info.ClusterUuid = cluster.Uuid
 		cluster_info.PollingCount = *vanilla.NewNullInt(len(services))
 		cluster_info.Created = time.Now()
@@ -621,7 +637,7 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	iat := time.Now()
 	exp := globvar.ClientSession.ExpirationTime(iat)
 
-	payload := &sessionv3.ClientSessionPayload{
+	payload := &sessions.ClientSessionPayload{
 		ExpiresAt:    exp.Unix(),
 		IssuedAt:     iat.Unix(),
 		Uuid:         session_token_uuid,
@@ -652,7 +668,7 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 			errors.Wrapf(err, "jwt New payload=%+v", payload))
 	}
 
-	session := sessionv3.Session{}
+	session := sessions.Session{}
 	session.Uuid = payload.Uuid
 	session.ClusterUuid = payload.ClusterUuid
 	session.Token = token_string
@@ -733,7 +749,7 @@ func (ctl ControlVanilla) VerifyClientSessionToken(ctx echo.Context) (err error)
 			))
 		}
 
-		claims := new(sessionv3.ClientSessionPayload)
+		claims := new(sessions.ClientSessionPayload)
 		jwt_token, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
 			return []byte(globvar.ClientSession.SignatureSecret()), nil
 		})
@@ -741,7 +757,7 @@ func (ctl ControlVanilla) VerifyClientSessionToken(ctx echo.Context) (err error)
 			return errors.Wrapf(err, "jwt parse claims")
 		}
 
-		if _, ok := jwt_token.Claims.(*sessionv3.ClientSessionPayload); !ok || !jwt_token.Valid {
+		if _, ok := jwt_token.Claims.(*sessions.ClientSessionPayload); !ok || !jwt_token.Valid {
 			return errors.Errorf("jwt verify%v", logs.KVL(
 				"header", __HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__,
 				"token", token,
@@ -759,7 +775,7 @@ func (ctl ControlVanilla) VerifyClientSessionToken(ctx echo.Context) (err error)
 func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error) {
 	token := ctx.Request().Header.Get(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__)
 	var jwt_token *jwt.Token
-	claims := new(sessionv3.ClientSessionPayload)
+	claims := new(sessions.ClientSessionPayload)
 	err = func() (err error) {
 		if len(token) == 0 {
 			return errors.Wrapf(ErrorInvalidRequestParameter, "missing request header%s",
@@ -775,7 +791,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 			))
 		}
 
-		if _, ok := jwt_token.Claims.(*sessionv3.ClientSessionPayload); !ok {
+		if _, ok := jwt_token.Claims.(*sessions.ClientSessionPayload); !ok {
 			return errors.Errorf("is not valid type%v",
 				logs.KVL(
 					"jwt.Token.Claims", TypeName(jwt_token.Claims),
@@ -814,7 +830,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 
 	var service_count vanilla.NullInt
 	err = func() (err error) {
-		cluster_info := clusterinfov2.ClusterInformation{}
+		cluster_info := clusterinfos.ClusterInformation{}
 		columnnames := []string{"polling_count"}
 		cond := stmt.Equal("cluster_uuid", claims.ClusterUuid)
 
@@ -865,7 +881,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 	//save client session-token to header
 	ctx.Response().Header().Set(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, new_token_string)
 
-	session := sessionv3.Session{}
+	session := sessions.Session{}
 	session.Uuid = claims.Uuid
 	session.Token = new_token_string
 	session.ExpirationTime = *vanilla.NewNullTime(time.Unix(claims.ExpiresAt, 0))
@@ -1040,18 +1056,13 @@ func getCookie(ctx echo.Context, key string) (string, error) {
 
 type PollingFilter = func(service servicev3.Service_polling) bool
 
-func newPollingFilter(limit int) PollingFilter {
+func newPollingFilter(limit int, timelimit int, ltime time.Time) PollingFilter {
 	limit = func(limit int) int {
 		if limit == 0 {
 			limit = math.MaxInt8 // 127
 		}
 		return limit + 1
 	}(limit)
-
-	timelimit := globvar.ClientConfig.ServiceValidTimeLimit()
-	ltime := time.Now().
-		Truncate(time.Second).
-		Add(time.Duration(timelimit) * time.Minute * -1)
 
 	return func(service servicev3.Service_polling) bool {
 		status := service.Status
