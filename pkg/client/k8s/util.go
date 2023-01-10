@@ -37,6 +37,10 @@ func FindCastFromMap(m map[string]interface{}, find string, cast interface{}) (b
 	}
 	found := true
 
+	if val == nil {
+		return found, nil
+	}
+
 	crv := reflect.ValueOf(cast)
 	if crv.Kind() != reflect.Ptr {
 		return found, fmt.Errorf("cast value must be pointer")
@@ -44,6 +48,13 @@ func FindCastFromMap(m map[string]interface{}, find string, cast interface{}) (b
 	crv = crv.Elem()
 
 	vrv := reflect.ValueOf(val)
+	switch t := vrv.Kind(); t {
+	case reflect.Chan, reflect.Func, reflect.Map, reflect.Ptr, reflect.UnsafePointer, reflect.Interface, reflect.Slice:
+		if vrv.IsNil() {
+			return found, nil
+		}
+	}
+
 	if vrv.Type() != crv.Type() {
 		return found, fmt.Errorf("type of '%s' must be %s, not %s", find, crv.Type().String(), vrv.Type().String())
 	}

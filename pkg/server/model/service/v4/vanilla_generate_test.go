@@ -5,18 +5,15 @@ import (
 	"testing"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/ice_cream_maker"
-	"github.com/NexClipper/sudory/pkg/server/model/service/v3"
+	"github.com/NexClipper/sudory/pkg/server/model/service/v4"
 )
 
 var objs = []interface{}{
-	service.Service_create{},
 	service.Service{},
 
-	// service.ServiceResult_create{},
 	service.ServiceResult{},
 
-	service.ServiceStep_create{},
-	service.ServiceStep{},
+	service.ServiceStatus{},
 
 	service.Service_polling{},
 }

@@ -10,11 +10,11 @@ import (
 )
 
 type ServiceExecutor struct {
-	service       service.Service
-	updateChannel chan<- service.UpdateServiceStep
+	service       service.ServiceV1
+	updateChannel chan<- service.ServiceUpdateInterface
 }
 
-func NewServiceExecutor(service service.Service, updateChannel chan<- service.UpdateServiceStep) *ServiceExecutor {
+func NewServiceExecutor(service service.ServiceV1, updateChannel chan<- service.ServiceUpdateInterface) *ServiceExecutor {
 	return &ServiceExecutor{service: service, updateChannel: updateChannel}
 }
 
@@ -80,7 +80,7 @@ func (se *ServiceExecutor) Execute() (err error) {
 
 func (se *ServiceExecutor) SendServiceStatusUpdate(seq int, status service.StepStatus, result string, st, et time.Time) {
 	if se.updateChannel != nil {
-		update := service.UpdateServiceStep{
+		update := service.UpdateServiceV1{
 			Uuid:      se.service.Id,
 			StepCount: len(se.service.Steps),
 			Sequence:  seq,
@@ -90,7 +90,7 @@ func (se *ServiceExecutor) SendServiceStatusUpdate(seq int, status service.StepS
 			Ended:     et,
 		}
 
-		se.updateChannel <- update
+		se.updateChannel <- &update
 	}
 }
 

@@ -1,0 +1,40 @@
+@protocolver = HTTP/1.1
+@protocol    = http
+@hostname    = localhost
+@port        = 8099
+@url         = {{protocol}}://{{hostname}}:{{port}}
+
+
+@date = {{$datetime "YYYY-MM-DDThh:mm:ss"}}Z
+
+@template_uuid = 00000000000000000000000000000001
+@command_name = 00000000000000000000000000000001
+
+//<<<< GET >>>> 
+# @name get_template_command
+
+GET {{url}}/v2/server/template_command/{{command_name}}  {{protocolver}}
+Content-Type: application/json
+
+###
+# @name list_template_command
+
+GET {{url}}/v2/server/template_command  {{protocolver}}
+Content-Type: application/json
+
+###
+# @name get_template
+
+GET {{url}}/v2/server/template/{{template_uuid}}  {{protocolver}}
+Content-Type: application/json
+
+###
+# @name find_template__match__uuid
+
+
+@match_uuid = (eq uuid "{{template_uuid}}")
+
+GET {{url}}/v2/server/template?q={{match_uuid}}  {{protocolver}}
+Content-Type: application/json
+
+###

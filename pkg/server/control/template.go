@@ -7,7 +7,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	template_v2 "github.com/NexClipper/sudory/pkg/server/model/template/v2"
+	"github.com/NexClipper/sudory/pkg/server/model/template/v2"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -164,18 +164,18 @@ func (ctl ControlVanilla) GetTemplate(ctx echo.Context) (err error) {
 		return
 	}
 
-	template := template_v2.Template{}
-	template.Uuid = uuid
+	tmpl := template.Template{}
+	tmpl.Uuid = uuid
 
 	tmpl_cond := stmt.And(
-		stmt.Equal("uuid", template.Uuid),
+		stmt.Equal("uuid", tmpl.Uuid),
 		stmt.IsNull("deleted"),
 	)
 
-	err = ctl.dialect.QueryRow(template.TableName(), template.ColumnNames(), tmpl_cond, nil, nil)(
+	err = ctl.dialect.QueryRow(tmpl.TableName(), tmpl.ColumnNames(), tmpl_cond, nil, nil)(
 		ctx.Request().Context(), ctl)(
 		func(scan excute.Scanner) error {
-			err := template.Scan(scan)
+			err := tmpl.Scan(scan)
 			err = errors.WithStack(err)
 
 			return err
@@ -184,8 +184,8 @@ func (ctl ControlVanilla) GetTemplate(ctx echo.Context) (err error) {
 		return
 	}
 
-	commands := make([]template_v2.TemplateCommand, 0, state.ENV__INIT_SLICE_CAPACITY__())
-	command := template_v2.TemplateCommand{}
+	commands := make([]template.TemplateCommand, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	command := template.TemplateCommand{}
 	command.TemplateUuid = uuid
 
 	command_cond := stmt.And(
@@ -212,7 +212,7 @@ func (ctl ControlVanilla) GetTemplate(ctx echo.Context) (err error) {
 		return
 	}
 
-	return ctx.JSON(http.StatusOK, template_v2.HttpRsp_Template{Template: template, Commands: commands})
+	return ctx.JSON(http.StatusOK, template.HttpRsp_Template{Template: tmpl, Commands: commands})
 }
 
 // @Description Find []template
@@ -247,9 +247,9 @@ func (ctl ControlVanilla) FindTemplate(ctx echo.Context) error {
 		p = stmt.Limit(__DEFAULT_DECORATION_LIMIT__)
 	}
 
-	rsp := make([]template_v2.HttpRsp_Template, 0, state.ENV__INIT_SLICE_CAPACITY__())
-	var set_tmpl = map[template_v2.Template]struct{}{}
-	var tmpl template_v2.Template
+	rsp := make([]template.HttpRsp_Template, 0, state.ENV__INIT_SLICE_CAPACITY__())
+	var set_tmpl = map[template.Template]struct{}{}
+	var tmpl template.Template
 	err = ctl.dialect.QueryRows(tmpl.TableName(), tmpl.ColumnNames(), q, o, p)(
 		ctx.Request().Context(), ctl)(
 		func(scan excute.Scanner, _ int) error {
@@ -272,7 +272,7 @@ func (ctl ControlVanilla) FindTemplate(ctx echo.Context) error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to get list")
 		}
-		rsp = append(rsp, template_v2.HttpRsp_Template{Template: tmpl, Commands: commands})
+		rsp = append(rsp, template.HttpRsp_Template{Template: tmpl, Commands: commands})
 	}
 
 	return ctx.JSON(http.StatusOK, rsp)

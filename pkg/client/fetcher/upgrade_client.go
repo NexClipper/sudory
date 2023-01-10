@@ -20,23 +20,18 @@ import (
 
 	"github.com/NexClipper/sudory/pkg/client/k8s"
 	"github.com/NexClipper/sudory/pkg/client/log"
-
-	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
+	"github.com/NexClipper/sudory/pkg/client/service"
 )
 
-func (f *Fetcher) UpgradeClient(serviceId string, args map[string]interface{}) (err error) {
+func (f *Fetcher) UpgradeClient(version service.Version, serviceId string, args map[string]interface{}) (err error) {
 	log.Debugf("SudoryClient Upgrade: start")
 
 	t := time.Now()
 
 	// service processing status update
 	for {
-		if err := f.sudoryAPI.UpdateServices(context.Background(), &servicev3.HttpReq_ClientServiceUpdate{
-			Uuid:     serviceId,
-			Sequence: 0,
-			Status:   servicev3.StepStatusProcessing,
-			Started:  t,
-		}); err != nil {
+		up := service.CreateUpdateService(version, serviceId, 1, 0, service.StepStatusProcessing, "", t, time.Time{})
+		if err := f.sudoryAPI.UpdateServices(context.Background(), service.ConvertServiceStepUpdateClientToServer(up)); err != nil {
 			log.Errorf("SudoryClient Upgrade: failed to update service status(processing): error: %s\n", err.Error())
 
 			// retry and handshake if session expired
@@ -55,14 +50,8 @@ func (f *Fetcher) UpgradeClient(serviceId string, args map[string]interface{}) (
 			log.Errorf("SudoryClient Upgrade: failed to upgrade: %v\n", err)
 
 			for {
-				if err := f.sudoryAPI.UpdateServices(context.Background(), &servicev3.HttpReq_ClientServiceUpdate{
-					Uuid:     serviceId,
-					Sequence: 0,
-					Status:   servicev3.StepStatusFail,
-					Result:   err.Error(),
-					Started:  t,
-					Ended:    time.Now(),
-				}); err != nil {
+				up := service.CreateUpdateService(version, serviceId, 1, 0, service.StepStatusFail, "", t, time.Now())
+				if err := f.sudoryAPI.UpdateServices(context.Background(), service.ConvertServiceStepUpdateClientToServer(up)); err != nil {
 					log.Errorf(err.Error())
 
 					// retry and handshake if session expired
@@ -276,14 +265,8 @@ func (f *Fetcher) UpgradeClient(serviceId string, args map[string]interface{}) (
 
 	// upgrade success
 	for {
-		if err := f.sudoryAPI.UpdateServices(context.Background(), &servicev3.HttpReq_ClientServiceUpdate{
-			Uuid:     serviceId,
-			Sequence: 0,
-			Status:   servicev3.StepStatusSuccess,
-			Result:   fmt.Sprintf("Successfully upgrade sudory-client image : %s -> %s", prevImage, upgradeImage),
-			Started:  t,
-			Ended:    time.Now(),
-		}); err != nil {
+		up := service.CreateUpdateService(version, serviceId, 1, 0, service.StepStatusSuccess, "", t, time.Now())
+		if err := f.sudoryAPI.UpdateServices(context.Background(), service.ConvertServiceStepUpdateClientToServer(up)); err != nil {
 			log.Errorf(err.Error())
 			// retry and handshake if session expired
 			if f.sudoryAPI.IsTokenExpired() {

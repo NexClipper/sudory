@@ -127,7 +127,12 @@ func (f *Fetcher) poll() {
 	}
 
 	// respData -> services
-	recvServices := service.ConvertServiceListServerToClient(respData)
+	recvServices, failed := service.ConvertServiceListServerToClient(respData)
+
+	if len(failed) > 0 {
+		log.Debugf("Failed to convert %d service\n", len(failed))
+		f.UpdateFailedToConvertServices(failed)
+	}
 
 	// catch sudoryclient service
 	if ok := f.CatchSudoryClientService(recvServices); ok {
@@ -165,14 +170,19 @@ func (f *Fetcher) UpdateServiceProcess() {
 	for update := range f.scheduler.NotifyServiceUpdate() {
 		<-time.After(time.Millisecond * 100)
 
-		go func(up service.UpdateServiceStep) {
+		go func(up service.ServiceUpdateInterface) {
 			serv := service.ConvertServiceStepUpdateClientToServer(up)
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 			defer cancel()
 
 			if err := f.sudoryAPI.UpdateServices(ctx, serv); err != nil {
-				log.Errorf("Failed to update service on server : service_uuid:%s, error:%s\n", serv.Uuid, err.Error())
+				switch serv.Version {
+				case "v3":
+					log.Errorf("Failed to update service on server : service_uuid:%s, error:%s\n", serv.V3.Uuid, err.Error())
+				case "v4":
+					log.Errorf("Failed to update service on server : service_uuid:%s, error:%s\n", serv.V4.Uuid, err.Error())
+				}
 			}
 
 			f.scheduler.UpdateServiceStatus(up)
@@ -180,24 +190,47 @@ func (f *Fetcher) UpdateServiceProcess() {
 	}
 }
 
-func (f *Fetcher) CatchSudoryClientService(services map[string]*service.Service) bool {
+func (f *Fetcher) CatchSudoryClientService(services map[string]service.ServiceInterface) bool {
 	exist := false
 
 	for _, svc := range services {
-		for _, step := range svc.Steps {
-			if step.Command != nil {
-				method := step.Command.Method
+		switch ver := svc.Version(); ver {
+		case service.SERVICE_VERSION_V1:
+			svcv1 := svc.(*service.ServiceV1)
+			for _, step := range svcv1.Steps {
+				if step.Command != nil {
+					method := step.Command.Method
 
-				switch method {
-				case "sudory.client_pod.rebounce":
-					exist = true
-					f.RebounceClientPod(svc.Id)
-				case "sudory.client.upgrade":
-					exist = true
-					f.UpgradeClient(svc.Id, step.Command.Args)
+					switch method {
+					case "sudory.client_pod.rebounce":
+						exist = true
+						f.RebounceClientPod(ver, svcv1.Id)
+					case "sudory.client.upgrade":
+						exist = true
+						f.UpgradeClient(ver, svcv1.Id, step.Command.Args)
+					}
+					if exist {
+						return exist
+					}
 				}
-				if exist {
-					return exist
+			}
+		case service.SERVICE_VERSION_V2:
+			svcv2 := svc.(*service.ServiceV2)
+			for _, step := range svcv2.Flow {
+				if step.Command != "" {
+					method := step.Command
+
+					switch method {
+					case "sudory.client_pod.rebounce":
+						exist = true
+						f.RebounceClientPod(ver, svcv2.Id)
+					case "sudory.client.upgrade":
+						exist = true
+						f.UpgradeClient(ver, svcv2.Id, step.Inputs.GetInputs())
+					}
+					if exist {
+						return exist
+					}
 				}
 			}
 		}
@@ -208,4 +241,50 @@ func (f *Fetcher) CatchSudoryClientService(services map[string]*service.Service)
 
 func (f *Fetcher) RemainServices() map[string]service.ServiceStatus {
 	return f.scheduler.CleanupRemainingServices()
+}
+
+func (f *Fetcher) UpdateFailedToConvertServices(failed []service.FailedConvertService) {
+	for _, d := range failed {
+		var up service.ServiceUpdateInterface
+		switch d.Data.Version {
+		case "v3":
+			dd := d.Data.V3
+			t := time.Now()
+			up = &service.UpdateServiceV1{
+				Uuid:      dd.Uuid,
+				StepCount: len(dd.Steps),
+				Sequence:  0,
+				Status:    service.StepStatusFail,
+				Result:    d.Err.Error(),
+				Started:   t,
+				Ended:     t,
+			}
+		case "v4":
+			dd := d.Data.V4
+			t := time.Now()
+			up = &service.UpdateServiceV2{
+				Id:        dd.Uuid,
+				StepCount: dd.StepMax,
+				Sequence:  0,
+				Status:    service.StepStatusFail,
+				Result:    d.Err.Error(),
+				Started:   t,
+				Ended:     t,
+			}
+		}
+
+		serv := service.ConvertServiceStepUpdateClientToServer(up)
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+
+		if err := f.sudoryAPI.UpdateServices(ctx, serv); err != nil {
+			switch serv.Version {
+			case "v3":
+				log.Errorf("Failed to update service on server : service_uuid:%s, error:%s\n", serv.V3.Uuid, err.Error())
+			case "v4":
+				log.Errorf("Failed to update service on server : service_uuid:%s, error:%s\n", serv.V4.Uuid, err.Error())
+			}
+		}
+	}
 }

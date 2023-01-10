@@ -8,12 +8,13 @@ import (
 )
 
 type ClientSessionPayload struct {
-	ExpiresAt    int64  `json:"exp,omitempty"`           //expiration_time
-	IssuedAt     int64  `json:"iat,omitempty"`           //issued_at_time
-	Uuid         string `json:"uuid,omitempty"`          //token_uuid
-	ClusterUuid  string `json:"cluster-uuid,omitempty"`  //cluster_uuid
-	PollInterval int    `json:"poll-interval,omitempty"` //config_poll_interval
-	Loglevel     string `json:"log-level,omitempty"`     //config_log_level
+	ExpiresAt    int64  `json:"exp,omitempty"`           // expiration_time
+	IssuedAt     int64  `json:"iat,omitempty"`           // issued_at_time
+	Uuid         string `json:"uuid,omitempty"`          // token_uuid
+	ClusterUuid  string `json:"cluster-uuid,omitempty"`  // cluster_uuid
+	TenantHash   string `json:"tenant-hash,omitempty"`   // TenantHash
+	PollInterval int    `json:"poll-interval,omitempty"` // config_poll_interval
+	Loglevel     string `json:"log-level,omitempty"`     // config_log_level
 }
 
 func (claims ClientSessionPayload) Valid() error {

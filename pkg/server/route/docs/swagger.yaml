@@ -81,51 +81,7 @@ definitions:
         description: uuid
         type: string
     type: object
-  parse.ListNode:
-    properties:
-      NodeType:
-        type: integer
-      Pos:
-        type: integer
-      nodes:
-        description: The element nodes in lexical order.
-        items: {}
-        type: array
-    type: object
-  parse.Tree:
-    properties:
-      mode:
-        description: parsing mode.
-        type: integer
-      name:
-        description: name of the template represented by the tree.
-        type: string
-      parseName:
-        description: name of the top-level template during parsing, for error messages.
-        type: string
-      root:
-        $ref: '#/definitions/parse.ListNode'
-        description: top-level root of the tree.
-    type: object
-  service.HttpReq_ClientServiceUpdate:
-    properties:
-      ended:
-        type: string
-      result:
-        description: StepStatus 값에 따라; 결과 혹은 에러 메시지
-        type: string
-      sequence:
-        description: pk
-        type: integer
-      started:
-        type: string
-      status:
-        type: integer
-      uuid:
-        description: pk
-        type: string
-    type: object
-  service.HttpReq_Service_create:
+  github.com_NexClipper_sudory_pkg_server_model_service_v3.HttpReq_Service_create:
     properties:
       cluster_uuid:
         items:
@@ -148,7 +104,7 @@ definitions:
       template_uuid:
         type: string
     type: object
-  service.HttpRsp_ClientServicePolling:
+  github.com_NexClipper_sudory_pkg_server_model_service_v3.HttpRsp_Service:
     properties:
       assigned_client_uuid:
         type: string
@@ -189,48 +145,7 @@ definitions:
         description: pk char(32) service.uuid
         type: string
     type: object
-  service.HttpRsp_Service:
-    properties:
-      assigned_client_uuid:
-        type: string
-      cluster_uuid:
-        description: pk char(32) cluster.uuid
-        type: string
-      created:
-        type: string
-      message:
-        type: string
-      name:
-        type: string
-      partition_date:
-        description: pk date
-        type: string
-      priority:
-        type: integer
-      status:
-        type: integer
-      step_count:
-        type: integer
-      step_position:
-        type: integer
-      steps:
-        items:
-          $ref: '#/definitions/service.ServiceStep'
-        type: array
-      subscribed_channel:
-        type: string
-      summary:
-        type: string
-      template_uuid:
-        type: string
-      timestamp:
-        description: pk datetime(6)
-        type: string
-      uuid:
-        description: pk char(32) service.uuid
-        type: string
-    type: object
-  service.HttpRsp_Service_create:
+  github.com_NexClipper_sudory_pkg_server_model_service_v3.HttpRsp_Service_create:
     properties:
       cluster_uuid:
         description: pk char(32) cluster.uuid
@@ -267,7 +182,7 @@ definitions:
         description: pk char(32) service.uuid
         type: string
     type: object
-  service.HttpRsp_ServiceResult:
+  github.com_NexClipper_sudory_pkg_server_model_service_v3.HttpRsp_ServiceResult:
     properties:
       cluster_uuid:
         description: pk char(32) cluster.uuid
@@ -284,6 +199,212 @@ definitions:
         type: string
       uuid:
         description: pk char(32) service.uuid
+        type: string
+    type: object
+  github.com_NexClipper_sudory_pkg_server_model_service_v4.HttpReq_Service_create:
+    properties:
+      cluster_uuid:
+        items:
+          type: string
+        type: array
+      inputs:
+        additionalProperties: true
+        type: object
+      name:
+        type: string
+      subscribed_channel:
+        type: string
+      summary:
+        type: string
+      template_uuid:
+        type: string
+    type: object
+  github.com_NexClipper_sudory_pkg_server_model_service_v4.HttpRsp_Service:
+    properties:
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      created:
+        type: string
+      flow:
+        type: string
+      inputs:
+        type: object
+      name:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      priority:
+        type: integer
+      status_records:
+        items:
+          $ref: '#/definitions/service.ServiceStatus'
+        type: array
+      step_max:
+        type: integer
+      subscribed_channel:
+        type: string
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  github.com_NexClipper_sudory_pkg_server_model_service_v4.HttpRsp_Service_create:
+    properties:
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      created:
+        type: string
+      flow:
+        type: string
+      inputs:
+        type: object
+      name:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      priority:
+        type: integer
+      step_max:
+        type: integer
+      subscribed_channel:
+        type: string
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  github.com_NexClipper_sudory_pkg_server_model_service_v4.HttpRsp_ServiceResult:
+    properties:
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      created:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      result:
+        type: string
+      result_type:
+        type: integer
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  github.com_NexClipper_sudory_pkg_server_model_template_v2.HttpRsp_Template:
+    properties:
+      commands:
+        items:
+          $ref: '#/definitions/template.TemplateCommand'
+        type: array
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      name:
+        type: string
+      origin:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
+        type: string
+    type: object
+  github.com_NexClipper_sudory_pkg_server_model_template_v2.HttpRsp_TemplateCommand:
+    properties:
+      args:
+        type: object
+      created:
+        type: string
+      deleted:
+        type: string
+      id:
+        description: pk
+        type: integer
+      method:
+        type: string
+      name:
+        type: string
+      result_filter:
+        type: string
+      sequence:
+        type: integer
+      summary:
+        type: string
+      template_uuid:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: uuid
+        type: string
+    type: object
+  github.com_NexClipper_sudory_pkg_server_model_template_v3.HttpRsp_Template:
+    properties:
+      created:
+        type: string
+      deleted:
+        type: string
+      flow:
+        type: string
+      inputs:
+        type: string
+      name:
+        type: string
+      origin:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+      uuid:
+        description: pk
+        type: string
+    type: object
+  github.com_NexClipper_sudory_pkg_server_model_template_v3.HttpRsp_TemplateCommand:
+    properties:
+      client_version:
+        type: integer
+      created:
+        type: string
+      deleted:
+        type: string
+      inputs:
+        type: string
+      name:
+        description: pk
+        type: string
+      outputs:
+        type: string
+      summary:
+        type: string
+      updated:
+        type: string
+    type: object
+  service.HttpReq_ClientServiceUpdate:
+    properties:
+      version:
+        type: string
+    type: object
+  service.HttpRsp_ClientServicePolling:
+    properties:
+      version:
         type: string
     type: object
   service.HttpRsp_ServiceStep:
@@ -318,6 +439,33 @@ definitions:
       timestamp:
         description: pk datetime(6)
         type: string
+      uuid:
+        description: pk char(32) service.uuid
+        type: string
+    type: object
+  service.ServiceStatus:
+    properties:
+      cluster_uuid:
+        description: pk char(32) cluster.uuid
+        type: string
+      created:
+        description: pk datetime(6)
+        type: string
+      ended:
+        type: string
+      message:
+        type: string
+      partition_date:
+        description: pk date
+        type: string
+      started:
+        type: string
+      status:
+        type: integer
+      step_max:
+        type: integer
+      step_seq:
+        type: integer
       uuid:
         description: pk char(32) service.uuid
         type: string
@@ -419,45 +567,6 @@ definitions:
         type: boolean
       rebouncing:
         type: boolean
-    type: object
-  template.HttpRsp_Template:
-    properties:
-      commands:
-        items:
-          $ref: '#/definitions/template.TemplateCommand'
-        type: array
-      tree:
-        $ref: '#/definitions/parse.Tree'
-        description: The underlying template's parse tree, updated to be HTML-safe.
-    type: object
-  template.HttpRsp_TemplateCommand:
-    properties:
-      args:
-        type: object
-      created:
-        type: string
-      deleted:
-        type: string
-      id:
-        description: pk
-        type: integer
-      method:
-        type: string
-      name:
-        type: string
-      result_filter:
-        type: string
-      sequence:
-        type: integer
-      summary:
-        type: string
-      template_uuid:
-        type: string
-      updated:
-        type: string
-      uuid:
-        description: uuid
-        type: string
     type: object
   template.TemplateCommand:
     properties:
@@ -1916,7 +2025,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/service.HttpRsp_Service'
+              $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_service_v3.HttpRsp_Service'
             type: array
       security:
       - ServiceAuth: []
@@ -1932,7 +2041,7 @@ paths:
         name: service
         required: true
         schema:
-          $ref: '#/definitions/service.HttpReq_Service_create'
+          $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_service_v3.HttpReq_Service_create'
       produces:
       - application/json
       responses:
@@ -1940,7 +2049,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/service.HttpRsp_Service_create'
+              $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_service_v3.HttpRsp_Service_create'
             type: array
       security:
       - ServiceAuth: []
@@ -1952,7 +2061,7 @@ paths:
       - application/json
       description: Get a Service
       parameters:
-      - description: Service 의 Uuid
+      - description: service's UUID
         in: path
         name: uuid
         required: true
@@ -1963,7 +2072,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/service.HttpRsp_Service'
+            $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_service_v3.HttpRsp_Service'
       security:
       - ServiceAuth: []
       tags:
@@ -1974,7 +2083,7 @@ paths:
       - application/json
       description: Get a Service Result
       parameters:
-      - description: Service 의 Uuid
+      - description: service's UUID
         in: path
         name: uuid
         required: true
@@ -1985,7 +2094,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/service.HttpRsp_ServiceResult'
+            $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_service_v3.HttpRsp_ServiceResult'
       security:
       - ServiceAuth: []
       tags:
@@ -2191,7 +2300,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/template.HttpRsp_Template'
+              $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_template_v2.HttpRsp_Template'
             type: array
       security:
       - XAuthToken: []
@@ -2215,7 +2324,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/template.HttpRsp_TemplateCommand'
+              $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_template_v2.HttpRsp_TemplateCommand'
             type: array
       security:
       - XAuthToken: []
@@ -2243,7 +2352,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/template.HttpRsp_TemplateCommand'
+            $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_template_v2.HttpRsp_TemplateCommand'
       security:
       - XAuthToken: []
       tags:
@@ -2265,7 +2374,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/template.HttpRsp_Template'
+            $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_template_v2.HttpRsp_Template'
       security:
       - XAuthToken: []
       tags:
@@ -2314,6 +2423,198 @@ paths:
       - XAuthToken: []
       tags:
       - server/tenant
+  /v2/server/service:
+    get:
+      consumes:
+      - application/json
+      description: Find []Service (v2)
+      parameters:
+      - description: query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
+        in: query
+        name: q
+        type: string
+      - description: order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
+        in: query
+        name: o
+        type: string
+      - description: paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
+        in: query
+        name: p
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_service_v4.HttpRsp_Service'
+            type: array
+      security:
+      - ServiceAuth: []
+      tags:
+      - server/service
+    post:
+      consumes:
+      - application/json
+      description: Create a Service (v2)
+      parameters:
+      - description: HttpReq_Service_create
+        in: body
+        name: service
+        required: true
+        schema:
+          $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_service_v4.HttpReq_Service_create'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_service_v4.HttpRsp_Service_create'
+            type: array
+      security:
+      - ServiceAuth: []
+      tags:
+      - server/service
+  /v2/server/service/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: Get a Service (v2)
+      parameters:
+      - description: service's UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_service_v4.HttpRsp_Service'
+      security:
+      - ServiceAuth: []
+      tags:
+      - server/service
+  /v2/server/service/{uuid}/result:
+    get:
+      consumes:
+      - application/json
+      description: Get a Service Result (v2)
+      parameters:
+      - description: service's UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_service_v4.HttpRsp_ServiceResult'
+      security:
+      - ServiceAuth: []
+      tags:
+      - server/service
+  /v2/server/template:
+    get:
+      consumes:
+      - application/json
+      description: Find []template (v2)
+      parameters:
+      - description: query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
+        in: query
+        name: q
+        type: string
+      - description: order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
+        in: query
+        name: o
+        type: string
+      - description: paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md
+        in: query
+        name: p
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_template_v3.HttpRsp_Template'
+            type: array
+      security:
+      - XAuthToken: []
+      tags:
+      - server/template
+  /v2/server/template/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: Get a template (v2)
+      parameters:
+      - description: Template Uuid
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_template_v3.HttpRsp_Template'
+      security:
+      - XAuthToken: []
+      tags:
+      - server/template
+  /v2/server/template_command:
+    get:
+      consumes:
+      - application/json
+      description: List template command (v2)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_template_v3.HttpRsp_TemplateCommand'
+            type: array
+      security:
+      - XAuthToken: []
+      tags:
+      - server/template_command
+  /v2/server/template_command/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: Get a template command (v2)
+      parameters:
+      - description: HttpReqTemplateCommand 의 Uuid
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github.com_NexClipper_sudory_pkg_server_model_template_v3.HttpRsp_TemplateCommand'
+      security:
+      - XAuthToken: []
+      tags:
+      - server/template_command
 securityDefinitions:
   ClientAuth:
     description: token for client api

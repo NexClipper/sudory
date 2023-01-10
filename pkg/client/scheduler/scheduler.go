@@ -17,16 +17,16 @@ type Scheduler struct {
 	servicesStatusMap map[string]service.ServiceStatus
 	lock              sync.RWMutex
 	maxProcessLimit   int
-	updateChan        chan service.UpdateServiceStep // this channel receives service's status
-	notifyUpdateChan  chan service.UpdateServiceStep
+	updateChan        chan service.ServiceUpdateInterface // this channel receives service's status
+	notifyUpdateChan  chan service.ServiceUpdateInterface
 }
 
 func NewScheduler() *Scheduler {
 	return &Scheduler{
 		servicesStatusMap: make(map[string]service.ServiceStatus),
 		maxProcessLimit:   defaultMaxProcessLimit,
-		updateChan:        make(chan service.UpdateServiceStep),
-		notifyUpdateChan:  make(chan service.UpdateServiceStep)}
+		updateChan:        make(chan service.ServiceUpdateInterface),
+		notifyUpdateChan:  make(chan service.ServiceUpdateInterface)}
 }
 
 func (s *Scheduler) Start() error {
@@ -39,23 +39,23 @@ func (s *Scheduler) Start() error {
 	return nil
 }
 
-func (s *Scheduler) RegisterServices(services map[string]*service.Service) {
+func (s *Scheduler) RegisterServices(services map[string]service.ServiceInterface) {
 	// 1. already existing services drop
-	var startingList []*service.Service
+	var startingList []service.ServiceInterface
 	s.lock.Lock()
-	for _, service := range services {
-		_, ok := s.servicesStatusMap[service.Id]
+	for _, srv := range services {
+		_, ok := s.servicesStatusMap[srv.GetId()]
 		if !ok {
-			startingList = append(startingList, service)
+			startingList = append(startingList, srv)
 		}
 	}
 	sort.Slice(startingList, func(i, j int) bool {
-		if startingList[i].Priority > startingList[j].Priority {
+		if startingList[i].GetPriority() > startingList[j].GetPriority() {
 			return true
-		} else if startingList[i].Priority < startingList[j].Priority {
+		} else if startingList[i].GetPriority() < startingList[j].GetPriority() {
 			return false
 		} else {
-			return startingList[i].CreatedTime.Before(startingList[j].CreatedTime)
+			return startingList[i].GetCreatedTime().Before(startingList[j].GetCreatedTime())
 		}
 	})
 
@@ -77,8 +77,8 @@ func (s *Scheduler) RegisterServices(services map[string]*service.Service) {
 	var startingServiceUuids []string
 	for _, serv := range startingList {
 		if remain > 0 {
-			startingServiceUuids = append(startingServiceUuids, serv.Id)
-			s.servicesStatusMap[serv.Id] = service.ServiceStatusPreparing
+			startingServiceUuids = append(startingServiceUuids, serv.GetId())
+			s.servicesStatusMap[serv.GetId()] = service.ServiceStatusPreparing
 			// create and execute(goroutine) service.
 			go s.ExecuteService(serv)
 			remain--
@@ -107,11 +107,18 @@ func (s *Scheduler) RegisterServices(services map[string]*service.Service) {
 	s.lock.Unlock()
 }
 
-func (s *Scheduler) ExecuteService(serv *service.Service) error {
+func (s *Scheduler) ExecuteService(serv service.ServiceInterface) error {
 	// Pass channel because scheduler need to update service's status.
-	se := executor.NewServiceExecutor(*serv, s.updateChan)
+	switch serv.Version() {
+	case service.SERVICE_VERSION_V1:
+		se := executor.NewServiceExecutor(*serv.(*service.ServiceV1), s.updateChan)
+		return se.Execute()
+	case service.SERVICE_VERSION_V2:
+		se := executor.NewServiceExecutorV2(*serv.(*service.ServiceV2), s.updateChan)
+		return se.Execute()
+	}
 
-	return se.Execute()
+	return fmt.Errorf("not supported service version(%s)", serv.Version())
 }
 
 func (s *Scheduler) RecvNotifyServiceStatus() {
@@ -121,26 +128,28 @@ func (s *Scheduler) RecvNotifyServiceStatus() {
 	}
 }
 
-func (s *Scheduler) UpdateServiceStatus(update service.UpdateServiceStep) {
+func (s *Scheduler) UpdateServiceStatus(update service.ServiceUpdateInterface) {
 	serviceStatus := service.ServiceStatusProcessing
-	if update.StepCount == update.Sequence+1 {
-		if update.Status == service.StepStatusSuccess {
-			serviceStatus = service.ServiceStatusSuccess
-		} else if update.Status == service.StepStatusFail {
-			serviceStatus = service.ServiceStatusFailed
+	if update.GetStatus() == service.StepStatusFail {
+		serviceStatus = service.ServiceStatusFailed
+	} else {
+		if update.GetStepCount() == update.GetSequence()+1 {
+			if update.GetStatus() == service.StepStatusSuccess {
+				serviceStatus = service.ServiceStatusSuccess
+			}
 		}
 	}
 	s.lock.Lock()
-	prevStatus, ok := s.servicesStatusMap[update.Uuid]
+	prevStatus, ok := s.servicesStatusMap[update.GetId()]
 	if ok {
 		if prevStatus < serviceStatus {
-			s.servicesStatusMap[update.Uuid] = service.ServiceStatus(serviceStatus)
+			s.servicesStatusMap[update.GetId()] = service.ServiceStatus(serviceStatus)
 		}
 	}
 	s.lock.Unlock()
 }
 
-func (s *Scheduler) NotifyServiceUpdate() <-chan service.UpdateServiceStep {
+func (s *Scheduler) NotifyServiceUpdate() <-chan service.ServiceUpdateInterface {
 	return s.notifyUpdateChan
 }
 

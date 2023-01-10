@@ -3,7 +3,6 @@ package jq
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/itchyny/gojq"
@@ -11,7 +10,7 @@ import (
 
 const defaultJqTimeout = 10 * time.Second
 
-func Request(input map[string]interface{}, filter string) (string, error) {
+func Request(input interface{}, filter string) (string, error) {
 	res := &JqResult{Filter: filter}
 	var err error
 
@@ -33,11 +32,7 @@ type JqResult struct {
 	Results interface{} `json:"results"`
 }
 
-func Process(input map[string]interface{}, filter string) (interface{}, error) {
-	if input == nil || filter == "" {
-		return "", fmt.Errorf("input or filter value is empty")
-	}
-
+func Process(input interface{}, filter string) (interface{}, error) {
 	query, err := gojq.Parse(filter)
 	if err != nil {
 		return "", err

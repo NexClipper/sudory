@@ -8,7 +8,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt"
 	"github.com/NexClipper/sudory/pkg/server/macro/echoutil"
 	"github.com/NexClipper/sudory/pkg/server/macro/logs"
-	template_v2 "github.com/NexClipper/sudory/pkg/server/model/template/v2"
+	"github.com/NexClipper/sudory/pkg/server/model/template/v2"
 	"github.com/NexClipper/sudory/pkg/server/status/state"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -185,19 +185,19 @@ func (ctl ControlVanilla) ListTemplateCommand(ctx echo.Context) (err error) {
 		return
 	}
 
-	rsp := make([]template_v2.HttpRsp_TemplateCommand, len(commands))
+	rsp := make([]template.HttpRsp_TemplateCommand, len(commands))
 	for i := range commands {
-		rsp[i] = template_v2.HttpRsp_TemplateCommand(commands[i])
+		rsp[i] = template.HttpRsp_TemplateCommand(commands[i])
 	}
 
 	return ctx.JSON(http.StatusOK, rsp)
 
 }
 
-func ListTemplateCommand(ctx context.Context, ctl ControlVanilla, template_uuid string) ([]template_v2.TemplateCommand, error) {
-	rsp := make([]template_v2.TemplateCommand, 0, state.ENV__INIT_SLICE_CAPACITY__())
+func ListTemplateCommand(ctx context.Context, ctl ControlVanilla, template_uuid string) ([]template.TemplateCommand, error) {
+	rsp := make([]template.TemplateCommand, 0, state.ENV__INIT_SLICE_CAPACITY__())
 
-	command := template_v2.TemplateCommand{}
+	command := template.TemplateCommand{}
 	command.TemplateUuid = template_uuid
 
 	eq_uuid := stmt.Equal("template_uuid", command.TemplateUuid)
@@ -257,7 +257,7 @@ func (ctl ControlVanilla) GetTemplateCommand(ctx echo.Context) (err error) {
 		return
 	}
 
-	command := template_v2.TemplateCommand{}
+	command := template.TemplateCommand{}
 	command.Uuid = uuid
 
 	eq_uuid := stmt.Equal("uuid", command.Uuid)

@@ -11,10 +11,10 @@ func (Service_create) ColumnNames() []string {
  		"summary",
  		"template_uuid",
  		"step_count",
+ 		"priority",
  		"subscribed_channel",
  		"step_position",
  		"status",
- 		"priority",
  		"created",
 	}
 }
@@ -29,24 +29,13 @@ func (Service) ColumnNames() []string {
  		"summary",
  		"template_uuid",
  		"step_count",
+ 		"priority",
  		"subscribed_channel",
  		"assigned_client_uuid",
  		"step_position",
  		"status",
- 		"priority",
  		"message",
  		"created",
-	}
-}
- 
-func (ServiceResult_create) ColumnNames() []string {
-	return []string{
- 		"cluster_uuid",
- 		"uuid",
- 		"timestamp",
- 		"pdate",
- 		"result_type",
- 		"result",
 	}
 }
  
@@ -101,8 +90,8 @@ func (Service_polling) ColumnNames() []string {
 	return []string{
  		"uuid",
  		"timestamp",
- 		"status",
  		"priority",
+ 		"status",
  		"created",
 	}
 }
@@ -117,10 +106,10 @@ func (row Service_create) Values() []interface{} {
 		row.Summary,
 		row.TemplateUuid,
 		row.StepCount,
+		row.Priority,
 		row.SubscribedChannel,
 		row.StepPosition,
 		row.Status,
-		row.Priority,
 		row.Created,
 	}
 }
@@ -135,24 +124,13 @@ func (row Service) Values() []interface{} {
 		row.Summary,
 		row.TemplateUuid,
 		row.StepCount,
+		row.Priority,
 		row.SubscribedChannel,
 		row.AssignedClientUuid,
 		row.StepPosition,
 		row.Status,
-		row.Priority,
 		row.Message,
 		row.Created,
-	}
-}
- 
-func (row ServiceResult_create) Values() []interface{} {
-	return []interface{}{
-		row.ClusterUuid,
-		row.Uuid,
-		row.Timestamp,
-		row.PartitionDate,
-		row.ResultSaveType,
-		row.Result,
 	}
 }
  
@@ -207,8 +185,8 @@ func (row Service_polling) Values() []interface{} {
 	return []interface{}{
 		row.Uuid,
 		row.Timestamp,
-		row.Status,
 		row.Priority,
+		row.Status,
 		row.Created,
 	}
 }
@@ -227,10 +205,10 @@ func (row *Service_create) Scan(scanner Scanner) error {
 		&row.Summary,
 		&row.TemplateUuid,
 		&row.StepCount,
+		&row.Priority,
 		&row.SubscribedChannel,
 		&row.StepPosition,
 		&row.Status,
-		&row.Priority,
 		&row.Created,
 	)
 }
@@ -245,24 +223,13 @@ func (row *Service) Scan(scanner Scanner) error {
 		&row.Summary,
 		&row.TemplateUuid,
 		&row.StepCount,
+		&row.Priority,
 		&row.SubscribedChannel,
 		&row.AssignedClientUuid,
 		&row.StepPosition,
 		&row.Status,
-		&row.Priority,
 		&row.Message,
 		&row.Created,
-	)
-}
- 
-func (row *ServiceResult_create) Scan(scanner Scanner) error {
-	return scanner.Scan(
-		&row.ClusterUuid,
-		&row.Uuid,
-		&row.Timestamp,
-		&row.PartitionDate,
-		&row.ResultSaveType,
-		&row.Result,
 	)
 }
  
@@ -317,8 +284,8 @@ func (row *Service_polling) Scan(scanner Scanner) error {
 	return scanner.Scan(
 		&row.Uuid,
 		&row.Timestamp,
-		&row.Status,
 		&row.Priority,
+		&row.Status,
 		&row.Created,
 	)
 }
@@ -333,10 +300,10 @@ func (row *Service_create) Ptrs() []interface{} {
 		&row.Summary,
 		&row.TemplateUuid,
 		&row.StepCount,
+		&row.Priority,
 		&row.SubscribedChannel,
 		&row.StepPosition,
 		&row.Status,
-		&row.Priority,
 		&row.Created,
 	}
 }
@@ -351,24 +318,13 @@ func (row *Service) Ptrs() []interface{} {
 		&row.Summary,
 		&row.TemplateUuid,
 		&row.StepCount,
+		&row.Priority,
 		&row.SubscribedChannel,
 		&row.AssignedClientUuid,
 		&row.StepPosition,
 		&row.Status,
-		&row.Priority,
 		&row.Message,
 		&row.Created,
-	}
-}
- 
-func (row *ServiceResult_create) Ptrs() []interface{} {
-	return []interface{}{
-		&row.ClusterUuid,
-		&row.Uuid,
-		&row.Timestamp,
-		&row.PartitionDate,
-		&row.ResultSaveType,
-		&row.Result,
 	}
 }
  
@@ -423,8 +379,8 @@ func (row *Service_polling) Ptrs() []interface{} {
 	return []interface{}{
 		&row.Uuid,
 		&row.Timestamp,
-		&row.Status,
 		&row.Priority,
+		&row.Status,
 		&row.Created,
 	}
 }

@@ -26,10 +26,11 @@ import (
 	"github.com/NexClipper/sudory/pkg/server/model/auths/v2"
 	channelv3 "github.com/NexClipper/sudory/pkg/server/model/channel/v3"
 	clusterv3 "github.com/NexClipper/sudory/pkg/server/model/cluster/v3"
-	clusterinfos "github.com/NexClipper/sudory/pkg/server/model/cluster_infomation/v2"
+	clusterinfov2 "github.com/NexClipper/sudory/pkg/server/model/cluster_infomation/v2"
 	"github.com/NexClipper/sudory/pkg/server/model/cluster_token/v3"
 	cryptov2 "github.com/NexClipper/sudory/pkg/server/model/default_crypto_types/v2"
 	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
+	servicev4 "github.com/NexClipper/sudory/pkg/server/model/service/v4"
 	sessions "github.com/NexClipper/sudory/pkg/server/model/session/v3"
 	"github.com/NexClipper/sudory/pkg/server/model/tenants/v3"
 	"github.com/NexClipper/sudory/pkg/server/status/globvar"
@@ -44,7 +45,7 @@ import (
 // @Produce     json
 // @Tags        client/service
 // @Router      /client/service [get]
-// @Success     200 {array}  service.HttpRsp_ClientServicePolling
+// @Success     200 {array}  servicev4.HttpRsp_ClientServicePolling
 // @Header      200 {string} x-sudory-client-token
 func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 
@@ -75,230 +76,380 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 
 	// gather service
 	// get service offset
-	var cluster_info_count int
-	var polling_offset vanilla.NullTime
-	func() (err error) {
-		cluster_info := clusterinfos.ClusterInformation{}
-		columnnames := []string{"polling_offset"}
+	// var polling_offset vanilla.NullTime
+	clusterInfo := func(fn func(clusterinfov2.ClusterInformation) (int, time.Time, []servicev4.HttpRsp_ClientServicePolling, error)) (cnt int, v []servicev4.HttpRsp_ClientServicePolling, err error) {
+		var cluster_info_count int
+		var cluster_info clusterinfov2.ClusterInformation
 		cond := stmt.And(
 			stmt.Equal("cluster_uuid", claims.ClusterUuid),
 			stmt.IsNull("deleted"),
 		)
 
-		err = ctl.dialect.QueryRows(cluster_info.TableName(), columnnames, cond, nil, nil)(ctx.Request().Context(), ctl)(
+		err = ctl.dialect.QueryRows(cluster_info.TableName(), cluster_info.ColumnNames(), cond, nil, nil)(ctx.Request().Context(), ctl)(
 			func(scan excute.Scanner, i int) error {
 				cluster_info_count = i + 1
-				err = scan.Scan(&polling_offset)
+				err = cluster_info.Scan(scan)
 				err = errors.WithStack(err)
 
 				return err
 			})
 		if err != nil {
-			return errors.Wrapf(err, "failed to get service offset")
+			err = errors.Wrapf(err, "failed to get service offset")
+
+			return
 		}
+
+		// build polling data
+		cnt, offset, v, err := fn(cluster_info)
+		if err != nil {
+			return
+		}
+
+		err = func() (err error) {
+			// save polling_count to cluster_infomation
+			cluster_info := clusterinfov2.ClusterInformation{}
+			cluster_info.ClusterUuid = cluster.Uuid
+			cluster_info.PollingCount = *vanilla.NewNullInt(cnt)
+			cluster_info.PollingOffset = *vanilla.NewNullTime(offset)
+			cluster_info.Created = time.Now()
+			cluster_info.Updated = *vanilla.NewNullTime(cluster_info.Created)
+
+			switch cluster_info_count {
+			case 0:
+				affected, _, err := ctl.dialect.Insert(cluster_info.TableName(), cluster_info.ColumnNames(), cluster_info.Values())(
+					ctx.Request().Context(), ctl)
+				if err != nil {
+					return errors.Wrapf(err, "insert")
+				}
+				if affected == 0 {
+					err := errors.New("no affected")
+					return err
+				}
+
+				return nil
+			default:
+				keys_values := map[string]interface{}{
+					"cluster_uuid":   cluster_info.ClusterUuid,
+					"polling_count":  cluster_info.PollingCount,
+					"polling_offset": cluster_info.PollingOffset,
+					"updated":        cluster_info.Updated,
+				}
+				if !cluster_info.PollingOffset.Valid {
+					delete(keys_values, "polling_offset")
+				}
+
+				cond := stmt.And(
+					stmt.Equal("cluster_uuid", cluster_info.ClusterUuid),
+					stmt.IsNull("deleted"),
+				)
+
+				affected, err := ctl.dialect.Update(cluster_info.TableName(), keys_values, cond)(
+					ctx.Request().Context(), ctl)
+				if err != nil {
+					err := errors.Wrapf(err, "update")
+					return err
+				}
+
+				if 1 < affected {
+					err := errors.Wrapf(err, "too many affected")
+
+					return err
+				}
+
+				return nil
+			}
+		}()
+		if err != nil {
+			err = errors.Wrapf(err, "save cluster_information")
+
+			return
+		}
+
 		return
-	}()
-
-	// 오프셋이 서비스 유효시간 보다 작은 경우
-	// 혹은 오프셋이 없는 경우
-	// 오프셋 시간을 서비스 유효시간으로 설정
-	timelimit := globvar.ClientConfig.ServiceValidTimeLimit()
-	ltime := time.Now().
-		Truncate(time.Second).
-		Add(time.Duration(timelimit) * time.Minute * -1)
-
-	if !polling_offset.Valid {
-		polling_offset = *vanilla.NewNullTime(ltime)
 	}
 
-	if ltime.After(polling_offset.Time) {
-		polling_offset = *vanilla.NewNullTime(ltime)
-	}
+	makePollingServicev3 := func(cluster_info clusterinfov2.ClusterInformation) (polling_cnt int, polling_offset time.Time, rsp_ []servicev4.HttpRsp_ClientServicePolling, err error) {
 
-	// polling limit filter
-	polling_filter := newPollingFilter(cluster.PoliingLimit, timelimit, ltime)
-	services, steps, err := pollingService(ctx.Request().Context(), ctl, ctl.dialect, claims.ClusterUuid, polling_offset, polling_filter)
+		// 오프셋이 서비스 유효시간 보다 작은 경우
+		// 혹은 오프셋이 없는 경우
+		// 오프셋 시간을 서비스 유효시간으로 설정
+		timelimit := globvar.ClientConfig.ServiceValidTimeLimit()
+		ltime := time.Now().
+			Truncate(time.Second).
+			Add(time.Duration(timelimit) * time.Minute * -1)
 
-	err = func() (err error) {
-		// save polling_count to cluster_infomation
-		cluster_info := clusterinfos.ClusterInformation{}
-		cluster_info.ClusterUuid = cluster.Uuid
-		cluster_info.PollingCount = *vanilla.NewNullInt(len(services))
-		cluster_info.Created = time.Now()
-		cluster_info.Updated = *vanilla.NewNullTime(cluster_info.Created)
+		if !cluster_info.PollingOffset.Valid {
+			cluster_info.PollingOffset = *vanilla.NewNullTime(ltime)
+		}
+
+		if ltime.After(cluster_info.PollingOffset.Time) {
+			cluster_info.PollingOffset = *vanilla.NewNullTime(ltime)
+		}
+
+		// polling limit filter
+		polling_filter := newPollingFilter(cluster.PoliingLimit, timelimit, ltime)
+		servs, steps, err := pollingService(ctx.Request().Context(), ctl, ctl.dialect, claims.ClusterUuid, cluster_info.PollingOffset, polling_filter)
 
 		// set polling_offest
-		for _, service := range services {
-			// 초기화가 안되어 있으면 값을 세팅
-			if !cluster_info.PollingOffset.Valid {
-				cluster_info.PollingOffset = *vanilla.NewNullTime(service.Created)
-				continue
+		var polling_offest_ time.Time
+		for _, serv := range servs {
+			if polling_offest_.IsZero() {
+				polling_offest_ = serv.Created
 			}
 
-			// 서비스 생성 시간이 작은것으로 세팅
-			// 다음 polling에서 다시 폴링해야 하기 때문에
-			if cluster_info.PollingOffset.Time.After(service.Created) {
-				cluster_info.PollingOffset = *vanilla.NewNullTime(service.Created)
+			if polling_offest_.After(serv.Created) {
+				polling_offest_ = serv.Created
 			}
 		}
 
-		switch cluster_info_count {
-		case 0:
-			affected, _, err := ctl.dialect.Insert(cluster_info.TableName(), cluster_info.ColumnNames(), cluster_info.Values())(
-				ctx.Request().Context(), ctl)
-			if err != nil {
-				return errors.Wrapf(err, "insert")
-			}
-			if affected == 0 {
-				err := errors.New("no affected")
-				return err
-			}
+		polling_cnt = len(servs)
+		polling_offset = polling_offest_
 
-			return nil
-		default:
-			keys_values := map[string]interface{}{
-				"cluster_uuid":   cluster_info.ClusterUuid,
-				"polling_count":  cluster_info.PollingCount,
-				"polling_offset": cluster_info.PollingOffset,
-				"updated":        cluster_info.Updated,
-			}
-			if !cluster_info.PollingOffset.Valid {
-				delete(keys_values, "polling_offset")
-			}
-
-			cond := stmt.And(
-				stmt.Equal("cluster_uuid", cluster_info.ClusterUuid),
-				stmt.IsNull("deleted"),
-			)
-
-			affected, err := ctl.dialect.Update(cluster_info.TableName(), keys_values, cond)(
-				ctx.Request().Context(), ctl)
-			if err != nil {
-				err := errors.Wrapf(err, "update")
-				return err
-			}
-
-			if 1 < affected {
-				err := errors.Wrapf(err, "too many affected")
-				return err
-			}
-
-			return nil
+		UpdateServiceStatus := func(serv servicev3.Service, assigned_client_uuid string, status servicev3.StepStatus, t time.Time) servicev3.Service {
+			serv.AssignedClientUuid = *vanilla.NewNullString(assigned_client_uuid)
+			serv.Status = status
+			serv.Timestamp = t
+			return serv
 		}
-	}()
-	if err != nil {
-		return errors.Wrapf(err, "save cluster_information")
-	}
+		UpdateStepStatus := func(step servicev3.ServiceStep, status servicev3.StepStatus, t time.Time) servicev3.ServiceStep {
+			step.Status = status
+			step.Timestamp = t
+			return step
+		}
 
-	UpdateServiceStatus := func(service servicev3.Service, assigned_client_uuid string, status servicev3.StepStatus, t time.Time) servicev3.Service {
-		service.AssignedClientUuid = *vanilla.NewNullString(assigned_client_uuid)
-		service.Status = status
-		service.Timestamp = t
-		return service
-	}
-	UpdateStepStatus := func(step servicev3.ServiceStep, status servicev3.StepStatus, t time.Time) servicev3.ServiceStep {
-		step.Status = status
-		step.Timestamp = t
-		return step
-	}
+		type CALLBACK_Service func(a servicev3.Service)
+		type CALLBACK_ServiceStep func(a servicev3.ServiceStep)
 
-	type CALLBACK_Service func(a servicev3.Service)
-	type CALLBACK_ServiceStep func(a servicev3.ServiceStep)
+		MakeUpdate := func(
+			t time.Time,
+			servs []servicev3.Service, CALLBACK_Service CALLBACK_Service,
+			steps map[string][]servicev3.ServiceStep, CALLBACK_ServiceStep CALLBACK_ServiceStep) {
 
-	MakeUpdate := func(
-		t time.Time,
-		services []servicev3.Service, CALLBACK_Service CALLBACK_Service,
-		steps map[string][]servicev3.ServiceStep, CALLBACK_ServiceStep CALLBACK_ServiceStep) {
+			for _, serv := range servs {
+				if serv.Status == servicev3.StepStatusRegist {
+					v := UpdateServiceStatus(serv, claims.Uuid, servicev3.StepStatusSend, t)
+					CALLBACK_Service(v)
 
-		for _, service := range services {
-			if service.Status == servicev3.StepStatusRegist {
-				v := UpdateServiceStatus(service, claims.Uuid, servicev3.StepStatusSend, t)
-				CALLBACK_Service(v)
-
-				for _, step := range steps[v.Uuid] {
-					v := UpdateStepStatus(step, servicev3.StepStatusSend, t)
-					CALLBACK_ServiceStep(v)
+					for _, step := range steps[v.Uuid] {
+						v := UpdateStepStatus(step, servicev3.StepStatusSend, t)
+						CALLBACK_ServiceStep(v)
+					}
 				}
 			}
 		}
+
+		var new_service_status = make([]vault.Table, 0, len(servs))
+		var new_step_status = make([]vault.Table, 0, len(steps))
+
+		time_now := time.Now()
+		MakeUpdate(time_now,
+			servs, func(a servicev3.Service) {
+				new_service_status = append(new_service_status, a)
+			},
+			steps, func(a servicev3.ServiceStep) {
+				new_step_status = append(new_step_status, a)
+			})
+
+		err = sqlex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
+
+			if err = vault.SaveMultiTable(tx, ctl.dialect, new_service_status); err != nil {
+				return errors.Wrapf(err, "faild to save service")
+			}
+
+			if err = vault.SaveMultiTable(tx, ctl.dialect, new_step_status); err != nil {
+				return errors.Wrapf(err, "faild to save service step")
+			}
+
+			return nil
+		})
+		if err != nil {
+			return
+		}
+
+		// make response body
+		rsp := make([]servicev3.HttpRsp_ClientServicePolling, len(servs))
+		for i, serv := range servs {
+			rsp[i].Service = serv
+			rsp[i].Steps = steps[serv.Uuid]
+		}
+
+		// invoke event (service-poll-out)
+		var mm = make([]map[string]interface{}, len(rsp))
+		// invoke event (service-poll-out)
+		const event_name = "service-poll-out"
+		for i, service := range rsp {
+			mm[i] = map[string]interface{}{}
+			mm[i]["event_name"] = event_name
+			mm[i]["service_uuid"] = service.Uuid
+			mm[i]["service_name"] = service.Name
+			mm[i]["template_uuid"] = service.TemplateUuid
+			mm[i]["cluster_uuid"] = service.ClusterUuid
+			mm[i]["assigned_client_uuid"] = service.AssignedClientUuid
+			mm[i]["status"] = service.Status
+			mm[i]["status_description"] = service.Status.String()
+			mm[i]["result_type"] = servicev3.ResultSaveTypeNone.String()
+			mm[i]["result"] = ""
+			mm[i]["step_count"] = service.StepCount
+			mm[i]["step_position"] = service.StepPosition
+		}
+
+		if 0 < len(mm) {
+			// invoke event by event category
+			managed_channel.InvokeByEventCategory(claims.TenantHash, channelv3.EventCategoryServicePollingOut, mm)
+		}
+
+		rsp_ = make([]servicev4.HttpRsp_ClientServicePolling, len(servs))
+		for i := range rsp {
+			rsp_[i].Version = "v3"
+			rsp_[i].V3 = rsp[i]
+		}
+
+		return
 	}
 
-	var new_service_status = make([]vault.Table, 0, len(services))
-	var new_step_status = make([]vault.Table, 0, len(steps))
+	makePollingServicev4 := func(cluster_info clusterinfov2.ClusterInformation) (polling_cnt int, polling_offset time.Time, rsp []servicev4.HttpRsp_ClientServicePolling, err error) {
 
-	time_now := time.Now()
-	MakeUpdate(time_now,
-		services, func(a servicev3.Service) {
-			new_service_status = append(new_service_status, a)
-		},
-		steps, func(a servicev3.ServiceStep) {
-			new_step_status = append(new_step_status, a)
+		// 오프셋이 서비스 유효시간 보다 작은 경우
+		// 혹은 오프셋이 없는 경우
+		// 오프셋 시간을 서비스 유효시간으로 설정
+		timelimit := globvar.ClientConfig.ServiceValidTimeLimit()
+		ltime := time.Now().
+			Truncate(time.Second).
+			Add(time.Duration(timelimit) * time.Minute * -1)
+
+		if !cluster_info.PollingOffset.Valid {
+			cluster_info.PollingOffset = *vanilla.NewNullTime(ltime)
+		}
+
+		if ltime.After(cluster_info.PollingOffset.Time) {
+			cluster_info.PollingOffset = *vanilla.NewNullTime(ltime)
+		}
+
+		// polling limit filter
+		polling_filter := newPollingFilter_v2(cluster.PoliingLimit, timelimit, ltime)
+		servs, stats, err := pollingService_v2(ctx.Request().Context(), ctl, ctl.dialect, claims.ClusterUuid, cluster_info.PollingOffset, polling_filter)
+
+		// set polling_offest
+		var polling_offest_ time.Time
+		for _, serv := range servs {
+			if polling_offest_.IsZero() {
+				polling_offest_ = serv.Created
+			}
+
+			if polling_offest_.After(serv.Created) {
+				polling_offest_ = serv.Created
+			}
+		}
+
+		polling_cnt = len(servs)
+		polling_offset = polling_offest_
+
+		UpdateStepStatus := func(step servicev4.ServiceStatus, status servicev4.StepStatus, t time.Time) servicev4.ServiceStatus {
+			step.Status = status
+			step.Created = t
+			return step
+		}
+
+		time_now := time.Now()
+		var new_step_status = make([]vault.Table, 0, len(stats))
+		for i := range stats {
+			if stats[i].Status == servicev4.StepStatusRegist {
+				v := UpdateStepStatus(stats[i], servicev4.StepStatusSent, time_now)
+
+				new_step_status = append(new_step_status, v)
+			}
+		}
+
+		err = sqlex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
+			if err = vault.SaveMultiTable(tx, ctl.dialect, new_step_status); err != nil {
+				err = errors.Wrapf(err, "faild to save a service status")
+				return err
+			}
+
+			return nil
 		})
-
-	err = sqlex.ScopeTx(ctx.Request().Context(), ctl, func(tx *sql.Tx) error {
-
-		if err = vault.SaveMultiTable(tx, ctl.dialect, new_service_status); err != nil {
-			return errors.Wrapf(err, "faild to save service")
+		if err != nil {
+			return
 		}
 
-		if err = vault.SaveMultiTable(tx, ctl.dialect, new_step_status); err != nil {
-			return errors.Wrapf(err, "faild to save service step")
+		// make response body
+		rsp = make([]servicev4.HttpRsp_ClientServicePolling, len(servs))
+		for i := range servs {
+			rsp[i].Version = "v4"
+			rsp[i].V4 = servs[i]
 		}
 
-		return nil
-	})
+		// // get tenent by cluster_uuid
+		// var tenant tenants.Tenant
+		// tenant_table := clusterv3.TenantTableName(claims.ClusterUuid)
+		// tenant_cond := stmt.And(
+		// 	stmt.IsNull("deleted"),
+		// )
+		// err = ctl.dialect.QueryRows(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil)(
+		// 	ctx.Request().Context(), ctl)(
+		// 	func(scan excute.Scanner, _ int) error {
+		// 		err := tenant.Scan(scan)
+		// 		err = errors.WithStack(err)
+
+		// 		return err
+		// 	})
+		// if err != nil {
+		// 	err = errors.Wrapf(err, "failed to get a tenent by cluster_uuid")
+		// 	return
+		// }
+
+		// invoke event (service-poll-out)
+		const event_name = "service-poll-out"
+		var mm = make([]map[string]interface{}, len(rsp))
+		for i := range servs {
+			serv := servs[i]
+			stat := stats[i]
+
+			mm[i] = map[string]interface{}{}
+			mm[i]["event_name"] = event_name
+			mm[i]["service_uuid"] = serv.Uuid
+			mm[i]["service_name"] = serv.Name
+			mm[i]["template_uuid"] = serv.TemplateUuid
+			mm[i]["cluster_uuid"] = serv.ClusterUuid
+			mm[i]["assigned_client_uuid"] = claims.Uuid
+			mm[i]["status"] = stat.Status
+			mm[i]["status_description"] = stat.Status.String()
+			mm[i]["result_type"] = servicev3.ResultSaveTypeNone.String()
+			mm[i]["result"] = ""
+			mm[i]["step_count"] = stat.StepMax
+			mm[i]["step_position"] = stat.StepSeq
+		}
+
+		if 0 < len(mm) {
+			// invoke event by event category
+			managed_channel.InvokeByEventCategory(claims.TenantHash, channelv3.EventCategoryServicePollingOut, mm)
+		}
+
+		return
+	}
+
+	// cnt, rsp, err := clusterInfo(makePollingServicev3)
+	// if err != nil {
+	// 	return err
+	// }
+	// if 0 < cnt {
+	// 	return ctx.JSON(http.StatusOK, rsp)
+	// }
+	// _, rsp, err = clusterInfo(makePollingServicev4)
+	// if err != nil {
+	// 	return err
+	// }
+
+	cnt, rsp, err := clusterInfo(makePollingServicev4)
 	if err != nil {
 		return err
 	}
-
-	// make response body
-	rsp := make([]servicev3.HttpRsp_ClientServicePolling, len(services))
-	for i, service := range services {
-		rsp[i].Service = service
-		rsp[i].Steps = steps[service.Uuid]
-		i++
+	if 0 < cnt {
+		return ctx.JSON(http.StatusOK, rsp)
 	}
-
-	// get tenent by cluster_uuid
-	var tenant tenants.Tenant
-	tenant_table := clusterv3.TenantTableName(claims.ClusterUuid)
-	tenant_cond := stmt.And(
-		stmt.IsNull("deleted"),
-	)
-	err = ctl.dialect.QueryRows(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil)(
-		ctx.Request().Context(), ctl)(
-		func(scan excute.Scanner, _ int) error {
-			err := tenant.Scan(scan)
-			err = errors.WithStack(err)
-
-			return err
-		})
+	_, rsp, err = clusterInfo(makePollingServicev3)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get a tenent by cluster_uuid")
-	}
-
-	var mm = make([]map[string]interface{}, len(rsp))
-	// invoke event (service-poll-out)
-	for i, service := range rsp {
-		const event_name = "service-poll-out"
-		mm[i] = map[string]interface{}{}
-		mm[i]["event_name"] = event_name
-		mm[i]["service_uuid"] = service.Uuid
-		mm[i]["service_name"] = service.Name
-		mm[i]["template_uuid"] = service.TemplateUuid
-		mm[i]["cluster_uuid"] = service.ClusterUuid
-		mm[i]["assigned_client_uuid"] = service.AssignedClientUuid
-		mm[i]["status"] = service.Status
-		mm[i]["status_description"] = service.Status.String()
-		mm[i]["result_type"] = servicev3.ResultSaveTypeNone.String()
-		mm[i]["result"] = ""
-		mm[i]["step_count"] = service.StepCount
-		mm[i]["step_position"] = service.StepPosition
-	}
-
-	if 0 < len(mm) {
-		// invoke event by event category
-		managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryServicePollingOut, mm)
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, rsp)
@@ -310,60 +461,12 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 // @Produce     json
 // @Tags        client/service
 // @Router      /client/service [put]
-// @Param       body body service.HttpReq_ClientServiceUpdate true "HttpReq_ClientServiceUpdate"
+// @Param       body body servicev4.HttpReq_ClientServiceUpdate true "HttpReq_ClientServiceUpdate"
 // @Success     200
 // @Header      200 {string} x-sudory-client-token
 func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 
-	stepPosition := func(service_step servicev3.ServiceStep) int {
-		// 스템 포지션 값은
-		// ServiceStep.Sequence+1
-		return service_step.Sequence + 1
-	}
-	stepStatus := func(body servicev3.HttpReq_ClientServiceUpdate, service servicev3.Service, service_step servicev3.ServiceStep) servicev3.StepStatus {
-		// 스탭 포지션이 카운트와 같은 경우만
-		if service.StepCount == stepPosition(service_step) {
-			return body.Status
-		}
-		// 기본값; 처리중(Processing)
-		return servicev3.StepStatusProcessing
-	}
-	serviceResult := func(body servicev3.HttpReq_ClientServiceUpdate) cryptov2.CryptoString {
-		// 상태가 성공인 경우만
-		if body.Status == servicev3.StepStatusSuccess {
-			return cryptov2.CryptoString(body.Result)
-		}
-		//기본값; 공백 문자열
-		return ""
-	}
-	stepMessage := func(body servicev3.HttpReq_ClientServiceUpdate) vanilla.NullString {
-		// 상태가 실패인 경우만
-		if body.Status == servicev3.StepStatusFail {
-			return *vanilla.NewNullString(body.Result)
-		}
-		//기본값; 공백 문자열
-		return vanilla.NullString{}
-	}
-	resultType := func(body servicev3.HttpReq_ClientServiceUpdate, service servicev3.Service, service_step servicev3.ServiceStep) (resultType servicev3.ResultSaveType) {
-		// 마지막 스탭의 결과만 저장 한다
-		if service.StepCount != stepPosition(service_step) {
-			return
-		}
-		// 상태 값이 성공이 아닌 경우
-		// 서비스 결과를 저장 하지 않는다
-		if servicev3.StepStatusSuccess != stepStatus(body, service, service_step) {
-			return
-		}
-		// 채널이 등록되어 있는 경우
-		// 서비스 결과를 저장 하지 않는다
-		if !service.SubscribedChannel.Valid || 0 < len(service.SubscribedChannel.String) {
-			return
-		}
-
-		return servicev3.ResultSaveTypeDatabase
-	}
-
-	body := servicev3.HttpReq_ClientServiceUpdate{}
+	body := servicev4.HttpReq_ClientServiceUpdate{}
 	if err := echoutil.Bind(ctx, &body); err != nil {
 		err = errors.Wrapf(err, "bind%s",
 			logs.KVL(
@@ -372,193 +475,435 @@ func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
-	if err := body.Status.Valid(); err != nil {
-		err = errors.Wrapf(err, "valid param%s",
-			logs.KVL(
-				ParamLog(fmt.Sprintf("%s.Status", TypeName(body)), body.Status)...,
+	updateServiceStatus_v3 := func(body servicev3.HttpReq_ClientServiceUpdate) error {
+
+		stepPosition := func(service_step servicev3.ServiceStep) int {
+			// 스탭 포지션 값은
+			// ServiceStep.Sequence+1
+			return service_step.Sequence + 1
+		}
+		stepStatus := func(body servicev3.HttpReq_ClientServiceUpdate, serv servicev3.Service, service_step servicev3.ServiceStep) servicev3.StepStatus {
+			// 스탭 포지션이 카운트와 같은 경우만
+			if serv.StepCount == stepPosition(service_step) {
+				return body.Status
+			}
+			// 기본값; 처리중(Processing)
+			return servicev3.StepStatusProcessing
+		}
+		serviceResult := func(body servicev3.HttpReq_ClientServiceUpdate) cryptov2.CryptoString {
+			// 상태가 성공인 경우만
+			if body.Status == servicev3.StepStatusSuccess {
+				return cryptov2.CryptoString(body.Result)
+			}
+			//기본값; 공백 문자열
+			return ""
+		}
+		stepMessage := func(body servicev3.HttpReq_ClientServiceUpdate) vanilla.NullString {
+			// 상태가 실패인 경우만
+			if body.Status == servicev3.StepStatusFail {
+				return *vanilla.NewNullString(body.Result)
+			}
+			//기본값; 공백 문자열
+			return vanilla.NullString{}
+		}
+		resultType := func(body servicev3.HttpReq_ClientServiceUpdate, serv servicev3.Service, service_step servicev3.ServiceStep) (resultType servicev3.ResultSaveType) {
+			// 마지막 스탭의 결과만 저장 한다
+			if serv.StepCount != stepPosition(service_step) {
+				return
+			}
+			// 상태 값이 성공이 아닌 경우
+			// 서비스 결과를 저장 하지 않는다
+			if servicev3.StepStatusSuccess != stepStatus(body, serv, service_step) {
+				return
+			}
+			// 채널이 등록되어 있는 경우
+			// 서비스 결과를 저장 하지 않는다
+			if !serv.SubscribedChannel.Valid || 0 < len(serv.SubscribedChannel.String) {
+				return
+			}
+
+			return servicev3.ResultSaveTypeDatabase
+		}
+
+		if err := body.Status.Valid(); err != nil {
+			err = errors.Wrapf(err, "valid param%s",
+				logs.KVL(
+					ParamLog(fmt.Sprintf("%s.Status", TypeName(body)), body.Status)...,
+				))
+			return HttpError(err, http.StatusBadRequest)
+		}
+
+		// get client token claims
+		// claims, err := GetSudoryClientTokenClaims(ctx)
+		claims, err := GetClientSessionClaims(ctx, ctl.DB, ctl.dialect)
+		if err != nil {
+			err = errors.Wrapf(err, "failed to get client token")
+			return HttpError(err, http.StatusBadRequest)
+		}
+
+		// get serv
+		serv := new(servicev3.Service)
+		serv.ClusterUuid = claims.ClusterUuid
+		serv.Uuid = body.Uuid
+
+		serv, err = vault.GetService(context.Background(), ctl, ctl.dialect, serv.ClusterUuid, serv.Uuid)
+		if err != nil {
+			return errors.Wrapf(err, "failed to found service%v", logs.KVL(
+				"cluster_uuid", claims.ClusterUuid,
+				"uuid", body.Uuid,
 			))
-		return HttpError(err, http.StatusBadRequest)
-	}
-
-	// get client token claims
-	// claims, err := GetSudoryClientTokenClaims(ctx)
-	claims, err := GetClientSessionClaims(ctx, ctl.DB, ctl.dialect)
-	if err != nil {
-		err = errors.Wrapf(err, "failed to get client token")
-		return HttpError(err, http.StatusBadRequest)
-	}
-
-	// get service
-	service := new(servicev3.Service)
-	service.ClusterUuid = claims.ClusterUuid
-	service.Uuid = body.Uuid
-
-	service, err = vault.GetService(context.Background(), ctl, ctl.dialect, service.ClusterUuid, service.Uuid)
-	if err != nil {
-		return errors.Wrapf(err, "failed to found service%v", logs.KVL(
-			"cluster_uuid", claims.ClusterUuid,
-			"uuid", body.Uuid,
-		))
-	}
-
-	// get service service_step
-	service_step := new(servicev3.ServiceStep)
-	service_step.ClusterUuid = claims.ClusterUuid
-	service_step.Uuid = body.Uuid
-	service_step.Sequence = body.Sequence
-
-	service_step, err = vault.GetServiceStep(context.Background(), ctl, ctl.dialect, service_step.ClusterUuid, service_step.Uuid, service_step.Sequence)
-	if err != nil {
-		return errors.Wrapf(err, "failed to found service step%v", logs.KVL(
-			"cluster_uuid", claims.ClusterUuid,
-			"uuid", body.Uuid,
-			"sequence", uint8(body.Sequence),
-		))
-	}
-
-	now_time := time.Now()
-	// udpate service
-	{
-		// update key
-		service.Timestamp = now_time
-		// update value
-		service.AssignedClientUuid = *vanilla.NewNullString(claims.Uuid)
-		service.StepPosition = stepPosition(*service_step)
-		service.Status = stepStatus(body, *service, *service_step)
-		service.Message = stepMessage(body)
-	}
-	// new service result
-	service_result := func() *servicev3.ServiceResult {
-		// update key
-		service_result := new(servicev3.ServiceResult)
-		service_result.PartitionDate = service.PartitionDate
-		service_result.ClusterUuid = service.ClusterUuid
-		service_result.Uuid = service.Uuid
-		service_result.Timestamp = now_time
-		// update value
-		service_result.ResultSaveType = resultType(body, *service, *service_step)
-		service_result.Result = serviceResult(body)
-
-		return service_result
-	}()
-	// udpate service step
-	{
-		// update key
-		service_step.Timestamp = now_time
-		// update value
-		service_step.Status = body.Status                         // Status
-		service_step.Started = *vanilla.NewNullTime(body.Started) // Started
-		service_step.Ended = *vanilla.NewNullTime(body.Ended)     // Ended
-	}
-
-	// save to db
-	err = sqlex.ScopeTx(context.Background(), ctl, func(tx *sql.Tx) (err error) {
-
-		// save service
-		if err = vault.SaveMultiTable(tx, ctl.dialect, []vault.Table{service}); err != nil {
-			return errors.Wrapf(err, "failed to save service_status")
 		}
 
-		// save service step
-		if err = vault.SaveMultiTable(tx, ctl.dialect, []vault.Table{service_step}); err != nil {
-			return errors.Wrapf(err, "failed to save service_step_status")
+		// get service step
+		step := new(servicev3.ServiceStep)
+		step.ClusterUuid = claims.ClusterUuid
+		step.Uuid = body.Uuid
+		step.Sequence = body.Sequence
+
+		step, err = vault.GetServiceStep(context.Background(), ctl, ctl.dialect, step.ClusterUuid, step.Uuid, step.Sequence)
+		if err != nil {
+			return errors.Wrapf(err, "failed to found service step%v", logs.KVL(
+				"cluster_uuid", claims.ClusterUuid,
+				"uuid", body.Uuid,
+				"sequence", uint8(body.Sequence),
+			))
 		}
 
-		// check servcie result save type
-		if service_result.ResultSaveType != servicev3.ResultSaveTypeNone {
-			// save service result
-			if err = vault.SaveMultiTable(tx, ctl.dialect, []vault.Table{service_result}); err != nil {
-				return errors.Wrapf(err, "failed to save service_result")
+		now_time := time.Now()
+		// udpate service
+		{
+			// update key
+			serv.Timestamp = now_time
+			// update value
+			serv.AssignedClientUuid = *vanilla.NewNullString(claims.Uuid)
+			serv.StepPosition = stepPosition(*step)
+			serv.Status = stepStatus(body, *serv, *step)
+			serv.Message = stepMessage(body)
+		}
+		// new service result
+		result := func() *servicev3.ServiceResult {
+			// update key
+			result := new(servicev3.ServiceResult)
+			result.PartitionDate = serv.PartitionDate
+			result.ClusterUuid = serv.ClusterUuid
+			result.Uuid = serv.Uuid
+			result.Timestamp = now_time
+			// update value
+			result.ResultSaveType = resultType(body, *serv, *step)
+			result.Result = serviceResult(body)
+
+			return result
+		}()
+		// udpate service step
+		{
+			// update key
+			step.Timestamp = now_time
+			// update value
+			step.Status = body.Status                         // Status
+			step.Started = *vanilla.NewNullTime(body.Started) // Started
+			step.Ended = *vanilla.NewNullTime(body.Ended)     // Ended
+		}
+
+		// save to db
+		err = sqlex.ScopeTx(context.Background(), ctl, func(tx *sql.Tx) (err error) {
+
+			// save service
+			if err = vault.SaveMultiTable(tx, ctl.dialect, []vault.Table{serv}); err != nil {
+				return errors.Wrapf(err, "failed to save service_status")
 			}
-		}
 
-		return
-	})
-	err = errors.Wrapf(err, "failed to save")
-	if err != nil {
-		return err
-	}
+			// save service step
+			if err = vault.SaveMultiTable(tx, ctl.dialect, []vault.Table{step}); err != nil {
+				return errors.Wrapf(err, "failed to save service_step_status")
+			}
 
-	// get tenent by cluster_uuid
-	var tenant tenants.Tenant
-	tenant_table := clusterv3.TenantTableName(claims.ClusterUuid)
-	tenant_cond := stmt.And(
-		stmt.IsNull("deleted"),
-	)
-	err = ctl.dialect.QueryRows(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil)(
-		context.Background(), ctl.DB)(
-		func(scan excute.Scanner, _ int) error {
-			err := tenant.Scan(scan)
-			err = errors.WithStack(err)
+			// check servcie result save type
+			if result.ResultSaveType != servicev3.ResultSaveTypeNone {
+				// save service result
+				if err = vault.SaveMultiTable(tx, ctl.dialect, []vault.Table{result}); err != nil {
+					return errors.Wrapf(err, "failed to save service_result")
+				}
+			}
 
-			return err
+			return
 		})
-	if err != nil {
-		return errors.Wrapf(err, "failed to get a tenent by cluster_uuid")
-	}
-
-	// invoke event (service-poll-in)
-	const event_name = "service-poll-in"
-	mm := make([]map[string]interface{}, 1)
-	mm[0] = map[string]interface{}{}
-	mm[0]["event_name"] = event_name
-	mm[0]["service_uuid"] = service.Uuid
-	mm[0]["service_name"] = service.Name
-	mm[0]["template_uuid"] = service.TemplateUuid
-	mm[0]["cluster_uuid"] = service.ClusterUuid
-	mm[0]["assigned_client_uuid"] = service.AssignedClientUuid
-	mm[0]["status"] = service.Status
-	mm[0]["status_description"] = service.Status.String()
-	mm[0]["result_type"] = service_result.ResultSaveType.String()
-	mm[0]["result"] = func() interface{} {
-		var b = []byte(strings.TrimSpace(body.Result))
-		if len(b) == 0 {
-			// empty string
-			return map[string]interface{}{
-				"message": body.Result,
-			}
+		err = errors.Wrapf(err, "failed to save")
+		if err != nil {
+			return err
 		}
 
-		head, tail := b[0], b[len(b)-1]
-		if ok := (head == '{' && tail == '}') || (head == '[' && tail == ']'); !ok {
-			// not json
-			return map[string]interface{}{
-				"message": body.Result,
+		// // get tenent by cluster_uuid
+		// var tenant tenants.Tenant
+		// tenant_table := clusterv3.TenantTableName(claims.ClusterUuid)
+		// tenant_cond := stmt.And(
+		// 	stmt.IsNull("deleted"),
+		// )
+		// err = ctl.dialect.QueryRows(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil)(
+		// 	context.Background(), ctl.DB)(
+		// 	func(scan excute.Scanner, _ int) error {
+		// 		err := tenant.Scan(scan)
+		// 		err = errors.WithStack(err)
+
+		// 		return err
+		// 	})
+		// if err != nil {
+		// 	return errors.Wrapf(err, "failed to get a tenent by cluster_uuid")
+		// }
+
+		// invoke event (service-poll-in)
+		const event_name = "service-poll-in"
+		mm := make([]map[string]interface{}, 1)
+		mm[0] = map[string]interface{}{}
+		mm[0]["event_name"] = event_name
+		mm[0]["service_uuid"] = serv.Uuid
+		mm[0]["service_name"] = serv.Name
+		mm[0]["template_uuid"] = serv.TemplateUuid
+		mm[0]["cluster_uuid"] = serv.ClusterUuid
+		mm[0]["assigned_client_uuid"] = serv.AssignedClientUuid
+		mm[0]["status"] = serv.Status
+		mm[0]["status_description"] = serv.Status.String()
+		mm[0]["result_type"] = result.ResultSaveType.String()
+		mm[0]["result"] = func() interface{} {
+			var b = []byte(strings.TrimSpace(body.Result))
+			if len(b) == 0 {
+				// empty string
+				return map[string]interface{}{
+					"message": body.Result,
+				}
 			}
-		}
 
-		// json
-		return json.RawMessage(body.Result)
-	}()
-	mm[0]["step_count"] = service.StepCount
-	mm[0]["step_position"] = service.StepPosition
+			head, tail := b[0], b[len(b)-1]
+			if ok := (head == '{' && tail == '}') || (head == '[' && tail == ']'); !ok {
+				// not json
+				return map[string]interface{}{
+					"message": body.Result,
+				}
+			}
 
-	if 0 < len(mm) {
-		if service.Status == servicev3.StepStatusSuccess && len(service_result.Result.String()) == 0 {
+			// json
+			return json.RawMessage(body.Result)
+		}()
+		mm[0]["step_count"] = serv.StepCount
+		mm[0]["step_position"] = serv.StepPosition
+
+		if serv.Status == servicev3.StepStatusSuccess && len(result.Result.String()) == 0 {
 			log.Debugf("channel(poll-in-service): %+v", mm)
 		}
 
 		// invoke event by channel uuid
-		if 0 < len(service.SubscribedChannel.String) {
+		if 0 < len(serv.SubscribedChannel.String) {
 			// find channel
 			channel := channelv3.ManagedChannel{}
-			channel.Uuid = service.SubscribedChannel.String
+			channel.Uuid = serv.SubscribedChannel.String
 			channel_cond := stmt.And(
 				stmt.Equal("uuid", channel.Uuid),
 				stmt.IsNull("deleted"),
 			)
-			channel_table := channelv3.TableNameWithTenant_ManagedChannel(tenant.Hash)
+			channel_table := channelv3.TableNameWithTenant_ManagedChannel(claims.TenantHash)
 			found, err := ctl.dialect.Exist(channel_table, channel_cond)(context.Background(), ctl)
 			if err != nil {
 				return err
 			}
 			if found {
-				managed_channel.InvokeByChannelUuid(tenant.Hash, service.SubscribedChannel.String, mm)
+				managed_channel.InvokeByChannelUuid(claims.TenantHash, serv.SubscribedChannel.String, mm)
 			}
 		}
 
 		// invoke event by event category
-		managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryServicePollingIn, mm)
+		managed_channel.InvokeByEventCategory(claims.TenantHash, channelv3.EventCategoryServicePollingIn, mm)
+
+		return nil
+	}
+
+	updateServiceStatus_v4 := func(body servicev4.HttpReq_ClientServiceUpdate_multistep) error {
+		if err := body.Status.Valid(); err != nil {
+			err = errors.Wrapf(err, "valid param%s",
+				logs.KVL(
+					ParamLog(fmt.Sprintf("%s.Status", TypeName(body)), body.Status)...,
+				))
+			return HttpError(err, http.StatusBadRequest)
+		}
+
+		// get client token claims
+		// claims, err := GetSudoryClientTokenClaims(ctx)
+		claims, err := GetClientSessionClaims(ctx, ctl.DB, ctl.dialect)
+		if err != nil {
+			err = errors.Wrapf(err, "failed to get client token")
+			return HttpError(err, http.StatusBadRequest)
+		}
+
+		// get serv
+		var serv servicev4.Service
+		serv.ClusterUuid = claims.ClusterUuid
+		serv.Uuid = body.Uuid
+
+		serv_cond := stmt.And(
+			stmt.Equal("cluster_uuid", serv.ClusterUuid),
+			stmt.Equal("uuid", serv.Uuid))
+
+		err = ctl.dialect.QueryRow(serv.TableName(), serv.ColumnNames(), serv_cond, nil, nil)(
+			ctx.Request().Context(), ctl)(
+			func(scan excute.Scanner) error {
+				err = serv.Scan(scan)
+				err = errors.WithStack(err)
+
+				return err
+			})
+		if err != nil {
+			return errors.Wrapf(err, "failed to found a service%v", logs.KVL(
+				"cluster_uuid", claims.ClusterUuid,
+				"uuid", body.Uuid,
+			))
+		}
+
+		now_time := time.Now()
+
+		newStatus := servicev4.ServiceStatus{}
+		newStatus.PartitionDate = serv.PartitionDate
+		newStatus.ClusterUuid = serv.ClusterUuid
+		newStatus.Uuid = serv.Uuid
+		newStatus.Created = now_time
+		newStatus.StepMax = serv.StepMax
+		newStatus.StepSeq = body.Sequence + 1
+		newStatus.Status = body.Status
+		newStatus.Started = *vanilla.NewNullTime(body.Started)
+		newStatus.Ended = *vanilla.NewNullTime(body.Ended)
+		if body.Status == servicev4.StepStatusFailed {
+			newStatus.Message = *vanilla.NewNullString(body.Result)
+		}
+
+		newResult := servicev4.ServiceResult{}
+		newResult.PartitionDate = serv.PartitionDate
+		newResult.ClusterUuid = serv.ClusterUuid
+		newResult.Uuid = serv.Uuid
+		// 채널이 등록되어 있는 경우
+		// 서비스 결과를 저장 하지 않는다
+		if !serv.SubscribedChannel.Valid || 0 < len(serv.SubscribedChannel.String) {
+			newResult.ResultSaveType = servicev4.ResultSaveTypeDatabase
+		}
+		if body.Status == servicev4.StepStatusSucceeded {
+			newResult.Result = cryptov2.CryptoString(body.Result)
+		}
+		newResult.Created = now_time
+
+		// save to db
+		err = sqlex.ScopeTx(context.Background(), ctl, func(tx *sql.Tx) (err error) {
+			// save service step
+			_, _, err = ctl.dialect.Insert(newStatus.TableName(), newStatus.ColumnNames(), newStatus.Values())(
+				context.Background(), ctl)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to save a status")
+				return err
+			}
+
+			if body.Status == servicev4.StepStatusSucceeded {
+				updateColumn := []string{"result_type", "result", "created"}
+				_, _, err = ctl.dialect.InsertOrUpdate(newResult.TableName(), newResult.ColumnNames(), updateColumn, newResult.Values())(
+					context.Background(), ctl)
+				if err != nil {
+					err = errors.Wrapf(err, "failed to save a result")
+					return
+				}
+			}
+
+			return
+		})
+		if err != nil {
+			err = errors.Wrapf(err, "failed to save")
+			return err
+		}
+
+		// // get tenent by cluster_uuid
+		// var tenant tenants.Tenant
+		// tenant_table := clusterv3.TenantTableName(claims.ClusterUuid)
+		// tenant_cond := stmt.And(
+		// 	stmt.IsNull("deleted"),
+		// )
+		// err = ctl.dialect.QueryRows(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil)(
+		// 	context.Background(), ctl.DB)(
+		// 	func(scan excute.Scanner, _ int) error {
+		// 		err := tenant.Scan(scan)
+		// 		err = errors.WithStack(err)
+
+		// 		return err
+		// 	})
+		// if err != nil {
+		// 	return errors.Wrapf(err, "failed to get a tenent by cluster_uuid")
+		// }
+
+		// invoke event (service-poll-in)
+		const event_name = "service-poll-in"
+		mm := make([]map[string]interface{}, 1)
+		mm[0] = map[string]interface{}{}
+		mm[0]["event_name"] = event_name
+		mm[0]["service_uuid"] = serv.Uuid
+		mm[0]["service_name"] = serv.Name
+		mm[0]["template_uuid"] = serv.TemplateUuid
+		mm[0]["cluster_uuid"] = serv.ClusterUuid
+		mm[0]["assigned_client_uuid"] = claims.Uuid
+		mm[0]["status"] = newStatus.Status
+		mm[0]["status_description"] = newStatus.Status.String()
+		mm[0]["result_type"] = newResult.ResultSaveType.String()
+		mm[0]["result"] = func() interface{} {
+
+			var b = []byte(strings.TrimSpace(body.Result))
+			if len(b) == 0 {
+				// empty string
+				return map[string]interface{}{
+					"message": body.Result,
+				}
+			}
+
+			head, tail := b[0], b[len(b)-1]
+			if ok := (head == '{' && tail == '}') || (head == '[' && tail == ']'); !ok {
+				// not json
+				return map[string]interface{}{
+					"message": body.Result,
+				}
+			}
+
+			// json
+			return json.RawMessage(body.Result)
+		}()
+		mm[0]["step_count"] = newStatus.StepMax
+		mm[0]["step_position"] = newStatus.StepSeq
+
+		if newStatus.Status == servicev4.StepStatusSucceeded && len(newResult.Result.String()) == 0 {
+			log.Debugf("channel(poll-in-service): %+v", mm)
+		}
+
+		// invoke event by channel uuid
+		if 0 < len(serv.SubscribedChannel.String) {
+			// find channel
+			channel := channelv3.ManagedChannel{}
+			channel.Uuid = serv.SubscribedChannel.String
+			channel_cond := stmt.And(
+				stmt.Equal("uuid", channel.Uuid),
+				stmt.IsNull("deleted"),
+			)
+			channel_table := channelv3.TableNameWithTenant_ManagedChannel(claims.TenantHash)
+			found, err := ctl.dialect.Exist(channel_table, channel_cond)(context.Background(), ctl)
+			if err != nil {
+				return err
+			}
+			if found {
+				managed_channel.InvokeByChannelUuid(claims.TenantHash, serv.SubscribedChannel.String, mm)
+			}
+		}
+		// invoke event by event category
+		managed_channel.InvokeByEventCategory(claims.TenantHash, channelv3.EventCategoryServicePollingIn, mm)
+
+		return nil
+	}
+
+	switch body.Version {
+	case "v3":
+		updateServiceStatus_v3(body.V3)
+	case "v4":
+		updateServiceStatus_v4(body.V4)
+	default:
+		err := errors.New("invalid version")
+		return err
 	}
 
 	return ctx.JSON(http.StatusOK, OK())
@@ -603,6 +948,25 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 		return HttpError(err, http.StatusBadRequest)
 	}
 
+	// get tenent by cluster_uuid
+	var tenant tenants.Tenant
+	tenant_table := clusterv3.TenantTableName(cluster.Uuid)
+	tenant_cond := stmt.And(
+		stmt.IsNull("deleted"),
+	)
+
+	err = ctl.dialect.QueryRows(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil)(
+		ctx.Request().Context(), ctl.DB)(
+		func(scan excute.Scanner, _ int) error {
+			err := tenant.Scan(scan)
+			err = errors.WithStack(err)
+
+			return err
+		})
+	if err != nil {
+		return errors.Wrapf(err, "failed to get a tenent by cluster_uuid")
+	}
+
 	//valid token
 	token := cluster_token.ClusterToken{}
 	token.ClusterUuid = auth.ClusterUuid
@@ -642,6 +1006,7 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 		IssuedAt:     iat.Unix(),
 		Uuid:         session_token_uuid,
 		ClusterUuid:  auth.ClusterUuid,
+		TenantHash:   tenant.Hash,
 		PollInterval: globvar.ClientConfig.PollInterval(),
 		Loglevel:     globvar.ClientConfig.Loglevel(),
 	}
@@ -695,25 +1060,6 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	//save token to header
 	ctx.Response().Header().Set(__HTTP_HEADER_X_SUDORY_CLIENT_TOKEN__, token_string)
 
-	// get tenent by cluster_uuid
-	var tenant tenants.Tenant
-	tenant_table := clusterv3.TenantTableName(cluster.Uuid)
-	tenant_cond := stmt.And(
-		stmt.IsNull("deleted"),
-	)
-
-	err = ctl.dialect.QueryRows(tenant_table, tenant.ColumnNames(), tenant_cond, nil, nil)(
-		ctx.Request().Context(), ctl.DB)(
-		func(scan excute.Scanner, _ int) error {
-			err := tenant.Scan(scan)
-			err = errors.WithStack(err)
-
-			return err
-		})
-	if err != nil {
-		return errors.Wrapf(err, "failed to get a tenent by cluster_uuid")
-	}
-
 	//invoke event (client-auth-accept)
 	const event_name = "client-auth-accept"
 	mm := make([]map[string]interface{}, 1)
@@ -722,10 +1068,8 @@ func (ctl ControlVanilla) AuthClient(ctx echo.Context) (err error) {
 	mm[0]["cluster_uuid"] = payload.ClusterUuid
 	mm[0]["session_uuid"] = payload.Uuid
 
-	if 0 < len(mm) {
-		// invoke event by event category
-		managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryClientAuthAccept, mm)
-	}
+	// invoke event by event category
+	managed_channel.InvokeByEventCategory(tenant.Hash, channelv3.EventCategoryClientAuthAccept, mm)
 
 	return ctx.JSON(http.StatusOK, OK())
 }
@@ -830,7 +1174,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 
 	var service_count vanilla.NullInt
 	err = func() (err error) {
-		cluster_info := clusterinfos.ClusterInformation{}
+		cluster_info := clusterinfov2.ClusterInformation{}
 		columnnames := []string{"polling_count"}
 		cond := stmt.Equal("cluster_uuid", claims.ClusterUuid)
 
@@ -844,7 +1188,7 @@ func (ctl ControlVanilla) RefreshClientSessionToken(ctx echo.Context) (err error
 			})
 
 		// cond := pollingServiceCondition(claims.ClusterUuid)
-		// service := servicev3.Service{}
+		// service := service.Service{}
 		// service_count, err = stmtex.Count(service.TableName(), cond.Parse(), nil)(ctx.Request().Context(), ctl)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get cluster service count")
@@ -1033,14 +1377,14 @@ func getCookie(ctx echo.Context, key string) (string, error) {
 // 	// return vanilla.And(
 // 	// 	vanilla.Equal("cluster_uuid", cluster_uuid),
 // 	// 	vanilla.Or(
-// 	// 		vanilla.Equal("status", servicev3.StepStatusRegist),
-// 	// 		vanilla.Equal("status", servicev3.StepStatusSend),
-// 	// 		vanilla.Equal("status", servicev3.StepStatusProcessing),
+// 	// 		vanilla.Equal("status", service.StepStatusRegist),
+// 	// 		vanilla.Equal("status", service.StepStatusSend),
+// 	// 		vanilla.Equal("status", service.StepStatusProcessing),
 // 	// 	))
 
 // 	return vanilla.And(
 // 		vanilla.Equal("cluster_uuid", cluster_uuid),
-// 		vanilla.LessThan("status", servicev3.StepStatusSuccess),
+// 		vanilla.LessThan("status", service.StepStatusSuccess),
 // 	)
 // }
 
@@ -1064,9 +1408,9 @@ func newPollingFilter(limit int, timelimit int, ltime time.Time) PollingFilter {
 		return limit + 1
 	}(limit)
 
-	return func(service servicev3.Service_polling) bool {
-		status := service.Status
-		created := service.Created
+	return func(serv servicev3.Service_polling) bool {
+		status := serv.Status
+		created := serv.Created
 
 		if !(0 < limit) {
 			return false
@@ -1085,10 +1429,44 @@ func newPollingFilter(limit int, timelimit int, ltime time.Time) PollingFilter {
 	}
 }
 
+type PollingFilter_v2 = func(service vault.ServicePolling) bool
+
+func newPollingFilter_v2(limit int, timelimit int, ltime time.Time) PollingFilter_v2 {
+	limit = func(limit int) int {
+		if limit == 0 {
+			limit = math.MaxInt8 // 127
+		}
+		return limit + 1
+	}(limit)
+
+	return func(service vault.ServicePolling) bool {
+		status := service.LastStatus.Status
+		created := service.Service.Created
+
+		if !(0 < limit) {
+			return false
+		}
+
+		if !(status < servicev4.StepStatusSucceeded) {
+			return false
+		}
+
+		// println(ltime.String())
+		// println(created.String())
+
+		if !created.After(ltime) && 0 < timelimit {
+			return false
+		}
+
+		limit--
+		return true
+	}
+}
+
 func pollingService(ctx context.Context, tx excute.Preparer, dialect excute.SqlExcutor,
 	cluster_uuid string, polling_offest vanilla.NullTime,
 	polling_filter PollingFilter,
-) (services []servicev3.Service, stepSet map[string][]servicev3.ServiceStep, err error) {
+) (servs []servicev3.Service, stepSet map[string][]servicev3.ServiceStep, err error) {
 
 	// check polling
 	polling_keys, err := vault.GetServicesPolling(ctx, tx, dialect, cluster_uuid, polling_offest)
@@ -1109,10 +1487,10 @@ func pollingService(ctx context.Context, tx excute.Preparer, dialect excute.SqlE
 	}
 
 	// get polling service detail
-	services = make([]servicev3.Service, 0, len(filtered_keys))
+	servs = make([]servicev3.Service, 0, len(filtered_keys))
 	for _, service_key := range filtered_keys {
-		var service *servicev3.Service
-		service, err = vault.GetService(ctx, tx, dialect, cluster_uuid, service_key.Uuid)
+		var serv *servicev3.Service
+		serv, err = vault.GetService(ctx, tx, dialect, cluster_uuid, service_key.Uuid)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to found service %v", logs.KVL(
 				"cluster_uuid", cluster_uuid,
@@ -1121,24 +1499,52 @@ func pollingService(ctx context.Context, tx excute.Preparer, dialect excute.SqlE
 			return
 		}
 		// append to
-		services = append(services, *service)
+		servs = append(servs, *serv)
 	}
 
 	// gather service step
 	stepSet = make(map[string][]servicev3.ServiceStep)
-	for _, service_ := range filtered_keys {
+	for _, serv := range filtered_keys {
 		var steps []servicev3.ServiceStep
-		steps, err = vault.GetServiceSteps(ctx, tx, dialect, cluster_uuid, service_.Uuid)
+		steps, err = vault.GetServiceSteps(ctx, tx, dialect, cluster_uuid, serv.Uuid)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to found service steps%v", logs.KVL(
 				"cluster_uuid", cluster_uuid,
-				"uuid", service_.Uuid,
+				"uuid", serv.Uuid,
 			))
 			return
 		}
 
-		stepSet[service_.Uuid] = steps
+		stepSet[serv.Uuid] = steps
 
+	}
+
+	return
+}
+
+func pollingService_v2(ctx context.Context, tx excute.Preparer, dialect excute.SqlExcutor,
+	cluster_uuid string, polling_offest vanilla.NullTime,
+	polling_filter PollingFilter_v2,
+) (servs []servicev4.Service, stats []servicev4.ServiceStatus, err error) {
+
+	// check pollingServices
+	pollingServices, err := vault.GetServicesPolling_v4(ctx, tx, dialect, cluster_uuid, polling_offest)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to found services%v", logs.KVL(
+			"cluster_uuid", cluster_uuid,
+			"polling_offest", polling_offest,
+		))
+		return
+	}
+
+	// filtering
+	servs = make([]servicev4.Service, 0, len(pollingServices))
+	stats = make([]servicev4.ServiceStatus, 0, len(pollingServices))
+	for i := range pollingServices {
+		if polling_filter(pollingServices[i]) {
+			servs = append(servs, pollingServices[i].Service)
+			stats = append(stats, pollingServices[i].LastStatus)
+		}
 	}
 
 	return

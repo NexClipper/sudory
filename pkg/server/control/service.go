@@ -33,7 +33,7 @@ import (
 // @Produce     json
 // @Tags        server/service
 // @Router      /server/service [post]
-// @Param       service      body   service.HttpReq_Service_create true  "HttpReq_Service_create"
+// @Param       service     body service.HttpReq_Service_create true "HttpReq_Service_create"
 // @Success     200 {array} service.HttpRsp_Service_create
 func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 	var body = new(service.HttpReq_Service_create)
@@ -173,9 +173,9 @@ func (ctl ControlVanilla) CreateService(ctx echo.Context) error {
 // @Produce     json
 // @Tags        server/service
 // @Router      /server/service [get]
-// @Param       q            query  string false "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
-// @Param       o            query  string false "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
-// @Param       p            query  string false "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       q           query string false "query  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       o           query string false "order  github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
+// @Param       p           query string false "paging github.com/NexClipper/sudory/pkg/server/database/vanilla/stmt/README.md"
 // @Success     200 {array} service.HttpRsp_Service
 func (ctl ControlVanilla) FindService(ctx echo.Context) (err error) {
 	q, err := stmt.ConditionLexer.Parse(echoutil.QueryParam(ctx)["q"])
@@ -276,7 +276,7 @@ func (ctl ControlVanilla) FindService(ctx echo.Context) (err error) {
 // @Produce     json
 // @Tags        server/service
 // @Router      /server/service/{uuid} [get]
-// @Param       uuid         path   string true  "Service 의 Uuid"
+// @Param       uuid         path string true "service's UUID"
 // @Success     200 {object} service.HttpRsp_Service
 func (ctl ControlVanilla) GetService(ctx echo.Context) (err error) {
 	var uuid string
@@ -354,7 +354,7 @@ func (ctl ControlVanilla) GetService(ctx echo.Context) (err error) {
 // @Produce     json
 // @Tags        server/service
 // @Router      /server/service/{uuid}/result [get]
-// @Param       uuid         path   string true  "Service 의 Uuid"
+// @Param       uuid         path string true "service's UUID"
 // @Success     200 {object} service.HttpRsp_ServiceResult
 func (ctl ControlVanilla) GetServiceResult(ctx echo.Context) (err error) {
 	var uuid string

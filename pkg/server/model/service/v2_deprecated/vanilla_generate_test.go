@@ -1,24 +1,28 @@
-package service_test
+package v2_test
 
 import (
 	"os"
 	"testing"
 
 	"github.com/NexClipper/sudory/pkg/server/database/vanilla/ice_cream_maker"
-	"github.com/NexClipper/sudory/pkg/server/model/service/v3"
+	v2 "github.com/NexClipper/sudory/pkg/server/model/service/v2_deprecated"
 )
 
 var objs = []interface{}{
-	service.Service_create{},
-	service.Service{},
+	v2.Service_essential{},
+	v2.Service{},
+	v2.ServiceStatus_essential{},
+	v2.ServiceStatus{},
+	v2.ServiceResults_essential{},
+	v2.ServiceResult{},
+	v2.Service_tangled{},
+	v2.Service_status{},
 
-	// service.ServiceResult_create{},
-	service.ServiceResult{},
-
-	service.ServiceStep_create{},
-	service.ServiceStep{},
-
-	service.Service_polling{},
+	v2.ServiceStep_essential{},
+	v2.ServiceStep{},
+	v2.ServiceStepStatus_essential{},
+	v2.ServiceStepStatus{},
+	v2.ServiceStep_tangled{},
 }
 
 func TestNoXormColumns(t *testing.T) {

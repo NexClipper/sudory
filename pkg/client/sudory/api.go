@@ -12,7 +12,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/server/model/auths/v2"
-	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
+	servicev4 "github.com/NexClipper/sudory/pkg/server/model/service/v4"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 )
 
@@ -79,8 +79,8 @@ func (s *SudoryAPI) Auth(ctx context.Context, auth *auths.HttpReqAuth) error {
 	return nil
 }
 
-func (s *SudoryAPI) GetServices(ctx context.Context) ([]servicev3.HttpRsp_ClientServicePolling, error) {
-	var services []servicev3.HttpRsp_ClientServicePolling
+func (s *SudoryAPI) GetServices(ctx context.Context) ([]servicev4.HttpRsp_ClientServicePolling, error) {
+	var services []servicev4.HttpRsp_ClientServicePolling
 
 	token := s.GetToken()
 	if token == "" {
@@ -105,11 +105,19 @@ func (s *SudoryAPI) GetServices(ctx context.Context) ([]servicev3.HttpRsp_Client
 	return services, nil
 }
 
-func (s *SudoryAPI) UpdateServices(ctx context.Context, service *servicev3.HttpReq_ClientServiceUpdate) error {
+func (s *SudoryAPI) UpdateServices(ctx context.Context, service *servicev4.HttpReq_ClientServiceUpdate) error {
 	if service == nil {
 		return fmt.Errorf("service is nil")
 	}
-	log.Debugf("request update_service: service{uuid:%s, status:%d, result_len:%d}\n", service.Uuid, service.Status, len(service.Result))
+
+	switch service.Version {
+	case "v3":
+		log.Debugf("request update_service: service{version:%s, uuid:%s, status:%d, result_len:%d}\n", service.Version, service.V3.Uuid, service.V3.Status, len(service.V3.Result))
+	case "v4":
+		log.Debugf("request update_service: service{version:%s, uuid:%s, status:%d, result_len:%d}\n", service.Version, service.V4.Uuid, service.V4.Status, len(service.V4.Result))
+	default:
+		return fmt.Errorf("unknown service version: %s", service.Version)
+	}
 
 	b, err := json.Marshal(service)
 	if err != nil {

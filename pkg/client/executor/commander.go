@@ -238,7 +238,7 @@ func (c *HelmCommander) Run() (string, error) {
 }
 
 type JqCommander struct {
-	input  map[string]interface{}
+	input  interface{}
 	filter string
 }
 
@@ -257,7 +257,7 @@ func (c *JqCommander) GetCommandType() CommandType {
 }
 
 func (c *JqCommander) ParseCommand(command *service.StepCommand) error {
-	if m, ok := macro.MapMap(command.Args, "input"); ok {
+	if m, ok := command.Args["input"]; ok {
 		c.input = m
 	} else {
 		return fmt.Errorf("input not found")

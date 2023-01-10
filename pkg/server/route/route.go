@@ -120,8 +120,10 @@ func New(cfg *config.Config, db *sql.DB) *Route {
 
 	{
 		group := e.Group("")
-		// @Security XAuthToken
-		group.Use(XAuthToken(cfg))
+		group.Use(XAuthToken(cfg)) // @Security XAuthToken
+
+		groupV2 := e.Group("/v2")
+		groupV2.Use(XAuthToken(cfg)) // @Security XAuthToken
 
 		// /server/auth*
 		group.POST("/server/tenant", ctl.Tenant)
@@ -129,28 +131,34 @@ func New(cfg *config.Config, db *sql.DB) *Route {
 		// /server/template*
 		group.GET("/server/template", ctl.FindTemplate)
 		group.GET("/server/template/:uuid", ctl.GetTemplate)
-		// group.POST("/server/template", controller.CreateTemplate)
-		// group.PUT("/server/template/:uuid", ctl.UpdateTemplate)
-		// group.DELETE("/server/template/:uuid", controller.DeleteTemplate)
+
 		// /server/template/:template_uuid/command*
 		group.GET("/server/template/:template_uuid/command", ctl.ListTemplateCommand)
 		group.GET("/server/template/:template_uuid/command/:uuid", ctl.GetTemplateCommand)
-		// group.POST("/server/template/:template_uuid/command", controller.CreateTemplateCommand)
-		// group.PUT("/server/template/:template_uuid/command/:uuid", controller.UpdateTemplateCommand)
-		// group.DELETE("/server/template/:template_uuid/command/:uuid", controller.DeleteTemplateCommand)
+
 		// /server/template_recipe*
 		group.GET("/server/template_recipe", ctl.FindTemplateRecipe)
+
+		// /v2/server/template*
+		groupV2.GET("/server/template", ctl.FindTemplate_v2)
+		groupV2.GET("/server/template/:uuid", ctl.GetTemplate_v2)
+		// /v2/server/template_command*
+		groupV2.GET("/server/template_command", ctl.FindTemplateCommand_v2)
+		groupV2.GET("/server/template_command/:uuid", ctl.GetTemplateCommand_v2)
 
 		// /server/global_variables*
 		group.GET("/server/global_variables", ctl.FindGlobalVariables)
 		group.GET("/server/global_variables/:uuid", ctl.GetGlobalVariables)
 		group.PUT("/server/global_variables/:uuid", ctl.UpdateGlobalVariablesValue)
+
 	}
 
 	{
 		group := e.Group("")
-		// @Security ServiceAuthorizationBearerToken
-		group.Use(ServiceAuthorizationBearerToken())
+		group.Use(ServiceAuthorizationBearerToken()) // @Security ServiceAuthorizationBearerToken
+
+		groupV2 := e.Group("/v2")
+		groupV2.Use(ServiceAuthorizationBearerToken()) // @Security ServiceAuthorizationBearerToken
 
 		// /server/cluster*
 		group.GET("/server/cluster", ctl.FindCluster)
@@ -170,6 +178,12 @@ func New(cfg *config.Config, db *sql.DB) *Route {
 		group.GET("/server/service/step", ctl.FindServiceStep)
 		group.GET("/server/service/:uuid/step", ctl.GetServiceSteps)
 		group.GET("/server/service/:uuid/step/:sequence", ctl.GetServiceStep)
+
+		// /v2/server/service*
+		groupV2.GET("/server/service", ctl.FindService_v2)
+		groupV2.GET("/server/service/:uuid", ctl.GetService_v2)
+		groupV2.POST("/server/service", ctl.CreateService_v2)
+		groupV2.GET("/server/service/:uuid/result", ctl.GetServiceResult_v2)
 
 		// /server/session*
 		group.GET("/server/session", ctl.FindSession)
