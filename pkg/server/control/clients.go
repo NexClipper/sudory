@@ -452,7 +452,12 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 		return err
 	}
 
-	return ctx.JSON(http.StatusOK, rsp)
+	rspv3 := make([]servicev3.HttpRsp_ClientServicePolling, len(rsp))
+	for i, s := range rsp {
+		rspv3[i] = s.V3
+	}
+
+	return ctx.JSON(http.StatusOK, rspv3)
 }
 
 // @Description update a service
@@ -465,14 +470,37 @@ func (ctl ControlVanilla) PollingService(ctx echo.Context) error {
 // @Success     200
 // @Header      200 {string} x-sudory-client-token
 func (ctl ControlVanilla) UpdateService(ctx echo.Context) (err error) {
-
-	body := servicev4.HttpReq_ClientServiceUpdate{}
-	if err := echoutil.Bind(ctx, &body); err != nil {
+	type temp struct {
+		Version string `json:"version,omitempty"`
+	}
+	bodyTemp := temp{}
+	if err := echoutil.Bind(ctx, &bodyTemp); err != nil {
 		err = errors.Wrapf(err, "bind%s",
 			logs.KVL(
-				"type", TypeName(body),
+				"type", TypeName(bodyTemp),
 			))
 		return HttpError(err, http.StatusBadRequest)
+	}
+
+	body := servicev4.HttpReq_ClientServiceUpdate{}
+
+	if len(bodyTemp.Version) > 0 {
+		if err := echoutil.Bind(ctx, &body); err != nil {
+			err = errors.Wrapf(err, "bind%s",
+				logs.KVL(
+					"type", TypeName(body),
+				))
+			return HttpError(err, http.StatusBadRequest)
+		}
+	} else {
+		body.Version = "v3"
+		if err := echoutil.Bind(ctx, &body.V3); err != nil {
+			err = errors.Wrapf(err, "bind%s",
+				logs.KVL(
+					"type", TypeName(body),
+				))
+			return HttpError(err, http.StatusBadRequest)
+		}
 	}
 
 	updateServiceStatus_v3 := func(body servicev3.HttpReq_ClientServiceUpdate) error {

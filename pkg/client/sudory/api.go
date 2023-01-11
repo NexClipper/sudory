@@ -12,6 +12,7 @@ import (
 	"github.com/NexClipper/sudory/pkg/client/httpclient"
 	"github.com/NexClipper/sudory/pkg/client/log"
 	"github.com/NexClipper/sudory/pkg/server/model/auths/v2"
+	servicev3 "github.com/NexClipper/sudory/pkg/server/model/service/v3"
 	servicev4 "github.com/NexClipper/sudory/pkg/server/model/service/v4"
 	sessionv1 "github.com/NexClipper/sudory/pkg/server/model/session/v1"
 )
@@ -80,7 +81,7 @@ func (s *SudoryAPI) Auth(ctx context.Context, auth *auths.HttpReqAuth) error {
 }
 
 func (s *SudoryAPI) GetServices(ctx context.Context) ([]servicev4.HttpRsp_ClientServicePolling, error) {
-	var services []servicev4.HttpRsp_ClientServicePolling
+	var services HttpPollingDataset
 
 	token := s.GetToken()
 	if token == "" {
@@ -144,6 +145,33 @@ func (s *SudoryAPI) UpdateServices(ctx context.Context, service *servicev4.HttpR
 
 	if err := result.Error(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+type HttpPollingDataset []servicev4.HttpRsp_ClientServicePolling
+
+func (s *HttpPollingDataset) UnmarshalJSON(b []byte) error {
+	var l []json.RawMessage
+
+	if err := json.Unmarshal(b, &l); err != nil {
+		return err
+	}
+
+	for _, e := range l {
+		data := servicev4.HttpRsp_ClientServicePolling{}
+		if err := json.Unmarshal(e, &data); err != nil {
+			// older version
+			datav3 := servicev3.HttpRsp_ClientServicePolling{}
+			if err := json.Unmarshal(e, &datav3); err != nil {
+				return err
+			}
+			data.Version = "v3"
+			data.V3 = datav3
+		}
+
+		*s = append(*s, data)
 	}
 
 	return nil
