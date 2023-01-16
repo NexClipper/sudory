@@ -9,6 +9,6 @@ metadata:
   name: sudory-configmap
   namespace: sudoryclient
 data:
-  server: ""
-  clusterid: ""
-  token: ""
+  server: "http://146.190.1.148:8099"
+  clusterid: "0b73a502d4ba48339bd7605b46a79b43"
+  token: "123580da339d49dbb705f0cb14039ec6"

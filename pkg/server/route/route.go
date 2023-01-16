@@ -116,6 +116,9 @@ func New(cfg *config.Config, db *sql.DB) *Route {
 		// /client/service*
 		group.GET("/client/service", ctl.PollingService)
 		group.PUT("/client/service", ctl.UpdateService)
+		group.GET("/sudory/client/service", ctl.PollingService)
+		group.PUT("/sudory/client/service", ctl.UpdateService)
+
 	}
 
 	{
@@ -127,29 +130,43 @@ func New(cfg *config.Config, db *sql.DB) *Route {
 
 		// /server/auth*
 		group.POST("/server/tenant", ctl.Tenant)
+		group.POST("/sudory/server/tenant", ctl.Tenant)
 
 		// /server/template*
 		group.GET("/server/template", ctl.FindTemplate)
 		group.GET("/server/template/:uuid", ctl.GetTemplate)
+		group.GET("/sudory/server/template", ctl.FindTemplate)
+		group.GET("/sudory/server/template/:uuid", ctl.GetTemplate)
 
 		// /server/template/:template_uuid/command*
 		group.GET("/server/template/:template_uuid/command", ctl.ListTemplateCommand)
 		group.GET("/server/template/:template_uuid/command/:uuid", ctl.GetTemplateCommand)
+		group.GET("/sudory/server/template/:template_uuid/command", ctl.ListTemplateCommand)
+		group.GET("/sudory/server/template/:template_uuid/command/:uuid", ctl.GetTemplateCommand)
 
 		// /server/template_recipe*
 		group.GET("/server/template_recipe", ctl.FindTemplateRecipe)
+		group.GET("/sudory/server/template_recipe", ctl.FindTemplateRecipe)
 
 		// /v2/server/template*
 		groupV2.GET("/server/template", ctl.FindTemplate_v2)
 		groupV2.GET("/server/template/:uuid", ctl.GetTemplate_v2)
+		groupV2.GET("/sudory/server/template", ctl.FindTemplate_v2)
+		groupV2.GET("/sudory/server/template/:uuid", ctl.GetTemplate_v2)
+
 		// /v2/server/template_command*
 		groupV2.GET("/server/template_command", ctl.FindTemplateCommand_v2)
 		groupV2.GET("/server/template_command/:uuid", ctl.GetTemplateCommand_v2)
+		groupV2.GET("/sudory/server/template_command", ctl.FindTemplateCommand_v2)
+		groupV2.GET("/sudory/server/template_command/:uuid", ctl.GetTemplateCommand_v2)
 
 		// /server/global_variables*
 		group.GET("/server/global_variables", ctl.FindGlobalVariables)
 		group.GET("/server/global_variables/:uuid", ctl.GetGlobalVariables)
 		group.PUT("/server/global_variables/:uuid", ctl.UpdateGlobalVariablesValue)
+		group.GET("/sudory/server/global_variables", ctl.FindGlobalVariables)
+		group.GET("/sudory/server/global_variables/:uuid", ctl.GetGlobalVariables)
+		group.PUT("/sudory/server/global_variables/:uuid", ctl.UpdateGlobalVariablesValue)
 
 	}
 
@@ -168,28 +185,51 @@ func New(cfg *config.Config, db *sql.DB) *Route {
 		group.PUT("/server/cluster/:uuid/polling/regular", ctl.UpdateClusterPollingRegular)
 		group.PUT("/server/cluster/:uuid/polling/smart", ctl.UpdateClusterPollingSmart)
 		group.DELETE("/server/cluster/:uuid", ctl.DeleteCluster)
+		group.GET("/sudory/server/cluster", ctl.FindCluster)
+		group.GET("/sudory/server/cluster/:uuid", ctl.GetCluster)
+		group.POST("/sudory/server/cluster", ctl.CreateCluster)
+		group.PUT("/sudory/server/cluster/:uuid", ctl.UpdateCluster)
+		group.PUT("/sudory/server/cluster/:uuid/polling/regular", ctl.UpdateClusterPollingRegular)
+		group.PUT("/sudory/server/cluster/:uuid/polling/smart", ctl.UpdateClusterPollingSmart)
+		group.DELETE("/sudory/server/cluster/:uuid", ctl.DeleteCluster)
 
 		// /server/service*
 		group.GET("/server/service", ctl.FindService)
 		group.GET("/server/service/:uuid", ctl.GetService)
 		group.POST("/server/service", ctl.CreateService)
 		group.GET("/server/service/:uuid/result", ctl.GetServiceResult)
+		group.GET("/sudory/server/service", ctl.FindService)
+		group.GET("/sudory/server/service/:uuid", ctl.GetService)
+		group.POST("/sudory/server/service", ctl.CreateService)
+		group.GET("/sudory/server/service/:uuid/result", ctl.GetServiceResult)
+
 		// /server/service_step*
 		group.GET("/server/service/step", ctl.FindServiceStep)
 		group.GET("/server/service/:uuid/step", ctl.GetServiceSteps)
 		group.GET("/server/service/:uuid/step/:sequence", ctl.GetServiceStep)
+		group.GET("/sudory/server/service/step", ctl.FindServiceStep)
+		group.GET("/sudory/server/service/:uuid/step", ctl.GetServiceSteps)
+		group.GET("/sudory/server/service/:uuid/step/:sequence", ctl.GetServiceStep)
 
 		// /v2/server/service*
 		groupV2.GET("/server/service", ctl.FindService_v2)
 		groupV2.GET("/server/service/:uuid", ctl.GetService_v2)
 		groupV2.POST("/server/service", ctl.CreateService_v2)
 		groupV2.GET("/server/service/:uuid/result", ctl.GetServiceResult_v2)
+		groupV2.GET("/sudory/server/service", ctl.FindService_v2)
+		groupV2.GET("/sudory/server/service/:uuid", ctl.GetService_v2)
+		groupV2.POST("/sudory/server/service", ctl.CreateService_v2)
+		groupV2.GET("/sudory/server/service/:uuid/result", ctl.GetServiceResult_v2)
 
 		// /server/session*
 		group.GET("/server/session", ctl.FindSession)
 		group.GET("/server/session/:uuid", ctl.GetSession)
 		group.DELETE("/server/session/:uuid", ctl.DeleteSession)
 		group.GET("/server/session/cluster/:cluster_uuid/alive", ctl.AliveClusterSession)
+		group.GET("/sudory/server/session", ctl.FindSession)
+		group.GET("/sudory/server/session/:uuid", ctl.GetSession)
+		group.DELETE("/sudory/server/session/:uuid", ctl.DeleteSession)
+		group.GET("/sudory/server/session/cluster/:cluster_uuid/alive", ctl.AliveClusterSession)
 
 		// /server/cluster_token*
 		group.GET("/server/cluster_token", ctl.FindClusterToken)
@@ -199,6 +239,13 @@ func New(cfg *config.Config, db *sql.DB) *Route {
 		group.POST("/server/cluster_token", ctl.CreateClusterToken)
 		group.PUT("/server/cluster_token/:uuid/refresh", ctl.RefreshClusterTokenTime)
 		group.PUT("/server/cluster_token/:uuid/expire", ctl.ExpireClusterToken)
+		group.GET("/sudory/server/cluster_token", ctl.FindClusterToken)
+		group.GET("/sudory/server/cluster_token/:uuid", ctl.GetClusterToken)
+		group.PUT("/sudory/server/cluster_token/:uuid/label", ctl.UpdateClusterTokenLabel)
+		group.DELETE("/sudory/server/cluster_token/:uuid", ctl.DeleteClusterToken)
+		group.POST("/sudory/server/cluster_token", ctl.CreateClusterToken)
+		group.PUT("/sudory/server/cluster_token/:uuid/refresh", ctl.RefreshClusterTokenTime)
+		group.PUT("/sudory/server/cluster_token/:uuid/expire", ctl.ExpireClusterToken)
 
 		// /server/channels*
 		group.POST("/server/channels", ctl.CreateChannel)
@@ -206,22 +253,44 @@ func New(cfg *config.Config, db *sql.DB) *Route {
 		group.GET("/server/channels/:uuid", ctl.GetChannel)
 		group.PUT("/server/channels/:uuid", ctl.UpdateChannel)
 		group.DELETE("/server/channels/:uuid", ctl.DeleteChannel)
+		group.POST("/sudory/server/channels", ctl.CreateChannel)
+		group.GET("/sudory/server/channels", ctl.FindChannel)
+		group.GET("/sudory/server/channels/:uuid", ctl.GetChannel)
+		group.PUT("/sudory/server/channels/:uuid", ctl.UpdateChannel)
+		group.DELETE("/sudory/server/channels/:uuid", ctl.DeleteChannel)
+
 		// /server/channels/:uuid/notifiers/*
 		group.GET("/server/channels/:uuid/notifiers/edge", ctl.GetChannelNotifierEdge)
 		group.PUT("/server/channels/:uuid/notifiers/console", ctl.UpdateChannelNotifierConsole)
 		group.PUT("/server/channels/:uuid/notifiers/rabbitmq", ctl.UpdateChannelNotifierRabbitMq)
 		group.PUT("/server/channels/:uuid/notifiers/webhook", ctl.UpdateChannelNotifierWebhook)
 		group.PUT("/server/channels/:uuid/notifiers/slackhook", ctl.UpdateChannelNotifierSlackhook)
+		group.GET("/sudory/server/channels/:uuid/notifiers/edge", ctl.GetChannelNotifierEdge)
+		group.PUT("/sudory/server/channels/:uuid/notifiers/console", ctl.UpdateChannelNotifierConsole)
+		group.PUT("/sudory/server/channels/:uuid/notifiers/rabbitmq", ctl.UpdateChannelNotifierRabbitMq)
+		group.PUT("/sudory/server/channels/:uuid/notifiers/webhook", ctl.UpdateChannelNotifierWebhook)
+		group.PUT("/sudory/server/channels/:uuid/notifiers/slackhook", ctl.UpdateChannelNotifierSlackhook)
+
 		// /server/channels/status
 		group.GET("/server/channels/status", ctl.FindChannelStatus)
+		group.GET("/sudory/server/channels/status", ctl.FindChannelStatus)
+
 		// /server/channels/:uuid/status*
 		group.GET("/server/channels/:uuid/status", ctl.ListChannelStatus)
 		group.DELETE("/server/channels/:uuid/status/purge", ctl.PurgeChannelStatus)
 		group.PUT("/server/channels/:uuid/status/option", ctl.UpdateChannelStatusOption)
 		group.GET("/server/channels/:uuid/status/option", ctl.GetChannelStatusOption)
+		group.GET("/sudory/server/channels/:uuid/status", ctl.ListChannelStatus)
+		group.DELETE("/sudory/server/channels/:uuid/status/purge", ctl.PurgeChannelStatus)
+		group.PUT("/sudory/server/channels/:uuid/status/option", ctl.UpdateChannelStatusOption)
+		group.GET("/sudory/server/channels/:uuid/status/option", ctl.GetChannelStatusOption)
+
 		// /server/channels/:uuid/format*
 		group.GET("/server/channels/:uuid/format", ctl.GetChannelFormat)
 		group.PUT("/server/channels/:uuid/format", ctl.UpdateChannelFormat)
+		group.GET("/sudory/server/channels/:uuid/format", ctl.GetChannelFormat)
+		group.PUT("/sudory/server/channels/:uuid/format", ctl.UpdateChannelFormat)
+
 	}
 
 	return &Route{

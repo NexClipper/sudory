@@ -16,7 +16,7 @@ spec:
       serviceAccountName: sudory-controller
       containers:
         - name: sudory-client
-          image: repo.nexclipper.io/nexclipper/sudory-client:0.2.1
+          image: repo.nexclipper.io/nexclipper-dev/nexclipper-sudory-client
           env:
             - name: S_SERVER_URL
               valueFrom:
