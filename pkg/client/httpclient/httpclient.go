@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 	"sync"
 	"time"
@@ -71,6 +72,7 @@ func (c *HttpClient) Delete(path string) *Request {
 type Request struct {
 	c          *HttpClient
 	method     string
+	prefixPath string
 	path       string
 	params     url.Values
 	headers    http.Header
@@ -78,13 +80,19 @@ type Request struct {
 	enableGzip bool
 }
 
-func NewRequest(c *HttpClient, method, path string) *Request {
+func NewRequest(c *HttpClient, method, reqPath string) *Request {
+	var prefixPath string
+	if c.root != nil {
+		prefixPath = path.Join("/", c.root.Path)
+	}
+
 	r := &Request{
-		c:       c,
-		method:  method,
-		path:    path,
-		params:  make(url.Values),
-		headers: make(http.Header),
+		c:          c,
+		method:     method,
+		prefixPath: prefixPath,
+		path:       reqPath,
+		params:     make(url.Values),
+		headers:    make(http.Header),
 	}
 
 	return r
@@ -140,7 +148,7 @@ func (r *Request) URL() *url.URL {
 	if r.c.root != nil {
 		*u = *r.c.root
 	}
-	u.Path = r.path
+	u.Path = path.Join(r.prefixPath, r.path)
 
 	if len(r.params) > 0 {
 		u.RawQuery = r.params.Encode()
