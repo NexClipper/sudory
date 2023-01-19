@@ -25,12 +25,12 @@ type SudoryAPI struct {
 }
 
 func NewSudoryAPI(address string) (*SudoryAPI, error) {
-	log.Debugf("address in NewSudoryAPI : %s\n", address)
+	log.Debugf("address in NewSudoryAPI - api.go : %s\n", address)
 	client, err := httpclient.NewHttpClient(address, false, 0, 0)
 	if err != nil {
 		return nil, err
 	}
-
+	log.Debugf("client in NewSudoryAPI - api.go : %s\n", client)
 	return &SudoryAPI{client: client}, nil
 }
 
