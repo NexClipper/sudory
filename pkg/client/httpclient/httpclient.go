@@ -26,12 +26,11 @@ type HttpClient struct {
 }
 
 func NewHttpClient(address string, defaultTLS bool, retryMax, retryInterval int) (*HttpClient, error) {
-	log.Debugf("Provided url : %s\n", address)
+	log.Debugf("Provided url in httpclient.go : %s\n", address)
 	defaultUrl, err := DefaultURL(address, defaultTLS)
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("Cleaned url : %s\n", defaultUrl)
 	client := retryablehttp.NewClient()
 
 	client.HTTPClient.Transport.(*http.Transport).MaxIdleConns = 100
@@ -44,6 +43,7 @@ func NewHttpClient(address string, defaultTLS bool, retryMax, retryInterval int)
 		return time.Millisecond * time.Duration(retryInterval)
 	}
 	client.ErrorHandler = RetryableHttpErrorHandler
+	log.Debugf("default url in httpclient.go: %s\n", defaultUrl)
 
 	return &HttpClient{root: defaultUrl, client: client}, nil
 }

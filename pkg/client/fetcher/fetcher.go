@@ -40,6 +40,7 @@ func NewFetcher(bearerToken, server, clusterId string, scheduler *scheduler.Sche
 	id = strings.ReplaceAll(id, "-", "")
 
 	api, err := sudory.NewSudoryAPI(server)
+	log.Debugf("api in fetcher.go : %s\n", api)
 	if err != nil {
 		return nil, err
 	}
