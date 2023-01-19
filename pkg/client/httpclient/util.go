@@ -9,6 +9,16 @@ import (
 	"strings"
 )
 
+func last(s string, b byte) int {
+	i := len(s)
+	for i--; i >= 0; i-- {
+		if s[i] == b {
+			break
+		}
+	}
+	return i
+}
+
 func ValidateURL(url string) error {
 	if url == "" {
 		return fmt.Errorf("url is empty : got(%s)", url)
@@ -23,13 +33,16 @@ func ValidateURL(url string) error {
 		return fmt.Errorf("url scheme is empty : want:(http or https), got(%s)", parsedURL.Scheme)
 	}
 
-	host, port, err := net.SplitHostPort(parsedURL.Host)
-	if err != nil {
-		return err
-	}
+	i := last(parsedURL.Host, ':')
 
-	if host == "" || port == "" {
-		return fmt.Errorf("host or port is empty : host(%s), port(%s)", host, port)
+	if i >= 0 {
+		host, port, err := net.SplitHostPort(parsedURL.Host)
+		if host == "" || port == "" {
+			return fmt.Errorf("host or port is empty : host(%s), port(%s)", host, port)
+		}
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
