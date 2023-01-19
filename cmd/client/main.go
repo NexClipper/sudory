@@ -70,7 +70,7 @@ func main() {
 	scheduler := scheduler.NewScheduler()
 	scheduler.Start()
 
-	log.Debugf("server url in main.go : %s\n", server)
+	log.Debugf("server url in main.go : %s\n", *server)
 	fetcher, err := fetcher.NewFetcher(*token, *server, *clusterid, scheduler)
 	if err != nil {
 		log.Fatalf("Failed to create poller : %v.\n", err)

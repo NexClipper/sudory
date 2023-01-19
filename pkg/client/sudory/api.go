@@ -25,6 +25,7 @@ type SudoryAPI struct {
 }
 
 func NewSudoryAPI(address string) (*SudoryAPI, error) {
+	log.Debugf("address in NewSudoryAPI : %s\n", address)
 	client, err := httpclient.NewHttpClient(address, false, 0, 0)
 	if err != nil {
 		return nil, err
@@ -63,7 +64,7 @@ func (s *SudoryAPI) Auth(ctx context.Context, auth *auths.HttpReqAuth) error {
 	if err != nil {
 		return err
 	}
-
+	log.Debugf("sudory API in Auth : %s\n", s.client)
 	result := s.client.Post("/client/auth").SetBody("application/json", b).Do(ctx)
 
 	// get session token
