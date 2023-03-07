@@ -109,6 +109,7 @@ func New(cfg *config.Config, db *sql.DB) *Route {
 	{
 		// /client/auth*
 		e.POST("/client/auth", ctl.AuthClient)
+		e.POST("/sudory/client/auth", ctl.AuthClient)
 
 		group := e.Group("")
 		// @Security ClientSessionToken
