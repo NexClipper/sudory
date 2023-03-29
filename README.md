@@ -290,21 +290,16 @@ source build
 $ make go-build target=server
 ```
 
-docker login
-```console
-$ make docker-login register=p8s.me user=blah
-```
-
 image build(server / client)  
 ```console
-$ make docker-build image=p8s.me/nexclipper/sudory target=server version=0.1.0
+$ make docker-build image=repo.kubeaiops.com/lab/nexclipper-sudory target=server
 
 or
 
-$ make docker-build image=p8s.me/nexclipper/sudory target=client version=0.1.0
+$ make docker-build image=repo.kubeaiops.com/lab/nexclipper-sudory target=client
 ```
 
 image push
 ```console
-$ make docker-push image=p8s.me/nexclipper/sudory target=server version=0.1.0
+$ make docker-push image=repo.kubeaiops.com/lab/nexclipper-sudory target=server
 ```
