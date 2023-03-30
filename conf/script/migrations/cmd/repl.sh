@@ -32,7 +32,7 @@ until false ; do
         
         migrate create -ext sql -dir "$DIR" -seq "$CREATE_ARG"
     else
-        migrate -source "$SOURCE" -database "$DATABASE" -lock-timeout 60 $CMD
+        migrate -source "$SOURCE" -database "$DATABASE" -lock-timeout 60 $up
     fi
     
     echo ""
