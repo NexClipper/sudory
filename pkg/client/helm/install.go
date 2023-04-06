@@ -28,6 +28,8 @@ func (c *Client) Install(args map[string]interface{}) (string, error) {
 		ChartName    string                 `param:"chart_name"`
 		RepoURL      string                 `param:"repo_url,optional"`
 		RepoName     string                 `param:"repo_name,optional"`
+		RepoUsername string                 `param:"repo_username,optional"`
+		RepoPassword string                 `param:"repo_password,optional"`
 		ChartVersion string                 `param:"chart_version,optional"`
 		Values       map[string]interface{} `param:"values,optional"`
 		Timeout      int                    `param:"timeout,optional"`

@@ -146,8 +146,11 @@ func (r *Repos) Add(name, url, username, password string) error {
 	}
 
 	entry := &repo.Entry{
-		Name: name,
-		URL:  url,
+		Name:                  name,
+		URL:                   url,
+		Username:              username,
+		Password:              password,
+		InsecureSkipTLSverify: false,
 	}
 
 	// check if the repo name is legal
@@ -160,24 +163,27 @@ func (r *Repos) Add(name, url, username, password string) error {
 		return err
 	}
 
-	// login if there is a credentail
-
-	// Create an empty slice of getter.Provider
-	crProviders := []getter.Provider{}
-	// Add all registered providers to the slice using getter.All()
-	crProviders = append(crProviders, getter.All(r.settings)...)
-	// Create the basic auth option
-	var basicAuth getter.Option
+	// login if credential is provided
+	var providers getter.Providers
 	if username != "" && password != "" {
-		basicAuth = getter.WithBasicAuth(username, password)
-		crProviders = append(crProviders, func() (getter.Provider, error) {
+		// Create a new HTTPGetter to handle authentication
+		authConstructor := func(opts ...getter.Option) (getter.Getter, error) {
 			return getter.NewHTTPGetter(
-				getter.WithURL(url),
-				basicAuth,
-			), nil
-		})
+				append(opts, getter.WithBasicAuth(username, password), getter.WithURL(url))...)
+		}
 
-	cr, err := repo.NewChartRepository(entry, crProviders)
+		// Create a new Provider with the authConstructor
+		providers = getter.Providers{
+			{Schemes: []string{"http", "https"}, New: authConstructor},
+		}
+	} else {
+		providers = getter.All(r.settings)
+	}
+
+	cr, err := repo.NewChartRepository(entry, providers)
+
+	//cr, err := repo.NewChartRepository(entry, getter.All(r.settings))
+
 	if err != nil {
 		return err
 	}
@@ -255,4 +261,3 @@ func (r *Repos) Update(name string) error {
 
 	return nil
 }
-
