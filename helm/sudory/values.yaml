@@ -1,0 +1,83 @@
+client:
+  enabled: true
+  image: "repo.kubeaiops.com/lab/nexclipper-sudory-client:latest"
+  environment_variable:
+    data:
+      server: "" #http://<IP>:<PORT>
+      clusterid: ""
+      token: ""
+
+server:
+  enabled: true
+  service:
+    service_type: "ClusterIP"
+  image: "repo.kubeaiops.com/lab/nexclipper-sudory-server:latest"
+  containerPort: 8099
+  environment_variable:
+    data:
+      SUDORY_DB_HOST: "mariadb.mariadb.svc.cluster.local"
+      SUDORY_DB_PORT: "3306"
+      SUDORY_DB_SCHEME: "sudory"
+      SUDORY_DB_EXPORT_PATH: "."
+      SUDORY_DB_SERVER_USERNAME: "sudory"
+      SUDORY_LOG_SEVERITY: "info"
+      SUDORY_LOG_SYSTEM_EVENT: "false"
+      SUDORY_LOG_VERBOSE: "true"
+      SUDORY_LOG_VERBOSELEVEL: "9"
+      SUDORY_LOG_FILENAME: "./sudory.log"
+      SUDORY_LOG_MAXSIZE: "10"
+      SUDORY_LOG_MAXAGE: "5"
+      SUDORY_LOG_MAXBACKUPS: "10"
+      SUDORY_LOG_COMPRESS: "false"
+  secret_variable:
+    data:
+      db_server_password: "sudory"
+  serverrule:
+    enabled: false
+    data:
+     enigma.yml: |
+       enigma:
+         sudory.default.crypto:
+           block-method: none
+           block-size: 0
+           block-key:
+           cipher-mode: none
+           cipher-salt: null
+           padding: none
+           strconv: plain
+  ingress:
+    enabled: false
+    # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
+    # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+    ingressClassName: nginx
+    # Values can be templated
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    labels: {}
+    path: /
+    # pathType is only for k8s >= 1.1=
+    pathType: Prefix
+    # By default, Kubernetes uses an ingress controller named nginx if the ingress class name is not specified.
+    # ingressClassName: ""
+    hosts:
+      - chart-example.local
+    ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
+    extraPaths: []
+    # - path: /*
+    #   backend:
+    #     serviceName: ssl-redirect
+    #     servicePort: use-annotation
+    ## Or for k8s > 1.19
+    # - path: /*
+    #   pathType: Prefix
+    #   backend:
+    #     service:
+    #       name: ssl-redirect
+    #       port:
+    #         name: use-annotation
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+

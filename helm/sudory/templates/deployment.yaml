@@ -17,7 +17,7 @@ spec:
       labels:
         sudory: {{ .Release.Name }}-sudory-client
     spec:
-      serviceAccountName: {{ .Release.Name }}-sudory-controller
+      serviceAccountName: {{ .Release.Name }}-sudoryclient-controller
       containers:
         - name: {{ .Release.Name }}-sudory-client
           image: "{{ .Values.client.image }}"
@@ -69,11 +69,11 @@ spec:
                   key: {{ $key }}
             {{- end -}}
             {{- range $key, $value := .Values.server.secret_variable.data }}
-            - name: {{ $value }}
+            - name: {{ $key }}
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Release.Name }}-sudory-secret
-                  key: {{ $value }}
+                  key: {{ $key }}
                 {{- end }}
           livenessProbe:
             tcpSocket:

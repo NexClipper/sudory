@@ -126,7 +126,7 @@ func (r *Repos) updateRepoEntry(entry *repo.Entry) error {
 	return nil
 }
 
-func (r *Repos) Add(name, url string) error {
+func (r *Repos) Add(name, url, username, password string) error {
 	if err := checkDeprecatedRepos(url); err != nil {
 		return err
 	}
@@ -135,10 +135,10 @@ func (r *Repos) Add(name, url string) error {
 	lockCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	err := r.lockFile(lockCtx)
-	defer r.unlockFile()
 	if err != nil {
 		return err
 	}
+	defer r.unlockFile()
 
 	// read repo file
 	if err := r.readFile(); err != nil {
@@ -160,7 +160,24 @@ func (r *Repos) Add(name, url string) error {
 		return err
 	}
 
-	cr, err := repo.NewChartRepository(entry, getter.All(r.settings))
+	// login if there is a credentail
+
+	// Create an empty slice of getter.Provider
+	crProviders := []getter.Provider{}
+	// Add all registered providers to the slice using getter.All()
+	crProviders = append(crProviders, getter.All(r.settings)...)
+	// Create the basic auth option
+	var basicAuth getter.Option
+	if username != "" && password != "" {
+		basicAuth = getter.WithBasicAuth(username, password)
+		crProviders = append(crProviders, func() (getter.Provider, error) {
+			return getter.NewHTTPGetter(
+				getter.WithURL(url),
+				basicAuth,
+			), nil
+		})
+
+	cr, err := repo.NewChartRepository(entry, crProviders)
 	if err != nil {
 		return err
 	}
@@ -238,3 +255,4 @@ func (r *Repos) Update(name string) error {
 
 	return nil
 }
+

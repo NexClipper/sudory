@@ -8,7 +8,7 @@ import (
 )
 
 func (c *Client) RepoAdd(args map[string]interface{}) (string, error) {
-	var name, url string
+	var name, url, username, password string
 
 	for _, a := range []string{"repo_name", "repo_url"} {
 		v, ok := args[a]
@@ -23,10 +23,12 @@ func (c *Client) RepoAdd(args map[string]interface{}) (string, error) {
 
 	name = args["repo_name"].(string)
 	url = args["repo_url"].(string)
+	username = args["repo_username"].(string)
+	password = args["repo_password"].(string)
 
 	r := repo.NewRepos(c.settings)
 
-	if err := r.Add(name, url); err != nil {
+	if err := r.Add(name, url, username, password); err != nil {
 		if repo.ErrIsExistRepo(err) {
 			return fmt.Sprintf("repository(%s) has already been added", name), nil
 		}
