@@ -61,7 +61,8 @@ func (c *Client) Install(args map[string]interface{}) (string, error) {
 	// client.Description =
 	client.ChartPathOptions.Version = params.ChartVersion
 	client.ChartPathOptions.RepoURL = params.RepoURL
-
+	client.ChartPathOptions.Username = params.RepoUsername
+	client.ChartPathOptions.Password = params.RepoPassword
 	client.ReleaseName = params.Name
 
 	chartName := params.ChartName

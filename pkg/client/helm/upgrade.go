@@ -64,6 +64,8 @@ func (c *Client) Upgrade(args map[string]interface{}) (string, error) {
 
 	client.ChartPathOptions.Version = params.ChartVersion
 	client.ChartPathOptions.RepoURL = params.RepoURL
+	client.ChartPathOptions.Username = params.RepoUsername
+	client.ChartPathOptions.Password = params.RepoPassword
 	client.Namespace = c.settings.Namespace()
 	client.ReuseValues = params.ReuseValues
 

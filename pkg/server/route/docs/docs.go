@@ -3067,6 +3067,9 @@ const docTemplate = `{
         "github.com_NexClipper_sudory_pkg_server_model_template_v3.HttpRsp_TemplateCommand": {
             "type": "object",
             "properties": {
+                "category": {
+                    "type": "string"
+                },
                 "client_version": {
                     "type": "integer"
                 },
