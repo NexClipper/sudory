@@ -285,6 +285,12 @@ kubectl apply -f sa.yaml
 
 ## Make Example
 
+
+swagger build 
+```console
+$ make swagger
+```
+
 source build
 ```console
 $ make go-build target=server
@@ -303,3 +309,14 @@ image push
 ```console
 $ make docker-push image=repo.kubeaiops.com/lab/nexclipper-sudory target=server
 ```
+
+## Design
+
+how to use swagger?
+```
+kubectl port-forward svc/sudory-sudory-server -n sudory 8099
+http://127.0.0.1:8099/swagger/index.html
+```
+
+database design
+![](asset/erd.png)

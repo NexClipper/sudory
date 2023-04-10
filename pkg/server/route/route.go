@@ -3,10 +3,6 @@
 // @description this is a sudory server.
 // @contact.url https://nexclipper.io
 // @contact.email jaehoon@nexclipper.io
-// @securityDefinitions.apikey ServiceAuth
-// @in header
-// @name Authorization
-// @description Bearer token for service api
 // @securityDefinitions.apikey ClientAuth
 // @in header
 // @name x-sudory-client-token
@@ -119,7 +115,6 @@ func New(cfg *config.Config, db *sql.DB) *Route {
 		group.PUT("/client/service", ctl.UpdateService)
 		group.GET("/sudory/client/service", ctl.PollingService)
 		group.PUT("/sudory/client/service", ctl.UpdateService)
-
 	}
 
 	{

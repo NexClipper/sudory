@@ -2623,11 +2623,6 @@ securityDefinitions:
     in: header
     name: x-sudory-client-token
     type: apiKey
-  ServiceAuth:
-    description: Bearer token for service api
-    in: header
-    name: Authorization
-    type: apiKey
   XAuthToken:
     description: limit for access sudory api
     in: header

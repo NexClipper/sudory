@@ -4076,12 +4076,6 @@ const docTemplate = `{
             "name": "x-sudory-client-token",
             "in": "header"
         },
-        "ServiceAuth": {
-            "description": "Bearer token for service api",
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
-        },
         "XAuthToken": {
             "description": "limit for access sudory api",
             "type": "apiKey",
